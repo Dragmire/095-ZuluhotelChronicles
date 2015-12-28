@@ -1,0 +1,29 @@
+
+use uo;
+
+include "include/damages";
+include "include/random";
+
+program invisibleonhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	ApplyTheDamage( defender , attacker , rawdamage );
+	
+	var chance := GetObjProperty( armor , "ChanceOfEffect" );
+	if(RandomDiceStr("1d100") <= chance)
+
+		if( GetObjProperty( armor , "Cursed" ) )
+			ApplyTheDamage( defender , defender , rawdamage );
+		else
+			defender.hidden := 1;
+		endif
+
+	endif
+
+endprogram

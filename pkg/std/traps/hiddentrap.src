@@ -1,0 +1,34 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/dotempmods";
+include "include/random";
+include "include/areas";
+program walk_on_trap( mobile, trap )
+
+   var itemdesc := ReadConfigFile( "itemdesc" );
+   var elem := FindConfigElem( itemdesc, trap.objtype );
+   var effect := GetConfigInt( elem, "Effect" );
+   var sound := GetConfigInt( elem, "Sound" );
+   var dieroll := GetConfigString( elem, "Damage" );
+   var poison := GetConfigInt( elem, "Poison" );
+
+   PlaySoundEffect( mobile, sound );
+   var trapitem := CreateItemAtLocation( trap.x, trap.y, trap.z, effect, 1 );
+
+if( IsInArea( mobile, AREAID_MINOC ) ) //safe zone
+return 0;
+endif
+
+   if (poison)
+	SetPoison(mobile,Random(3)+1,"You've been poisoned!");
+   else
+	var dam := RandomDiceStr( dieroll );
+	ApplyRawDamage( mobile, dam );
+   endif
+
+   sleep(2);
+   DestroyItem(trapitem);
+
+endprogram

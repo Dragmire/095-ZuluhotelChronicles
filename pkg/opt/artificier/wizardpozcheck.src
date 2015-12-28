@@ -1,0 +1,63 @@
+use uo;
+use os;
+include "include/attributes";
+
+program wizardpozcheck( parms )
+
+	var wizards	:= parms[1];
+	var north	:= parms[2];
+	var captor	:= parms[3];
+
+	var min_x	:= north.x - 4;
+	var max_x	:= north.x + 5;
+	var min_y	:= north.y;
+	var max_y	:= north.y + 9;
+
+	var start_hp	:= 0;
+
+
+	foreach wizard in wizards
+		start_hp := start_hp + GetHp(wizard);
+	endforeach
+
+	while( GetObjProperty( captor, "RitualRunning" ) )
+		
+		sleep( 5 );
+
+		var hp_pool	:= 0;
+	
+		foreach wizard in wizards
+			if( wizard.x < min_x || wizard.x > max_x || wizard.y < min_y || wizard.y > max_y )
+				EraseObjProperty( captor, "RitualRunning" );
+				break;
+			endif
+		
+			hp_pool := hp_pool + GetHp(wizard);
+		endforeach
+	
+		if( hp_pool < start_hp )
+			EraseObjProperty( captor, "RitualRunning" );
+			break;
+		endif
+	
+		var mobiles := ListMobilesNearLocation( north.x, north.y+5, north.z, 5 );
+		foreach mobile in mobiles
+			if( !(mobile in wizards) )
+				EraseObjProperty( captor, "RitualRunning" );
+				break;
+			endif
+		endforeach
+	
+		var hidden  := ListMobilesNearLocationEx( north.x, north.y, north.z, 5, LISTEX_FLAG_HIDDEN );
+		foreach mobile in hidden
+			if( !(mobile in wizards) )
+				EraseObjProperty( captor, "RitualRunning" );
+				mobile.hidden := 0;
+				ApplyRawDamage( mobile, GetHp(mobile)+3 );
+				break;
+			endif
+		endforeach
+	
+	endwhile
+
+endprogram

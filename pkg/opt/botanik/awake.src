@@ -1,0 +1,39 @@
+// AWAKE :
+// makes trees grow, it is esecuted from maketree, uses awake parameter
+// from tree config. Gotta check it and improve it maybe (sounds, etc...) ;)
+// yo!
+
+use os;
+use uo;
+use cfgfile;
+
+include "botanik";
+
+program awake(item)
+
+ PrintTextAbove(item,"*You plant a new tree*");
+
+ var newleaves,newtree,i,tree,leaves,cfg:=ReadConfigFile("tree");
+ if (!cfg) return; endif
+
+ sleep(cfg[item.objtype].awake);
+
+ newleaves:=CreateItemAtLocation(CInt(item.x),CInt(item.y),CInt(item.z),CInt(cfg[item.objtype].awaketype),1);
+ newleaves.movable:=0;
+ newtree:=CreateItemAtLocation(CInt(newleaves.x),CInt(newleaves.y),CInt(newleaves.z),CInt(cfg[newleaves.objtype].treetype),1);
+
+ PrintTextAbove(newleaves,"*grows*");
+ DestroyItem(item);
+
+ sleep(cfg[newleaves.objtype].awake);
+
+ leaves:=CreateItemAtLocation(CInt(newleaves.x),CInt(newleaves.y),CInt(newleaves.z),CInt(cfg[newleaves.objtype].awaketype),1);
+ leaves.movable:=0;
+ DestroyItem(newleaves);
+ DestroyItem(newtree);
+ tree:=CreateItemAtLocation(CInt(leaves.x),CInt(leaves.y),CInt(leaves.z), CInt(cfg[leaves.objtype].treetype),1);
+
+ PrintTextAbove(leaves,"*matures*");
+ fixtree(tree,cfg[tree.objtype].regrown,cfg[tree.objtype].maxamount);
+
+endprogram

@@ -1,0 +1,158 @@
+use uo;
+use os;
+include "include/client";
+
+program songwriting(who)
+	var lcontents := {};
+	var gcontents := {};
+	SendSysMessage(who,"Target a Song Scroll to copy.");
+	var scroll := Target(who);
+	if (scroll.objtype < 0x6178 or scroll.objtype > 0x6187)
+		SendSysMessage(who,"You must select a Song Scroll!");
+		return;
+	endif
+	SendSysMessage(who,"Target a Song Scroll Book to copy into.");
+	var book := Target(who);
+	if (book.objtype != 0x6177)
+		SendSysMessage(who,"You must select a Song Book!");
+		return;
+	endif
+	lcontents := GetObjProperty(book,"lcontents");
+	if (!lcontents)
+		lcontents := {};
+	endif
+	gcontents := GetObjProperty(book,"gcontents");
+	if (!gcontents)
+		gcontents := {};
+	endif
+	var lesser := GetObjProperty(book,"Lesser");
+	if (!lesser)
+		lesser := 0;
+	endif
+	var greater := GetObjProperty(book,"Greater");
+	if (!greater)
+		greater := 0;
+	endif
+	var diff;
+	var byte;
+	var circle ;
+	case (scroll.objtype)
+		0x6178:	diff := 80;
+			byte := 1;
+			circle := 1;
+		0x6179:	diff := 80;
+			byte := 2;
+			circle := 1;
+		0x617a:	diff := 85;
+			byte := 4;
+			circle := 1;
+		0x617b:	diff := 85;
+			byte := 8;
+			circle := 1;
+		0x617c: diff := 90;
+			byte := 16;
+			circle := 1;
+		0x617d: diff := 90;
+			byte := 32;
+			circle := 1;
+		0x617e: diff := 95;	
+			byte := 64;
+			circle := 1;
+		0x617f: diff := 95;
+			byte := 128;
+			circle := 1;
+		0x6180:	diff := 100;
+			byte := 1;
+			circle := 2;
+		0x6181:	diff := 100;
+			byte := 2;
+			circle := 2;
+		0x6182:	diff := 105;
+			byte := 4;
+			circle := 2;
+		0x6183:	diff := 105;
+			byte := 8;
+			circle := 2;
+		0x6184: diff := 110;
+			byte := 16;
+			circle := 2;
+		0x6185: diff := 110;
+			byte := 32;
+			circle := 2;
+		0x6186: diff := 115;	
+			byte := 64;
+			circle := 2;
+		0x6187: diff := 115;
+			byte := 128;
+			circle := 2;
+	endcase
+	var found := 0;
+	foreach item in EnumerateItemsInContainer( who.backpack )	
+		if (item == scroll)
+			found := 1;
+		endif
+	endforeach
+	if (found == 0)
+		SendSysMessage(who,"The items need to be in your backpack!");
+		return;
+	endif
+
+	found := 0;
+	foreach item in EnumerateItemsInContainer( who.backpack )	
+		if (item == book)
+			found := 1;
+		endif
+	endforeach
+	if (found == 0)
+		SendSysMessage(who,"The items need to be in your backpack!");
+		return;
+	endif
+	if (circle == 1)
+		foreach inscribed in lcontents
+			if (inscribed == byte)
+				SendSysMessage(who,"That song is already inscribed!");
+				return;
+			endif
+		endforeach
+	endif
+	if (circle == 2)
+		foreach inscribed in gcontents
+			if (inscribed == byte)
+				SendSysMessage(who,"That song is already inscribed!");
+				return;
+			endif
+		endforeach
+	endif
+	var peace := GetAttribute(who, ATTRIBUTEID_PEACEMAKING);
+	var prov := GetAttribute(who, ATTRIBUTEID_PROVOCATION);
+	var mus := GetAttribute(who, ATTRIBUTEID_MUSICIANSHIP);
+	if (diff < mus)
+		if (circle == 1)
+			if (diff < peace)
+				lesser := lesser + byte;
+				SetObjproperty(book,"Lesser",lesser);
+				SendSysMessage(who,"You add the song to the Song Book.");
+				PlaySoundEffect(who , 0x50 ); 
+				lcontents.append(byte);
+				SetObjProperty(book,"lcontents",lcontents);
+			else
+				SendSysMessage(who,"You fail and destroy the song scroll.");
+			endif
+		elseif (circle == 2)
+			if (diff < prov)
+				greater := greater + byte;
+				SetObjproperty(book,"Greater",greater);
+				PlaySoundEffect( who , 0x50 );
+                                SendSysMessage(who,"You add the song to the Song Book.");
+				gcontents.append(byte);
+				SetObjProperty(book,"gcontents",gcontents);
+			else
+				SendSysMessage(who,"You fail and destroy the song scroll.");
+			endif
+		endif
+	else
+		SendSysMessage(who,"You fail and destroy the song scroll.");
+		
+	endif
+	DestroyItem(scroll);
+endprogram			

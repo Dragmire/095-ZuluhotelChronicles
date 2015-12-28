@@ -1,0 +1,1058 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Spelldata.inc
+//
+// Contains various constants && settings for spellsystem
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Internal settings do NOT change those, 
+// && keep them at the top of this file.
+/////////////////////////////////////////////////////////////////////////////////////////
+const CAST_FROM_SPELLBOOK			:= 0;
+const CAST_FROM_SCROLL				:= 1;
+
+const SINGLE_USE_OPTIONS			:= 0;
+const PERMANENT_OPTIONS				:= 1;
+
+const SINGLE_TARGET_SPELL			:= 0;
+const AREA_EFFECT_SPELL				:= 1;
+
+const SPELLOPT_DONT_BURN_SELF_ON_FIZZLE		:= 0;
+const SPELLOPT_BURN_SELF_ON_FIZZLE		:= 1;
+
+const SPELLSYS_CASTINGOPT_NO_DELAY		:= 0x01;
+const SPELLSYS_CASTINGOPT_NO_MANA		:= 0x02;
+const SPELLSYS_CASTINGOPT_NO_POWER_WORDS	:= 0x04;
+const SPELLSYS_CASTINGOPT_NO_REAGENTS		:= 0x08;
+const SPELLSYS_CASTINGOPT_NO_SKILL_CHECK	:= 0x10;
+const SPELLSYS_CASTINGOPT_ANY_EQUIPMENT		:= 0x20;
+
+const PARMS_INDEX_SWITCH			:= 1;
+const PARMS_INDEX_CASTER			:= 2;
+const PARMS_INDEX_CAST_ON			:= 3;
+const PARMS_INDEX_CIRCLE			:= 4;
+const PARMS_INDEX_FROM_HIT			:= 5;
+const PARMS_VALUE_FROM_SCRIPT			:= "#MOB";
+
+const FX_TYPE_MOVING				:= 0x1;
+const FX_TYPE_OBJECT_CENTERED			:= 0x2;
+const FX_TYPE_STATIONARY			:= 0x3;
+const FX_TYPE_LIGHTNING_BOLT			:= 0x4;
+const FX_TYPE_DOUBLE_LIGHTNING			:= 0x5;
+const FX_TYPE_WATERFALL				:= 0x6;
+const FX_TYPE_MAGIC_CIRCLE			:= 0x7;
+
+const MAX_NORMAL_SPELL				:= 64;
+const MAX_NECRO_SPELL				:= 80;
+const MAX_EARTH_SPELL				:= 96;
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Misc settings those can be changed to alter the balance
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Damages calculation
+const SPELLSYS_DAMAGES_CIRCLE_MULTIPLIER	:= 3;	// Will be multipled to the circle for the amount of dices rolled
+const SPELLSYS_DAMAGES_DICE_TYPE		:= 5;	// The type of dices rolled
+const SPELLSYS_DAMAGES_MAGERY_DIVIDER		:= 4;	// The caster's magery skill devided by this will be added to the result of the dice roll
+const SPELLSYS_DAMAGES_ON_PLAYERS_DIVIDER	:= 2;	// If the spell is casted on a player the damages will be divided by this
+
+// Various msgs
+const SYSMSG_SPELLSYSTEM_ANTIMAGIC_AREA		:= "Spells cannot be cast here.";
+const SYSMSG_SPELLSYSTEM_FIZZLE			:= "The spell fizzles.";
+const SYSMSG_SPELLSYSTEM_INTERRUPTED		:= "Your spell-casting was interrupted.";
+const SYSMSG_SPELLSYSTEM_LOST_CONCENTRATION	:= "You've lost your concentration!";
+const SYSMSG_SPELLSYSTEM_MUST_TARGET_MOBILE	:= "You must target a mobile.";
+const SYSMSG_SPELLSYSTEM_NOT_ENOUGH_MANA	:= "You do not have enough mana to cast that spell.";
+const SYSMSG_SPELLSYSTEM_NOT_ENOUGH_REAGENTS	:= "You do not have enough reagents to cast that spell.";
+const SYSMSG_SPELLSYSTEM_NOT_ENOUGH_SKILL	:= "This spell is above your abilities.";
+const SYSMSG_SPELLSYSTEM_NOT_IN_LINE_OF_SIGHT	:= "You cannot see that.";
+const SYSMSG_SPELLSYSTEM_RESISTED_SPELL		:= "You feel yourself resisting magical energy!";
+const SYSMSG_SPELLSYSTEM_SOMETHING_IN_HANDS	:= "Your hands must be free to cast spells.";
+
+
+
+//////////////////////////////////
+// Burn Self effect		//
+//////////////////////////////////
+const SFX_BURN_SELF			:= 0x05d;
+const FX_TYPE_BURN_SELF			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_BURN_SELF			:= 0x375a;
+const FX_SPEED_BURN_SELF		:= 0x1;
+const FX_LOOP_BURN_SELF			:= 0x10;
+
+
+//////////////////////////////////
+// Fizzle effect     		//
+//////////////////////////////////
+const SFX_FIZZLE			:= 0x05d;
+const FX_TYPE_FIZZLE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_FIZZLE			:= 0x3735;
+const FX_SPEED_FIZZLE			:= 0x7;
+const FX_LOOP_FIZZLE			:= 0x7;
+
+
+//////////////////////////////////
+// Resist effect     		//
+//////////////////////////////////
+const SFX_RESIST			:= 0x01e7;
+const FX_TYPE_RESIST			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_RESIST			:= 0x374a;
+const FX_SPEED_RESIST			:= 0x5;
+const FX_LOOP_RESIST			:= 0x5;
+
+
+//////////////////////////////////
+// Summon Elemental SFX		//
+//////////////////////////////////
+const SFX_SPELL_SUMMON_ELEMENTAL	:= 0x0218;
+
+
+
+
+
+//////////////////////////////////
+// 1st Circle Spells 		//
+//////////////////////////////////
+
+//Clumsy
+const SPELLID_CLUMSY  			:= 1;
+const BURN_SELF_CLUMSY			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CLUMSY			:= 0x01e0;
+const FX_TYPE_CLUMSY			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_CLUMSY			:= 0x374a;
+const FX_SPEED_CLUMSY			:= 0x7;
+const FX_LOOP_CLUMSY			:= 0x7;
+
+//Create Food
+const SPELLID_CREATE_FOOD		:= 2;
+const BURN_SELF_CREATE_FOOD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CREATE_FOOD		:= 0x01e3;
+const FX_TYPE_CREATE_FOOD		:= 0;
+const FX_ID_CREATE_FOOD			:= 0;
+const FX_SPEED_CREATE_FOOD		:= 0;
+const FX_LOOP_CREATE_FOOD		:= 0;
+
+//Feeblemind
+const SPELLID_FEEBLEMIND		:= 3;
+const BURN_SELF_FEEBLEMIND		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_FEEBLEMIND		:= 0x01e5;
+const FX_TYPE_FEEBLEMIND		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_FEEBLEMIND			:= 0x374a;
+const FX_SPEED_FEEBLEMIND		:= 0x7;
+const FX_LOOP_FEEBLEMIND		:= 0x7;
+
+//Heal
+const SPELLID_HEAL			:= 4;
+const BURN_SELF_HEAL			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_HEAL			:= 0x01f3;
+const FX_TYPE_HEAL			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_HEAL			:= 0x376a;
+const FX_SPEED_HEAL			:= 0x7;
+const FX_LOOP_HEAL			:= 0x10;
+
+//Magic Arrow
+const SPELLID_MAGIC_ARROW		:= 5;
+const BURN_SELF_MAGIC_ARROW		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MAGIC_ARROW		:= 0x01e6;
+const FX_TYPE_MAGIC_ARROW		:= FX_TYPE_MOVING;
+const FX_ID_MAGIC_ARROW			:= 0x36e4;
+const FX_SPEED_MAGIC_ARROW		:= 0x5;
+const FX_LOOP_MAGIC_ARROW		:= 0x1;
+
+//Night Sight
+const SPELLID_NIGHTSIGHT		:= 6;
+const BURN_SELF_NIGHTSIGHT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_NIGHTSIGHT		:= 0x01e4;
+const FX_TYPE_NIGHTSIGHT		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_NIGHTSIGHT			:= 0x373a;
+const FX_SPEED_NIGHTSIGHT		:= 0xa;
+const FX_LOOP_NIGHTSIGHT		:= 0xa;
+
+//Reactive Armor
+const SPELLID_REACTIVE_ARMOR		:= 7;
+const BURN_SELF_REACTIVE_ARMOR		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_REACTIVE_ARMOR		:= 0x01f3;
+const FX_TYPE_REACTIVE_ARMOR		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_REACTIVE_ARMOR		:= 0x373a;
+const FX_SPEED_REACTIVE_ARMOR		:= 0x5;
+const FX_LOOP_REACTIVE_ARMOR		:= 0x5;
+
+//Weaken
+const SPELLID_WEAKEN			:= 8;
+const BURN_SELF_WEAKEN			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_WEAKEN			:= 0x01e7;
+const FX_TYPE_WEAKEN			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_WEAKEN			:= 0x373a;
+const FX_SPEED_WEAKEN			:= 0x7;
+const FX_LOOP_WEAKEN			:= 0x7;
+
+
+
+//////////////////////////////////
+// 2nd Circle Spells 		//
+//////////////////////////////////
+
+//Agility
+const SPELLID_AGILITY			:= 9;
+const BURN_SELF_AGILITY			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_AGILITY			:= 0x01e8;
+const FX_TYPE_AGILITY			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_AGILITY			:= 0x373a;
+const FX_SPEED_AGILITY			:= 0x7;
+const FX_LOOP_AGILITY			:= 0x7;
+
+//Cunning
+const SPELLID_CUNNING			:= 10;
+const BURN_SELF_CUNNING			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CUNNING			:= 0x01ec;
+const FX_TYPE_CUNNING			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_CUNNING			:= 0x373a;
+const FX_SPEED_CUNNING			:= 0x7;
+const FX_LOOP_CUNNING			:= 0x7;
+
+//Cure
+const SPELLID_CURE			:= 11;
+const BURN_SELF_CURE			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CURE			:= 0x01e1;
+const FX_TYPE_CURE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_CURE			:= 0x373a;
+const FX_SPEED_CURE			:= 0xa;
+const FX_LOOP_CURE			:= 0xa;
+
+//Harm
+const SPELLID_HARM			:= 12;
+const BURN_SELF_HARM			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_HARM			:= 0x01f2;
+const FX_TYPE_HARM			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_HARM			:= 0x37c3;
+const FX_SPEED_HARM			:= 0xa;
+const FX_LOOP_HARM			:= 0x1e;
+
+//Magic Trap
+const SPELLID_MAGIC_TRAP		:= 13;
+const BURN_SELF_MAGIC_TRAP		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MAGIC_TRAP1 		:= 0x01f0;
+const SFX_SPELL_MAGIC_TRAP2 		:= 0x0236;
+const FX_TYPE_MAGIC_TRAP		:= 0;
+const FX_ID_MAGIC_TRAP			:= 0;
+const FX_SPEED_MAGIC_TRAP		:= 0;
+const FX_LOOP_MAGIC_TRAP		:= 0;
+
+//Magic Untrap
+const SPELLID_MAGIC_UNTRAP		:= 14;
+const BURN_SELF_MAGIC_UNTRAP		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MAGIC_UNTRAP1		:= 0x01f1;
+const SFX_SPELL_MAGIC_UNTRAP2		:= 0x011f;
+const FX_TYPE_MAGIC_UNTRAP		:= 0;
+const FX_ID_MAGIC_UNTRAP		:= 0;
+const FX_SPEED_MAGIC_UNTRAP		:= 0;
+const FX_LOOP_MAGIC_UNTRAP		:= 0;
+
+//Protection
+const SPELLID_PROTECTION		:= 15;
+const BURN_SELF_PROTECTION		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_PROTECTION		:= 0x01ee;
+const FX_TYPE_PROTECTION		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_PROTECTION			:= 0x373a;
+const FX_SPEED_PROTECTION		:= 0x7;
+const FX_LOOP_PROTECTION		:= 0x7;
+
+//Strength
+const SPELLID_STRENGTH			:= 16;
+const BURN_SELF_STRENGTH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_STRENGTH        	:= 0x01ef;
+const FX_TYPE_STRENGTH			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_STRENGTH			:= 0x373a;
+const FX_SPEED_STRENGTH			:= 0x7;
+const FX_LOOP_STRENGTH			:= 0x7;
+
+
+
+//////////////////////////////////
+// 3rd Circle Spells 		//
+//////////////////////////////////
+
+//Bless
+const SPELLID_BLESS			:= 17;
+const BURN_SELF_BLESS			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_BLESS			:= 0x01eb;
+const FX_TYPE_BLESS			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_BLESS			:= 0x373a;
+const FX_SPEED_BLESS			:= 0xa;
+const FX_LOOP_BLESS			:= 0xa;
+
+//Fireball
+const SPELLID_FIREBALL			:= 18;
+const BURN_SELF_FIREBALL		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_FIREBALL		:= 0x0160;
+const FX_TYPE_FIREBALL			:= FX_TYPE_MOVING;
+const FX_ID_FIREBALL			:= 0x36d4;
+const FX_SPEED_FIREBALL			:= 0x5;
+const FX_LOOP_FIREBALL			:= 0x1;
+
+//Magic Lock
+const SPELLID_MAGIC_LOCK		:= 19;
+const BURN_SELF_MAGIC_LOCK		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MAGIC_LOCK1		:= 0x01f5;
+const SFX_SPELL_MAGIC_LOCK2		:= 0x011f;
+const FX_TYPE_MAGIC_LOCK		:= 0;
+const FX_ID_MAGIC_LOCK			:= 0;
+const FX_SPEED_MAGIC_LOCK		:= 0;
+const FX_LOOP_MAGIC_LOCK		:= 0;
+
+//Poison
+const SPELLID_POISON			:= 20;
+const BURN_SELF_POISON			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_POISON			:= 0x0247;
+const FX_TYPE_POISON			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_POISON			:= 0x374a;
+const FX_SPEED_POISON			:= 0xa;
+const FX_LOOP_POISON			:= 0x1e;
+
+//Telekinesis
+const SPELLID_TELEKINESIS		:= 21;
+const BURN_SELF_TELEKINESIS		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_TELEKINESIS		:= 0x01f6;
+const FX_TYPE_TELEKINESIS		:= 0;
+const FX_ID_TELEKINESIS			:= 0;
+const FX_SPEED_TELEKINESIS		:= 0;
+const FX_LOOP_TELEKINESIS		:= 0;
+
+//Teleport
+const SPELLID_TELEPORT			:= 22;
+const BURN_SELF_TELEPORT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_TELEPORT		:= 0x01ff;
+const FX_TYPE_TELEPORT			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_TELEPORT			:= 0x3728;
+const FX_SPEED_TELEPORT			:= 0xa;
+const FX_LOOP_TELEPORT			:= 0xa;
+
+//Unlock
+const SPELLID_UNLOCK			:= 23;
+const BURN_SELF_UNLOCK			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_UNLOCK1			:= 0x0200;
+const SFX_SPELL_UNLOCK2			:= 0x011f;
+const FX_TYPE_UNLOCK			:= 0;
+const FX_ID_UNLOCK			:= 0;
+const FX_SPEED_UNLOCK			:= 0;
+const FX_LOOP_UNLOCK			:= 0;
+
+//Wall of Stone
+const SPELLID_WALL_OF_STONE		:= 24;
+const BURN_SELF_WALL_OF_STONE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_WALL_OF_STONE		:= 0x01f7;
+const FX_TYPE_WALL_OF_STONE		:= 0;
+const FX_ID_WALL_OF_STONE		:= 0;
+const FX_SPEED_WALL_OF_STONE		:= 0;
+const FX_LOOP_WALL_OF_STONE		:= 0;
+
+
+
+//////////////////////////////////
+// 4th Circle Spells 		//
+//////////////////////////////////
+
+//Arch Cure
+const SPELLID_ARCH_CURE			:= 25;
+const BURN_SELF_ARCH_CURE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ARCH_CURE		:= 0x01e9;
+const FX_TYPE_ARCH_CURE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ARCH_CURE			:= 0x373a;
+const FX_SPEED_ARCH_CURE		:= 0xa;
+const FX_LOOP_ARCH_CURE			:= 0xa;
+
+//Arch Protection
+const SPELLID_ARCH_PROTECTION		:= 26;
+const BURN_SELF_ARCH_PROTECTION		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ARCH_PROTECTION		:= 0x01f8;
+const FX_TYPE_ARCH_PROTECTION		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ARCH_PROTECTION		:= 0x373a;
+const FX_SPEED_ARCH_PROTECTION		:= 0x7;
+const FX_LOOP_ARCH_PROTECTION		:= 0x7;
+
+//Curse
+const SPELLID_CURSE			:= 27;
+const BURN_SELF_CURSE			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CURSE			:= 0x01e2;
+const FX_TYPE_CURSE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_CURSE			:= 0x373a;
+const FX_SPEED_CURSE			:= 0xa;
+const FX_LOOP_CURSE			:= 0xa;
+
+//Fire Field
+const SPELLID_FIRE_FIELD		:= 28;
+const BURN_SELF_FIRE_FIELD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_FIRE_FIELD		:= 0x01de;
+const FX_TYPE_FIRE_FIELD		:= 0;
+const FX_ID_FIRE_FIELD			:= 0;
+const FX_SPEED_FIRE_FIELD		:= 0;
+const FX_LOOP_FIRE_FIELD		:= 0;
+
+//Greater Heal
+const SPELLID_GREATER_HEAL		:= 29;
+const BURN_SELF_GREATER_HEAL		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_GREATER_HEAL		:= 0x0203;
+const FX_TYPE_GREATER_HEAL		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_GREATER_HEAL		:= 0x375a;
+const FX_SPEED_GREATER_HEAL		:= 0x7;
+const FX_LOOP_GREATER_HEAL		:= 0x10;
+
+//Lightning
+const SPELLID_LIGHTNING			:= 30;
+const BURN_SELF_LIGHTNING		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_LIGHTNING		:= 0x02a;
+const FX_TYPE_LIGHTNING			:= FX_TYPE_LIGHTNING_BOLT;
+const FX_ID_LIGHTNING			:= 0x0;
+const FX_SPEED_LIGHTNING		:= 0x0;
+const FX_LOOP_LIGHTNING			:= 0x0;
+
+//Mana Drain
+const SPELLID_MANA_DRAIN		:= 31;
+const BURN_SELF_MANA_DRAIN		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MANA_DRAIN		:= 0x01f9;
+const FX_TYPE_MANA_DRAIN		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MANA_DRAIN			:= 0x376a;
+const FX_SPEED_MANA_DRAIN		:= 0x7;
+const FX_LOOP_MANA_DRAIN		:= 0x10;
+
+//Recall
+const SPELLID_RECALL			:= 32;
+const BURN_SELF_RECALL			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_RECALL1  		:= 0x0210;
+const SFX_SPELL_RECALL2			:= 0x01fd;
+const SFX_SPELL_RECALL			:= 0x01fd;
+const FX_TYPE_RECALL			:= 0;
+const FX_ID_RECALL			:= 0;
+const FX_SPEED_RECALL			:= 0;
+const FX_LOOP_RECALL			:= 0;
+
+
+//////////////////////////////////
+// 5th Circle Spells 		//
+//////////////////////////////////
+
+//Blade Spirit
+const SPELLID_BLADE_SPIRIT		:= 33;
+const BURN_SELF_BLADE_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_BLADE_SPIRIT		:= 0x0213;
+const FX_TYPE_BLADE_SPIRIT		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_BLADE_SPIRIT		:= 0x3728;
+const FX_SPEED_BLADE_SPIRIT		:= 0xa;
+const FX_LOOP_BLADE_SPIRIT		:= 0xa;
+
+//Dispel Field
+const SPELLID_DISPEL_FIELD		:= 34;
+const BURN_SELF_DISPEL_FIELD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_DISPEL_FIELD		:= 0x0202;
+const FX_TYPE_DISPEL_FIELD		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_DISPEL_FIELD		:= 0x3728;
+const FX_SPEED_DISPEL_FIELD		:= 0xa;
+const FX_LOOP_DISPEL_FIELD		:= 0xa;
+
+//Incognito
+const SPELLID_INCOGNITO			:= 35;
+const BURN_SELF_INCOGNITO		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_INCOGNITO		:= 0x01e3;
+const FX_TYPE_INCOGNITO			:= 0;
+const FX_ID_INCOGNITO			:= 0;
+const FX_SPEED_INCOGNITO		:= 0;
+const FX_LOOP_INCOGNITO			:= 0;
+
+//Spell Reflection
+const SPELLID_MAGIC_REFLECTION		:= 36;
+const BURN_SELF_MAGIC_REFLECTION	:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MAGIC_REFLECTION	:= 0x01e8;
+const FX_TYPE_MAGIC_REFLECTION		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MAGIC_REFLECTION		:= 0x374a;
+const FX_SPEED_MAGIC_REFLECTION		:= 0xa;
+const FX_LOOP_MAGIC_REFLECTION		:= 0xa;
+
+//Mind Blast
+const SPELLID_MIND_BLAST		:= 37;
+const BURN_SELF_MIND_BLAST		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MIND_BLAST		:= 0x0214;
+const FX_TYPE_MIND_BLAST		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MIND_BLAST			:= 0x374a;
+const FX_SPEED_MIND_BLAST		:= 0x7;
+const FX_LOOP_MIND_BLAST		:= 0x10;
+
+//Paralyze
+const SPELLID_PARALYZE			:= 38;
+const BURN_SELF_PARALYZE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_PARALYZE		:= 0x0205;
+const FX_TYPE_PARALYZE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_PARALYZE			:= 0x374a;
+const FX_SPEED_PARALYZE			:= 0xa;
+const FX_LOOP_PARALYZE			:= 0xa;
+
+//Poison Field
+const SPELLID_POISON_FIELD		:= 39;
+const BURN_SELF_POISON_FIELD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_POISON_FIELD		:= 0x0247;
+const FX_TYPE_POISON_FIELD		:= 0;
+const FX_ID_POISON_FIELD		:= 0;
+const FX_SPEED_POISON_FIELD		:= 0;
+const FX_LOOP_POISON_FIELD		:= 0;
+
+//Summon Creature
+const SPELLID_SUMMON_CREATURE		:= 40;
+const BURN_SELF_SUMMON_CREATURE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_CREATURE		:= 0x0216;
+const FX_TYPE_SUMMON_CREATURE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SUMMON_CREATURE		:= 0x3728;
+const FX_SPEED_SUMMON_CREATURE		:= 0xa;
+const FX_LOOP_SUMMON_CREATURE		:= 0xa;
+
+
+
+//////////////////////////////////
+// 6th Circle Spells 		//
+//////////////////////////////////
+
+//Dispel
+const SPELLID_DISPEL			:= 41;
+const BURN_SELF_DISPEL			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_DISPEL			:= 0x0202;
+const FX_TYPE_DISPEL			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_DISPEL			:= 0x3728;
+const FX_SPEED_DISPEL			:= 0xa;
+const FX_LOOP_DISPEL			:= 0xa;
+
+//Energy Bolt
+const SPELLID_ENERGY_BOLT		:= 42;
+const BURN_SELF_ENERGY_BOLT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ENERGY_BOLT		:= 0x020b;
+const FX_TYPE_ENERGY_BOLT		:= FX_TYPE_MOVING;
+const FX_ID_ENERGY_BOLT			:= 0x379f;
+const FX_SPEED_ENERGY_BOLT		:= 0xa;
+const FX_LOOP_ENERGY_BOLT		:= 0x1e;
+
+//Explosion
+const SPELLID_EXPLOSION			:= 43;
+const BURN_SELF_EXPLOSION		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_EXPLOSION		:= 0x0208;
+const FX_TYPE_EXPLOSION			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_EXPLOSION			:= 0x36b0;
+const FX_SPEED_EXPLOSION		:= 0x7;
+const FX_LOOP_EXPLOSION			:= 0x10;
+
+//Invisibility
+const SPELLID_INVISIBILITY		:= 44;
+const BURN_SELF_INVISIBILITY		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_INVISIBILITY		:= 0x0204;
+const FX_TYPE_INVISIBILITY		:= 0;
+const FX_ID_INVISIBILITY		:= 0;
+const FX_SPEED_INVISIBILITY		:= 0;
+const FX_LOOP_INVISIBILITY		:= 0;
+
+//Mark
+const SPELLID_MARK			:= 45;
+const BURN_SELF_MARK			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MARK			:= 0x01fb;
+const FX_TYPE_MARK			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MARK			:= 0x3779;
+const FX_SPEED_MARK			:= 0xa;
+const FX_LOOP_MARK			:= 0xa;
+
+//Mass Curse
+const SPELLID_MASS_CURSE		:= 46;
+const BURN_SELF_MASS_CURSE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MASS_CURSE		:= 0x01fc;
+const FX_TYPE_MASS_CURSE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MASS_CURSE			:= 0x374a;
+const FX_SPEED_MASS_CURSE		:= 0xa;
+const FX_LOOP_MASS_CURSE		:= 0xa;
+
+//Paralyze Field
+const SPELLID_PARALYZE_FIELD		:= 47;
+const BURN_SELF_PARALYZE_FIELD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_PARALYZE_FIELD		:= 0x020c;
+const FX_TYPE_PARALYZE_FIELD		:= 0;
+const FX_ID_PARALYZE_FIELD		:= 0;
+const FX_SPEED_PARALYZE_FIELD		:= 0;
+const FX_LOOP_PARALYZE_FIELD		:= 0;
+
+//Reveal
+const SPELLID_REVEAL			:= 48;
+const BURN_SELF_REVEAL			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_REVEAL			:= 0x01fe;
+const FX_TYPE_REVEAL			:= 0;
+const FX_ID_REVEAL			:= 0;
+const FX_SPEED_REVEAL			:= 0;
+const FX_LOOP_REVEAL			:= 0;
+
+
+
+//////////////////////////////////
+// 7th Circle Spells 		//
+//////////////////////////////////
+
+//Chain Lightning
+const SPELLID_CHAIN_LIGHTNING		:= 49;
+const BURN_SELF_CHAIN_LIGHTNING		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CHAIN_LIGHTNING		:= 0x02a;
+const FX_TYPE_CHAIN_LIGHTNING		:= FX_TYPE_DOUBLE_LIGHTNING;
+const FX_ID_CHAIN_LIGHTNING		:= 0;
+const FX_SPEED_CHAIN_LIGHTNING		:= 0;
+const FX_LOOP_CHAIN_LIGHTNING		:= 0;
+
+//Energy Field
+const SPELLID_ENERGY_FIELD		:= 50;
+const BURN_SELF_ENERGY_FIELD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ENERGY_FIELD		:= 0x0211;
+const FX_TYPE_ENERGY_FIELD		:= 0;
+const FX_ID_ENERGY_FIELD		:= 0;
+const FX_SPEED_ENERGY_FIELD		:= 0;
+const FX_LOOP_ENERGY_FIELD		:= 0;
+
+//Flame Strike
+const SPELLID_FLAME_STRIKE		:= 51;
+const BURN_SELF_FLAME_STRIKE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_FLAME_STRIKE		:= 0x0209;
+const FX_TYPE_FLAME_STRIKE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_FLAME_STRIKE		:= 0x3709;
+const FX_SPEED_FLAME_STRIKE		:= 0xa;
+const FX_LOOP_FLAME_STRIKE		:= 0x1e;
+
+//Gate Travel
+const SPELLID_GATE_TRAVEL		:= 52;
+const BURN_SELF_GATE_TRAVEL		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_GATE_TRAVEL		:= 0x020f;
+const FX_TYPE_GATE_TRAVEL		:= 0;
+const FX_ID_GATE_TRAVEL			:= 0;
+const FX_SPEED_GATE_TRAVEL		:= 0;
+const FX_LOOP_GATE_TRAVEL		:= 0;
+
+//Mana Vampire
+const SPELLID_MANA_VAMPIRE		:= 53;
+const BURN_SELF_MANA_VAMPIRE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MANA_VAMPIRE		:= 0x01fa;
+const FX_TYPE_MANA_VAMPIRE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MANA_VAMPIRE		:= 0x37b9;
+const FX_SPEED_MANA_VAMPIRE		:= 0x7;
+const FX_LOOP_MANA_VAMPIRE		:= 0x10;
+
+//Mass Dispel
+const SPELLID_MASS_DISPEL		:= 54;
+const BURN_SELF_MASS_DISPEL		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_MASS_DISPEL		:= 0x020a;
+const FX_TYPE_MASS_DISPEL		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_MASS_DISPEL			:= 0x3728;
+const FX_SPEED_MASS_DISPEL		:= 0xa;
+const FX_LOOP_MASS_DISPEL		:= 0xa;
+
+//Meteor Swarm
+const SPELLID_METEOR_SWARM		:= 55;
+const BURN_SELF_METEOR_SWARM		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_METEOR_SWARM		:= 0x011e;
+const FX_TYPE_METEOR_SWARM		:= FX_TYPE_MOVING;
+const FX_ID_METEOR_SWARM		:= 0x1772;
+const FX_SPEED_METEOR_SWARM		:= 0x10;
+const FX_LOOP_METEOR_SWARM		:= 0xa;
+
+//Polymorph
+const SPELLID_POLYMORPH			:= 56;
+const BURN_SELF_POLYMORPH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_POLYMORPH		:= 0x020a;
+const FX_TYPE_POLYMORPH			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_POLYMORPH			:= 0x01fa;
+const FX_SPEED_POLYMORPH		:= 0xa;
+const FX_LOOP_POLYMORPH			:= 0xa;
+
+
+
+//////////////////////////////////
+// 8th Circle Spells 		//
+//////////////////////////////////
+
+//Earthquake
+const SPELLID_EARTHQUAKE		:= 57;
+const BURN_SELF_EARTHQUAKE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_EARTHQUAKE		:= 0x020e;
+const SFX_SPELL_EARTHQUAKE1		:= 0x0220;
+const SFX_SPELL_EARTHQUAKE2		:= 0x0223;
+const FX_TYPE_EARTHQUAKE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_EARTHQUAKE			:= 0x3728;
+const FX_SPEED_EARTHQUAKE		:= 0x7;
+const FX_LOOP_EARTHQUAKE		:= 0x7;
+
+//Energy Vortex
+const SPELLID_ENERGY_VORTEX		:= 58;
+const BURN_SELF_ENERGY_VORTEX		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ENERGY_VORTEX		:= 0x0213;
+const FX_TYPE_ENERGY_VORTEX		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ENERGY_VORTEX		:= 0x3728;
+const FX_SPEED_ENERGY_VORTEX		:= 0xa;
+const FX_LOOP_ENERGY_VORTEX		:= 0xa;
+
+//Resurrection
+const SPELLID_RESURRECTION		:= 59;
+const BURN_SELF_RESURRECTION		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_RESURRECTION		:= 0x0215;
+const FX_TYPE_RESURRECTION		:= 0;
+const FX_ID_RESURRECTION		:= 0;
+const FX_SPEED_RESURRECTION		:= 0;
+const FX_LOOP_RESURRECTION		:= 0;
+
+//Summon Air Elemental
+const SPELLID_SUMMON_AIR_ELEMENTAL	:= 60;
+const BURN_SELF_SUMMON_AIR_ELEMENTAL	:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_AIR_ELEMENTAL	:= SFX_SPELL_SUMMON_ELEMENTAL;
+const FX_TYPE_SUMMON_AIR_ELEMENTAL	:= 0;
+const FX_ID_SUMMON_AIR_ELEMENTAL	:= 0;
+const FX_SPEED_SUMMON_AIR_ELEMENTAL	:= 0;
+const FX_LOOP_SUMMON_AIR_ELEMENTAL	:= 0;
+
+//Summon Daemon
+const SPELLID_SUMMON_DAEMON		:= 61;
+const BURN_SELF_SUMMON_DAEMON		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_DAEMON		:= 0x0217;
+const FX_TYPE_SUMMON_DAEMON		:= 0;
+const FX_ID_SUMMON_DAEMON		:= 0;
+const FX_SPEED_SUMMON_DAEMON		:= 0;
+const FX_LOOP_SUMMON_DAEMON		:= 0;
+
+//Summon Earth Elemental
+const SPELLID_SUMMON_EARTH_ELEMENTAL	:= 62;
+const BURN_SELF_SUMMON_EARTH_ELEMENTAL	:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_EARTH_ELEMENTAL	:= SFX_SPELL_SUMMON_ELEMENTAL;
+const FX_TYPE_SUMMON_EARTH_ELEMENTAL	:= 0;
+const FX_ID_SUMMON_EARTH_ELEMENTAL	:= 0;
+const FX_SPEED_SUMMON_EARTH_ELEMENTAL	:= 0;
+const FX_LOOP_SUMMON_EARTH_ELEMENTAL	:= 0;
+
+//Summon Fire Elemental
+const SPELLID_SUMMON_FIRE_ELEMENTAL	:= 63;
+const BURN_SELF_SUMMON_FIRE_ELEMENTAL	:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_FIRE_ELEMENTAL	:= SFX_SPELL_SUMMON_ELEMENTAL;
+const FX_TYPE_SUMMON_FIRE_ELEMENTAL	:= 0;
+const FX_ID_SUMMON_FIRE_ELEMENTAL	:= 0;
+const FX_SPEED_SUMMON_FIRE_ELEMENTAL	:= 0;
+const FX_LOOP_SUMMON_FIRE_ELEMENTAL	:= 0;
+
+//Summon Water Elemental
+const SPELLID_SUMMON_WATER_ELEMENTAL	:= 64;
+const BURN_SELF_SUMMON_WATER_ELEMENTAL	:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_WATER_ELEMENTAL	:= SFX_SPELL_SUMMON_ELEMENTAL;
+const FX_TYPE_SUMMON_WATER_ELEMENTAL	:= 0;
+const FX_ID_SUMMON_WATER_ELEMENTAL	:= 0;
+const FX_SPEED_SUMMON_WATER_ELEMENTAL	:= 0;
+const FX_LOOP_SUMMON_WATER_ELEMENTAL	:= 0;
+
+
+
+/////////////////////////////////
+// Lesser Chants of Necromancy //
+/////////////////////////////////
+
+//Control Undead
+const SPELLID_CONTROL_UNDEAD		:= 65;
+const BURN_SELF_CONTROL_UNDEAD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CONTROL_UNDEAD		:= 0;
+const FX_TYPE_CONTROL_UNDEAD		:= 0;
+const FX_ID_CONTROL_UNDEAD		:= 0;
+const FX_SPEED_CONTROL_UNDEAD		:= 0;
+const FX_LOOP_CONTROL_UNDEAD		:= 0;
+
+//Darkness
+const SPELLID_DARKNESS			:= 66;
+const BURN_SELF_DARKNESS		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_DARKNESS		:= 0x01e4;
+const FX_TYPE_DARKNESS			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_DARKNESS			:= 0x0373a;
+const FX_SPEED_DARKNESS			:= 0xa;
+const FX_LOOP_DARKNESS			:= 0xa;
+
+//Decaying Ray
+const SPELLID_DECAYING_RAY		:= 67;
+const BURN_SELF_DECAYING_RAY		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_DECAYING_RAY		:= 0x00fe;
+const FX_TYPE_DECAYING_RAY		:= 0;
+const FX_ID_DECAYING_RAY		:= 0;
+const FX_SPEED_DECAYING_RAY		:= 0;
+const FX_LOOP_DECAYING_RAY		:= 0;
+
+//Specter's Touch
+const SPELLID_SPECTER_TOUCH		:= 68;
+const BURN_SELF_SPECTER_TOUCH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SPECTER_TOUCH		:= 0x01f2;
+const FX_TYPE_SPECTER_TOUCH		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SPECTER_TOUCH		:= 0x37c3;
+const FX_SPEED_SPECTER_TOUCH		:= 0xa;
+const FX_LOOP_SPECTER_TOUCH		:= 0x1e;
+
+//Abyssal Flame
+const SPELLID_ABYSSAL_FLAME		:= 69;
+const BURN_SELF_ABYSSAL_FLAME		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ABYSSAL_FLAME		:= 0x0160;
+const FX_TYPE_ABYSSAL_FLAME		:= FX_TYPE_MOVING;
+const FX_ID_ABYSSAL_FLAME		:= 0x36d4;
+const FX_SPEED_ABYSSAL_FLAME		:= 5;
+const FX_LOOP_ABYSSAL_FLAME		:= 1;
+
+//Animate Dead
+const SPELLID_ANIMATE_DEAD		:= 70;
+const BURN_SELF_ANIMATE_DEAD		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ANIMATE_DEAD		:= 0x022b;
+const FX_TYPE_ANIMATE_DEAD		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ANIMATE_DEAD		:= 0x37b9;
+const FX_SPEED_ANIMATE_DEAD		:= 0x7;
+const FX_LOOP_ANIMATE_DEAD		:= 0xa;
+
+//Sacrifice
+const SPELLID_SACRIFICE			:= 71;
+const BURN_SELF_SACRIFICE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SACRIFICE		:= 0x0208;
+const FX_TYPE_SACRIFICE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SACRIFICE			:= 0x36b0;
+const FX_SPEED_SACRIFICE		:= 0x7;
+const FX_LOOP_SACRIFICE			:= 0xa;
+
+//Wraith's Breath
+const SPELLID_WRAITH_BREATH		:= 72;
+const BURN_SELF_WRAITH_BREATH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_WRAITH_BREATH		:= 0x1fa;
+const FX_TYPE_WRAITH_BREATH		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_WRAITH_BREATH		:= 0x374a;
+const FX_SPEED_WRAITH_BREATH		:= 0x7;
+const FX_LOOP_WRAITH_BREATH		:= 0xa;
+
+
+
+//////////////////////////////////
+// Greater Chants of Necromancy //
+//////////////////////////////////
+
+//Sorcerer's Bane
+const SPELLID_SORCERERS_BANE		:= 73;
+const BURN_SELF_SORCERERS_BANE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SORCERERS_BANE		:= 0x0209;
+const FX_TYPE_SORCERERS_BANE		:= FX_TYPE_MAGIC_CIRCLE;
+const FX_ID_SORCERERS_BANE		:= 0;
+const FX_SPEED_SORCERERS_BANE		:= 0;
+const FX_LOOP_SORCERERS_BANE		:= 0;
+
+//Summon Spirit
+const SPELLID_SUMMON_SPIRIT		:= 74;
+const BURN_SELF_SUMMON_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_SPIRIT		:= 0x022b;
+const FX_TYPE_SUMMON_SPIRIT		:= 0;
+const FX_ID_SUMMON_SPIRIT		:= 0;
+const FX_SPEED_SUMMON_SPIRIT		:= 0;
+const FX_LOOP_SUMMON_SPIRIT		:= 0;
+
+//Wraithform
+const SPELLID_WRAITHFORM		:= 75;
+const BURN_SELF_WRAITHFORM		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const WRAITHFORM_MORPH_SOUND		:= 0x210;
+const WRAITHFORM_WRAITH_COLOR		:= 0x482;
+const SFX_SPELL_WRAITHFORM		:= 0x1fa;
+const FX_TYPE_WRAITHFORM		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_WRAITHFORM			:= 0x374a;
+const FX_SPEED_WRAITHFORM		:= 0x7;
+const FX_LOOP_WRAITHFORM		:= 0x10;
+
+//Wyvern Strike
+const SPELLID_WYVERN_STRIKE		:= 76;
+const BURN_SELF_WYVERN_STRIKE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_WYVERN_STRIKE		:= 0x1e2;
+const FX_TYPE_WYVERN_STRIKE		:= FX_TYPE_MOVING;
+const FX_ID_WYVERN_STRIKE		:= 0x3709;
+const FX_SPEED_WYVERN_STRIKE		:= 5;
+const FX_LOOP_WYVERN_STRIKE		:= 1;
+
+//Kill
+const SPELLID_KILL			:= 77;
+const BURN_SELF_KILL			:= SPELLOPT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_KILL			:= 0x202;
+const FX_TYPE_KILL			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_KILL			:= 0x375a;
+const FX_SPEED_KILL			:= 0x1;
+const FX_LOOP_KILL			:= 0x10;
+
+//Liche
+const SPELLID_LICHE			:= 78;
+const BURN_SELF_LICHE			:= SPELLOPT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_LICHE			:= 0x20a;
+const FX_TYPE_LICHE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_LICHE			:= 0x375a;
+const FX_SPEED_LICHE			:= 0x1;
+const FX_LOOP_LICHE			:= 0x10;
+
+//Plague
+const SPELLID_PLAGUE			:= 79;
+const BURN_SELF_PLAGUE			:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_PLAGUE			:= 0x1e2;
+const FX_TYPE_PLAGUE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_PLAGUE			:= 0x374a;
+const FX_SPEED_PLAGUE			:= 0x7;
+const FX_LOOP_PLAGUE			:= 0x10;
+
+//Spellbind
+const SPELLID_SPELLBIND			:= 80;
+const BURN_SELF_SPELLBIND		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SPELLBIND		:= 0x20d;
+const FX_TYPE_SPELLBIND			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SPELLBIND			:= 0x37b9;
+const FX_SPEED_SPELLBIND		:= 0x7;
+const FX_LOOP_SPELLBIND			:= 0x10;
+
+
+
+//////////////////////////////////////////
+// 1st Circle of Earth Spells		//
+//////////////////////////////////////////
+
+//Antidote
+const SPELLID_ANTIDOTE			:= 81;
+const BURN_SELF_ANTIDOTE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ANTIDOTE		:= 0x01e1;
+const FX_TYPE_ANTIDOTE			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ANTIDOTE			:= 0x373a;
+const FX_SPEED_ANTIDOTE			:= 0xa;
+const FX_LOOP_ANTIDOTE			:= 0xa;
+
+//Owl Sight
+const SPELLID_OWL_SIGHT			:= 82;
+const BURN_SELF_OWL_SIGHT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_OWL_SIGHT		:= 0x01e4;
+const FX_TYPE_OWL_SIGHT			:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_OWL_SIGHT			:= 0x373a;
+const FX_SPEED_OWL_SIGHT		:= 0xa;
+const FX_LOOP_OWL_SIGHT			:= 0xa;
+
+//Shifting Earth
+const SPELLID_SHIFTING_EARTH		:= 83;
+const BURN_SELF_SHIFTING_EARTH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SHIFTING_EARTH		:= 0x020e;
+const FX_TYPE_SHIFTING_EARTH		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SHIFTING_EARTH		:= 0x3789;
+const FX_SPEED_SHIFTING_EARTH		:= 0xa;
+const FX_LOOP_SHIFTING_EARTH		:= 0xa;
+
+//Summon Mammals
+const SPELLID_SUMMON_MAMMALS		:= 84;
+const BURN_SELF_SUMMON_MAMMALS		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SUMMON_MAMMALS		:= 0;
+const FX_TYPE_SUMMON_MAMMALS		:= 0;
+const FX_ID_SUMMON_MAMMALS		:= 0;
+const FX_SPEED_SUMMON_MAMMALS		:= 0;
+const FX_LOOP_SUMMON_MAMMALS		:= 0;
+
+//Call Lightning
+const SPELLID_CALL_LIGHTNING		:= 85;
+const BURN_SELF_CALL_LIGHTNING		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_CALL_LIGHTNING		:= 0x0207;
+const FX_TYPE_CALL_LIGHTNING		:= FX_TYPE_DOUBLE_LIGHTNING;
+const FX_ID_CALL_LIGHTNING		:= 0;
+const FX_SPEED_CALL_LIGHTNING		:= 0;
+const FX_LOOP_CALL_LIGHTNING		:= 0;
+
+//Earth Blessing
+const SPELLID_EARTH_BLESSING		:= 86;
+const BURN_SELF_EARTH_BLESSING		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_EARTH_BLESSING		:= 0x01eb;
+const FX_TYPE_EARTH_BLESSING		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_EARTH_BLESSING		:= 0x373a;
+const FX_SPEED_EARTH_BLESSING		:= 0xa;
+const FX_LOOP_EARTH_BLESSING		:= 0xa;
+
+//Earth Portal
+const SPELLID_EARTH_PORTAL		:= 87;
+const BURN_SELF_EARTH_PORTAL		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_EARTH_PORTAL		:= 0x020f;
+const FX_TYPE_EARTH_PORTAL		:= 0;
+const FX_ID_EARTH_PORTAL		:= 0;
+const FX_SPEED_EARTH_PORTAL		:= 0;
+const FX_LOOP_EARTH_PORTAL		:= 0;
+
+//Nature's Touch
+const SPELLID_NATURES_TOUCH		:= 88;
+const BURN_SELF_NATURES_TOUCH		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_NATURES_TOUCH		:= 0x0203;
+const FX_TYPE_NATURES_TOUCH		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_NATURES_TOUCH		:= 0x375a;
+const FX_SPEED_NATURES_TOUCH		:= 0x7;
+const FX_LOOP_NATURES_TOUCH		:= 0x10;
+
+
+
+//////////////////////////////////////////
+// 2nd Circle of Earth Spells 		//
+//////////////////////////////////////////
+
+//Gust of Air
+const SPELLID_GUST_OF_AIR		:= 89;
+const BURN_SELF_GUST_OF_AIR		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_GUST_OF_AIR1		:= 0x0108;
+const SFX_SPELL_GUST_OF_AIR2		:= 0x0109;
+const FX_TYPE_GUST_OF_AIR		:= FX_TYPE_STATIONARY;
+const FX_ID_GUST_OF_AIR			:= 0x37cc;
+const FX_SPEED_GUST_OF_AIR		:= 0x1e;
+const FX_LOOP_GUST_OF_AIR		:= 0x1e;
+
+//Rising Fire
+const SPELLID_RISING_FIRE		:= 90;
+const BURN_SELF_RISING_FIRE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_RISING_FIRE		:= 0x0209;
+const FX_TYPE_RISING_FIRE		:= FX_TYPE_STATIONARY;
+const FX_ID_RISING_FIRE			:= 0x3709;
+const FX_SPEED_RISING_FIRE		:= 0xa;
+const FX_LOOP_RISING_FIRE		:= 0x1e;
+
+//Shapeshift
+const SPELLID_SHAPESHIFT		:= 91;
+const BURN_SELF_SHAPESHIFT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_SHAPESHIFT		:= 0x020a;
+const FX_TYPE_SHAPESHIFT		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_SHAPESHIFT			:= 0x373a;
+const FX_SPEED_SHAPESHIFT		:= 0xa;
+const FX_LOOP_SHAPESHIFT		:= 0xa;
+
+//Ice Strike
+const SPELLID_ICE_STRIKE		:= 92;
+const BURN_SELF_ICE_STRIKE		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_ICE_STRIKE		:= 0x0117;
+const FX_TYPE_ICE_STRIKE		:= FX_TYPE_OBJECT_CENTERED;
+const FX_ID_ICE_STRIKE			:= 0x3789;
+const FX_SPEED_ICE_STRIKE		:= 0x1e;
+const FX_LOOP_ICE_STRIKE		:= 0x1e;
+
+//Earth Spirir
+const SPELLID_EARTH_SPIRIT		:= 93;
+const BURN_SELF_EARTH_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_EARTH_SPIRIT		:= 0;
+const FX_TYPE_EARTH_SPIRIT		:= 0;
+const FX_ID_EARTH_SPIRIT		:= 0;
+const FX_SPEED_EARTH_SPIRIT		:= 0;
+const FX_LOOP_EARTH_SPIRIT		:= 0;
+
+//Flame Spirit
+const SPELLID_FLAME_SPIRIT		:= 94;
+const BURN_SELF_FLAME_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_FLAME_SPIRIT		:= 0;
+const FX_TYPE_FLAME_SPIRIT		:= 0;
+const FX_ID_FLAME_SPIRIT		:= 0;
+const FX_SPEED_FLAME_SPIRIT		:= 0;
+const FX_LOOP_FLAME_SPIRIT		:= 0;
+
+//Storm Spirit
+const SPELLID_STORM_SPIRIT		:= 95;
+const BURN_SELF_STORM_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_STORM_SPIRIT		:= 0;
+const FX_TYPE_STORM_SPIRIT		:= 0;
+const FX_ID_STORM_SPIRIT		:= 0;
+const FX_SPEED_STORM_SPIRIT		:= 0;
+const FX_LOOP_STORM_SPIRIT		:= 0;
+
+//Water Spirit
+const SPELLID_WATER_SPIRIT		:= 96;
+const BURN_SELF_WATER_SPIRIT		:= SPELLOPT_DONT_BURN_SELF_ON_FIZZLE;
+const SFX_SPELL_WATER_SPIRIT		:= 0;
+const FX_TYPE_WATER_SPIRIT		:= 0;
+const FX_ID_WATER_SPIRIT		:= 0;
+const FX_SPEED_WATER_SPIRIT		:= 0;
+const FX_LOOP_WATER_SPIRIT		:= 0;

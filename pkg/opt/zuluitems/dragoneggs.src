@@ -1,0 +1,73 @@
+//put in a skill check to see if you can crack the egg
+//and from there it can be 60-40 50-50 some descent chance
+//that it will be tame
+
+use uo;
+include "include/random";
+include "include/attributes";
+program dragoneggs(who, item)
+Const NUMBER_OF_DRAKES := 11;
+Const NUMBER_OF_DRAGS := 10;
+if(!ReserveItem(item)) return; endif
+	
+SendSysMessage( who, "The egg begins to move and" );
+
+var dragon, typeofdragon :=Random(4*NUMBER_OF_DRAKES+2*NUMBER_OF_DRAGS), masteralone := Random(100);
+var temp:=0;
+SendSysMessage( who, "Random is "+typeofdragon);
+
+if (typeofdragon > (4*NUMBER_OF_DRAKES-1)) // UGLY
+typeofdragon:=CInt( (typeofdragon-(4*NUMBER_OF_DRAKES))/2)+(NUMBER_OF_DRAKES);
+else
+typeofdragon:=CInt(typeofdragon/4);
+endif
+
+
+
+case (typeofdragon)
+
+0: dragon := "drake1";
+1: dragon := "drake2";
+2: dragon := "frostdrake";
+3: dragon := "spectraldrake";
+4: dragon := "firedrake";
+5: dragon := "waterdrake";
+6: dragon := "earthdrake";
+7: dragon := "airdrake";
+8: dragon := "poisondrake";
+9: dragon := "undeaddrake";
+10: dragon := "heavenlydrake";
+11: dragon := "dragon1"; 
+12: dragon := "dragon2";
+13: dragon := "poisondragon";
+14: dragon := "infernodragon";
+15: dragon := "frostdragon";
+16: dragon := "tidaldragon";
+17: dragon := "rockdragon";
+18: dragon := "stormdragon";
+19: dragon := "shadowdragon";
+20: dragon := "celestialdragon";
+
+endcase
+
+var newpet := CreateNpcFromTemplate( dragon, who.x, who.y, who.z );
+SendSysMessage( who, "The dragon value is"+typeofdragon);
+
+if (GetEffectiveSkill( who, 35 )>90)
+
+if (masteralone<70)
+ SendSysMessage( who, "A baby dragon appears and accepts you as his master!");
+ SetObjProperty (newpet, "master", who.serial);
+ SetObjProperty (newpet, "prevtamed", 1);
+ newpet.script := "tamed";
+ RestartScript (newpet);
+endif
+
+else
+SendSysMessage( who, "A baby dragon appears!");
+endif
+
+            SubtractAmount( item, 1 );
+
+endprogram
+

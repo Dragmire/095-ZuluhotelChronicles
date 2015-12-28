@@ -1,0 +1,955 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "include/npcbackpacks";
+include "include/yesno";
+include "ai/main/npcinfo";
+include "include/time";
+include "include/time";
+include "include/dotempmods";
+include "include/areas";
+
+include "ai/setup/modsetup";
+include "include/random";
+
+var configfile := ReadConfigFile("::npcdesc");
+var flee_point := 0;
+var oktokill;
+var elem;
+var icount;
+const UACTION_LOOK_AROUND   := 0x05;
+const UACTION_SALUTE        := 0x21;
+const HALT_THRESHOLD := 10; // how close before he barks?
+
+var speech := 49;
+var me := Self();
+
+program CastleGuard()
+
+	if (me.x >= 1385 and me.x <= 1414 and 
+	    me.y >= 3729 and me.y <= 3758)
+		Killme();
+	elseif (me.x >= 4413 and me.x <= 4428 and 
+	    me.y >= 1152 and me.y <= 1162)
+		Killme();
+	endif
+
+
+	if( me.name["<random>"] )
+		SetMeUp();
+	endif
+
+	FixStuff();
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	EnableMainEvents();
+	SetWarMode( 0 );
+	set_priority(100);
+
+	var ev;
+	var next_wander := ReadGameClock() + 2;
+	var wanders := 9;
+	var hal;
+	var bots;
+	var botlist := {};
+	var loop := 0;
+	var ok := 1;
+	while (1)
+		hal := GetGlobalProperty("BBRunning");
+		if (hal)
+			hal := SystemFindObjectBySerial(hal);
+			bots := GetObjProperty(hal,"bots");
+			botlist := GetObjProperty(hal,"botlist");
+			if (!botlist)
+				botlist := {};
+			endif
+			if (!bots)
+				bots := 0;
+			endif
+			loop := 0;
+			ok := 1;
+			while ((loop < bots) and ok)	
+				loop := loop + 1;
+				if (me.serial = botlist[loop])
+					ok := 0;
+				endif
+			endwhile
+			if (ok = 1)
+				botlist[bots+1] := me.serial;
+				SetObjProperty(hal,"botlist",botlist);
+				SetObjProperty(hal,"bots",(bots+1));
+				sleepms(500);
+				PrintTextAbove(hal,"Linked to ["+me.serial+"]");
+			endif
+		endif
+		look_around();
+		if (ReadGameClock() >= next_wander)
+			wanders:=wanders+1;
+			wander();
+			next_wander := ReadGameClock() + 2;
+			if (wanders>10)
+				ev := sleepmode();
+				wanders := 0;
+			else
+				ev := os::wait_for_event(5);
+			endif
+		else
+			ev := os::wait_for_event(5);
+		endif
+
+		if (ev) ProcessEvents(ev, wanders, next_wander); endif
+
+	endwhile
+
+endprogram
+
+function CloseDistance( opponent )
+	
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        default:
+            RunToward( opponent );
+            return 0;
+    endcase
+endfunction
+
+function look_around()
+	var hal;
+	me.dexterity_mod := 3000;
+	var gx :=GetObjProperty(me,"guardx");
+	var gy :=GetObjProperty(me,"guardy");
+	var gz :=GetObjProperty(me,"guardz");
+	var wr :=GetObjProperty(me,"WanderRange");
+	var num;
+	var warnloop;
+	if (!wr)
+		wr := 10;
+	endif
+	if (me.x < (gx-wr) or me.x > (gx+wr) or me.y < (gy-wr) or me.y > (gy+wr))
+		WalkTowardLocation(gx,gy);
+		WalkTowardLocation(gx,gy);
+		WalkTowardLocation(gx,gy);
+	endif
+	var lastcheck := GetObjProperty(me,"lastcheck");
+	if (!lastcheck)
+		SetObjProperty(me,"lastcheck",(ReadGameClock()+20));
+		lastcheck := ReadGameClock() + 20;
+	endif
+	if (ReadGameClock() > lastcheck)
+		if (me.x < (gx-wr) or me.x > (gx+wr) or me.y < (gy-wr) or me.y > (gy+wr))
+			MoveCharacterToLocation(me, gx, gy, gz, 0);
+		endif
+		EraseObjProperty(me,"lastcheck");
+	endif
+	if (GetHP(me) < GetMaxHP(me))
+		SetHP(me , GetMaxHP(me) );
+	endif
+	foreach critter in listmobilesnearlocation(me.x, me.y, me.z, 20)
+		oktokill := 1;
+		if ((critter.npctemplate) and (critter.script != "tamed") and critter !=me )
+			if (!configfile[critter.npctemplate].guardignore) 
+				if (GetObjProperty(me,"ignoremultis") and critter.multi)
+					oktokill := 0;
+				endif
+				if (GetObjProperty(critter,"WarriorForHire"))
+					oktokill := 0;
+				endif
+				if (!IsInAProtectedCity(critter))
+					oktokill := 0;
+				endif
+				elem := FindConfigElem( configfile, critter.npctemplate );
+				if( elem.Privs = "invul" )
+					oktokill := 0;
+				endif
+				if (GetObjProperty(critter,"pvping"))
+					oktokill := 0;
+				elseif (GetObjProperty(critter,"cwarring"))
+					oktokill := 0;
+				elseif (GetObjProperty(critter,"tmonster"))
+					oktokill := 0;
+				endif
+				if (oktokill = 1)
+					say("Ah ha! " + critter.name);
+					foreach character in EnumerateOnlineCharacters()
+						if( character.cmdlevel > 0 )
+							SendSysmessage( character, "A Border Guard is Attacking "+critter.name+" at "+me.x+","+me.y+","+me.z, 3 ,130  );
+							SendSysmessage( character,"Reason : Hostile Creature in Guarded Area");
+						endif
+					endforeach
+					SetObjProperty(me,"lastincident","Hostile creature in Guarded Area ("+critter.name+")");	
+					icount := GetObjProperty(me,"incidentcount");
+					if (!icount)
+						icount := 0;
+					endif
+					icount := icount +1;
+					SetObjProperty(me,"incidentcount",icount);
+					hal := GetGlobalProperty("BBRunning");
+					if (hal)
+						hal := SystemFindObjectBySerial(hal);
+						if (hal)
+							SetObjProperty(hal,"PKIncident",me.serial);	
+						endif
+					endif
+					Slam(critter);
+				endif
+			endif
+		else
+			if (!critter.npctemplate)
+				CheckForCriminals(critter);
+			endif
+		endif
+	endforeach
+	var killhim := GetObjProperty(me,"KillHim");
+	var critter;
+	var victim;
+	if (killhim)
+		critter := SystemFindObjectBySerial(killhim);
+	endif
+	oktokill := 1;
+	if (critter)
+		victim := GetObjProperty(me,"Innocent");
+		if (victim)
+			victim := SystemFindObjectBySerial(victim);
+		endif
+		if (GetObjProperty(me,"ignoremultis") and critter.multi)
+			oktokill := 0;
+		endif
+		if (IsInAProtectedCity(critter) and IsInAProtectedCity(victim))
+			oktokill := 0;
+		endif
+		if (!IsInAProtectedCity(critter) and !IsInAProtectedCity(victim))
+			oktokill := 0;
+		endif
+		elem := FindConfigElem( configfile, critter.npctemplate );
+		if( elem.Privs = "invul" )
+			oktokill := 0;
+		endif
+		if (GetObjProperty(critter,"pvping"))
+			oktokill := 0;
+		elseif (GetObjProperty(critter,"cwarring"))
+			oktokill := 0;
+		elseif (GetObjProperty(critter,"tmonster"))
+			oktokill := 0;
+		endif
+		if (oktokill)
+			foreach character in EnumerateOnlineCharacters()
+				if( character.cmdlevel > 0 )
+					SendSysmessage( character, "A Border Guard is attacking "+critter.name+" at "+me.x+","+me.y+","+me.z, 3 ,130  );
+					SendSysmessage( character,"Reason : Attacking "+victim.name+" with magic over border.",3,130);
+				endif
+			endforeach
+			SetObjProperty(me,"lastincident",critter.name+ " attacking "+victim.name+" with magic over border.");
+			icount := GetObjProperty(me,"incidentcount");
+			if (!icount)
+				icount := 0;
+			endif
+			icount := icount +1;
+			SetObjProperty(me,"incidentcount",icount);
+				hal := GetGlobalProperty("BBRunning");
+				if (hal)
+					hal := SystemFindObjectBySerial(hal);
+					if (hal)
+						SetObjProperty(hal,"PKIncident",me.serial);
+					endif
+				endif
+			num := GetObjProperty(critter,"BoundaryWarning");
+			if(!num)
+				num := 0;
+			endif
+			num := num + 1;
+			if (num < 2)
+				PlayLightningBoltEffect( critter );
+				SendSysMessage(critter, "You have been warned for : ");
+				SendSysMessage(critter, "Attacking over a town boundary.");
+				SetObjProperty(critter,"BoundaryWarning",num);
+				warnloop := 0;
+				Say(critter.name+"! halt!");
+				while (Distance(me, critter)> 2 and warnloop < 10)
+					RunToward(critter);
+					warnloop := warnloop + 1;
+				endwhile
+				if(GetObjProperty(me,"Disarm"))
+					critter.mana := 0;
+				endif
+				oktokill := 0;
+			else
+				Slam(critter);
+				EraseObjProperty(me,"KillHim");
+				if (GetObjProperty(me,"autojail"))
+					AutoJail(critter);
+				endif
+			endif
+		endif
+	endif
+endfunction
+
+function sleepmode()
+
+	foreach critter in ListMobilesNearLocation( me.x,me.y,me.z, 32 )
+          if (!critter.npctemplate)
+		return 0;
+          endif
+	endforeach
+
+	var ev;
+
+	while (1)
+		ev := os::wait_for_event( 120 );
+
+		repeat
+		if (ev)
+		case (ev.type)
+                	SYSEVENT_ENGAGED:
+			SYSEVENT_DAMAGED:
+				return ev;
+			SYSEVENT_ENTEREDAREA:
+				if (!ev.source.npctemplate)
+					return ev;
+				endif
+		endcase
+		endif
+		until (! (ev := os::wait_for_event(120)) );
+
+	endwhile      
+
+endfunction       
+
+function CheckForCriminals(jerk)
+	var hal;	
+	var pvping;
+	var owner;
+	var num;
+	var warnloop ;
+	var weaponone;
+	var weapontwo;
+	if (jerk.dead)
+		return;
+	endif
+
+	foreach mob in ListHostiles( jerk, 20, 0 );
+		oktokill := 1;
+		if (GetObjProperty(me,"ignoremultis") and mob.multi)
+			oktokill := 0;
+		endif
+		elem := FindConfigElem( configfile, mob.npctemplate );
+		if( elem.Privs = "invul" )
+			oktokill := 0;
+		endif
+		if (GetObjProperty(mob,"pvping"))
+			oktokill := 0;
+		elseif (GetObjProperty(mob,"cwarring"))
+			oktokill := 0;
+		elseif (GetObjProperty(mob,"tmonster"))
+			oktokill := 0;
+		endif
+		//say (mob.name+" is hostile");
+		//if (IsInAProtectedCity(mob))
+		//	say(mob.name+" is in town");
+		//endif
+		//if (!IsInAProtectedCity(mob))
+		//	say(mob.name+" is out of town");
+		//endif
+		//if (IsInAProtectedCity(jerk))
+		//	say(jerk.name+" is in town");
+		//endif
+		//if (!IsInAProtectedCity(jerk))
+		//	say(jerk.name+" is out of town");
+		//endif	
+		if (IsInAProtectedCity(jerk))
+			if(IsInAProtectedCity(mob))
+				oktokill := 0;
+				//say("both hostiles are in town");
+			endif
+		endif
+		if (!IsInAProtectedCity(jerk))
+			 if(!IsInAProtectedCity(mob))
+				//say("both hostiles are out of town");
+				oktokill := 0;
+			endif
+		endif
+		if (!mob.npctemplate and oktokill)
+			num := GetObjProperty(mob,"BoundaryWarning");
+			if(!num)
+				num := 0;
+			endif
+			num := num + 1;
+			if (num < 3)
+				PlayLightningBoltEffect( mob );
+				SendSysMessage(mob, "You have been warned for : ");
+				SendSysMessage(mob, "Attacking over a town boundary.");
+				SetObjProperty(mob,"BoundaryWarning",num);
+				warnloop := 0;
+				Say(mob.name+"! halt!");
+				while (Distance(me, mob)> 2 and warnloop < 10)
+					RunToward(mob);
+					warnloop := warnloop + 1;
+				endwhile
+				if(GetObjProperty(me,"Disarm"))
+					weaponone := GetEquipmentByLayer( mob,  LAYER_HAND1 );
+					weapontwo := GetEquipmentByLayer( mob,  LAYER_HAND2 );
+					if (weaponone)
+						moveitemtocontainer(weaponone,mob.backpack);
+					endif
+					if (weapontwo)
+						moveitemtocontainer(weapontwo,mob.backpack);
+					endif
+				endif
+				oktokill := 0;
+			else
+				EraseObjProperty(mob,"BoundaryWarning");
+			endif
+		endif
+					 
+				
+		if (mob.script = "tamed")
+			owner := GetObjProperty(mob,"master");
+			if (owner)
+				owner := SystemFindObjectBySerial(owner);
+				if (owner)
+					pvping := GetObjProperty(owner,"pvping");
+					if (pvping)
+						oktokill := 0;
+					endif
+				endif
+			endif
+		endif
+		var tgt2;
+		if (mob.npctemplate and GetObjProperty(mob,"master"))
+			tgt2 := GetObjProperty(mob,"master");
+		endif
+		if (oktokill = 1)
+			foreach critter in ListMobilesInLineOfSight( me,20 )		
+				if(critter.serial = tgt2)
+					critter.frozen := 1;
+				endif
+			endforeach
+		endif
+		if (oktokill = 1)
+foreach character in EnumerateOnlineCharacters()
+if( character.cmdlevel > 0 )
+	SendSysmessage( character, "A Border Guard is attacking "+mob.name+" at "+me.x+","+me.y+","+me.z, 3 ,130  );	
+endif
+endforeach
+	if (!tgt2)
+		foreach character in EnumerateOnlineCharacters()
+			if( character.cmdlevel > 0 )
+				SendSysmessage( character,"Reason : Attacking "+jerk.name+" over border.",3,130);
+			endif
+		endforeach
+		SetObjProperty(me,"lastincident",mob.name+" attacking "+jerk.name+" over border");
+		icount := GetObjProperty(me,"incidentcount");
+		if (!icount)
+			icount := 0;
+		endif
+		icount := icount +1;
+		SetObjProperty(me,"incidentcount",icount);
+	else
+		tgt2 := SystemFindObjectBySerial(tgt2);
+		foreach character in EnumerateOnlineCharacters()
+			if( character.cmdlevel > 0 )
+		SendSysmessage( character,"Reason : Pet ordered to attack "+jerk.name+"over border. Pet owner is :" +tgt2.name,3,130);
+			endif
+		endforeach
+		SetObjProperty(me,"lastincident",tgt2.name+" attacking "+jerk.name+"over border with a pet.");
+		icount := GetObjProperty(me,"incidentcount");
+		if (!icount)
+			icount := 0;
+		endif
+		icount := icount +1;
+		SetObjProperty(me,"incidentcount",icount);
+	endif
+		say("Stop Criminal!");
+		if( Random(3) = 1)
+			say("Taste the wrath of Slaine!");
+			if (Random(2) = 1)
+				say("bwahahahahahaha");
+			endif
+		endif	
+					hal := GetGlobalProperty("BBRunning");
+					if (hal)
+						hal := SystemFindObjectBySerial(hal);
+						if (hal)
+							SetObjProperty(hal,"PKIncident",me.serial);
+						endif
+					endif
+
+		Slam(mob);
+		if (GetObjProperty(me,"autojail") and !mob.npctemplate)
+			AutoJail(mob);
+			RestartScript(me);
+		endif
+		foreach critter in ListMobilesInLineOfSight( me,20 )		
+			if(critter.serial = tgt2.serial)
+					hal := GetGlobalProperty("BBRunning");
+					if (hal)
+						hal := SystemFindObjectBySerial(hal);
+						if (hal)
+							SetObjProperty(hal,"PKIncident",me.serial);
+						endif
+					endif
+
+				Slam(critter);
+				if (GetObjProperty(me,"autojail"))
+					AutoJail(critter);
+					RestartScript(me);
+				endif
+				critter.frozen := 0;
+			endif
+		endforeach
+		EraseObjProperty(jerk,"#quest");
+		EraseObjProperty(jerk,"#ignoreit");
+		endif
+	endforeach
+	if ( CheckHateList(jerk))
+		say("I've been ordered to kill you on sight "+jerk.name+"!");
+		SetObjProperty(me,"lastincident",jerk.name+" was attacked on sight.");
+		icount := GetObjProperty(me,"incidentcount");
+		if (!icount)
+			icount := 0;
+		endif
+		icount := icount +1;
+		SetObjProperty(me,"incidentcount",icount);
+					hal := GetGlobalProperty("BBRunning");
+					if (hal)
+						hal := SystemFindObjectBySerial(hal);
+						if (hal)
+							SetObjProperty(hal,"PKIncident",me.serial);
+						endif
+					endif
+
+		Slam(jerk);
+	endif
+
+endfunction
+
+function AddToHateList(crim)
+	var hal;	
+	var Crooks := { };
+	if (!GetObjProperty(me,"crooks") )
+		Crooks[1] := crim.serial;
+		SetObjProperty(me,"crooks",crooks);
+		return;
+	else
+		Crooks := GetObjProperty(me,"crooks");
+	endif
+
+	var i;
+	foreach crook in crooks;
+		if ( crook = crim.serial )
+			return;//already hate him.
+		endif
+	endforeach
+
+	if (len(crooks)>5)
+		crooks[ Random(3)+1 ] := crim.serial;
+	else
+		crooks[ len(crooks)+1 ] := crim.serial;
+	endif
+
+	SetObjProperty(me,"crooks",crooks);
+
+endfunction
+
+function CheckHateList( you )
+	var hal;	
+	var Crooks := { };
+	if (!GetObjProperty(me,"crooks") )
+		return 0;//can't be on my list cause I don't have one
+	else
+		Crooks := GetObjProperty(me,"crooks");
+	endif
+
+
+	var i;
+	foreach crook in crooks;
+		if ( crook = you.serial )
+			return 1;//hate you.
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function cleareventque()
+
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+
+endfunction
+
+function EnableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_LEFTAREA + SYSEVENT_DISENGAGED + SYSEVENT_OPPONENT_MOVED );
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_SPEECH, 3 );
+    EnableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function DisableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED );
+    DisableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function SetMeUp()
+	SetObjProperty(me,"guardx",me.x);
+	SetObjProperty(me,"guardy",me.y);
+	SetObjProperty(me,"guardz",me.z);
+	me.name := "<random>";
+	me.gender := Random(2);
+	me.graphic := 400+me.gender;
+
+	me.name := RandomName( me );
+	me.title_suffix := " the guard";
+
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+		EquipItem(me, newbackpack);
+	endif
+	me.title_prefix := "Squire ";
+	me.title_suffix := " the Guard";
+	setobjproperty(me,"guardtype",3);
+		
+	var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+	var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+	if (weaponone)
+	moveitemtocontainer(weaponone,me.backpack);
+	DestroyItem(weaponone);
+	endif
+	if (weapontwo)
+		moveitemtocontainer(weapontwo,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	weaponone := CreateItemInInventory(me.backpack,0x7611,1);
+	SetObjProperty( weaponone, "SkillPoisoned" , 36 );
+	weaponone.name := "Disemboweler";
+	weaponone.desc := "Disemboweler";
+	weaponone.dmg_mod := 100;
+	weaponone.color := 1160;
+	EquipItem(me,weaponone);		
+	SetObjProperty( weaponone, "noloot" , 1 );
+	me.guardignore := 1;
+	var cloak := CreateItemInInventory(me.backpack,0x1515,1);
+	cloak.color := 1162;
+	SetObjProperty(cloak,"noloot",1);
+	EquipItem(me,cloak);
+	var shirt := CreateItemInInventory(me.backpack,0x1efd,1);
+	SetObjProperty(shirt,"noloot",1);
+	EquipItem(me,shirt);
+	var surcoat := CreateItemInInventory(me.backpack,0x1ffd,1);
+	surcoat.color := 1162;
+	SetObjProperty(surcoat,"noloot",1);
+	EquipItem(me,surcoat);
+	var pants := CreateItemInInventory(me.backpack,0x1539,1);
+	pants.color := 1162;
+	SetObjProperty(pants,"noloot",1);
+	EquipItem(me,pants);
+	var hat := CreateItemInInventory(me.backpack,0x1715,1);
+	hat.color := 1162;
+	SetObjProperty(hat,"noloot",1);
+	EquipItem(me,hat);
+	var boots := CreateItemInInventory(me.backpack,0x1515,1);
+	boots.color := 1;
+	SetObjProperty(boots,"noloot",1);
+	EquipItem(me,boots);
+	me.dexterity_mod := 3000;
+	SetObjProperty(me,"WanderRange",0);
+	SetObjProperty(me,"PeaceKeeper",1);
+	SetObjProperty(me,"WarriorForHire",1);
+endfunction
+
+function ProcessEvents(byref ev, byref wanders, byref next_wander)
+	var hal;
+	case (ev.type)
+	SYSEVENT_SPEECH:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		var evtext := lower(ev.text);
+
+		if ( (evtext["guards"]) or (evtext["guards!"]) )
+			look_around();
+		elseif (evtext["autojail"])
+			if (ev.source.cmdlevel > 2)
+				var ajail := SplitWords( evtext );
+				if (!ajail[2] or ajail[2] ="")
+					say("syntax is : autojail <on/off>");
+				else
+					if (ajail[2] ="on")
+						say("Auto Jailing is ON");
+						SetObjProperty(me,"autojail",1);		
+					elseif (ajail[2]="off")
+						say("Auto Jailing is OFF");
+						EraseObjProperty(me,"autojail");
+					endif
+				endif
+			endif		
+		elseif (evtext["disarm"])
+			if (ev.source.cmdlevel > 2)
+				var adisarm := SplitWords( evtext );
+				if (!adisarm[2] or adisarm[2] ="")
+					say("syntax is : disarm <on/off>");
+				else
+					if (adisarm[2] ="on")
+						say("Disarming is ON");
+						SetObjProperty(me,"Disarm",1);		
+					elseif (adisarm[2]="off")
+						say("Disarming is OFF");
+						EraseObjProperty(me,"Disarm");
+					endif
+				endif
+			endif	
+		elseif (evtext["range"])	
+			if (ev.source.cmdlevel > 2)
+				var rnge := SplitWords( evtext );
+				if (!rnge[2] or rnge[2] ="")
+					say("syntax is : range <1-50>");
+				else
+					var rint := CInt(rnge[2]);
+					if (rint < 1)
+						rint := 0;
+					elseif (rint > 50)
+						rint := 50;
+					endif
+					Say("Wander Range is now : "+rint);
+					SetObjProperty(me,"WanderRange",rint);
+				endif
+			endif
+		elseif (evtext["jailtime"])	
+			if (ev.source.cmdlevel > 2)
+				var rnge := SplitWords( evtext );
+				if (!rnge[2] or rnge[2] ="")
+					say("syntax is : jailtime <1-365>");
+				else
+					var rint := CInt(rnge[2]);
+					if (rint < 1)
+						rint := 1;
+					elseif (rint > 365)
+						rint := 365;
+					endif
+					Say("Jail Time is now : "+rint);
+					SetObjProperty(me,"SetDays",rint);
+				endif
+			endif
+		elseif (evtext["kill"])
+			if (ev.source.cmdlevel > 2)
+				var staffkill;
+				say("Kill who?");
+				var tgt := TargetCoordinates( ev.source );
+				if( tgt.mobile )
+ 					staffkill := tgt.mobile;
+				endif
+				if (!staffkill)
+					say("cancelled.");
+					return;
+				endif
+				if (staffkill.npctemplate)
+					say("You can only add players to my hitlist");
+				else
+					AddToHateList(staffkill);
+					say(staffkill.name+" added to my hitlist");
+				endif
+			
+			endif	
+		elseif (evtext["report"])
+			if (ev.source.cmdlevel > 2)
+				var rpt := GetObjProperty(me,"lastincident");
+				if (!rpt)
+					rpt := "None.";
+				endif
+				say("Last incident was :");
+				say(rpt);
+				icount := GetObjProperty(me,"incidentcount");
+				if (!icount)
+					icount := 0;
+				endif
+				say("Total incidents : "+icount);
+			endif
+		
+		endif
+
+	SYSEVENT_ENGAGED:
+	SYSEVENT_DAMAGED:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if ( (ev.source) and (!ev.source.dead) )
+			oktokill := 1;
+			if (GetObjProperty(me,"ignoremultis") and ev.source.multi)
+				oktokill := 0;
+			endif
+			elem := FindConfigElem( configfile, ev.source.npctemplate );
+			if( elem.Privs = "invul" )
+				oktokill := 0;
+			endif
+			if (ev.souce.dead)
+				oktokill := 0;
+			endif
+			if (GetObjProperty(ev.source,"pvping"))
+				oktokill := 0;
+			elseif (GetObjProperty(ev.source,"cwarring"))
+				oktokill := 0;
+			elseif (GetObjProperty(ev.source,"tmonster"))
+				oktokill := 0;
+			endif
+			if (oktokill = 1)
+			say("Die " + ev.source.name + "!" );
+			EraseObjProperty(ev.source,"#quest");
+			EraseObjProperty(ev.source,"#ignoreit");
+			foreach character in EnumerateOnlineCharacters()
+if( character.cmdlevel > 0 )
+	SendSysmessage( character, "A Border Guard is attacking "+ev.source.name+" at "+me.x+","+me.y+","+me.z, 3 ,130  );	
+	SendSysmessage( character,"Reason : Border Guard was attacked",3,130);
+endif
+endforeach
+			SetObjProperty(me,"lastincident",ev.source.name+" attacked me");
+			icount := GetObjProperty(me,"incidentcount");
+			if (!icount)
+				icount := 0;
+			endif
+			icount := icount +1;
+			SetObjProperty(me,"incidentcount",icount);
+					hal := GetGlobalProperty("BBRunning");
+					if (hal)
+						hal := SystemFindObjectBySerial(hal);
+						if (hal)
+							SetObjProperty(hal,"PKIncident",me.serial);
+						endif
+					endif
+
+			Slam( ev.source );
+			endif
+		endif
+	SYSEVENT_ENTEREDAREA:
+		wanders := 0;
+		PerformAction( me, UACTION_LOOK_AROUND );
+		look_around();
+	SYSEVENT_ITEM_GIVEN:
+		wanders := 0;
+		next_wander := readgameclock()+10;
+		TakeItem(ev.source,ev.item);
+	endcase
+
+endfunction
+
+function FixStuff()
+
+	me.graphic := 400+me.gender;
+
+	if ( me.name[" the "] ) me.name := splitwords(me.name)[1]; endif
+
+	var guardtype := Getobjproperty(me,"guardtype");
+	if (!guardtype)
+		me.title_suffix := " the Guard";
+		return;
+	endif
+	if (me.gender)
+		me.title_prefix := "Dame ";
+	else
+		me.title_prefix := "Squire ";
+	endif
+	me.title_suffix := " the Guard";
+	
+endfunction
+
+function killme()
+
+	MoveCharacterToLocation(me, 5445,1153,0, MOVECHAR_FORCELOCATION);
+	RevokePrivilege( me, "invul" );
+	setobjproperty(me,"guardkill",1);
+	applyrawdamage(me,me.maxhp+3);
+
+endfunction
+
+function AutoJail (looter)
+	say("Jailing "+looter.name);
+	var days;
+	var acc	:= looter.acct;
+	var note := acc.getprop("Notes");
+	var offence := GetObjProperty(looter,"tkjail");
+	if (!offence)
+		offence := 0;
+	endif
+	offence := offence + 1;
+	SetObjproperty(looter, "tkjail",offence);
+	if (offence > 4)
+		offence := 4;
+	endif
+	case (offence)
+		1:	days := 1;
+		2:	days := 2;
+		3:	days := 3;
+		4: 	days := 4;
+	endcase
+	var setdays :=GetObjProperty(me,"SetDays");
+	if (setdays)
+		days := setdays;
+	endif
+	var jaildays := (days * 86400);
+	var secs := polcore().systime;
+	var year;
+	var month;
+	var day;
+	var hour;
+	var minutes;
+	CalculateDate( secs, year, month, day );
+	CalculateTime( secs, hour, minutes );
+	if (minutes < 10)
+	note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":0"+minutes+") border fighting : "+days+" days";
+	else
+	note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":"+minutes+") border fihgting. : "+days+" days";
+	endif
+	acc.setprop("Release", (ReadGameClock() + jaildays));
+	acc.setprop("Notes", note);
+	looter.frozen := 1;
+	MoveCharacterToLocation( looter, 5304, 1184, 0, 0);
+	SendSysMessage( looter, "You have been jailed for attacking over a town border.");
+	DisconnectClient( looter );
+endfunction
+
+function Slam (victim)
+	sleepms(25);
+	var failsafe := ReadGameClock() + 30;
+	var nd := ReadGameClock() + 5;
+	var steps := 0;
+		while (victim and ReadGameClock() < failsafe and !victim.dead)
+		steps := 0;
+		while(steps < 30 and ReadGameClock() < nd and !victim.dead)
+			RunToward(victim);
+			RunToward(victim);
+			RunToward(victim);
+			if (Distance(me,victim) < 2 and !victim.dead)
+				Fight(victim);
+			endif
+			steps := steps + 1;	
+		endwhile
+		MoveCharacterToLocation(me,victim.x,victim.y,victim.z,0);
+		if (!victim.dead)
+			Fight(victim);
+		endif
+		sleepms(50);
+	endwhile
+	me.warmode := 0;
+	EraseObjProperty(me,"lastcheck");
+	return;
+endfunction	
+		

@@ -1,0 +1,42 @@
+// MakeTree:
+// it starts everytime you doubleclk a seed...
+// to do: put a sound at the plant creation
+
+use cfgfile;
+use uo;
+use os;
+
+include "include/checkcity";
+include "botanik";
+
+const scissor:=0x249;
+const packit:=0x5a;
+const rustle:=0x50;
+
+program tavernaz(user,item)
+
+ if(!ReserveItem(item)) return; endif
+ if (CheckCity(user)==1) PrintTextAbovePrivate(item,"You can't plant in cities.",user); return; endif
+
+ if (user.multi) SendSysMessage(user,"You can't place in that location."); return; endif
+
+ var tree,treex:=CInt(user.x),treey:=CInt(user.y),treez:=CInt(user.z);
+
+ var cfg:=ReadConfigFile("tree");
+ if (!cfg) return; endif
+
+ if (item.objtype==0xe000)
+   tree:=CreateItemAtLocation(treex,(treey-2),treez,0xd1d,1);
+   fixtree(tree,cfg[tree.objtype].regrown,10);
+   tree:=CreateItemAtLocation(treex,treey,treez,0xd1e,1);
+   fixtree(tree,cfg[tree.objtype].regrown,10);
+   tree:=CreateItemAtLocation(treex,(treey+2),treez,0xd1b,1);
+   fixtree(tree,cfg[tree.objtype].regrown,10);
+ else
+   tree:=CreateItemAtLocation(treex,treey,treez,CInt(cfg[item.objtype].treetype),1);
+   fixtree(tree,cfg[tree.objtype].regrown,cfg[item.objtype].maxamount);
+ endif
+
+ DestroyItem(item);
+
+endprogram

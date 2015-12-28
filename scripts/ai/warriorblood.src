@@ -1,0 +1,14 @@
+//warriorblood
+//Slaine 2007
+//Script creates decaying blood on a cut corpse for the warrior for hire's 'skin' command
+use uo;
+use util;
+include "include/random";
+program make_blood( item )
+	var theblood:= CreateItemAtLocation(cint(item.x), cint(item.y), cint(item.z), 0x122D, 1);
+	theblood.saveonexit :=0;
+	theblood.decayat := ReadGameClock()+10;
+	detach();
+	Sleep(60);
+	DestroyItem(theblood);
+endprogram

@@ -1,0 +1,61 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+include "include/client";
+include "include/random";
+
+program voidscript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var drained;
+	var drainer;
+	var stat := Random(3) + 1;
+	var amount := Random(6) + 10;
+	var cursed := GetObjProperty( weapon , "Cursed" );
+		
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage + 15 , 1 );
+	
+	if( cursed )
+		rawdamage := Cint( rawdamage / 2 );
+		ApplyTheDamage( attacker , attacker , rawdamage );
+		drained := attacker;
+		drainer := defender;
+	else
+		DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+		drained := defender;
+		drainer := attacker;
+	endif
+
+	case(stat)
+		1:	ApplyTheDamage( drained , attacker , amount );
+			drainer.hp := drainer.hp + amount;
+			if( drainer.hp > drainer.maxhp)
+				drainer.hp := drainer.maxhp;
+			endif
+			break;
+
+		2:	drained.mana := drained.mana - amount;
+			if( drained.mana > drained.maxmana)
+				drained.mana := 0;
+			endif
+			drainer.mana := drainer.mana + amount;
+			if( drainer.mana > drainer.maxmana)
+				drainer.mana := drainer.maxmana;
+			endif
+			break;
+
+		3:	drained.stamina := drained.stamina - amount;
+			if( drained.stamina > drained.maxstamina)
+				drained.stamina := 0;
+			endif
+			drainer.stamina := drainer.stamina + amount;
+			if( drainer.stamina > drainer.maxstamina)
+				drainer.stamina := drainer.maxstamina;
+			endif
+			break;
+			
+		default:
+	endcase
+
+endprogram
+

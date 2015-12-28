@@ -1,0 +1,24 @@
+use uo;
+
+program change_cmdlevel( who )
+
+	SendSysMessage( who, "Barter Ban, select player." );
+
+	var player := Target( who, TGTOPT_NOCHECK_LOS );
+
+	if( !player.npctemplate && !player.amount )
+		if( GetObjProperty(player, "barterban") == 1 )
+			EraseObjProperty( player, "barterban" );
+			SendSysMessage( who, "Player is no longer banned." );
+		elseif( player.cmdlevel >= who.cmdlevel && who.cmdlevel < 5 )
+			SendSysMessage( player, who.name + " is trying to barterban you." );
+		else
+			SetObjProperty( player, "barterban", 1 );
+			SendSysMessage( who, "Player is now banned." );
+		endif
+
+	else
+		SendSysMessage( who, "Not a player" );
+	endif
+
+endprogram

@@ -1,0 +1,56 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/slimecombatevent";
+include "ai/setup/modsetup";
+include "ai/setup/setup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+include "include/client";
+include "include/random";
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+program KillPlayers()
+
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	if (Random(10)=1)
+		me.name := "a razz";
+	endif
+
+	SetWarMode( 0 );
+	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+  
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        default:
+            WalkToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+    endcase
+
+endfunction

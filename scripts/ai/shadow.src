@@ -1,0 +1,362 @@
+use uo;
+use os;
+use npc;
+
+include "ai/setup/modsetup";
+include "include/eventid";
+include "include/client";
+include "include/random";
+
+var me:= self();
+
+var layout := {
+"page 0",
+"nodispose",
+"resizepic 0 0 3600 640 480",
+"text 80 15 550 0",
+"text 20 70 600 1",
+"button 150 70 210 211 2 2 2",
+"tilepic 20 100 3719", //weapon pic
+"text 20 190 600 2",
+"button 150 190 210 211 3 3 3",
+"text 20 300 600 3",
+"button 150 300 210 211 4 4 4",
+"tilepic 20 230 5073",
+"tilepic 20 340 5142",
+"text 170 100 600 4", //war fork desc
+"text 170 115 600 5", //war fork desc cont..
+"text 170 215 600 6", //leather desc
+"text 170 230 600 7", // cont..
+"text 170 245 600 8", // cont..
+"text 170 340 600 9", //Plate
+"text 170 355 600 10", //cont...
+"text 170 370 600 11", //cont..
+"page 1"
+};
+
+var data := {
+
+"Welcome to the Shadow Element Prize Choosing",
+"Weapon",
+"Magic Leather",
+"PlateMail",
+"The Shadow Element Pitchfork is a Weapon",
+"created by the Evil Shadow Lord, to corrupt the souls",
+"The Magic Leather Armor was created by the Evil shadow Lord",
+"to protect his army from the Humans",
+" ",
+"The Platemail was created to protect the bests and strong",
+"warriors from Sahdow Lord Army",
+" ",
+};
+
+var layout2 := {
+"page 0",
+"nodispose",
+"resizepic 0 0 3600 640 480",
+"text 90 15 550 0",
+"text 20 70 600 1",
+"text 20 100 600 2",
+"text 20 120 600 3",
+"text 20 140 600 4",
+"text 20 180 600 5",
+"text 20 220 600 6",
+"text 20 240 600 7",
+"text 20 260 600 8",
+"text 200 370 600 9",
+"tilepic 170 350 2852",
+"tilepic 400 350 2852",
+"page 1"
+};
+
+
+
+var data2 := {
+"Welcome to the Element Help System", //0
+"What to do with all 9 Shadow Pentagram pieces?", //1
+"  Bring them to me and drop them on me.", //2
+"  You do not have to bring them all at the same time or", //3 
+"  to the same Shadow Element Shrine Lord.", //4
+"Where can you find the 9 Shadow Pentagram pieces?", //5
+"  Pentagram pieces can be found on stronger monsters.", //6
+"  ",//7
+"  ", //8
+"Good Luck Brave Traveler" //9
+};
+
+EnableEvents( SYSEVENT_ITEM_GIVEN);
+EnableEvents( SYSEVENT_SPEECH,2);
+EnableEvents(SYSEVENT_DAMAGED + SYSEVENT_ENGAGED);
+
+while (1)
+	var ev := wait_for_event( 30 );
+	if (ev)
+		case(ev.type)
+			SYSEVENT_SPEECH:
+			TurnToward( ev.source );
+			if (ev.text["hello"] or ev.text["help"]) help(ev.source); endif
+			// Added by Terence 07-08-2002
+
+			if (ev.text["claim"]) claim(ev.source); endif	
+
+			// End added 
+			SYSEVENT_ITEM_GIVEN: ProcessItem(ev.source, ev.item);
+			SYSEVENT_DAMAGED: 
+			SYSEVENT_ENGAGED:  say("guards!!!");
+		endcase
+	endif
+endwhile
+
+function ProcessItem(who, item)
+
+
+
+var gotitem;
+
+if(item.objtype == 0xf109) 
+   if (getobjproperty(who, "spent1")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,1);
+  endif
+endif
+
+if(item.objtype == 0xf110) 
+   if (getobjproperty(who, "spent2")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,2);
+  endif
+endif
+
+
+if(item.objtype == 0xf111) 
+   if (getobjproperty(who, "spent3")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,3);
+  endif
+endif
+
+
+if(item.objtype == 0xf112) 
+   if (getobjproperty(who, "spent4")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,4);
+  endif
+endif
+
+
+if(item.objtype == 0xf113) 
+   if (getobjproperty(who, "spent5")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,5);
+  endif
+endif
+
+
+if(item.objtype == 0xf114) 
+   if (getobjproperty(who, "spent6")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,6);
+  endif
+endif
+
+
+if(item.objtype == 0xf115) 
+   if (getobjproperty(who, "spent7")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,7);
+  endif
+endif
+
+
+if(item.objtype == 0xf116) 
+   if (getobjproperty(who, "spent8")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,8);
+  endif
+endif
+
+
+if(item.objtype == 0xf117)
+   if (getobjproperty(who, "spent9")=1)
+      say("You've already given me that piece.");
+      MoveItemToContainer(item, who.backpack);
+      return;
+   else
+      setitems(who,9);
+  endif
+endif
+
+DestroyItem(item);
+if(checkforall(who)=1)
+   gotitem :=BuildPrizeGump(who,0);
+   if (gotitem>1 && gotitem<5) clearitems(who); endif
+endif
+
+endfunction
+
+// Added by Terence 07-08-2002
+function claim(who)
+var gotitem;
+if(checkforall(who)=1)
+   gotitem :=BuildPrizeGump(who,0);
+   if (gotitem>1 && gotitem<5) clearitems(who); endif
+endif
+endfunction
+// End Add
+
+function help(who)
+
+var res := SendDialogGump( who, layout2, data2 );
+
+var title:="";
+
+if (who.title_prefix) title:=who.title_prefix; endif
+
+if (res[0]=0) say ("Good luck " + title ); return; endif
+
+endfunction
+
+
+function checkforall(who)
+
+if ((getobjproperty (who, "spent1")=1) && (getobjproperty (who, "spent2")=1) && (getobjproperty (who, "spent3")=1) && (getobjproperty (who, "spent4")=1) && (getobjproperty (who, "spent5")=1) && (getobjproperty (who, "spent6")=1) && (getobjproperty (who, "spent7")=1) && (getobjproperty (who, "spent8")=1) && (getobjproperty (who, "spent9")=1))
+return 1;
+else
+return 0;
+endif
+
+endfunction
+
+function clearitems(who)
+eraseobjproperty (who, "spent1");
+eraseobjproperty (who, "spent2");
+eraseobjproperty (who, "spent3");
+eraseobjproperty (who, "spent4");
+eraseobjproperty (who, "spent5");
+eraseobjproperty (who, "spent6");
+eraseobjproperty (who, "spent7");
+eraseobjproperty (who, "spent8");
+eraseobjproperty (who, "spent9");
+endfunction
+
+function setitems(who,i)
+setobjproperty (who, "spent"+i, 1);
+say("You found Pentagram piece " + i + " of 9.");
+endfunction
+
+function BuildPrizeGump(who,fish)
+
+if (fish)
+say("Congradulations, you found all 9 Shell pieces.");
+else
+say("Congradulations, you found all 9 Pentagram pieces.");
+endif
+sleep(2);
+
+var res := SendDialogGump( who, layout, data );
+
+case (res[0])
+	2: MakeWeapon(who,fish);
+	3: MakeArmor(who,fish);
+	4: MakePlate(who,fish);
+endcase
+
+if (res[0]=0) say ("Good luck Sire."); return; endif
+
+return res[0];
+
+endfunction
+
+
+function MakeWeapon(who,fish)
+var item, title:="";
+if (who.title_prefix) title:=who.title_prefix; endif
+say( title + " I will create your items."); sleep(1);
+PerformAction( me, ANIM_CAST_DIR );	
+say("Vas An Shadow Do Air Vas Shadow Mani Corp Shadow An Vas Shadow");
+PlaySoundEffect( me, 0x0012 );
+PerformAction( me, ANIM_CAST_DIR );	
+PlaySoundEffect( me, 0x0014);
+SendSysMessage( who,  "The Ground Begins to Rumble");
+PlaySoundEffect( me, 0x0029);
+
+item :=CreateItemInContainer( who.backpack, 0xf118, 1 );
+
+endfunction
+
+
+function MakeArmor(who,fish)
+var item, title:="";
+if (who.title_prefix) title:=who.title_prefix; endif
+say( title + " I will create your items."); sleep(1);
+PerformAction( me, ANIM_CAST_DIR );	
+say("Vas An Shadow Do Air Vas Shadow Mani Corp Shadow An Vas Shadow");
+PlaySoundEffect( me, 0x0012 );
+PerformAction( me, ANIM_CAST_DIR );
+PlaySoundEffect( me, 0x0014);
+SendSysMessage( who,  "The Ground Begins to Rumble");
+PlaySoundEffect( me, 0x0029);
+PerformAction( me, ANIM_CAST_DIR );	
+item :=CreateItemInContainer( who.backpack, 0xf125, 1);
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf126, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1); 
+item :=CreateItemInContainer( who.backpack, 0xf127, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf128, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf129, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf130, 1 );
+
+endfunction
+
+function MakePlate(who,fish)
+var item, title:="";
+if (who.title_prefix) title:=who.title_prefix; endif
+say( title + " I will create your items."); sleep(1);
+PerformAction( me, ANIM_CAST_DIR );	
+say("Vas An Shadow Do Air Vas Shadow Mani Corp Shadow An Vas Shadow");
+PlaySoundEffect( me, 0x0012 );
+PerformAction( me, ANIM_CAST_DIR );	
+PlaySoundEffect( me, 0x0014);
+SendSysMessage( who,  "The Ground Begins to Rumble");
+PlaySoundEffect( me, 0x0029);
+PerformAction( me, ANIM_CAST_DIR );	
+item :=CreateItemInContainer( who.backpack, 0xf119, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf120, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1); 
+item :=CreateItemInContainer( who.backpack, 0xf121, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf122, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf123, 1 );
+PlaySoundEffect( me, 0x0014); sleep(1);
+item :=CreateItemInContainer( who.backpack, 0xf124, 1 );
+
+endfunction

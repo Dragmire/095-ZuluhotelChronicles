@@ -1,0 +1,75 @@
+
+use uo;
+use os;
+use cfgfile;
+
+include "include/spelldata";
+include "include/objtype";
+include "include/classes";
+include "include/client";
+include "include/random";
+const DELAY_BETWEEN_HITS_MS	:= 1000;
+
+program energy_control( item )
+
+	return 1;
+	var diff    := 60;
+	var points  := 25;
+	var power   := 4;
+	var element := AIR;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+	if( GetObjProperty( item, "ByTrueMage" ) )
+		power := CInt( power * CLASSE_BONUS );
+	endif
+	
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	var coordinates := {};
+
+	case( item.objtype )
+		UOBJ_EFIELD_NS:	coordinates := { { item.x, item.y, item.z },
+						 { item.x, item.y-1, item.z },
+						 { item.x, item.y+1, item.z } };
+				break;
+				
+				
+		UOBJ_EFIELD_EW:	coordinates := { { item.x, item.y, item.z },
+						 { item.x-1, item.y, item.z },
+						 { item.x+1, item.y, item.z } };
+				break;
+			
+		default:
+	endcase
+
+	if( !len(coordinates) )
+		return;
+	endif
+	
+	while( item )
+		var dmg := RandomDiceStr( power + "d8" );
+		PlaySoundEffect( item, SFX_SPELL_ENERGY_FIELD );
+		foreach coord in coordinates
+			foreach mobile in ListMobilesNearLocation( coord[1], coord[2], coord[3], 0 )
+				if( !creator )
+					creator := mobile;
+				endif
+		
+				PerformAction( mobile, ANIM_HIT );
+				ApplyElementalDamageNoResist( mobile,creator,CInt(ResistedDefinedSkillGain( creator, mobile, dmg, diff, points )),element );
+			endforeach
+		endforeach
+		sleepms( DELAY_BETWEEN_HITS_MS );
+	endwhile
+ 
+endprogram

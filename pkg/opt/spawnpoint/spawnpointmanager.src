@@ -1,0 +1,203 @@
+use uo;
+use os;
+use util;
+use basic;
+use cfgfile;
+
+include "include/all";
+include "include/starteqp";
+include "include/time";
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// CONSTS
+///////////////////////////////////////////////////////////////////////////////////////////////////
+const DEFAULT_WAIT_FOR_EVENT_TIME	:= 1 * TIMEID_SECONDS_PER_HOUR;
+const DEFAULT_TIME_BETWEEN_ALL_SPAWN	:= 5 * TIMEID_SECONDS_PER_HOUR;
+const UOBJ_SPAWNPOINT			:= 0xa300;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// THE SPAWNPOINTS
+///////////////////////////////////////////////////////////////////////////////////////////////////
+var spawnpoints;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// INTERNAL SETTING
+///////////////////////////////////////////////////////////////////////////////////////////////////
+var wait_for_event_time;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// THE MANAGER
+///////////////////////////////////////////////////////////////////////////////////////////////////
+program SpawnPointManager()
+
+	set_script_option( SCRIPTOPT_NO_RUNAWAY, 1 );
+	
+	RegisterSpawnPoints();
+	InitializeManagerSettings();
+	
+	set_priority(5);
+	
+	var ev;
+	var wait_time := wait_for_event_time;
+	while( 1 )
+		ev := wait_for_event(wait_time);
+		if( ev )
+			set_priority(100);
+			case( ev[1] )
+				EVID_SPAWNPOINT_CHECK_POINT:
+					ManagerAnswer( ev[2], CheckPoint(ev[3]) );
+					
+				EVID_SPAWNPOINT_CREATED:
+					ManagerAnswer( ev[2], CreatePoint(ev[3]) );
+					
+				EVID_SPAWNPOINT_DEATH:
+					ProcessSpawnDeath(ev);
+				
+				EVID_SPAWNPOINT_DESTROYED:
+					ManagerAnswer( ev[2], DeleteSpawnPoint(ev[3]) );
+
+				EVID_SPAWNPOINT_RESETED:
+					ManagerAnswer( ev[2], ResetSpawnPoint(ev[3]) );
+				
+				EVID_SPAWNPOINT_SPAWN_ALL:
+					ManagerAnswer( ev[2], SpawnAllPoints() );
+					
+				EVID_SPAWNPOINT_REQUEST_POINTS:
+					ManagerAnswer( ev[2], spawnpoints );
+					
+				EVID_SPAWNPOINT_REFRESH_POINTS:
+					ManagerAnswer( ev[2], RegisterSpawnPoints() );
+			endcase
+			
+			if( events_waiting() < 25 )
+				set_priority(5);
+				wait_time := wait_for_event_time;
+			else
+				wait_time := 0;
+			endif
+		endif
+	endwhile
+	
+endprogram
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// INTERNAL FUNCTIONS
+///////////////////////////////////////////////////////////////////////////////////////////////////
+function CheckPoint( byref point )
+
+	return Start_Script( ":spawnpoint:checkpoint", point );
+	
+endfunction
+
+
+function CreatePoint( byref point )
+
+	if( spawnpoints.append(point) )
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, {"NPC","nil",0,0,0,0,0,0,0,0,0,0,0,""} );
+		CheckPoint(point);
+		return len(spawnpoints);
+	else
+		var ret		:= error;
+		ret.+errortext	:= "Couldn't register the spawnpoint";
+		return ret;
+	endif
+	
+endfunction
+
+
+function DeleteSpawnPoint( byref point )
+
+	if( point )
+		/*if( GetObjProperty( point, PROPID_SPAWNPOINT_SETTING )[9] )
+			DespawnAll(point);
+		endif*/
+	
+		SetObjProperty( point, PROPID_SPAWNPOINT_CAN_BE_DESTROYED, 1 );
+		DestroyItem(point);
+	endif
+	
+endfunction
+
+
+function DespawnAll( byref point )
+	
+	return Start_Script( ":spawnpoint:despawner", point );
+	
+endfunction
+
+
+function InitializeManagerSettings()
+
+	set_critical(1);
+	var cfg := ReadConfigFile("settings");
+	wait_for_event_time := Cint(cfg[1].WaitForEventTime) * 60;
+	if( !wait_for_event_time )
+		wait_for_event_time := DEFAULT_WAIT_FOR_EVENT_TIME;
+	endif
+	
+	var time_between_all_spawn := Cint(cfg[1].TimeBetweenAllSpawn) * 60;
+	if( !time_between_all_spawn )
+		time_between_all_spawn := DEFAULT_TIME_BETWEEN_ALL_SPAWN;
+	endif
+	
+	UnloadConfigFile("settings");
+	Start_Script( ":spawnpoint:allspawner", time_between_all_spawn );
+	set_critical(0);
+	
+	return 1;
+
+endfunction
+
+
+function ProcessSpawnDeath( byref ev )
+
+	return Start_Script( ":spawnpoint:spawndeath", {ev[3],ev[4]} );
+
+endfunction
+
+
+function RegisterSpawnPoints()
+
+	set_critical(1);
+	spawnpoints := {};
+	var start := ReadGameClock();
+	Print( "Starting spawnpoints registration..." );
+	foreach object in ListObjectsInBox( 0, 0, -128, 6142, 4094, 128 )
+		if( object.objtype == UOBJ_SPAWNPOINT )
+			spawnpoints.append(object);
+		endif
+	endforeach
+
+	Print( "Spawnpoints registration completed in " + (ReadGameClock()-start) + " seconds. " );
+        Print( len(spawnpoints) + " runes were registered."  );
+	
+	set_critical(0);
+	
+	return len(spawnpoints);
+
+endfunction
+
+
+function ResetSpawnPoint( byref point )
+
+	DespawnAll(point);
+	SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, {"NPC","nil",0,0,0,0,0,0,0,0,0,0,0,""} );
+	EraseObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING );
+	EraseObjProperty( point, PROPID_SPAWNPOINT_NEXT_VALIDATION );
+	return 1;
+	
+endfunction
+
+
+function SpawnAllPoints()
+
+	foreach point in spawnpoints
+		if( point )
+			CheckPoint(point);
+		endif
+	endforeach
+
+endfunction

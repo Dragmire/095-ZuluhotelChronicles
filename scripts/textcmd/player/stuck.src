@@ -1,0 +1,50 @@
+use uo;
+use os;
+
+include "include/areas";
+
+program Stucky( who )
+
+
+	if( ReadGameClock() < Cint(GetObjProperty( who , "#laststuck" ) + 1200) )
+		SendSysMessage( who , "You can only use the stuck feature once ever 20 min!" );
+		return;
+	endif
+	stuck(who);
+	
+
+endprogram
+
+function stuck (who)
+
+	if (IsInArea( who, AREAID_JAIL) && who.cmdlevel < 3)
+		SendsysMessage( who, "You cannot use that while in jail!");
+		return;
+	endif
+
+	SendSysMessage( who, "Do not move and you will be teleported to the World Junction in 2 minutes." );
+
+	var x := who.x;
+	var y := who.y;
+	var check := 120;
+	var coolflame;
+
+	while ( (who.x==x) and (who.y==y) and check > 0)
+    		coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3709, 1 );
+    		playsoundeffect(who, 0x208);
+    		sleep(1);
+    		destroyitem(coolflame);
+		check := check-1;
+	endwhile
+
+	if ( check)
+		SendsysMessage ( who, "You must stand still to use the stuck feature." );
+		return;
+	endif
+		
+	
+	movecharactertolocation( who, 5450, 1131, 0, MOVECHAR_FORCELOCATION);
+	SetObjProperty( who , "#laststuck" , ReadGameClock() );
+
+	return;
+endfunction

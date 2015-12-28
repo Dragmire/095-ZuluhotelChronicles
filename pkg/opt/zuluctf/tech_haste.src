@@ -1,0 +1,41 @@
+// quad and inviso march 25, 2001
+// zulu (zulu@zuluhotel.com)
+
+use uo;
+use os;
+
+program use_tech(who,tech)
+
+if (GetObjProperty(who,"#ctftech")) return; endif
+if (tech.invisible==1) return; endif
+if (GetObjProperty(tech,"user")==who.serial) return; endif
+
+SetObjProperty(who,"#ctftech","haste");
+PlaySoundEffect(who,258);
+
+var weapon:=GetEquipmentByLayer(who,0x01);
+
+if (weapon.serial==error)
+
+else
+weapon.dmg_mod:=15;
+endif
+
+tech.invisible:=1;
+start_script(":zuluctf:hud",who);
+
+while (GetObjProperty(who,"#ctftech")=="haste")
+
+PlaySoundEffect(who,259);
+
+sleep(20);
+
+endwhile
+
+if (weapon.serial==error)
+
+else
+weapon.dmg_mod:=0;
+endif
+
+endprogram

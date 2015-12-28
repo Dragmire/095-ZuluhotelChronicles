@@ -1,0 +1,14 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+program windgate (who)
+
+MoveCharacterToLocation( who, 5383, 1230, 0 );
+SendSysMessage( who, "Welcome to the Merchant Market.");
+SendSysMessage( who, "This is a No-Pk/Looting Zone.");
+
+endprogram

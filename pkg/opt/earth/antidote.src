@@ -1,0 +1,77 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ANTIDOTE;
+const SPELL_EFFECT_ID		:= FX_SPELL_ANTIDOTE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ANTIDOTE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ANTIDOTE;
+
+program cast_antidote( parms )
+
+	var circle := GetCircle( SPELLID_ANTIDOTE );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_ANTIDOTE ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+        PlaySoundEffect(caster, SFX_SPELL_ANTIDOTE);
+
+        if( cast_on.poisoned )
+		CurePoison( cast_on );
+		SendSysMessage( caster, "You cured your patient." );
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+	var prevprot := GetObjProperty( caster, "PermPoisonImmunity" );
+	if( !prevprot )
+		var magery := GetEffectiveSkill( caster, SKILLID_MAGERY );
+		var duration := ModifyWithMagicEfficiency( caster, magery * 2 );
+		var power := ModifyWithMagicEfficiency( caster, magery / 25 );
+		if( duration && power )
+			SetObjProperty( caster, "PermPoisonImmunity", power );
+			sleep( duration );
+			EraseObjProperty( caster, "PermPoisonImmunity" );
+		endif
+	endif
+	
+endprogram

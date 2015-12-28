@@ -1,0 +1,34 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+program code_equal_to_number( who, client );
+
+	var checked := 0;
+
+   	foreach player in EnumerateOnlineCharacters()
+        	if (player.cmdlevel == 0)
+			if( (ReadGameClock() > Cint(GetObjProperty( player ,"#macrostart" ) +36000 )) && !GetObjProperty( player, "#allowmacro"))
+				start_script( "::macrojail", player );
+				checked := checked +1;
+			endif
+		endif
+	endforeach
+
+
+
+	SendSysMessage( who, "Checked: "+checked);
+endprogram

@@ -1,0 +1,3 @@
+use os;
+start_script(":zuluctf:ctf_control2");
+start_script(":zuluctf:ctf_control1");

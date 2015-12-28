@@ -1,0 +1,531 @@
+use npc;
+use os;
+use uo;
+
+include "include/namingbyenchant";
+include "include/attributes";
+include "include/randname";
+include "include/eventid";
+include "include/client";
+include "include/spelldata";
+include "include/dotempmods";
+include "include/speech";
+include "include/npcbackpacks";
+include "include/res";
+include "ai/setup/modsetup";
+include "include/random";
+const REACT_THRESHOLD := 2;
+
+const REMOVE_CURSE := 1;
+const DETECT_CURSE := 2;
+//Harl - removing purify coz its crap
+const USE_PURIFY := 3;
+const CAST_HEAL := 4;
+const CAST_CURE := 5;
+const CAST_PROTECT := 6;
+const CAST_BLESS := 7;
+
+var priest := Self();
+var me := priest;
+var speech := 5;
+
+// Prepare self
+if (priest.name["<random>"])
+   case( Random(2) )
+      0: priest.graphic := 400;
+      1: priest.graphic := 401;
+   endcase
+   SetName( priest, RandomName( priest ) );
+   set_priority( 1 );
+	var parms := {};
+	parms[1]:= priest;
+	parms[2]:= "mage";
+   	start_script("::/misc/dressme", parms);
+   set_priority( 50 );
+endif
+// done
+
+EnableEvents( SYSEVENT_DAMAGED + SYSEVENT_ENGAGED);
+EnableEvents( SYSEVENT_SPEECH, 2 );
+EnableEvents( SYSEVENT_ITEM_GIVEN );
+EnableEvents( SYSEVENT_ENTEREDAREA, REACT_THRESHOLD );
+
+
+while (1)
+
+	var event;
+	event := os::wait_for_event( 30 );
+	if (event)
+	case (event.type)
+	    	SYSEVENT_ENGAGED:
+		say( event.source.name + ", I'll punish you, foolish mortal!");
+	    	SYSEVENT_DAMAGED:
+			SetHp(priest, GetMaxHP(priest));
+			if( priest.poisoned ) CurePoison( priest ); endif
+			TurnToward( event.source );
+			say( "The Virtues won't tolerate such a foolishness!" );
+			PerformAction( me, ANIM_CAST_DIR );
+			//Sleep( 3 );
+			//ApplyRawDamage( event.source , event.source.maxhp + 3);
+			//SetObjProperty( event.source , "guardkill" , 1 );
+			//SetObjProperty( event.source , "PriestUpset" , 1 );
+			priest.hidden := 1;
+			sleep(200);
+			priest.hidden := 0;
+
+    		foreach chr in EnumerateOnlineCharacters()
+        		if (chr.cmdlevel>0)
+				SendSysMessage(chr, event.source.name + " is attacking an invul NPC!!!", 3, 130);
+			endif
+   		endforeach
+
+
+	    	SYSEVENT_SPEECH:
+	    		if( GetObjProperty( event.source, "PriestUpset" ) )
+	    			TurnToward( event.source );
+				say( "No, I won't listen to thy request.");
+				sleep( 1 );
+				say( "Thine past behavior made thee unworthy in the eyes of the Virtues" );
+			
+			elseif( event.text["Greeting"] || event.text["Hail"] || event.text["greeting"] || event.text["Hi"] || event.text["hi"] || event.text["Hello"] || event.text["hello"])
+				TurnToward( event.source );
+				say( "Greetings, I hope thee is having a good day." );
+
+			elseif( event.text["Help"] || event.text["help"] || event.text["HELP"] )
+				TurnToward( event.source );
+				say( "How can I help thee?" );
+			
+			elseif( event.text["Farewell"] || event.text["farewell"] )
+				TurnToward( event.source );
+				say( "I wish thee good luck in thine travels, and may the Virtues looks upon thee." );
+
+			elseif( event.text["remove curse"] || event.text["Remove curse"] || event.text["Remove the curse"] || event.text["remove the curse"] || event.text["uncurse"] || event.text["Uncurse"] )
+				var player := event.source;
+                		TurnToward( event.source );
+				say( "Show me the cursed item." );
+				var item := TargetAnItem(player);
+				if (item)
+					var curselevel := GetObjProperty( item, "Cursed");
+					if( curselevel == 2 )
+						var price := GetStrength(player) * 10;
+						SetObjProperty( player, "PriestDemand", REMOVE_CURSE );
+						SetObjProperty( player, "PriestPrice", price );
+						SetObjProperty( player, "TargetedItem", item.serial );
+						say( "I will remove the curse from that item for at least " + price + " gold pieces." );
+				
+					elseif( GetDexterity(item) )
+						say( "The Virues of Compassion teach us to always respect the people around us." );
+						sleep( 5 );
+						say( "That also mean to not insult them by telling them they are a curse." );
+
+					else
+                				say( "I can't remove a curse from an item that isn't cursed or don't seem to be." );
+					endif
+				endif
+
+			elseif (event.text["detect curse"] || event.text["Detect curse"])
+				var player := event.source;
+				TurnToward( event.source );
+				say( "What item do you suspect to be cursed?" );
+				var item := TargetAnItem(player);
+				if (item)
+					if ( GetDexterity(item) )
+						say( "I really don't think it's cursed, nor that it will ever be." );
+				
+					elseif ( GetObjProperty( item, "Cursed" ) == 2 || GetObjProperty( item, "Cursed" ) == 3 )
+						say( "That item isn't only cursed, but the curse is also already revealed." );
+
+					else
+						var price := GetStrength(player);
+						SetObjProperty( player, "PriestDemand", DETECT_CURSE );
+						SetObjProperty( player, "PriestPrice", price );
+						SetObjProperty( player, "TargetedItem", item.serial );
+						say( "I'll tell thee if that item is cursed is thee can spare at least " + price + " gold pieces." );
+					endif
+				endif
+			//Harl -removing purify
+			elseif (event.text["purify"] || event.text["Purify"])
+				var player := event.source;
+				TurnToward( event.source );
+				say( "What item dost thou want me to free from all malefic magical influences?" );
+				var item := TargetAnItem(player);
+				if(item)
+					if ( GetDexterity(item) )
+						say( "Are you deaf?" );
+						sleep( 2 );
+						say( "I asked you what ITEM you wanted me to free from all malefical magical influences!" );
+
+					else
+						var price := GetStrength(player) * 250;
+						SetObjProperty( player, "PriestDemand", USE_PURIFY );
+						SetObjProperty( player, "PriestPrice", price );
+						SetObjProperty( player, "TargetedItem", item.serial );
+						say( "That's a hard feat and I'll only do it if thee agree to make a donation of at least " + price + " gold pieces." );
+					endif
+				endif
+
+			elseif (event.text["heal"] || event.text["Heal"])
+				var player := event.source;
+				TurnToward( event.source );
+				var price := 50;
+				SetObjProperty( player, "PriestDemand", CAST_HEAL );
+				SetObjProperty( player, "PriestPrice", price );
+				say( "I'll heal all of thine wounds for a " + price + " gold pieces donation." );
+
+			elseif (event.text["cure"] || event.text["Cure"])
+				var player := event.source;
+				TurnToward( event.source );
+				var price := 400;
+				SetObjProperty( player, "PriestDemand", CAST_CURE );
+				SetObjProperty( player, "PriestPrice", price );
+				say( "Freeing thou from all toxins cost " + price + " gold pieces." );
+
+			elseif (event.text["protection"] || event.text["Protection"])
+				var player := event.source;
+				TurnToward( event.source );
+				SetObjProperty( player, "PriestDemand", CAST_PROTECT );
+				say( "For a small donation leaved to your discretion I can grant thee a protection from the Virtues." );
+
+			elseif (event.text["bless"] || event.text["Bless"])
+				var player := event.source;
+				TurnToward( event.source );
+				SetObjProperty( player, "PriestDemand", CAST_BLESS );
+				say( "For a small donation leaved to your discretion I can grant thee a blessing from the Virtues." );
+			endif
+
+
+            	SYSEVENT_ENTEREDAREA:
+			if ( !event.source.isA(POLCLASS_NPC) )
+				var player := event.source;
+                 		if( player.dead && CheckLineOfSight(me,player) && !GetObjProperty( player, "PriestUpset" ) )
+					TurnToward( event.source );
+					if( GetObjProperty( event.source, "PriestUpset" ) )
+						say( "Hahah I see that thee was finally killed, that is what thee deserved,");
+						sleep( 2 );
+						say( "after what he did in the past against the holy Virtues." );
+						return;
+					endif
+				
+					say( "By the power of the Virtues, may this soul be brough back to life!" );
+					PerformAction( me, ANIM_CAST_DIR );
+					PlaySoundEffect( me, SFX_SPELL_RESURRECTION);
+					PlaySoundEffect( player, SFX_SPELL_RESURRECTION);
+					ResurrectMobile( player, me );
+					sleep( 3 );
+					say( "Now that thee is in better health, maybe thee could make a donation to the holy Virtues." );
+				endif
+                  	endif
+
+
+
+		SYSEVENT_ITEM_GIVEN:
+			event.item.movable := 0; //Added by Sno 17/1/03 to stop duping by holding the gold.
+
+			TurnToward(event.source);
+			if (event.item.objtype == UOBJ_GOLD_COIN);
+				CheckWhyHeGave(event.source, event.item);
+			else
+				say( "Thou art most kind of wanting to give away such a thing, " );
+				MoveItemToContainer( event.item, event.source.backpack );
+				sleep( 2 );
+				say( "but giving a money donation instead would be more appreciated." );
+				sleep( 2 );
+				say( "*smile*" );
+			endif
+
+			event.item.movable := 1; //Added by Sno 17/1/03 to stop duping by holding the gold.
+	endcase
+	endif
+
+endwhile
+
+
+function CheckWhyHeGave( player, donation )
+
+
+	if( !donation.amount )
+		return;
+	endif
+
+
+	var demand := GetObjProperty( player, "PriestDemand" );
+	if( !demand )
+		if( GetObjProperty( player, "PriestUpset" ) )
+			if( donation.amount >= (GetStrength(player)) * 2 )
+				say( "Thee be blessed for this generous donation." );
+				EraseObjProperty( player, "PriestUpset" );
+			else
+				say( "Dost thou think that he can be forgiven for such a pitiful amount of gold?" );
+			endif
+		else
+			say( "Thee be blessed for this generous donation." );
+		endif
+		DestroyItem( donation );
+		return;
+	endif
+
+	EraseObjProperty( player, "PriestDemand" );
+
+	var price := CInt( GetObjProperty( player, "PriestPrice" ) );
+	if(price)
+		if(donation.amount < price)
+			say( "I was very generous by asking thee such a low price as " + price + "gps for that service, " );
+			MoveItemToContainer( donation, player.backpack );
+			sleep( 3 );
+			say( "so I had expected thee to have the politeness to give me what I asked for" );
+			SetObjProperty( player, "PriestUpset", 1 );
+			return;
+		endif
+		EraseObjProperty( player, "PriestPrice" );
+	endif
+
+
+	case(demand)
+
+		REMOVE_CURSE:		RemoveCurse( player, donation, price );
+					break;
+
+		DETECT_CURSE:		DetectCurse( player, donation, price );
+					break;
+		//Harl- removing purify
+		USE_PURIFY:		Purify( player, donation, price );
+					break;
+
+		CAST_HEAL:		Heal( player, donation );
+					break;
+
+		CAST_CURE:		Cure( player, donation );
+					break;
+
+		CAST_PROTECT:		CastSpell( player, donation, "protection" );
+					break;
+
+		CAST_BLESS:		CastSpell( player, donation, "bless" );
+					break;
+
+	endcase
+
+endfunction
+
+
+function RemoveCurse( player, donation, price )
+
+	var itemserial := GetObjProperty( player, "TargetedItem" );
+	var item := SystemFindObjectBySerial( itemserial );
+	EraseObjProperty( player, "TargetedItem" );
+
+	var chance := 75;
+	var chancemod := 0;
+
+	if( donation.amount > price )
+		chancemod := CInt( (donation.amount - price) / 10 );
+	endif
+
+	chance := chance + chancemod;
+	say( "Powers of the Virtues, I'm calling upon you to remove the curse from that item." );
+	PerformAction( me, ANIM_CAST_DIR );
+	sleep( 6 );
+
+	if( GetObjProperty( item, "CannotBeUncursed" ) )
+		CannotAchieveIt();
+	else
+		if( Random(100)+1 <= chance )
+			SetObjProperty( item, "Cursed", 3 );
+			EraseObjProperty( item, "StayEquipped" );
+			say( "From now on thee can unequip this " + item.desc + " as any normal item." );
+			PlaySoundEffect( player, SFX_SPELL_BLESS );
+			PlayObjectCenteredEffect( player, FX_BLESS_EFFECT, 10,10 );
+
+		else
+			PlayObjectCenteredEffect( me, FX_SPELL_FAIL, 7, 7);
+			PlaySoundEffect( me, SFX_5B);
+			say( "I failed in removing that curse!" );
+			sleep( 2 );
+			say( "Maybe if thee had give me more than " + donation.amount + "gps, I would have succeeded." );
+		endif
+	endif
+
+	DestroyItem( donation );
+
+endfunction
+
+
+function DetectCurse( player, donation, price )
+
+	var itemserial := GetObjProperty( player, "TargetedItem" );
+	var item := SystemFindObjectBySerial( itemserial );
+	EraseObjProperty( player, "TargetedItem" );
+
+	var chance := 90;
+	var chancemod := 0;
+
+	if (donation.amount > price)
+		chancemod := CInt( (donation.amount - price) / 2 );
+	endif
+
+	chance := chance + chancemod;
+	say( "Powers of the Virtues, I'm calling upon you to show us if that item is under malefic influences." );
+	PerformAction( me, ANIM_CAST_DIR );
+	sleep( 5 );
+
+	if(Random(100)+1 <= chance)
+		if( GetObjProperty( item, "Cursed" ) == 1 )
+			RevealCurse( item );
+			PlaySoundEffect( me, 0x1fe);
+			say( "Ah ah! That item is cursed and it revealed itself to be a " + item.desc + "." );
+
+		else
+			say( "I don't sense presence of any curses in that item." );
+
+		endif
+
+	else
+		PlayObjectCenteredEffect( me, FX_SPELL_FAIL, 7, 7);
+		PlaySoundEffect( me, SFX_5B);
+		say( "I failed to see if that item is cursed!" );
+		sleep( 2 );
+		say( "Maybe if thee had give me more than " + donation.amount + "gps, I would have succeeded." );
+	endif
+
+	DestroyItem( donation );
+
+endfunction
+
+//Harl- Removing purify
+
+function Purify( player, donation, price )
+
+	var itemserial := GetObjProperty( player, "TargetedItem" );
+	var item := SystemFindObjectBySerial( itemserial );
+	EraseObjProperty( player, "TargetedItem" );
+
+	var chance := 60;
+	var chancemod := 0;
+
+	if (donation.amount > price)
+		chancemod := CInt( (donation.amount - price) / 100 );
+	endif
+
+	chance := chance + chancemod;
+	say( "Great Essence of the Virtues, I'm calling upon you to purify this item from all curses" );
+	PerformAction( me, ANIM_CAST_DIR );
+	sleep( 8 );
+
+	if( GetObjProperty( item, "CannotBeUncursed" ) )
+		CannotAchieveIt();
+	else
+		if(Random(100)+1 <= chance)
+			BanishCurse( item );
+			PlaySoundEffect( player, SFX_SPELL_BLESS );
+			PlayObjectCenteredEffect( player, FX_BLESS_EFFECT, 10,10 );
+			say( "I made it!!! That item is now completely free from all curses." );
+
+		else
+			PlayObjectCenteredEffect( me, FX_SPELL_FAIL, 7, 7 );
+			PlaySoundEffect( me, SFX_5B );
+			say( "That curse is too strong, I failed to obliterate it!" );
+			sleep( 2 );
+			say( "Maybe if thee had give me more than " + donation.amount + "gps, I would have succeeded." );
+		endif
+	endif
+
+	DestroyItem( donation );
+
+endfunction
+
+
+function Heal( player, donation )
+
+	say( "Great Virtue of Compassion, bring down thine kindness upon that soul by healing him!" );
+	PerformAction( me, 0x0010 );
+	sleep( 3 );
+	PlayObjectCenteredEffect( player, FX_SPARK_EFFECT, 7, 0x10 );
+	PlaySoundEffect( player, SFX_SPELL_GREATER_HEAL );
+	SetHp(player, GetMaxHP(player));
+	DestroyItem( donation );
+
+endfunction
+
+
+function Cure( player, donation )
+
+	say( "Essence of Virtues, cure this corpse from all poison!" );
+	PerformAction( me, 0x0010 );
+	sleep( 3 );
+	PlaySoundEffect( player, SFX_SPELL_CURE );
+	PlayObjectCenteredEffect( player, FX_BLESS_EFFECT, 10,10 );
+	CurePoison( player );
+	DestroyItem( donation );
+
+endfunction
+
+
+function CastSpell( player, donation, spell)
+
+
+
+	var don := CInt(donation.amount);
+
+	if( don > 2000 )
+		don := 2000;
+	endif
+
+	if( don < 10 )
+		don := 10;
+	endif
+
+	var magery := (don / 10);
+
+
+
+	//magery := BaseSkillToRawSkill(magery);
+	SetBaseSkill( me, SKILLID_MAGERY, magery);
+	if( spell == "protection" )
+		say( "Valor and Courage, I'm calling upon you to harden this folk's skin." );
+	else
+		say( "I humbly call upon the Virtues to lay down thine blessing on this person." );
+	endif
+
+	PerformAction( me, 0x0010 );
+	sleep( 3 );
+	var spellparms := { };
+	spellparms[1] := "#MOB";
+	spellparms[2] := me;
+	spellparms[3] := player;
+	start_script( ":spells:"+spell, spellparms );
+	DestroyItem( donation );
+
+endfunction
+
+
+
+function CannotAchieveIt()
+
+	PlayObjectCenteredEffect( me, FX_SPELL_FAIL, 7, 7 );
+	PlaySoundEffect( me, SFX_5B );
+	say( "That curse is too strong, I never saw something like that before!" );
+	sleep( 3 );
+	say( "Pffff..." );
+	sleep( 2 );
+	say( "Even with all the money..." );
+	sleep( 1 );
+	say( "I mean..." );
+	sleep( 1 );
+	say( "with all the Virtues of the world, I wouldn't be able to achieve this." );
+	sleep( 1 );
+	say( "*blushes*" );
+
+endfunction
+
+
+
+function TargetAnItem( who )
+
+	var zone := TargetCoordinates( who );
+	if( zone.item )
+		return zone.item;
+	else
+		return 0;
+	endif
+
+endfunction

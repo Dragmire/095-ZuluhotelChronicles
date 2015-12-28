@@ -1,0 +1,25 @@
+use uo;
+use os;
+
+include "include/constants/objtypes";
+include "include/constants";
+include "include/managers";
+
+Var pt_data;
+
+program textcmd_createspawnpoint( who, template )
+
+    SendSysMessage( who, "Select a location." );
+    var place := TargetCoordinates( who );
+    var point := CreateItemAtLocation( place.x, place.y, place.z, UOBJ_SPAWNPOINT, 1 );
+    Sleep( 2 );
+    var doit := SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, {"NPC",template,1,0,4,0,0,0,0,0,0,0,0,""} );
+    if( doit )
+    SendSysMessage( who, "Spawnpoint Spawned." );
+    SendSpawnPointEvent( EVID_SPAWNPOINT_CHECK_POINT, point );
+    point.name := "SpawnPoint [1 " + template + "]";
+    else
+    SendSysMessage( who, "Failed" );
+    endif
+
+endprogram

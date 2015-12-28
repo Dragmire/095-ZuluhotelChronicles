@@ -1,0 +1,51 @@
+use uo;
+use cfgfile;
+
+include "include/time";
+include "include/all";
+
+program txtcmd_eraseobjproperty( who , propname )
+
+	SendSysMessage( who , "Erase " + propname + " cprop from what?" );
+	var object := Target( who );
+	if( !object )
+		return;
+	endif
+	
+	var result := EraseObjProperty( object , propname );
+	if( result )
+		SendSysMessage( who , "Property " + propname + " was successfully erased." );
+  LogEditing( Who, object, propname, "Property Erased" );
+	else
+		SendSysMessage( who , "Error erasing property: " + result.errortext );
+	endif
+
+endprogram
+
+Function LogEditing( Who, Item, Edited, EditAmt )
+
+    Var datafile := ReadConfigFile("logging_EditedRecords");
+    SetObjProperty( item, "STAFFEDITEDITEM" + Item.serial, { Who.serial, Who.name } );
+
+    If( datafile == error )
+    SendSysMessage( Who, "File Error " + datafile.errortext );
+    Return 0;
+    Endif
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  Who.name });
+    elem.append({ "Staff Serial",  Hex( Who.serial) });
+    elem.append({ "Item Name", Item.name });
+    elem.append({ "Item Serial",    Hex( Item.serial ) });
+    elem.append({ "EditedProp",  Edited });
+    elem.append({ "PropAmount",  EditAmt });
+    elem.append({ "TimeOfEdit", GetDateString( polcore().systime ) });
+
+    AppendConfigFileElem( "logging_EditedRecords", "ItemEdited", "" , elem );
+    UnloadConfigFile( "logging_EditedRecords" );
+    EndIf
+
+Endfunction

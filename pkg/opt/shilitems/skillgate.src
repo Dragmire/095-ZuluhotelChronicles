@@ -1,0 +1,243 @@
+
+use os;
+use uo;
+
+include "include/itemutil";
+include "include/attributes";
+include "include/eventid";
+include "include/objtype";
+include "include/client";
+include "include/yesno";
+
+
+program skillgate( mobile, gate )
+
+	if( !FitRequirements( mobile, gate ) )
+		return;
+	endif
+
+	mobile.frozen := 1;
+
+	var confirmation := GetObjProperty( gate, "ConfirmationMsg" );
+	if( confirmation[1] )
+		if( !YesNo( mobile, CStr(confirmation[2]) ) )
+			SendSysMessage( mobile, "Canceled." );
+			mobile.frozen := 0;
+			return;
+		endif
+	endif
+
+
+	var skill_mods := GetObjProperty( gate, "SkillLevelMod" );
+	if( !skill_mods )
+		skill_mods := array;
+	endif
+
+	var i;
+	var new_level;
+	for( i := 1; i <= len(skill_mods); i := i + 1 )
+		if( skill_mods[i][1] )
+			new_level	:= CDbl( skill_mods[i][2] );
+			if( new_level > 209.0 )
+				new_level := 209.0;
+			elseif( new_level < 0.0 )
+				new_level := 0.0;
+			endif
+		
+			SetSkillTemporaryMod( mobile, i-1,  new_level  );
+
+			var rawskill  := GetBaseSkill( mobile, i-1 );
+			var advancers := {};
+			foreach item in ListEquippedItems( mobile )
+				if( GetObjProperty( item, "skilladv" ) == CInt(i-1) )
+					advancers.append( item );
+					EraseObjProperty( mobile, "advamount" + (i-1) + "s" + item.serial );
+				endif
+			endforeach
+		
+			foreach advancer in advancers
+				var adv := CInt( GetObjProperty( advancer, "skilladvamount" ) );
+				var sub_power    := adv;
+				var sub_max;
+				if (GetObjProperty( advancer, "WeapAdv" ))
+					sub_power := CInt( sub_power / 5 );
+				endif
+
+				var sub_divider := CInt( GetObjProperty( advancer, "SpecMult" ) );
+				if( sub_divider )
+					sub_power := CInt( sub_power / sub_divider );
+				endif
+			
+				sub_max := sub_power;
+				if(sub_power < 0)
+					sub_max := 6;
+				endif
+			
+				var sub_baseskill := rawskill;
+				if( sub_max > sub_baseskill )
+					var must_give := sub_baseskill + adv;
+					if( must_give > sub_max )
+						must_give := sub_max;
+					endif
+	
+					if( must_give < 1 )
+						must_give := 1;
+					endif
+		
+					//must_give := BaseSkillToRawSkill( must_give );
+					adv := must_give - rawskill;
+					SetObjProperty( mobile, "advamount" + (i-1) + "s" + advancer.serial, adv );
+					SetSkillTemporaryMod( mobile, (i-1), must_give );
+					rawskill := GetSkillTemporaryMod( mobile, (i-1) );
+				endif
+			endforeach
+		endif
+	endfor
+
+	var skill_multipliers := GetObjProperty( gate, "SkillMultipliersMod" );
+	if( !skill_multipliers )
+		skill_multipliers := array;
+	endif
+
+	var new_mult;
+	var current_multipliers := GetObjProperty( mobile, "SkillMultipliers" );
+	if( !current_multipliers )
+		current_multipliers := array;
+	endif
+
+	for( i := 1; i <= len(skill_multipliers); i := i + 1 )
+		if( skill_multipliers[i][1] )
+			new_mult := CDbl( skill_multipliers[i][2] );
+			if( !new_mult )
+				new_mult := 9999;
+			endif
+	
+			current_multipliers[i] := new_mult;
+		endif
+	endfor
+
+	SetObjProperty( mobile, "SkillMultipliers", current_multipliers );
+
+
+	var stat_mods := GetObjProperty( gate, "StatLevelMod" );
+	if( !stat_mods )
+		stat_mods := array;
+	endif
+
+	for( i := 1; i <= len(stat_mods); i := i + 1 )
+		if( stat_mods[i][1] )
+			new_level := CInt( stat_mods[i][2] );
+			if( new_level > 209 )
+				new_level := 209;
+			elseif( new_level < 1 )
+				new_level := 1;
+			endif
+
+			case( i )
+				1:	SetBaseStrength(mobile, new_level );	break;
+				2:	SetBaseDexterity(mobile, new_level );	break;
+				3:	SetBaseIntelligence(mobile, new_level );	break;
+			endcase
+		endif
+	endfor
+
+
+	var max_stats := GetObjProperty( gate, "MaxStatMod" );
+	if( !max_stats )
+		max_stats := array;
+	endif
+
+	var max;
+	for( i := 1; i <= len(max_stats); i := i + 1 )
+		if( max_stats[i][1] )
+			max := CInt( max_stats[i][2] );
+			if( max > 209 )
+				max := 209;
+			elseif( max < 1 )
+				max := 1;
+			endif
+
+			case( i )
+				1:	SetObjProperty( mobile, "MaximumStrength", max );	break;
+				2:	SetObjProperty( mobile, "MaximumDexterity", max );	break;
+				3:	SetObjProperty( mobile, "MaximumIntelligence", max );	break;
+			endcase
+		endif
+	endfor
+
+	
+	var graphic_mods := GetObjProperty( gate, "GraphicMod" );
+	if( !graphic_mods )
+		graphic_mods := array;
+	endif
+
+	for( i := 1; i <= len(graphic_mods); i := i + 1 )
+		if( graphic_mods[i][1] )
+			new_level := CInt( graphic_mods[i][2] );
+			if( new_level < 1 )
+				new_level := 1;
+			endif
+
+			case( i )
+				1:	mobile.graphic := new_level;		break;
+				2:	mobile.trueobjtype := new_level;	break;
+			endcase
+		endif
+	endfor
+
+
+	var color_mods := GetObjProperty( gate, "ColorMod" );
+	if( !color_mods )
+		color_mods := array;
+	endif
+
+	for( i := 1; i <= len(color_mods); i := i + 1 )
+		if( color_mods[i][1] )
+			new_level := CInt( color_mods[i][2] );
+			if( new_level < 0 )
+				new_level := 0;
+			endif
+
+			case( i )
+				1:	mobile.color	 := new_level;	break;
+				2:	mobile.truecolor := new_level;	break;
+			endcase
+		endif
+	endfor
+
+
+	var name_mod := GetObjProperty( gate, "NameMod" );
+	if( !name_mod )
+		name_mod := array;
+	endif
+
+	for( i := 1; i <= len(name_mod); i := i + 1 )
+		if( name_mod[i][1] )
+			new_level := CStr( name_mod[i][2] );
+
+			case( i )
+				1:	if( (new_level != "") && (!new_level["<uninitialized"]) )
+						mobile.name := new_level;
+					endif
+					break;
+				
+				2:	if( !new_level["<uninitialized"] )
+						mobile.title_prefix := new_level;
+					else
+						mobile.title_prefix := "";
+					endif
+					break;
+				
+				3:	if( !new_level["<uninitialized"] )
+						mobile.title_suffix := new_level;
+					else
+						mobile.title_suffix := "";
+					endif
+					break;
+			endcase
+		endif
+	endfor
+
+	mobile.frozen := 0;
+
+endprogram

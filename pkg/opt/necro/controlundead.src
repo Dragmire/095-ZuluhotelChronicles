@@ -1,0 +1,101 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_CONTROL_UNDEAD;
+const SPELL_EFFECT_ID		:= FX_SPELL_CONTROL_UNDEAD;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_CONTROL_UNDEAD;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_CONTROL_UNDEAD;
+
+program cast_controlundead( parms )
+
+	var circle := GetCircle( SPELLID_CONTROL_UNDEAD );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_CONTROL_UNDEAD ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	if( GetObjProperty( cast_on, "Type" ) != "Undead" )
+		SendSysMessage( caster, "That isn't an undead!" );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( GetObjProperty( cast_on, "untamable" ) )
+		SendSysMessage( caster, "You can't take the control of this creature." );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_CONTROL_UNDEAD );
+
+	var protected := IsProtected( caster, cast_on, circle );
+	if( protected == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var duration := ModifyWithMagicEfficiency( caster, GetEffectiveSkill( caster, SKILLID_MAGERY ) * 3 );
+	var protect := GetResultingPlaneProtection( cast_on, plane );
+	if( protect )
+		duration := duration - ( duration * protect * 0.25 );
+		if( duration < 1 )
+			SendSysMessage( caster, "This undead is immuned to your spell!" );
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	var oldscript := cast_on.script;
+	SetObjProperty( cast_on, "master", caster.serial );
+	SetObjProperty( cast_on, "Charmed", 1 );
+	cast_on.script := "tamed";
+	RestartScript( cast_on );
+
+	EraseObjProperty( caster, "#Casting" );
+	sleep( duration );
+
+	cast_on.script := oldscript;
+	RestartScript( cast_on );
+	EraseObjProperty( cast_on, "master" );
+
+endprogram

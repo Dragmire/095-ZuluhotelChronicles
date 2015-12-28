@@ -1,0 +1,114 @@
+Use uo;
+Use os;
+
+Include "include/client";
+Include "include/objtype";
+Include "include/classes";
+
+Program UseWood( character, wood )
+
+    Var newitem;
+
+    If( not Accessible( character, wood ) )
+    PrintTextAbovePrivate( wood, "You can't reach that!", character );
+    Return;
+    Endif
+    
+    If( character.poisoned )
+    SendSysMessage( character, "You can't start a campire while poisoned." );
+    Return;
+    Endif
+
+    If( character.warmode )
+    SendSysMessage( character, "You can't start a campire in war mode." );
+    Return;
+    Endif
+
+    If( wood.container )
+    PrintTextAbovePrivate( wood, "Put that on the ground first!", character );
+    Return;
+    Endif
+    
+    If( ReadGameClock( ) < CInt( GetObjProperty( character, "#lastcamp" ) + 3 ) )
+    SendSysMessage( character, "You must wait some time before being able to start a camp fire again." );
+    Return;
+    Endif
+  
+    If( CheckSkill( character, SKILLID_CAMPING, -1, 100 ) )
+
+    SetObjProperty( character, "#lastcamp", ReadGameClock() );
+    
+    Var WoodX := Wood.x;
+    Var WoodY := Wood.y;
+    Var WoodZ := Wood.z;
+    
+    SubtractAmount( wood, 1 );
+
+    Var Campfire := CreateItemAtLocation( WoodX, WoodY, WoodZ, UOBJ_CAMPFIRE, 1 );
+    Var Range := CInt( GetAttribute( character, ATTRIBUTEID_CAMPING ) / 25 );
+    Var Ranger := GetObjProperty( character, CLASSEID_RANGER );
+    Var WaitTime := 10;
+    
+    If( Ranger )
+    waitTime := 15;
+    Range := CInt( Range + CInt( Ranger ) );
+    WaitTime := CInt( WaitTime / ClasseBonus( character, CLASSEID_RANGER ) );
+    Endif
+    
+    Foreach Char in ListMobilesNearLocationEx( WoodX, WoodY, WoodZ, Range, LISTEX_FLAG_NORMAL );
+    
+    If( !GetObjProperty( Char, "IsCamping" ) )
+    SetObjProperty( Char, "IsCamping", 1337 );
+    Var OrgX := Char.x;
+    Var OrgY := Char.y;
+    Var OrgHp := GetHp( Char );
+
+    While(
+    ( Char.x == OrgX ) &&
+    ( Char.y == OrgY ) &&
+    ( GetHp( Char ) < GetMaxHp( Char ) ) &&
+    ( GetHp( Char ) >= OrgHp ) &&
+    ( !Char.poisoned ) &&
+    ( !Char.warmode ) )
+
+    Var HPPercent := ( GetVitalMaximumValue( Char, "Life" ) / 100 );
+    Var Restored := GetHealingAmount( character, HPPercent );
+
+    HealTheDamage( Char, Restored );
+    Sleep( WaitTime );
+    Endwhile
+    
+    EraseObjProperty( Char, "IsCamping" );
+    Endif
+    
+    Endforeach
+    
+    Detach();
+    
+    Sleep( 30 );
+    DestroyItem( Campfire );
+    
+    Else
+    PrintTextAbovePrivate( wood, "You couldn't manage to start the campfire.", character );
+    Return 0;
+    Endif
+
+Endprogram
+
+Function GetHealingAmount( Who, Health )
+
+    Var Level := CDbl( GetObjProperty( Who, CLASSEID_RANGER ) );
+    If( !Level )
+    Level := 0.50;
+    Endif
+
+    Var BPlvl := 0.05;
+    Var Amount := 0;
+
+    Amount := Floor( ( ( BPlvl * Level ) * Health ) + RandomInt( 5 ) );
+
+    Return CInt( Amount );
+
+Endfunction
+
+

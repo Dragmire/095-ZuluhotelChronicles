@@ -1,0 +1,109 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Feb 10, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: Players can choose any name they want, as many characters as they want.
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+Use util;
+Use basic;
+Use cfgfile;
+
+Include "include/client";
+
+Program AntiDupeName( who )
+
+    If( !GetObjProperty( Who, "ADNSC" ) )
+    CheckName( Who );
+    SetObjProperty( Who, "ADNSC", 1 );
+    Return 0;
+    Else
+    MoveCharacterToLocation( who, 2967, 3404, 55, MOVECHAR_FORCELOCATION);
+    SendSysMessage( who, "How'd you get here?", FONT_NORMAL, 2611 );
+    Endif
+
+Endprogram
+
+Function CheckName( Who )
+
+    Var hisname := Lower( who.name );
+    Var cfg := ReadConfigFile( "usednames" );
+    Var elem := FindConfigElem( cfg, hisname );
+
+    If (!elem)
+    SendSysMessage( who, "Name added to the database.", FONT_NORMAL, 2558 );
+    AddName( Who, Lower( Who.name ) );
+    MoveCharacterToLocation( who, 2967, 3404, 55, MOVECHAR_FORCELOCATION);
+    SendSysMessage( who, "Choose 3 Skills to Boost.", FONT_NORMAL, 2611 );
+    Return 0;
+    Else
+        Var NewName := SendTextEntryGump( who, "The name you choose is already taken.", TE_CANCEL_DISABLE, TE_STYLE_NORMAL, 2595, "Please select a new name" );
+        If( !NewName )
+        SendSysMessage( who, "Try again.", FONT_NORMAL, 2595 );
+        CheckName( Who );
+        Return 0;
+        Endif
+            If( !InvalidChars( Who, NewName ) )
+            CheckName( Who );
+            Return 0;
+            Elseif( ValidChars( Who, NewName ) )
+            SetName( Who, NewName );
+            CheckName( Who );
+            Else
+            CheckName( Who );
+            Endif
+    Endif
+
+Endfunction
+
+Function ValidChars( Who, theName )
+
+    Var validstr := {
+    "a","b","c","d","e","f",
+    "g","h","i","j","k","l",
+    "m","n","o","p","k","r",
+    "s","t","u","v","w","x",
+    "y","z"," ",
+    };
+
+    theName := Lower( theName );
+    Var i;
+
+    For( i := 1; i <= Len( theName ); i := i + 1 )
+    If( !( theName[i] in validstr ) and Len( theName ) >= 17 )
+    SendSysMessage( Who, "Name can contain only letters, no longer than 16 characters.", FONT_NORMAL, 2595 );
+    Return 0;
+    Endif
+    Endfor
+    Return 1;
+
+Endfunction
+
+Function InvalidChars( Who, theName )
+
+    theName := Lower( theName );
+    If( theName[1] == " " and Len( theName ) >= 17 )
+    SendSysMessage( Who, "Name can contain only letters, no longer than 16 characters.", FONT_NORMAL, 2595 );
+    Return 0;
+    Endif
+    Return 1;
+
+Endfunction
+
+Function AddName( Who, nome )
+
+    Var elem := {};
+    Var elems := array;
+    elem.+pname;
+    elem.+pvalue;
+    Var rcfg := ReadConfigFile( "usednames" );
+    elem.pname := "Name";
+    elem.pvalue := nome;
+    elems[1] := elem;
+    AppendConfigFileElem( "usednames" , "Name" , who.name , elems );
+    UnloadConfigFile( "usednames" );
+
+Endfunction

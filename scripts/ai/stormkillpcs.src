@@ -1,0 +1,109 @@
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+Const MOVING_EFFECT_FIREBALL  := 0x36D4; 
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+
+	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+	var argh := 0;
+	var nme := {};
+	var nmecount := 0;
+	foreach critter in ListMobilesInLineOfSight( me, 20 )		
+		if (critter and (!critter.npctemplate or GetObjProperty (me, "killnpcs")))
+			nmecount := nmecount + 1;
+			nme[nmecount] := critter;
+		endif
+	endforeach
+	var nmetokill := 0;
+	while (nmetokill < nmecount and GetHP(me) > (GetMaxHP(me) / 3 ))
+		nmetokill := nmetokill + 1;
+		if (distance(me, nme[nmetokill]) > 5)
+			SpellAttack(nme[nmetokill]);
+			sleep(1);
+		endif
+		SetOpponent(nme[nmetokill]);
+		PlaySoundEffect(me,0x027e);
+		argh := 0;	
+		while (distance(me,nme[nmetokill]) > 0 and argh < 15 )
+			argh := argh + 1;
+			RunToward( nme[nmetokill] );
+		endwhile
+	endwhile
+	if (GetHP(me) < (GetMaxHP(me)/3))
+		argh := 0;
+		while (distance(me, nme[nmetokill]) < 5 or argh < 15)
+			RunAwayFrom(nme[nmetokill]);
+			argh := argh + 1;
+		endwhile
+		var oldg := me.graphic;
+		PerformAction( me, 0X022 );
+		PerformAction( me, 0X022 );
+		var ns := 0;
+		foreach critter in ListMobilesInLineOfSight( me, 5 )
+			if (critter)
+				ns := 1;
+			endif
+		endforeach
+		if (ns = 0)
+			me.graphic := 0xc;
+			argh := 0;
+			PlaySoundEffect( me , 0x17 );
+			while (argh < 10)
+				argh := argh + 1;
+				PerformAction( me, 0X022 );
+			endwhile
+			foreach critter in ListMobilesInLineOfSight( me, 20 )
+				if (critter and (!critter.npctemplate or GetObjProperty(me, "killnpcs")))
+					saywords := 0;
+					SetMana( me,  GetMana(me) + 100);
+					if (GetMana(me) > GetMaxMana(me))
+						SetMana( me, GetMaxMana(me) );
+					endif
+					PerformAction( me, 0X022 );
+					CastSpell(me,critter,"gustofair");
+				endif
+			endforeach
+			saywords := 1;
+			PerformAction( me, 0X022 );
+			sleep(1);
+			me.graphic := oldg;
+			SetHP(me, GetHP(me) + 100);
+			if (GetHP(me) > GetMaxHP(me) )
+				SetHP(me, GetMaxHP(me) );
+			endif
+		endif
+	endif
+		
+ endfunction

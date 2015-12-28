@@ -1,0 +1,51 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/damages";
+
+
+program staminadrainonhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var absorbed 	 := basedamage - rawdamage;
+	var drained;
+	var drainer;
+	
+	ApplyTheDamage( defender , attacker , rawdamage );
+	
+	if( !absorbed )
+		return;
+	endif
+	
+	if( GetObjProperty( armor , "Cursed" ) )
+		drained := defender;
+		drainer := attacker;
+	else
+		drained := attacker;
+		drainer := defender;
+	endif
+
+	var amount := absorbed;
+	
+	if( amount > drained.stamina)
+		drained.stamina := 0;
+	else
+		drained.stamina := drained.stamina - amount;
+	endif
+	
+	drainer.stamina := drainer.stamina + amount;
+	if( drainer.stamina > drainer.maxstamina)
+		drainer.stamina := drainer.maxstamina;
+	endif
+	
+
+endprogram
+

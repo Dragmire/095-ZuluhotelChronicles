@@ -1,0 +1,228 @@
+/////////////////////////
+// by Corsair ZHA
+///////////////////////
+
+use uo;
+use os;
+
+const	PAGAN_WYRMH := 3985;
+const 	PAGAN_BLOODS := 3964;
+const	PAGAN_DEADW := 3984;
+const 	PAGAN_SERPENTS := 3982;
+const	PAGAN_BONE := 3966;
+const 	PAGAN_DRAGONB := 3970;
+const	PAGAN_EXECCAP := 3971;
+const	PAGAN_BATWING := 3960;
+const	PAGAN_FETRILED := 3969;
+const	PAGAN_OBSIDIAN := 3977;
+const 	PAGAN_BRIMSTONE := 3967;
+const	PAGAN_DAEMONB := 3968;
+const	PAGAN_VIALOFBLOOD := 3965;
+const	PAGAN_PUMICE := 3979;
+const	PAGAN_EYESOFNEWT := 3975;
+const 	PAGAN_PIGIRON := 3978;
+const	PAGAN_BLACKMOOR := 3961;
+const	PAGAN_VOLCANICA	:= 3983;
+
+var gid_reags := {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+function ShowReagsDialog(me)
+	var layout := array(
+	"page 0",
+	"gumppic   0   0  5170 ",
+	"gumppic  38   0  5171 ",
+	"gumppic 208   0  5171 ",
+	/*"gumppic 378   0  5171 ",
+	"gumppic 548   0  5171 ",*/
+	"gumppic 358   0  5172 ",
+	"gumppic   0  38  5173 ",
+	"gumppic   0  150 5173 ", 
+	"gumppic  38  38  5174 ",
+	"gumppic 208  38  5174 ",
+	/*"gumppic 378  38  5174 ",*/
+	/*"gumppic 548  38  5174 ",*/
+	"gumppic  38  150 5174 ",
+	"gumppic 208  150 5174 ",
+	/*"gumppic 378  150 5174 ",
+	"gumppic 548  150 5174 ",*/
+	"gumppic 358  38  5175 ",
+	"gumppic 358  150 5175 ",
+	"gumppic   0 262  5176 ", 
+	"gumppic  38 262  5177 ",
+	"gumppic 208 262  5177 ",
+	/*"gumppic 378 262  5177 ",*/
+	/*"gumppic 548 262  5177 ",*/
+	"gumppic 358 262  5178 ",
+	/*"gumppic  30  26   93  ",
+	"gumppic 146  26   93  ",
+	"gumppic 262  26   93  ",
+	"gumppic 378  26   93  ",
+	"gumppic 494  26   93  ",
+	"gumppic 610  26   93  ",*/
+	"text 40   25  20 0",    //title
+	"tilepic 60 70 3985", //wyrm heart
+	"tilepic 60 100 3964", //bloodspawn
+	"tilepic 60 130 3984", //deadwood
+	"tilepic 60 160 3982", //serpentsscale
+	"tilepic 50 190 3966", //bone
+	"tilepic 60 220 3970", //dragonblood
+
+	"tilepic 150 70 3971", //exec cap
+	"tilepic 152 100 3960", //bat wing
+	"tilepic 159 130 3969", //fertiledirt
+	"tilepic 155 160 3977", //obsidian
+	"tilepic 150 190 3967", //brimstone
+	"tilepic 155 222 3968", //daemonbone
+	
+	"tilepic 240 70 3965", //vial
+	"tilepic 240 100 3979", //pumice
+	"tilepic 240 130 3975", //eyesonfewt
+	"tilepic 240 160 3978", //pigiron
+	"tilepic 240 190 3961", //blackmoor
+	"tilepic 240 222 3983", //volcanicash
+);
+
+
+
+
+	var data := {
+		"Pagan Reagent Counter",
+		"Set warning level",
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+	};
+
+
+	var layout_qty := {
+
+		"text 105 70 ", //quantity wyrmheart
+		"text 105 100 ", //quantity bloodspawn
+		"text 105 130 ", //quantity deadwood
+		"text 105 160 ", //quantity dragonscale
+		"text 105 190 ", //quantity bone
+		"text 105 220 ", //quantity dragonblood
+
+		"text 205 70 ", //quantity exec cap
+		"text 205 100 ", //quantity bat wing
+		"text 205 130 ", //quantity fertiledirt
+		"text 205 160 ", //quantity obsidian
+		"text 205 190 ", //quantity brimstone
+		"text 205 220 ", //quantity daemonbone
+
+		"text 295 70 ", //quantity vial
+		"text 295 100 ", //quantity pumice
+		"text 295 130 ", //quantity eyesonfewt
+		"text 295 160 ", //quantity pigiron
+		"text 295 190 ", //quantity blackmoor
+		"text 295 220 ", //quantity volcanicash
+	};
+
+	var n;
+	for (n := 1; n < 19; n := n + 1)
+		data[n+2] := gid_reags[n];
+	endfor
+	
+	var color;
+	for (n := 1; n < 19; n := n + 1)
+		color := 100;
+		layout_qty[n] := layout_qty[n] + color + " " + (n+1);
+		layout.append (layout_qty[n]);
+	endfor
+
+	var result := SendDialogGump(me, layout, data);
+endfunction
+
+function is_reag (what)
+	if ((what.objtype >= 0x0f78) && (what.objtype <= 0x0f91))
+		return 1;
+	else
+		return 0;
+	endif
+endfunction
+
+function is_a_backpack (what)
+	if ((what.objtype == 0x0E75) || (what.objtype == 0x190) || (what.objtype == 0x191))
+		return 1;
+	else
+		return 0;
+	endif
+endfunction
+
+function store_reags (who, reag)
+
+	case (reag.objtype)
+		PAGAN_WYRMH: gid_reags[1] := gid_reags[1] + reag.amount; break;
+		PAGAN_BLOODS: gid_reags[2] := gid_reags[2] + reag.amount; break; 
+		PAGAN_DEADW: gid_reags[3] := gid_reags[3] + reag.amount; break;
+		PAGAN_SERPENTS: gid_reags[4] := gid_reags[4] + reag.amount; break;
+		PAGAN_BONE: gid_reags[5] := gid_reags[5] + reag.amount; break;
+		PAGAN_DRAGONB: gid_reags[6] := gid_reags[6] + reag.amount; break;
+		PAGAN_EXECCAP: gid_reags[7] := gid_reags[7] + reag.amount; break;
+		PAGAN_BATWING: gid_reags[8] := gid_reags[8] + reag.amount; break;
+		PAGAN_FETRILED: gid_reags[9] := gid_reags[9] + reag.amount; break;
+		PAGAN_OBSIDIAN: gid_reags[10] := gid_reags[10] + reag.amount; break;
+		PAGAN_BRIMSTONE: gid_reags[11] := gid_reags[11] + reag.amount; break;
+		PAGAN_DAEMONB: gid_reags[12] := gid_reags[12] + reag.amount; break;
+		PAGAN_VIALOFBLOOD: gid_reags[13] := gid_reags[13] + reag.amount; break;
+		PAGAN_PUMICE: gid_reags[14] := gid_reags[14] + reag.amount; break;
+		PAGAN_EYESOFNEWT: gid_reags[15] := gid_reags[15] + reag.amount; break;
+		PAGAN_PIGIRON: gid_reags[16] := gid_reags[16] + reag.amount; break;
+		PAGAN_BLACKMOOR: gid_reags[17] := gid_reags[17] + reag.amount; break;
+		PAGAN_VOLCANICA: gid_reags[18] := gid_reags[18] + reag.amount; break;	
+	endcase
+
+endfunction
+
+function count_reags (who, container, byref reags_counted)
+
+	foreach j in EnumerateItemsInContainer(container)
+		if (is_reag(j))
+			store_reags (who, j);
+			reags_counted := 1;	//Ok
+		endif
+	endforeach
+
+endfunction
+
+program gumptest( who )
+	var item, reags_count;
+
+	reags_count := 0;
+	foreach item in ListEquippedItems (who)
+		if (is_a_backpack(item))
+			count_reags (who, item, reags_count);
+		endif
+	endforeach
+
+	if (reags_count == 0)
+		SendSysMessage (who, "You have no more pagan reagents!");
+	else
+		ShowReagsDialog(who);
+	endif
+
+endprogram
+
+function TypesOfPagans()
+	return {PAGAN_WYRMH  
+ 		PAGAN_BLOODS  
+		PAGAN_DEADW  
+ 		PAGAN_SERPENTS  
+		PAGAN_BONE  
+ 		PAGAN_DRAGONB  
+		PAGAN_EXECCAP  
+		PAGAN_BATWING  
+		PAGAN_FETRILED  
+		PAGAN_OBSIDIAN  
+ 		PAGAN_BRIMSTONE  
+		PAGAN_DAEMONB  
+		PAGAN_VIALOFBLOOD  
+		PAGAN_PUMICE  
+		PAGAN_EYESOFNEWT  
+ 		PAGAN_PIGIRON  
+		PAGAN_BLACKMOOR 
+		PAGAN_VOLCANICA };
+endfunction
+
+
+		
+

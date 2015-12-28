@@ -1,0 +1,43 @@
+use uo;
+use os;
+
+include "include/itemutil";
+include "include/objtype";
+
+const DELAY_BETWEEN_REFILL	:= 1800;
+const REAGENT_AMOUNT		:= 500;
+
+var normal_regs := {	0x0f7a, 0x0f7b, 0x0f84, 0x0f85,
+			0x0f86, 0x0f88, 0x0f8c, 0x0f8d };
+	
+var the_x := { 56, 29, 88, 88, 29, 58, 88, 29 };
+var the_y := { 68, 93, 66, 34, 34, 34, 90, 62 };
+
+program infinitenormals( bag )
+
+	while( 1 && bag )
+		var i;
+		for( i := 1; i <= len(normal_regs); i := i + 1 )
+			set_critical(1);
+		
+			var found_it := FindItemInContainer( bag, normal_regs[i] );
+			if( !found_it )
+				found_it := CreateItemInContainer( bag, normal_regs[i], REAGENT_AMOUNT );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			elseif( found_it.amount < REAGENT_AMOUNT )
+				var to_create := REAGENT_AMOUNT - found_it.amount;
+				found_it := CreateItemInContainer( bag, normal_regs[i], to_create );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			endif
+		
+			set_critical(0);
+		endfor
+	
+		sleep( DELAY_BETWEEN_REFILL );
+	endwhile
+
+endprogram

@@ -1,0 +1,22 @@
+use uo;
+use os;
+include "include/client";
+include "include/damages";
+program textcmd_setlight( who, text )
+
+    var range := cint(text);
+    var peoples := ListMobilesNearLocation( who.x , who.y , who.z , range );
+    Var count := 0;
+
+    foreach mob in peoples
+    if( mob.npctemplate )
+            RevokePrivilege( mob, "invul" );
+            SetObjProperty(mob, "guardkill", 1);
+            ApplyRawDamage( mob, GetHp(mob) );
+    count := count + 1;
+    endif
+    endforeach
+    
+    SendSysMessage(who, "Killed " + count + " npcs." );
+
+endprogram

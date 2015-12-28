@@ -1,0 +1,15 @@
+// serpent pillar - version .1
+// updated April 16, 2000
+// zulu (zulu@zuluhotel.com)
+
+use uo;
+use os;
+
+program setpillars()
+
+CreateItemAtLocation( 2983, 2888, -5, 0x7061, 1 );
+CreateItemAtLocation( 5972, 2695, -5, 0x7062, 1 );
+CreateItemAtLocation( 422, 3281, -5, 0x7063, 1 );
+CreateItemAtLocation( 5265, 2755, -5, 0x7064, 1 );
+
+endprogram

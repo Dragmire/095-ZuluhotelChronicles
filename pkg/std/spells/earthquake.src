@@ -1,0 +1,176 @@
+//////////////////////////////////////////////////////////////////////
+// 20010430 Jaleem Added code to destroy magical walls in the area
+//                 of effect of the eathquake.
+//////////////////////////////////////////////////////////////////////
+
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+
+program earthquake( parms )
+
+	const circle  := 8;
+	const element := EARTH;
+
+	var caster;
+	var fromhit;
+	var cast_on;
+	if( parms[1] == "#MOB" )
+		caster := parms[2];
+		if( parms[4] )
+			circle := parms[4];
+		endif
+		if( parms[5] )
+			fromhit := parms[5];
+		endif
+	else
+		caster := parms;
+		if( !can_cast(caster, circle) )
+			return;
+		endif
+	endif
+
+	var sx  := caster.x;
+	var sy  := caster.y;
+	var shp := GetHp(caster);
+
+	sleep(2);
+	if( caster.x != sx )
+		SendSysMessage( caster, "You lost your concentration." );
+		return 0;
+	elseif( caster.y != sy )
+		SendSysMessage( caster, "You lost your concentration." );
+		return 0;
+	elseif( GetHp(caster) < shp )
+		SendSysMessage( caster, "You were interrupted while casting." );
+		return 0;
+	endif
+
+
+
+
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY),okay;
+	var range := ModifyWithMagicEfficiency( caster, magery / 20 );
+	var victims := ListMobilesNearLocation( CInt(caster.x), CInt(caster.y), CInt(caster.z), range );
+
+	var immunity, circ, dmg;
+
+
+	sleep(2);
+	PlaySoundEffect( caster, SFX_SPELL_EARTHQUAKE2 );
+
+        foreach item in ListItemsNearLocationOfType(CInt(caster.x), CInt(caster.y), CInt(caster.z), CInt(range), UOBJ_STONEWALL_NS)
+		if( GetObjProperty(item, "f") )
+			PlayStationaryEffect( item.x, item.y, item.z, FX_SPELL_DISPEL_FIELD, SPEED_SPELL_DISPEL_FIELD, LOOP_SPELL_DISPEL_FIELD );
+                	DestroyItem(item);
+		endif
+        endforeach
+
+        foreach item in ListItemsNearLocationOfType(CInt(caster.x), CInt(caster.y), CInt(caster.z), CInt(range), UOBJ_STONEWALL_EW)
+		if( GetObjProperty(item, "f") )
+			PlayStationaryEffect( item.x, item.y, item.z, FX_SPELL_DISPEL_FIELD, SPEED_SPELL_DISPEL_FIELD, LOOP_SPELL_DISPEL_FIELD );
+                	DestroyItem(item);
+		endif
+        endforeach
+       
+	foreach item in ListItemsNearLocationOfType(CInt(caster.x), CInt(caster.y), CInt(caster.z), CInt(range), UOBJ_EFIELD_NS)
+		if( GetObjProperty(item, "f") )
+			PlayStationaryEffect( item.x, item.y, item.z, FX_SPELL_DISPEL_FIELD, SPEED_SPELL_DISPEL_FIELD, LOOP_SPELL_DISPEL_FIELD );
+                	DestroyItem(item);
+		endif
+        endforeach
+
+        foreach item in ListItemsNearLocationOfType(CInt(caster.x), CInt(caster.y), CInt(caster.z), CInt(range), UOBJ_EFIELD_EW)
+		if( GetObjProperty(item, "f") )
+			PlayStationaryEffect( item.x, item.y, item.z, FX_SPELL_DISPEL_FIELD, SPEED_SPELL_DISPEL_FIELD, LOOP_SPELL_DISPEL_FIELD );
+                	DestroyItem(item);
+		endif
+        endforeach
+
+endprogram
+
+
+
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY),okay;
+	var range := ModifyWithMagicEfficiency( caster, magery / 20 );
+	var victims := ListMobilesNearLocation( CInt(caster.x), CInt(caster.y), CInt(caster.z), range );
+
+	var immunity, circ, dmg;
+
+	PlaySoundEffect( caster, SFX_SPELL_EARTHQUAKE1 );
+	foreach mobile in victims
+		if( mobile.serial != caster.serial )
+			immunity := IsProtected( caster, mobile, circle );
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circle + circle;
+				else
+					circ := circle;
+				endif
+				dmg := CalcSpellDamage( caster, mobile, circ, AREA_EFFECT_SPELL );
+				send_attack( mobile, caster, SPELLID_EARTHQUAKE );
+				PrintTextAbovePrivate( mobile, "You are tossed about as the earth trembles below your feet!", mobile );
+				PlaySoundEffect( mobile, SFX_SPELL_EARTHQUAKE1 );
+				PlayObjectCenteredEffect( mobile, FX_SPELL_EARTHQUAKE, SPEED_SPELL_EARTHQUAKE, LOOP_SPELL_EARTHQUAKE );
+				okay:=0;
+				if(caster.multi || mobile.multi)
+					if(caster.multi==mobile.multi) if((CInt(mobile.z)==CInt(caster.z)) || (CInt(mobile.z)<CInt(caster.z)+10)) okay:=1; endif endif
+				else
+					okay:=1;
+				endif
+				if (okay) ApplyElementalDamage( caster, mobile, circ, dmg, element ); endif
+			endif
+		endif
+	endforeach
+endfunction
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY),okay;
+	var range := ModifyWithMagicEfficiency( caster, magery / 20 );
+	var victims := ListMobilesNearLocation( CInt(caster.x), CInt(caster.y), CInt(caster.z), range );
+
+	var immunity, circ, dmg;
+
+	PlaySoundEffect( caster, SFX_SPELL_EARTHQUAKE1 );
+	foreach mobile in victims
+	   if(!(mobile.npctemplate))
+		if( mobile.serial != caster.serial )
+			immunity := IsProtected( caster, mobile, circle );
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circle + circle;
+				else
+					circ := circle;
+				endif
+				dmg := CalcSpellDamage( caster, mobile, circ, AREA_EFFECT_SPELL );
+				send_attack( mobile, caster, SPELLID_EARTHQUAKE );
+				PrintTextAbovePrivate( mobile, "You are tossed about as the earth trembles below your feet!", mobile );
+				PlaySoundEffect( mobile, SFX_SPELL_EARTHQUAKE1 );
+				PlayObjectCenteredEffect( mobile, FX_SPELL_EARTHQUAKE, SPEED_SPELL_EARTHQUAKE, LOOP_SPELL_EARTHQUAKE );
+				okay:=0;
+				if(caster.multi || mobile.multi)
+					if(caster.multi==mobile.multi) if((CInt(mobile.z)==CInt(caster.z)) || (CInt(mobile.z)<CInt(caster.z)+10)) okay:=1; endif endif
+				else
+					okay:=1;
+				endif
+				if (okay) ApplyElementalDamage( caster, mobile, circ, dmg, element ); endif
+			endif
+		endif
+	   endif
+	endforeach
+endfunction

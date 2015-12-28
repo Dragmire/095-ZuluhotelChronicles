@@ -1,0 +1,70 @@
+#
+#  Created by Version: POL095-2003-07-05
+#  Mobiles:         7914
+#  Top-level Items: 11671
+#
+
+System
+{
+	CoreVersion	95
+	CoreVersionString	POL095-2003-07-05
+	CompileDate	Jul  5 2003
+	CompileTime	16:38:41
+	LastItemSerialNumber	1082026602
+	LastCharSerialNumber	91819
+}
+
+GlobalProperties
+{
+	CProp	AntiDamageAreas a74:i0i0i1i1i1i0i0i0i1i0i1i1i1i1i1i0i0i1i0i1i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1
+	CProp	AntiLootAreas a74:i1i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1i0i0i1i0i1i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1i1i0i0i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i1i1
+	CProp	AntiMagicAreas a74:i0i1i0i0i0i0i0i0i1i0i0i0i1i0i0i0i0i0i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0
+	CProp	BBCheck sIllegal Summons
+	CProp	BBChecking sBateman
+	CProp	BBGM u
+	CProp	BBRunning i14694
+	CProp	CTFFlags a2:i1074036322i1074036323
+	CProp	ChaosGuilds a3:i3i2i8
+	CProp	CurrentLotery i1
+	CProp	DisabledMarkingAreas a55:i0i0i0i0i0i1i1i0i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i1i0i0i0i0i1i0i0i0i0i1i1i0i1i1i0i1i0i1i1i0i0i0i0i0i0
+	CProp	DisabledRecallingAreas a89:i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1i0i1i0i0i0i0i0i0i0i0i0i0i0i0i1i0i0i0i0i1i0i0i0i0i0i0i0i0i0i0i0i1i1i0i0i0i0i0i0i0i0i0i0i0i1i1S12:Fire DungeonS6:DeceitS7:DespiseS7:DestardS8:HythlothS8:CovetousS11:Ice DungeonS4:JailS14:Newbie DungeonS12:Shame Part 1S12:Shame Part 2S15:Terathan TempleS4:WindS5:WrongS17:Underground Caves
+	CProp	End_CTF_Queue i1
+	CProp	FeluccaPhase i6
+	CProp	GauntletHighScore i49
+	CProp	GuardedAreas a55:i1i1i0i0i1i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i1i1i1i1i0i1i0i0i0i0i0i1i0i0i1i0i1i0i0i0i0i0i0i1i0
+	CProp	LastLottery i9594463
+	CProp	LastTicketNumber i0
+	CProp	LongestUptime i1118048
+	CProp	MostOnline i176
+	CProp	NoNpcLooting i1
+	CProp	OrderGuilds a4:i4i5i9i1
+	CProp	PvMDifficulty i5
+	CProp	PvMNames e1:S9:errortextS18:Property not found
+	CProp	PvMNumber i3
+	CProp	PvMScores e1:S9:errortextS18:Property not found
+	CProp	PvMType schallenge
+	CProp	QueuedCTF_Pid i2613809
+	CProp	SkillPointsMultiplier a49:r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1r1
+	CProp	Telegrams a1:e1:S9:errortextS18:Property not found
+	CProp	TrammelPhase i4
+	CProp	WantedList a1:e1:S9:errortextS18:Property not found
+	CProp	cwarsjackpot i0
+	CProp	cwblue i5
+	CProp	cwfee i3500
+	CProp	cwgreen i0
+	CProp	cwred i5
+	CProp	cwtype s2
+	CProp	gameclock s17896013
+	CProp	gmpages a2:i74S37:Ingame Staff, check the staff forums!
+	CProp	kothnum i1
+	CProp	lastcolor sBlue
+	CProp	news a1:S28:Welcome to Chaotic Realm!
+	CProp	nextlockid i15191
+	CProp	quest1 t5:S6:mobileuS7:objtypei400S1:xi5513S1:yi1109S1:zi0
+	CProp	quest2 t5:S6:mobileuS7:objtypei400S1:xi5524S1:yi1121S1:zi0
+	CProp	raiddead1 e1:S9:errortextS18:Property not found
+	CProp	signs a79:i1078052129i1077064249i1075790508i1076376275i1076302866i1077029528i1075865259i1078184905i1076930007i1076336631i1078501141i1077192178i1076141906i1079088653i1078985919i1078493999i1075855310i1079205098i1079454491i1079551694i1079575814i1079578766i1079578825i1079581354i1079618327i1079624792i1079624883i1079653451i1079670425i1079677117i1079678152i1079682591i1079684124i1079689996i1079696684i1079696788i1079696867i1079698585i1079699117i1079699374i1079699798i1079700264i1079700520i1079700997i1079703598i1079712884i1079713492i1079726820i1079747833i1079752047i1079754627i1079775769i1079815748i1079842528i1079937223i1080002086i1080003228i1080003682i1080349222i1080555233i1080791064i1080791111i1080795687i1080804647i1081015965i1081291047i1081295689i1081332798i1081416550i1081421418i1081437318i1081451792i1081453022i1081454348i1081512851i1081513315i1081530302i1081552206i1081657398
+	CProp	townlist a14:S4:asasS3:yepS7:BritainS5:MinocS4:CoveS6:JhelomS8:MaginciaS8:MoonglowS6:NujelmS5:OccloS14:Serpent's HoldS10:Skara BraeS7:TrinsicS6:Vesper
+	CProp	unlockedchests e1:S9:errortextS18:Property not found
+}
+

@@ -1,0 +1,161 @@
+use uo;
+use os;
+use basic;
+use cfgfile;
+
+include "include/bitwise";
+include "include/spelldata";
+
+var layout := {
+	"page 0",
+	"gumppic 30 30 2200",
+	"text 80 40 28 0",
+	"text 240 40 28 1"
+};
+
+var lspellarray := {65,66,67,68,69,70,71,72};
+var gspellarray := {73,74,75,76,77,78,79,80};
+var bookarray := {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+var lesserbuttonlayout := {
+	"button 60 70 2104 2103 1 0 101",
+	"button 60 90 2104 2103 1 0 102",
+	"button 60 110 2104 2103 1 0 103",
+	"button 60 130 2104 2103 1 0 104",
+	"button 60 150 2104 2103 1 0 105",
+	"button 60 170 2104 2103 1 0 106",
+	"button 60 190 2104 2103 1 0 107",
+	"button 60 210 2104 2103 1 0 108"
+};
+
+var greaterbuttonlayout := {
+	"button 220 70 2104 2103 1 0 109",
+	"button 220 90 2104 2103 1 0 110",
+	"button 220 110 2104 2103 1 0 111",
+	"button 220 130 2104 2103 1 0 112",
+	"button 220 150 2104 2103 1 0 113",
+	"button 220 170 2104 2103 1 0 114",
+	"button 220 190 2104 2103 1 0 115",
+	"button 220 210 2104 2103 1 0 116",
+};
+
+var lessertextlayout := {
+	"text 80 65 0 ",
+	"text 80 85 0 ",
+	"text 80 105 0 ",
+	"text 80 125 0 ",
+	"text 80 145 0 ",
+	"text 80 165 0 ",
+	"text 80 185 0 ",
+	"text 80 205 0 ",
+};
+
+var greatertextlayout := {
+	"text 240 65 0 ",
+	"text 240 85 0 ",
+	"text 240 105 0 ",
+	"text 240 125 0 ",
+	"text 240 145 0 ",
+	"text 240 165 0 ",
+	"text 240 185 0 ",
+	"text 240 205 0 "
+};
+
+var data := {
+	"Lesser Chants",
+	"Greater Chants"
+};
+
+var lesserspelldata := {
+	"Control Undead",
+	"Darkness",
+	"Decaying Ray",
+	"Spectre's Touch",
+	"Abyssal Flame",
+	"Animate Dead",
+	"Sacrifice",
+	"Wraith's Breath"
+};
+
+var greaterspelldata := {
+	"Sorcerer's Bane",
+	"Summon Spirit",
+	"Wraithform",
+	"Wyvern Strike",
+	"Kill",
+	"Liche",
+	"Plague",
+	"Spellbind"
+};
+
+program codexdamnorum(who, tome)
+
+	set_script_option( SCRIPTOPT_NO_RUNAWAY, 1 );
+
+	var i := 1;
+	var q := 8;
+	var ltotal := 0;
+	var gtotal := 0;
+
+	var layoutlen := len(layout);
+	var datalen := len(data);
+
+	var greaterflag := GetObjProperty(tome, "Greater");
+	var lesserflag := GetObjProperty(tome, "Lesser");
+
+	greaterflag := CInt(greaterflag);
+	lesserflag := CInt(lesserflag);
+
+	while (i < 9)
+		if (FlagCheck(lesserflag, i)==1)
+			ltotal := ltotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lesserbuttonlayout[ltotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lessertextlayout[ltotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := lesserspelldata[i];
+			bookarray[ltotal] := lspellarray[i];
+		endif
+		if (FlagCheck(greaterflag, i)==1)
+			gtotal := gtotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greaterbuttonlayout[gtotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greatertextlayout[gtotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := greaterspelldata[i];
+			q := 8 + gtotal;
+			bookarray[q] := gspellarray[i];
+		endif
+		i := i + 1;
+	endwhile
+
+	SendSysMessage(who, "Select Spell.");
+	
+	var res := SendDialogGump( who, layout, data );			
+
+	if (res[0] < 100)
+		return;
+	endif
+
+	set_critical(1);
+
+	var castme := (res[0] - 100);
+	castme := bookarray[castme];
+
+	var spell := GetScript( castme );
+
+	if( GetObjProperty( tome, "CastingOpts" ) )
+		SetObjProperty( who, "CastingOpts", GetObjProperty( tome, "CastingOpts" ) );
+	endif
+
+	SetObjProperty( who, "#Casting", 1 );
+
+	start_script( spell, who );
+	
+	while( GetObjProperty( who, "#Casting" ) )
+		sleepms( 250 );
+	endwhile
+
+endprogram

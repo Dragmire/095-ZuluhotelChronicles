@@ -1,0 +1,46 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program renhancement( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_ENHANCEMENT, HAVE_HP + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2] * 5;
+
+	if( !item.quality )
+		SendSysMessage( caster, "You can't improve the quality of this!" );
+		return;
+	endif
+
+	power	:= 100 + power;
+	var newquality := CInt(item.quality * power);
+	newquality := CDbl(newquality);
+	newquality := newquality / 100;
+	item.quality := newquality;
+	SetObjProperty( item, "IsExceptional", 1 );
+	SendSysMessage( caster, "The quality of the item was greatly improved." );
+	SetNameByEnchant( item );
+
+endprogram

@@ -1,0 +1,63 @@
+use uo;
+use os;
+
+include "include/dotempmods";
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ENLIGHTENMENT;
+const SPELL_EFFECT_ID		:= FX_SPELL_ENLIGHTENMENT;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ENLIGHTENMENT;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ENLIGHTENMENT;
+
+program cast_CUNNING( parms )
+
+	var circle := 8;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+ 
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_ENLIGHTENMENT ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		detach();
+		cast_on := Reflected( caster , caster , circle );
+		EraseObjProperty( caster , "#Casting" );
+	else
+		PlayObjectCenteredEffect(caster, 
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+	
+	PlaySoundEffect(caster, SFX_SPELL_ENLIGHTENMENT);
+
+	if (!CanMod(caster, "int"))
+		SendSysMessage(caster,"Already under the influence!");
+		return;
+	endif
+
+	var mod_amount := (GetModAmount( caster )*1.6);
+	var duration := GetModDuration( caster );
+	DoTempMod(caster, "int", mod_amount, duration);
+	mod_amount := Cint( GetModAmount( caster ) /2 );
+	duration := GetModDuration( caster );
+	DoTempMod(caster, "ar", mod_amount, duration);
+	EraseObjProperty( caster , "#Casting" );
+endprogram

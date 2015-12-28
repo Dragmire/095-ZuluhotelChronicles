@@ -1,0 +1,116 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program cast_chainlightning( parms )
+
+	var circle := 7;
+	var element := AIR;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetArea(caster, circle);
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	var dmg;
+	var range := GetEffectiveSkill(caster,SKILLID_MAGERY)/15;
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		range := CInt( range * CLASSE_BONUS );
+	endif
+
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+
+endprogram
+
+
+
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+	var circle := 7;
+	var element := AIR;
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster, CInt( GetEffectiveSkill( caster, SKILLID_MAGERY ) / 35 ) );
+	if( !range )
+		return;
+	endif
+	var victims := ListMobilesNearLocationEx( cast_on.x, cast_on.y, cast_on.z, range, 0x03);
+	foreach mobile in victims
+
+		if( (CheckLosAt( mobile, cast_on.x, cast_on.y, cast_on.z ) ) )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity == IMMUNED )
+				continue;
+			endif
+
+			if( immunity == CURSED )
+				circ := circ * 2;
+			endif
+		
+			dmg := CalcSpellDamage( caster, mobile, circ, AREA_EFFECT_SPELL );
+			send_attack(mobile,caster, SPELLID_CHAIN_LIGHTNING);
+			PlayLightningBoltEffect( mobile );
+			PlaySoundEffect(mobile, SFX_SPELL_CHAIN_LIGHTNING);
+			PlayLightningBoltEffect( mobile );
+			ApplyElementalDamage( caster, mobile, circ, dmg, element );
+		endif
+
+    	endforeach
+endfunction
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+	var circle := 7;
+	var element := AIR;
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster, CInt( GetEffectiveSkill( caster, SKILLID_MAGERY ) / 35 ) );
+	if( !range )
+		return;
+	endif
+	var victims := ListMobilesNearLocationEx( cast_on.x, cast_on.y, cast_on.z, range, 0x03);
+	foreach mobile in victims
+	   if(!(mobile.npctemplate))
+		if( (CheckLosAt( mobile, cast_on.x, cast_on.y, cast_on.z ) ) )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity == IMMUNED )
+				continue;
+			endif
+
+			if( immunity == CURSED )
+				circ := circ * 2;
+			endif
+		
+			dmg := CalcSpellDamage( caster, mobile, circ, AREA_EFFECT_SPELL );
+			send_attack(mobile,caster, SPELLID_CHAIN_LIGHTNING);
+			PlayLightningBoltEffect( mobile );
+			PlaySoundEffect(mobile, SFX_SPELL_CHAIN_LIGHTNING);
+			PlayLightningBoltEffect( mobile );
+			ApplyElementalDamage( caster, mobile, circ, dmg, element );
+		endif	
+	   endif
+    	endforeach
+endfunction

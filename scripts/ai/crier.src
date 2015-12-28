@@ -1,0 +1,85 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+const HALT_THRESHOLD := 8;
+var saynews:=0;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "ai/main/mainloopcrier";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "ai/main/sleepmode";
+include "ai/setup/criersetup";
+include "ai/setup/modsetup";
+
+program TownCrier()
+
+	WalkHome();
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	if (!me.title_suffix)
+		var names := splitwords(me.name);
+		if ( names[2] = "the" )
+			me.title_suffix := " the town crier";
+			me.name := names[1];
+		endif
+	else
+		me.title_suffix := " the town crier";
+	endif
+
+    	SetWarMode( 0 );
+    	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+
+    case Distance( me, opponent )
+        1:
+        0:
+            return 1;
+        default:
+            RunToward( opponent );
+            return 0;
+    endcase
+
+endfunction
+
+function walkhome()
+
+	var myhome := {};
+	if (!getobjproperty(me,"myhome"))
+		myhome[1] := me.x;
+		myhome[2] := me.y;
+		setobjproperty(me,"myhome",myhome);
+	else
+		myhome := getobjproperty(me,"myhome");
+	endif
+
+	if ( me.x = myhome[1] and me.y = myhome[2] )
+		SetAnchor( me.x, me.y, 4, 50 );
+		return;
+	endif
+
+	var i;
+	for (i := 1; i < 11; i := i + 1)
+		WalkTowardLocation(myhome[1],myhome[2]);
+		if (me.x = myhome[1] and me.y = myhome[2] )
+			break;
+		endif
+	endfor
+
+	SetAnchor( myhome[1], myhome[2], 4, 50 );
+
+endfunction

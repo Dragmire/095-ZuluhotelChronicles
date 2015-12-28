@@ -1,0 +1,19 @@
+use uo;
+use os;
+
+program textcmd_loot(who)
+
+	var item := Target( who,TGTOPT_NOCHECK_LOS );
+	if (!item) return; endif
+
+	var storepack := CreateItemInBackpack( who, 0x9b0, 1 );
+
+	foreach thingie in EnumerateItemsInContainer(item)
+	
+	if (thingie.container.serial = item.serial)
+	moveitemtocontainer(thingie,storepack);
+	endif
+
+	endforeach
+
+endprogram

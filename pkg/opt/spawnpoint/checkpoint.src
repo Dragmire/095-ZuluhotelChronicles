@@ -1,0 +1,589 @@
+use uo;
+use os;
+use util;
+use basic;
+use cfgfile;
+
+include "include/managers";
+include "include/starteqp";
+include "include/time";
+include "include/objtype"; // add start & end hair
+include "include/itemutil"; // added for getcursedlevel()
+
+const VALIDATE_INTERVAL	:= 4 * TIMEID_SECONDS_PER_HOUR;
+
+program CheckPoint( point )
+
+	var pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+		pt_data	    := array;
+		pt_data[1]  := "NPC";	// Type
+		pt_data[2]  := "nil";	// Template
+		pt_data[3]  := 0;	// Max appear
+		pt_data[4]  := 0;	// Appear Range
+		pt_data[5]  := 0;	// Wander Range
+		pt_data[6]  := 0;	// Frequency
+		pt_data[7]  := 0;	// Disabled
+		pt_data[8]  := 0;	// Spawn in group.
+		pt_data[9]  := 0;	// Despawn on destroy
+		pt_data[10] := 0;	// Expire time
+		pt_data[11] := 0;	// Expire number
+		pt_data[12] := 0;	// Start spawning hours
+		pt_data[13] := 0;	// End spawning hours
+		pt_data[14] := "";	// Notes
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+		
+	if( pt_data[7] )
+		return 0;
+	endif
+
+	// Done periodically.
+	ValidatePointSpawns( point, pt_data );
+
+	// Check for expiry based on time.
+	if( pt_data[10] )
+		// Calculate how much time left.
+		if( Cint(GetObjProperty(point, PROPID_SPAWNPOINT_CREATION_TIME)) + Cint(pt_data[10]) * 60 >= ReadGameClock() )
+			DestroyItem(point);
+			return 0;
+		endif
+	endif
+
+	// Anything to spawn?
+	if( pt_data[2] == "nil" || !pt_data[2] )
+		return 0;
+	endif
+	
+	if( !CanSpawn(point, pt_data) )
+		return 0;
+	endif
+	
+	var serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := {};
+	endif
+
+	// How many to spawn?
+	var numtospawn := Cint(pt_data[3]) - serials.size();
+	if( numtospawn <= 0 )
+		return 0;
+	endif
+
+	// Check for expiry based on number.
+	var deleterune	:= 0;
+	var expirenum	:= Cint(pt_data[11]);
+	if( expirenum )
+		var expireleft := expirenum - numtospawn;
+		if( expireleft <= 0 )
+			numtospawn := expirenum;
+			deleterune := 1;
+		else
+			pt_data[11] := expireleft;
+			SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		endif
+	endif
+
+	// Check if grouping, otherwise stagger.
+	if( !pt_data[8] )
+		if( numtospawn > 1 )
+			DelaySpawning( point, Cint(pt_data[6])*TIMEID_SECONDS_PER_MINUTE );
+		endif
+		numtospawn := 1;
+	endif
+
+	var num;
+	var ret := 1;
+	for( num := 0; num < numtospawn; num := num + 1 )
+		set_critical(1);
+		case( pt_data[1] )
+			"NPC":		ret := CreateSpawnPointNpc( point, pt_data[2], pt_data );
+			"Group":	ret := CreateSpawnPointNpcFromGroup( point, pt_data );
+			"Item":		ret := CreateSpawnPointItem( point, pt_data );
+			"Container":	ret := CreateSpawnPointContainer( point, pt_data );
+		endcase
+		
+		if( ret == error )
+			if( ret.errortext["Invalid spawning location."] )
+				pt_data[7] := 1;
+				SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+				return ret;
+			elseif( ret.errortext["Can't spawn any more npcs."] )
+				return ret;
+			endif
+		endif
+		set_critical(0);
+		SleepMs(5);
+	endfor
+
+	if( deleterune )
+		DestroyItem(point);
+	endif
+
+	return ret;
+
+endprogram
+
+
+function CanSpawn( byref point, byref pt_data )
+
+	if( pt_data[6] )
+		var clock	:= ReadGameClock();
+		var nextspawn	:= GetObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING );
+		if( nextspawn )
+			if( nextspawn > clock )
+				DelaySpawning( point, Cint(nextspawn-clock+5) );
+				return 0;
+			endif
+		endif
+	endif
+
+	var start_hr := Cint(pt_data[12]);
+	var end_hour := Cint(pt_data[13]);
+	if( start_hr || end_hour )
+		var delaying;
+		var current_time := GetCurrentTimeData();
+		var current_hour := Cint(current_time.hour);
+		if( start_hr < end_hour )
+			if( current_hour >= start_hr )
+				if( current_hour < end_hour )
+					if( pt_data[6] )
+						SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING, ReadGameClock()+(Cint(pt_data[6])*TIMEID_SECONDS_PER_MINUTE) );
+						return 1;
+					endif
+				else
+					delaying := 24 - current_hour + start_hr;
+				endif
+			else
+				delaying := start_hr - current_hour;
+			endif
+		else
+			end_hour	:= end_hour + 24;
+			current_hour	:= current_hour + 24;
+			if( current_hour >= start_hr )
+				if( current_hour < end_hour )
+					if( pt_data[6] )
+						SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING, ReadGameClock()+(Cint(pt_data[6])*TIMEID_SECONDS_PER_MINUTE) );
+						return 1;
+					endif
+				else
+					delaying := 24 - current_hour + start_hr;
+				endif
+			else
+				delaying := start_hr - current_hour;
+			endif
+		endif
+		
+		DespawnAll(point); // Despawn all, can't spawn now.
+		delaying := delaying * TIMEID_SECONDS_PER_HOUR;
+		delaying := delaying - (current_time.minutes*TIMEID_SECONDS_PER_MINUTE);
+		DelaySpawning( point, delaying+5 );
+		return 0;
+	endif
+	
+	if( pt_data[6] )
+		SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING, ReadGameClock()+(Cint(pt_data[6])*TIMEID_SECONDS_PER_MINUTE) );
+		return 1;
+	endif
+	
+	return 1;
+
+endfunction
+
+
+function CreateSpawnPointContainer( byref point, byref pt_data )
+
+	var objtype	:= pt_data[2];
+	var template	:= objtype;
+	objtype		:= Cint( objtype );
+	
+	if( !objtype )
+		objtype := GetObjtypeByName(template);
+	endif
+	
+	if( !objtype )
+		return 0;
+	endif
+	
+	var chest	:= CreateItemAtLocation( 0, 0, 0, objtype, 1 );
+	if( !chest )
+		return 0;
+	elseif( !chest.IsA(POLCLASS_CONTAINER) )
+		return 0;
+	endif
+	
+	SetObjProperty( chest, PROPID_CHEST_TREASURE_CHEST, 1 );
+	
+	var lootdata	:= SplitWords(pt_data[5]);
+	var lootgroup	:= Cint(lootdata[1]);
+	if( !lootgroup )
+		lootgroup := RandomDiceRoll(lootdata[1]);
+	endif
+	
+	if( !lootgroup )
+		DestroyItem(chest);
+		return 0;
+	endif
+	
+	var magic_chance := Cint(lootdata[2]);
+	if( !magic_chance )
+		magic_chance := RandomDiceRoll(lootdata[2]);
+	endif
+	
+	if( !magic_chance )
+		magic_chance := 0;
+	endif
+	
+	var magic_level := Cint(lootdata[3]);
+	if( !magic_level )
+		magic_level := RandomDiceRoll(lootdata[3]);
+	endif
+	
+	if( !magic_chance )
+		magic_level := 0;
+	endif
+	
+	MakeLoot( chest, lootgroup, magic_chance, magic_level );
+	
+	var x		:= point.x;
+	var y		:= point.y;
+	var z		:= point.z;
+ 
+        SleepMS( 10 );
+	
+	var serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := array;
+	endif
+	
+	var appear := Cint( pt_data[4] );
+	if( appear )
+		x := x + RandomInt((appear*2)+1) - appear;
+		y := y + RandomInt((appear*2)+1) - appear;
+	endif
+	
+	var count := 1;
+	chest.movable := 1;
+	while( !MoveItemToLocation( chest, cint(x), cint(y), cint(z), MOVEITEM_NORMAL ) && (count <= 10) )
+		if( appear )
+			x := point.x + RandomInt((appear*2)+1) - appear;
+			y := point.y + RandomInt((appear*2)+1) - appear;
+		endif
+		
+		count := count + 1;
+        SleepMS( 10 );
+	endwhile
+	
+	if( count > 10 )
+		DestroyItem(chest);
+		return 0;
+	endif
+	
+	chest.movable := 0;
+	chest.locked := 1;
+	SetObjProperty( chest, PROPID_CHEST_LOCK_DIFFICULTY, RandomInt(101)+50 );
+	if( !RandomInt(10) )
+		SetObjProperty( chest, PROPID_CHEST_TRAP_TYPE, RandomInt(3)+1 );
+		SetObjProperty( chest, PROPID_CHEST_TRAP_STRENGTH, RandomInt(8)+1 );
+		chest.usescript := USESCRIPTID_TRAPPED_CONTAINER;
+	endif
+	
+	serials.append( chest.serial );
+	SetObjProperty( chest, PROPID_MOBILE_SPAWNPOINT_SERIAL, point.serial );
+	SetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS, serials );
+	
+	return chest;
+	
+endfunction
+
+
+function CreateSpawnPointItem( byref point, byref pt_data )
+	
+	var objtype	:= pt_data[2];
+	var template	:= objtype;
+	objtype		:= Cint(objtype);
+	
+	if( !objtype )
+		objtype := GetObjtypeByName(template);
+	endif
+	
+	if( !objtype )
+		return 0;
+	endif
+	
+	var forbidden := GetGlobalProperty( PROPID_GLOBAL_SPAWNPOINTS_FORBIDDEN_TEMPLATES );
+	if( !forbidden )
+		forbidden := array;
+	endif
+	
+	if( (template in forbidden) || (Cstr(objtype) in forbidden) )
+		return 0;
+	endif
+	
+	var amount := RandomDiceRoll( pt_data[5] );
+	if( !amount )
+		amount := 1;
+    	endif
+	
+	var x;
+	var y;
+	var z;
+	var item;
+	var try	  := 1;
+	var range := Cint( pt_data[4] );
+	
+	while( !item && try <= 3 )
+		if( range )
+			x := point.x + Cint( RandomInt((range*2)+1) - range );
+			y := point.y + Cint( RandomInt((range*2)+1) - range );
+			z := Cint( GetWorldHeight( x, y ) );
+		else
+			x := point.x;
+			y := point.y;
+			z := point.z;
+		endif
+		
+		item := CreateItemAtLocation( x, y, z, objtype, amount );
+                try := try + 1;
+        SleepMS( 10 );
+	endwhile
+
+	if( !item )
+		return 0;
+	endif
+
+	var serials := GetObjProperty( point , PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := array;
+	endif
+
+	SetObjProperty( item, PROPID_MOBILE_SPAWNPOINT_SERIAL, point.serial );
+	serials.append( item.serial );
+	SetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS, serials );
+	
+	return item;
+	
+endfunction
+
+
+function CreateSpawnPointNpc( byref point, byref template, byref pt_data )
+
+	var serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := {};
+	endif
+	
+	if( serials.size() >= Cint(pt_data[3]) )
+		var ret := error;
+		ret.+errortext := "Can't spawn any more npcs.";
+		return ret;
+	endif
+	
+	var forbidden	:= GetGlobalProperty( PROPID_GLOBAL_SPAWNPOINTS_FORBIDDEN_TEMPLATES );
+	if( !forbidden )
+		forbidden := {};
+	endif
+	
+	if( Lower(template) in forbidden )
+		var ret := error;
+		ret.+errortext := "Forbidden template.";
+		return ret;
+	endif
+	
+	var x		:= Cint(point.x);
+	var y		:= Cint(point.y);
+	var z		:= Cint(point.z);
+	var range	:= Cint(pt_data[5]);
+	var critter	:= CreateNpcFromTemplate( template, 5280, 1184, 0 );
+	if( !critter )
+		return critter;
+	endif
+	
+	critter.hidden := 1;
+	var appear := Cint(pt_data[4]);
+	if( appear )
+		x := x + RandomInt((appear*2)+1) - appear;
+		y := y + RandomInt((appear*2)+1) - appear;
+	endif
+	
+	if( range )
+		var anchor	:= {};
+		anchor[1]	:= cint(point.x);
+		anchor[2]	:= cint(point.y);
+		anchor[3]	:= cint(range);
+		anchor[4]	:= cint(100/range);
+		SetObjProperty( critter, PROPID_MOBILE_ANCHOR, anchor );
+	endif
+	
+	SetObjProperty( critter, PROPID_MOBILE_SELF_SERIAL, critter.serial );	
+	
+	var standing := GetStandingHeight( x, y, z );
+	var count := 1;
+	while( count <= 10 )
+		if( standing )
+			if( !standing.multi )
+				if( MoveCharacterToLocation( critter, x, y, cint(standing.z) ) )
+					RestartScript(critter);
+					serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+					if( !serials )
+						serials := {};
+					endif
+					
+					serials.append(critter.serial);
+					SetObjProperty(point,PROPID_SPAWNPOINT_SPAWNED_OBJECTS,serials);
+					SetObjProperty( critter, PROPID_MOBILE_SPAWNPOINT_SERIAL, point.serial );
+					critter.hidden := 0;
+					return critter;
+				endif
+			endif
+		endif
+		
+		if( appear )
+			x := point.x + RandomInt((appear*2)+1) - appear;
+			y := point.y + RandomInt((appear*2)+1) - appear;
+			standing := GetStandingHeight( x, y, z );
+		else
+			var ret := error;
+			ret.errortext := "Invalid spawning location.";
+			KillMobile(critter,1);
+			return ret;
+		endif
+		
+		count := count + 1;
+        SleepMS( 10 );
+	endwhile
+	
+	var ret := error;
+	ret.errortext := "Invalid spawning location.";
+	KillMobile(critter,1);
+	return ret;
+	
+endfunction
+
+
+function CreateSpawnPointNpcFromGroup( byref point, byref pt_data )
+	
+	var group := Cint(pt_data[2]);
+	var cfg := ReadConfigFile( ":spawnpoint:groups" );
+	if( !cfg )
+		return 0;
+	endif
+	
+	var elem	:= cfg[group];
+	var possibles	:= GetConfigStringArray( elem, "spawn" );
+	if( !possibles.size() )
+		return 0;
+	endif
+	
+	var template := possibles[RandomInt(possibles.size())+1];
+	if( !template )
+		return 0;
+	endif
+	
+	var critter := CreateSpawnPointNpc( point, template, pt_data );
+
+	return critter;
+	
+endfunction
+
+
+function DelaySpawning( byref point, byref delay )
+
+	var parms	:= array;
+	parms[1]	:= point;
+	parms[2]	:= Cint(delay + 5); // +5 to prevent lagging issues to alter spawning
+	
+	Start_Script( ":spawnpoint:delayedspawning", parms );
+
+endfunction
+
+
+function DespawnAll( byref point )
+
+	return Start_Script( ":spawnpoint:despawner", point );
+	
+endfunction
+
+
+function TheresPlayersNear( byref obj )
+
+	foreach mobile in ListMobilesNearLocationEx( obj.x, obj.y, obj.z, 10, LISTEX_FLAG_NORMAL+LISTEX_FLAG_HIDDEN )
+		if( !mobile.IsA(POLCLASS_NPC) )
+			if( !mobile.cmdlevel )
+				return 1;
+			endif
+		endif
+	endforeach
+	
+	return 0;
+	
+endfunction
+
+
+function ValidatePointSpawns( byref point, byref pt_data )
+
+	var nextval := Cint(GetObjProperty(point,PROPID_SPAWNPOINT_NEXT_VALIDATION));
+	if( !nextval )
+		SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_VALIDATION, ReadGameClock()+VALIDATE_INTERVAL );
+	else
+		// Check if time to validate again.
+		var clock := ReadGameClock();
+		if( nextval > clock )
+			return 0;
+		endif
+
+		SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_VALIDATION, clock+VALIDATE_INTERVAL );
+	endif
+
+	set_critical(1);
+	
+	var serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := {};
+	endif
+	
+	if( !serials.size() )
+		SetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS, {} );
+		set_critical(0);
+		return 0;
+	endif
+
+	var obj;
+	var new := {};
+	foreach serial in serials
+		if( serial )
+			obj := SystemFindObjectBySerial(serial);
+			if( obj )
+				case( pt_data[1] )
+					"Item":	
+						if( !obj.container )
+							new.append(serial);
+						endif
+					
+					"Container":
+						if( !TheresPlayersNear(obj) )
+							if( !obj.locked )
+								DestroyItem(obj);
+							elseif( !len(EnumerateItemsInContainer(obj)) )
+								DestroyItem(obj);
+							else
+								new.append(serial);
+							endif
+						else
+							new.append(serial);
+						endif
+						
+					default:	new.append(serial);
+				endcase
+			endif
+		endif
+        SleepMS( 10 );
+	endforeach
+
+	SetObjProperty(point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS, new);
+
+	set_critical(0);
+	
+	return 1;
+	
+endfunction

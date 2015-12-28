@@ -1,0 +1,298 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Jan 02, 2005.
+   Version: 1.0
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/attributes";
+Include "include/gumps";
+
+Program Test( Who )
+
+    If ( CInt(GetObjProperty( who, "#skills_view" ) ) > ReadGameClock( ) )
+    SendSysMessage( who, "Skill menu is already open.", FONT_NORMAL, 2611 );
+    Return;
+    Else
+    SetObjProperty( who, "#skills_view", ReadGameClock( ) + 60 );
+    Endif
+    
+    Var Player := Target( Who );
+
+    Var Skill_Data := GetObjProperty( Player, SKILLSTATE );
+    
+    If( !Skill_Data )
+    Var i;
+    Skill_Data := array;
+    For( i := SKILLID_MIN; i <= SKILLID_MAX; i := i + 1 )
+    Skill_Data[i] := SKILLSTATE_NORMAL;
+    Endfor
+    SetObjProperty( Player, SKILLSTATE, Skill_Data );
+    Skill_Data := GetObjProperty( Player, SKILLSTATE );
+    Endif
+    
+    Var X := 75;
+    Var Y := 75;
+    Var ButtonUP   := 2435;
+    Var ButtonDOWN := 2436;
+    Var Count := 0;
+    Var i;
+   
+    GFInitGump();
+    GFPage( 0 );
+    GFResizePic( 50, 50, 5054, 400, 550 );
+   
+    For( i := SKILLID_MIN; i <= SKILLID_MAX; i := i + 1 )
+    If( Count > 24 )
+    X := 75 + 200;
+    Y := 75;
+    Count := 0;
+    Endif
+    
+    If( Skill_Data[i] == SKILLSTATE_LOWER )
+    ButtonUP   := 2437;
+    ButtonDOWN := 2438;
+    Elseif( Skill_Data[i] == SKILLSTATE_LOCKED )
+    ButtonUP   := 2092;
+    ButtonDOWN := 2092;
+    Elseif( Skill_Data[i] == SKILLSTATE_NORMAL )
+    ButtonUP   := 2435;
+    ButtonDOWN := 2436;
+    Endif
+    GFButtonID( X, ( Y + 5 ), ButtonUP, ButtonDOWN, 1, i );
+    GFTextLine( ( X + 15 ), Y, 2601, GetAttributeIdBySkillId( i - 1 ) ) ;
+    Y := Y + 20;
+    Count := Count + 1;
+    
+    Endfor
+
+    Var Change := GFSendGump( Who );
+    
+    Case( Change[0] )
+    1:
+    ChangeSkillState( Player, 1 );
+    Break;
+    
+    2:
+    ChangeSkillState( Player, 2 );
+    Break;
+    
+    3:
+    ChangeSkillState( Player, 3 );
+    Break;
+    
+    4:
+    ChangeSkillState( Player, 4 );
+    Break;
+    
+    5:
+    ChangeSkillState( Player, 5 );
+    Break;
+    
+    6:
+    ChangeSkillState( Player, 6 );
+    Break;
+    
+    7:
+    ChangeSkillState( Player, 7 );
+    Break;
+    
+    8:
+    ChangeSkillState( Player, 8 );
+    Break;
+    
+    9:
+    ChangeSkillState( Player, 9 );
+    Break;
+    
+    10:
+    ChangeSkillState( Player, 10 );
+    Break;
+    
+    11:
+    ChangeSkillState( Player, 11 );
+    Break;
+    
+    12:
+    ChangeSkillState( Player, 12 );
+    Break;
+    
+    13:
+    ChangeSkillState( Player, 13 );
+    Break;
+    
+    14:
+    ChangeSkillState( Player, 14 );
+    Break;
+    
+    15:
+    ChangeSkillState( Player, 15 );
+    Break;
+    
+    16:
+    ChangeSkillState( Player, 16 );
+    Break;
+    
+    17:
+    ChangeSkillState( Player, 17 );
+    Break;
+    
+    18:
+    ChangeSkillState( Player, 18 );
+    Break;
+    
+    19:
+    ChangeSkillState( Player, 19 );
+    Break;
+    
+    20:
+    ChangeSkillState( Player, 20 );
+    Break;
+    
+    21:
+    ChangeSkillState( Player, 21 );
+    Break;
+    
+    22:
+    ChangeSkillState( Player, 22 );
+    Break;
+    
+    23:
+    ChangeSkillState( Player, 23 );
+    Break;
+    
+    24:
+    ChangeSkillState( Player, 24 );
+    Break;
+    
+    25:
+    ChangeSkillState( Player, 25 );
+    Break;
+    
+    26:
+    ChangeSkillState( Player, 26 );
+    Break;
+    
+    27:
+    ChangeSkillState( Player, 27 );
+    Break;
+    
+    28:
+    ChangeSkillState( Player, 28 );
+    Break;
+    
+    29:
+    ChangeSkillState( Player, 29 );
+    Break;
+    
+    30:
+    ChangeSkillState( Player, 30 );
+    Break;
+    
+    31:
+    ChangeSkillState( Player, 31 );
+    Break;
+    
+    32:
+    ChangeSkillState( Player, 32 );
+    Break;
+    
+    33:
+    ChangeSkillState( Player, 33 );
+    Break;
+    
+    34:
+    ChangeSkillState( Player, 34 );
+    Break;
+    
+    35:
+    ChangeSkillState( Player, 35 );
+    Break;
+    
+    36:
+    ChangeSkillState( Player, 36 );
+    Break;
+    
+    37:
+    ChangeSkillState( Player, 37 );
+    Break;
+    
+    38:
+    ChangeSkillState( Player, 38 );
+    Break;
+    
+    39:
+    ChangeSkillState( Player, 39 );
+    Break;
+    
+    40:
+    ChangeSkillState( Player, 40 );
+    Break;
+    
+    41:
+    ChangeSkillState( Player, 41 );
+    Break;
+    
+    42:
+    ChangeSkillState( Player, 42 );
+    Break;
+    
+    43:
+    ChangeSkillState( Player, 43 );
+    Break;
+
+    44:
+    ChangeSkillState( Player, 44 );
+    Break;
+
+    45:
+    ChangeSkillState( Player, 45 );
+    Break;
+
+    46:
+    ChangeSkillState( Player, 46 );
+    Break;
+    
+    47:
+    ChangeSkillState( Player, 47 );
+    Break;
+    
+    48:
+    ChangeSkillState( Player, 48 );
+    Break;
+    
+    49:
+    ChangeSkillState( Player, 49 );
+    Break;
+
+    Endcase
+    
+    EraseObjProperty( Player, "#skills_view" );
+
+Endprogram
+
+Function ChangeSkillState( Player, SkillID )
+
+    Var Skill_Data := GetObjProperty( Player, SKILLSTATE );
+    
+    If( Skill_Data[SkillID] == SKILLSTATE_NORMAL )
+    Skill_Data[SkillID] := SKILLSTATE_LOWER;
+    SetObjProperty( Player, SKILLSTATE, Skill_Data );
+    SendSysMessage( Player, GetAttributeIdBySkillId( SkillID - 1 ) + " is now set to Lower." );
+    Elseif( Skill_Data[SkillID] == SKILLSTATE_LOWER )
+    Skill_Data[SkillID] := SKILLSTATE_LOCKED;
+    SetObjProperty( Player, SKILLSTATE, Skill_Data );
+    SendSysMessage( Player, GetAttributeIdBySkillId( SkillID - 1 ) + " is now Locked." );
+    Elseif( Skill_Data[SkillID] == SKILLSTATE_LOCKED )
+    Skill_Data[SkillID] := SKILLSTATE_NORMAL;
+    SetObjProperty( Player, SKILLSTATE, Skill_Data );
+    SendSysMessage( Player, GetAttributeIdBySkillId( SkillID - 1 ) + " is now set to Raise." );
+    Endif
+    
+    Return 1;
+
+EndFunction

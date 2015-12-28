@@ -1,0 +1,16 @@
+use uo;
+
+program disable_npc_looting( who )
+
+	if( GetGlobalProperty( "NoNpcLooting" ) )
+		SendSysMessage( who, "Npcs can't loot already." );
+		return;
+	endif
+	
+	if( SetGlobalProperty( "NoNpcLooting" , 1 ) )
+		SendSysMessage( who, "From now on the npcs will no longer loot." );
+	else
+		SendSysMessage( who, "Couldn't stop the npcs from looting." );
+	endif
+
+endprogram

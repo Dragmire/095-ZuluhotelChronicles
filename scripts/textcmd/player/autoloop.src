@@ -1,0 +1,36 @@
+// command .autoloop
+// Developer Omero
+// ZuluHotel Italia
+// Fear is your only God
+
+use uo;
+include "include/client";
+const max := 60000;
+
+program textcmd_autoloop( who, amount )
+
+	var number;
+
+	if (amount)
+		number := CInt( amount );
+	else
+		number := CInt( SendTextEntryGump(who, "How many? [0-"+max+"]", TE_CANCEL_ENABLE, TE_STYLE_NORMAL, 6));
+	endif
+
+	if( number > max )
+		number := max;
+	elseif( number < 0 )
+		number := 0;
+	endif
+
+	SetObjProperty ( who, "autoloop", number );
+
+	if( number == 0 )
+		SendSysMessage( who, "Autoloop configured to ask you how many loops to do.", FONT_NORMAL, 2611 );
+	elseif( number == 1 )
+		SendSysMessage( who, "Autoloop configured to loop 1 time.", FONT_NORMAL, 2558 );
+	else
+		SendSysMessage( who, "Autoloop configured to loop " + number + " times.", FONT_NORMAL, 2558 );
+	endif
+
+endprogram

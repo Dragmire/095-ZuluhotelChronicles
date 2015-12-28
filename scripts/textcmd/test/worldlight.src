@@ -1,0 +1,16 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program TextCMD_WorldLightLevel( Who, Text )
+
+    SetRegionLightLevel( "WorldZone" , Cint( Text ) );
+    SendSysMessage( Who, "World Light Level: " + Cint( Text ) );
+
+Endprogram

@@ -1,0 +1,122 @@
+use uo;
+use os;
+
+include "include/random";
+include "include/attributes";
+include "include/spelldata";
+include "include/damages";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_KILL;
+const SPELL_EFFECT_ID		:= FX_SPELL_KILL;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_KILL;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_KILL;
+
+
+program cast_kill( parms )
+
+	var circle := GetCircle( SPELLID_KILL );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		var result := TryToCast( caster, SPELLID_KILL );
+		if( result != SUCCESS )
+			if( result == NO_SKILL )
+				BurnSelf( caster, circle );
+				PlayObjectCenteredEffect( caster, FX_SPELL_KILL, SPEED_SPELL_KILL, LOOP_SPELL_KILL );
+				PlaySoundEffect( caster, SFX_SPELL_KILL);
+			endif
+		
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	
+		SendSysMessage( caster, "Select a victim." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_KILL);
+
+	var protected := IsProtected( caster, cast_on, circle );
+	if( protected == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+
+	var multiplier;
+	if (!cast_on.isA(POLCLASS_NPC))
+		multiplier := 1;
+	else
+		multiplier := 2;
+	endif
+
+	multiplier := ModifyWithMagicEfficiency( caster, multiplier );
+
+	if( protected == CURSED )
+		circle := circle * 2;
+		multiplier := multiplier * 2;
+	endif
+
+
+	var alternative := CalcSpellDamage( caster, cast_on, circle );
+	var protection  := GetResultingPlaneProtection( cast_on, plane );
+	var casterskill := GetEffectiveSkill( caster, SKILLID_EVALINT );
+	var magery	  := GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var victimlevel := GetHp(cast_on);
+	var instantkill := CInt( magery * multiplier / 3 );
+
+	if( protection )
+		instantkill := instantkill - CInt( instantkill * protection * 0.25 );
+		if( instantkill < 1 )
+			instantkill := 1;
+		endif
+	endif
+
+	if( victimlevel <= instantkill )
+		ApplyTheDamage( cast_on, caster, GetHp(cast_on) + 3, DMGID_MAGIC + plane );
+
+	elseif( victimlevel <= CInt( instantkill * 1.5 ) )
+		var victimskill  := GetEffectiveSkill( cast_on, SKILLID_MAGICRESISTANCE );
+		var resistchance := CInt( (victimskill / multiplier) -  (casterskill / 3) );;
+		if( RandomDiceStr("1d100") <= resistchance )
+			ApplyPlanarDamage( caster, cast_on, circle, alternative, plane );
+		else
+			ApplyTheDamage( cast_on, caster, GetHp(cast_on) + 3, DMGID_MAGIC + plane );
+		endif
+
+	else
+		ApplyPlanarDamage( caster, cast_on, circle, alternative, plane );
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram

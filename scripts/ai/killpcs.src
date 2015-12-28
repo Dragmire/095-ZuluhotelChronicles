@@ -1,0 +1,76 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "ai/setup/modsetup";
+include "include/npccast";
+include "ai/setup/killpcssetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+var saywords := 1;
+
+program KillPlayers()
+
+	if (GetObjProperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+
+var Near;
+Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+var kwall := 0;
+var runaround := 0;
+foreach item in Near
+if (item.objtype == 0x5f or item.objtype == 0x57 or item.objtype == 0x3946 or item.objtype == 0x3955)
+if (kwall = 0)
+	if (!CheckLineOfSight( me, opponent))
+		if (Random(2) = 1 )
+			SetMana( me, GetMana(me) + 50);
+			CastSpell(me,me,"dispel_field");
+			kwall := 1;
+		else	
+			while (runaround < 15)
+				runaround := runaround + 1;
+				RunToward(opponent);
+			endwhile
+			runaround := 0;
+		endif
+	endif
+endif
+endif
+endforeach
+
+  var sleepdelay := 180 - (CInt(GetDexterity(me)) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+	if( Distance( me, opponent ) <= 1)
+		return 1;
+	else
+		WalkToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+endfunction
+

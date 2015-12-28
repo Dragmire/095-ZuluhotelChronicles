@@ -1,0 +1,14 @@
+use uo;
+use os;
+
+program walkon(who, what)
+
+	var myscript := GetObjProperty(what,"walkon");
+
+	var parms := {};
+	parms[1] := who;
+	parms[2] := what;
+
+	start_script(myscript,parms);
+
+endprogram

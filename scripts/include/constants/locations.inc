@@ -1,0 +1,26 @@
+///////////////////////////////////////////////////////////
+// Locations.inc
+//
+// Constants for all the default locations.
+///////////////////////////////////////////////////////////
+
+
+const DEFAULT_LOCATION_CHARACTER_RELOCATION_X	:= 1475;
+const DEFAULT_LOCATION_CHARACTER_RELOCATION_Y	:= 1645;
+const DEFAULT_LOCATION_CHARACTER_RELOCATION_Z	:= 20;
+
+const DEFAULT_LOCATION_ITEM_CREATION_X		:= 5283;
+const DEFAULT_LOCATION_ITEM_CREATION_Y		:= 1184;
+const DEFAULT_LOCATION_ITEM_CREATION_Z		:= 0;
+
+const DEFAULT_LOCATION_JAIL_X			:= 5304;
+const DEFAULT_LOCATION_JAIL_Y			:= 1184;
+const DEFAULT_LOCATION_JAIL_Z			:= 0;
+
+const DEFAULT_LOCATION_NPC_RELOCATION_X		:= 5283;
+const DEFAULT_LOCATION_NPC_RELOCATION_Y		:= 1184;
+const DEFAULT_LOCATION_NPC_RELOCATION_Z		:= 0;
+
+const DEFAULT_LOCATION_POSSESSION_X		:= 5326;
+const DEFAULT_LOCATION_POSSESSION_Y		:= 1240;
+const DEFAULT_LOCATION_POSSESSION_Z		:= 0;

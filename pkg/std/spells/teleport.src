@@ -1,0 +1,74 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+
+var water := { 0xa8, 0xa9, 0x64, 0xaa, 0xab };
+
+program cast_teleport( parms )
+
+	var circle := 3;
+	var caster;
+	var where;
+	var BX;
+	var BY;
+	var BZ;
+	var fromhit;
+
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		where := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		where := CanTargetArea(caster, circle);
+		if (!where)
+			return;
+		endif
+	endif
+	bx:=caster.x;
+	by:=caster.y;
+	bz:=caster.z;
+
+	foreach item in ListItemsNearLocation( CInt(where.x), CInt(where.y), CInt(where.z), 4 );
+		if( (item.objtype == 61457 || item.objtype == 61458) &&
+		  (GetMapInfo(where.x,where.y).landtile in water) )
+			SendSysMessage( caster, "You cannot teleport there." );
+			return;
+		endif
+	endforeach
+
+	var sx := caster.x, sy := caster.y, sz := caster.z;
+	MoveCharacterToLocation( caster, CInt(where.x), CInt(where.y), CInt(where.z) );
+	PlayStationaryEffect( sx, sy, sz, FX_SPELL_TELEPORT, SPEED_SPELL_TELEPORT, LOOP_SPELL_TELEPORT );
+	PlayStationaryEffect( CInt(caster.x), CInt(caster.y), CInt(caster.z), FX_SPELL_TELEPORT, SPEED_SPELL_TELEPORT, LOOP_SPELL_TELEPORT );
+	PlaySoundEffect( caster, SFX_SPELL_TELEPORT );
+	//Print("multi:"+caster.multi);
+	if (caster.multi)
+		MoveCharacterToLocation( caster, bx, by, bz );
+		print("Player: " + caster.name + " Teleported onto a Multi." );
+    Var datafile:=ReadConfigFile("Logging/illegalressing");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Name",  caster.name });
+    elem.append({ "Serial",  hex(caster.serial) });
+    elem.append({ "X",  caster.x });
+    elem.append({ "Y",  caster.y });
+    elem.append({ "Z",  caster.z });
+
+    AppendConfigFileElem("Logging/illegalressing", "Illegal", "Teleport" + hex(caster.serial), elem);
+    UnloadConfigFile("Logging/illegalressing");
+    EndIf
+	endif
+
+endprogram

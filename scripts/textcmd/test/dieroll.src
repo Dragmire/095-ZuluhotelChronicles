@@ -1,0 +1,22 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+Include "include/classes";
+
+Program textcmd_mount( Who, Text )
+
+Var TheDamage := ( RandomDiceRoll( Text ) );
+
+    PrintTextAbove( who, "" + TheDamage, FONT_BOLD, 2611 );
+    
+Endprogram

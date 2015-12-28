@@ -1,0 +1,55 @@
+//Created by Jose Eduardo Lazaretti (Greven)
+
+use os;
+use uo;
+
+include "include/client";
+include "include/attributes";
+
+program MinocMinesGate( who )
+var allowed := 0;
+
+//check crafter skills
+
+    if(GetEffectiveSkill( who, SKILLID_ARMSLORE)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_BOWCRAFT)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_CARPENTRY)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_TAILORING)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_LUMBERJACKING)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_MINING)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_TINKERING)>=129)
+       allowed := allowed + 1;
+    endif
+
+    if(GetEffectiveSkill( who, SKILLID_BLACKSMITHY)>=129)
+       allowed := allowed + 1;
+    endif
+
+//If you have at least 129 points in 3 crafters skills, you are allowed to enter.
+    if(allowed >= 3)
+	MoveCharacterToLocation( who, 2573, 519, 15, 0 );
+	sendsysmessage(who,"Welcome to the Minoc Mines");
+    else
+	sendsysmessage(who,"You need 3 or more crafter skills to enter in Minoc Mines",0,1176);
+    endif
+
+
+endprogram

@@ -1,0 +1,57 @@
+use uo;
+use os;
+use util;
+use datafile;
+
+program buildmanagers(me)
+
+	local regionfile := OpenDataFile("regions");
+	local regionelem;
+	local keys := regionfile.Keys();
+	local totalbuilt := 0;
+	local existed := 0;
+	local manager;
+	local region := struct;
+	region.+fromx;
+	region.+fromy;
+	region.+tox;
+	region.+toy;
+	local xrange;
+	local yrange;
+	local xrdm;
+	local yrdm;
+	local newz;
+	
+	SendSysMessage(me, "Building managers...");
+	
+	foreach key in keys
+		if(!GetGlobalProperty("#regiondefs"+key))
+			regionelem := regionfile.FindElement(key);
+			region.fromx := regionelem.GetProp("FromX");
+			region.fromy := regionelem.GetProp("FromY");
+			region.tox := regionelem.GetProp("ToX");
+			region.toy := regionelem.GetProp("ToY");
+			xrange := region.tox - region.fromx + 1;
+			yrange := region.toy - region.fromy + 1;
+			repeat
+				sleepms(10);
+				xrdm := region.fromx + RandomInt(xrange);
+				yrdm := region.fromy + RandomInt(yrange);
+				newz := GetWorldHeight(xrdm,yrdm);
+				manager := CreateItemAtLocation(xrdm, yrdm, newz, 0xa348, 1);
+			until (manager);
+			ReserveItem(manager);
+			SetObjProperty(manager, "ActualNum", 0);
+			SetObjProperty(manager, "Enabled", 1);
+			SetObjProperty(manager, "RegionNum", key);
+			manager.decayat := 0;
+			ReleaseItem(manager);
+			totalbuilt := totalbuilt + 1;
+		else
+			existed := existed + 1;
+		endif
+	endforeach
+	
+	SendSysMessage(me, totalbuilt+" managers built, "+existed+" managers existed.");
+	
+endprogram

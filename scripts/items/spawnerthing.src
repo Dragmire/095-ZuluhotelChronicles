@@ -1,0 +1,15 @@
+Use uo;
+Use os;
+
+Program time( who, item )
+
+    If( ReadGameClock() > GetObjProperty( item, "SpawnedAt" ) )
+    CreateNpcFromTemplate( "blama", 2678, 1056, 5 );
+    SendSysMessage( who, "Ding" );
+    EraseObjProperty( item, "SpawnedAt" );
+    SetObjProperty( item, "SpawnedAt", ReadGameClock() + 5400 );
+    Else
+    SendSysMessage( who, "Dong" );
+    Endif
+
+Endprogram

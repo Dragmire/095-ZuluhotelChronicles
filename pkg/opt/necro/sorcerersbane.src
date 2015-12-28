@@ -1,0 +1,157 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+include "include/dotempmods";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_SORCERERS_BANE;
+const SPELL_EFFECT_ID		:= FX_SPELL_SORCERERS_BANE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_SORCERERS_BANE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_SORCERERS_BANE;
+
+
+program sorcerersbane( parms )
+
+	var circle := GetCircle( SPELLID_SORCERERS_BANE );
+	var element1 := FIRE;
+	var element2 := WATER;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		var result := TryToCast( caster, SPELLID_SORCERERS_BANE );
+		if( result != SUCCESS )
+			if( result == NO_SKILL )
+				BurnSelf( caster, circle );
+			endif
+		
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayMovingEffect(caster,
+                                 cast_on,
+                                 SPELL_EFFECT_ID,
+                                 SPELL_EFFECT_SPEED,
+                                 SPELL_EFFECT_LOOP,
+                                 explode := 0);
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_SORCERERS_BANE );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, CInt( dmg / 2 ), element1 );
+
+	var stolen := Resisted( caster, cast_on, circle, ModifyWithMagicEfficiency( caster, GetMana(cast_on) ) );
+	if( stolen > GetMana(cast_on) )
+		stolen := GetMana(cast_on);
+	endif
+
+	stolen := CInt( stolen / ClasseBonus( cast_on, CLASSEID_MAGE ) );
+	SetMana(cast_on, GetMana(cast_on) - stolen);
+	SetMana(caster, GetMana(caster) + stolen);
+	if( GetMana(caster) > GetMaxMana(caster) )
+		SetMana(caster, caster.maxmana);
+	endif
+
+	sleepms( 500 );
+
+	PlaySoundEffect( caster, SFX_SPELL_SUMMON_ELEMENTAL );
+	var x := cast_on.x;
+	var y := cast_on.y;
+	var z := cast_on.z;
+
+	var wavetop1 := CreateItemAtLocation( CInt(x), CInt(y), CInt(z+110), 0x350b, 1 );
+	var wavetop2 := CreateItemAtLocation( CInt(x), CInt(y), CInt(z+110), 0x34ed, 1 );
+	wavetop1.movable := 0;
+	wavetop2.movable := 0;
+
+	var i;
+
+	var waterfall_array := {};
+	var waterfall_base := {};
+
+	for(i := 10; i >= 0; i := i - 1)
+		waterfall_array.append( CreateItemAtLocation( CInt(x), CInt(y), CInt(z+i*10), 0x3517, 1 ) );
+		waterfall_array[len(waterfall_array)].movable := 0;
+		waterfall_array.append( CreateItemAtLocation( CInt(x), CInt(y), CInt(z+i*10), 0x34f9, 1 ) );
+		waterfall_array[len(waterfall_array)].movable := 0;
+		sleepms( 50 );
+	endfor
+
+	waterfall_base.append( CreateItemAtLocation(CInt(x),   CInt(y+1), CInt(z), 0x17a1, 1) );
+	waterfall_base[1].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x+1), CInt(y),   CInt(z), 0x179d, 1) );
+	waterfall_base[2].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x),   CInt(y-1), CInt(z), 0x179f, 1) );
+	waterfall_base[3].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x-1), CInt(y),   CInt(z), 0x17a3, 1) );
+	waterfall_base[4].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x+1), CInt(y+1), CInt(z), 0x17a7, 1) );
+	waterfall_base[5].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x-1), CInt(y+1), CInt(z), 0x17a8, 1) );
+	waterfall_base[6].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x+1), CInt(y-1), CInt(z), 0x17a5, 1) );
+	waterfall_base[7].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x-1), CInt(y-1), CInt(z), 0x17a6, 1) );
+	waterfall_base[8].movable := 0;
+	waterfall_base.append( CreateItemAtLocation(CInt(x),   CInt(y),   CInt(z), 0x1797, 1) );
+	waterfall_base[9].movable := 0;
+
+	PlaySoundEffect(caster, 0x11);
+
+	ApplyElementalDamage( caster, cast_on, circle, CInt( dmg / 2 ), element2 );
+
+	sleep( 5 );
+
+	DestroyItem(wavetop1);
+	DestroyItem(wavetop2);
+
+	foreach waterfall_tile in waterfall_array
+		DestroyItem( waterfall_tile );
+		sleepms( 25 );
+	endforeach
+
+	sleep( 5 );
+
+	foreach part in waterfall_base
+		DestroyItem( part );
+	endforeach
+
+endprogram

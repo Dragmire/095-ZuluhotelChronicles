@@ -1,0 +1,19 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated by Zulu (zulu@zuluhotel.com) Dec 23, 1999
+// - funky xmas letter, you can change what is says and recompile it.
+// updated November 19, 2000
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+
+program xmaspres(who,xmas)
+
+    if(!ReserveItem(xmas)) return; endif
+
+    DestroyItem(xmas);
+
+    SendStringAsTipWindow(who,"Happy Holidays from all the staff.  Thanks to all of you who sent in donations.  Have a great holiday season and we will see you next year.");
+
+endprogram

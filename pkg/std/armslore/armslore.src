@@ -1,0 +1,205 @@
+use cfgfile;
+use uo;
+use basic;
+
+include "include/string";
+include "include/client";
+include "include/classes";
+include "include/skillpoints";
+
+const POINTS := 200;
+
+program do_armslore( character )
+
+	SendSysMessage( character , "Select an object to evaluate." );
+	var item := Target( character );
+	if( !Accessible( character , item ) )
+		SendSysMessage( character , "You can't reach that." );
+		return;
+	endif
+	
+	if( Distance( character , item ) > 2 )
+		SendSysMessage( character , "That is too far." );
+		return;
+	endif
+	
+	if( item.isa( POLCLASS_ARMOR ) )
+		EvaluateArmor( character , item );
+	elseif( item.isa( POLCLASS_WEAPON ) )
+		EvaluateWeapon( character , item );
+	else
+		SendSysMessage( character , "You can only use this skill on weapons or armor!" );
+	endif
+	
+endprogram
+
+
+function EvaluateArmor( who , item )
+
+	var crafter := GetObjProperty( who , CLASSEID_CRAFTER );
+	
+	if( !CheckSkill( who , SKILLID_ARMSLORE , -1 , POINTS ) )
+		SendSysMessage( who , "I can't quite tell . . ." );
+		return;
+	endif
+	
+	
+	var ar := item.ar;
+	var a_desc;
+	if( ar > 60 )
+		a_desc := "is superbly crafted to provide maximum protection";
+	elseif( ar > 50 )
+		a_desc := "offers excellent protection";
+	elseif( ar > 40 )
+		a_desc := "is a superior defense against attack";
+	elseif( ar > 30 )
+		a_desc := "serves as a sturdy protection";
+	elseif( ar > 20 )
+		a_desc := "offers some protection against blows";
+	elseif( ar > 10 )
+		a_desc := "provides very little protection";
+	elseif( ar > 0 )
+		a_desc := "provides almost no protection";
+	else
+		a_desc := "offers no defense against attackers";
+	endif
+	
+	
+	var max_hp := Cint(item.maxhp);
+	var hp := Cint(item.hp);
+	if( !max_hp )
+		max_hp := 1;
+		if( !hp )
+			hp := 1;
+		endif
+	endif
+	
+	var condition	:= Cint( Cdbl(hp) / CDbl(max_hp) * 100 );
+	var c_desc;
+	if( condition >= 100  )
+		c_desc := "is brand new.";
+	elseif( condition >= 90 )
+		c_desc := "is almost new.";
+	elseif( condition >= 80 )
+		c_desc := "is barely used, with a few nicks and scrapes.";
+	elseif( condition >= 70 )
+		c_desc := "is in fairly good condition.";
+	elseif( condition >= 60 )
+		c_desc := "suffered some wear and tear.";
+	elseif( condition >= 50 )
+		c_desc := "is well used.";
+	elseif( condition >= 40 )
+		c_desc := "is rather battered.";
+	elseif( condition >= 30 )
+		c_desc := "is somewhat badly damaged.";
+	elseif( condition >= 20 )
+		c_desc := "is flimsy and trustworthy.";
+	else
+		c_desc := "is falling apart.";
+	endif
+	
+	SendSysMessage( who , "This " + TruncateArticle(item.desc) + " " + a_desc + " and " + c_desc );
+
+endfunction
+
+
+function EvaluateWeapon( who , item )
+
+	var crafter := GetObjProperty( who , CLASSEID_CRAFTER );
+
+	if( !CheckSkill( who , SKILLID_ARMSLORE , -1 , POINTS ) )
+		if( crafter )
+			if( !CheckSkill( who , SKILLID_ARMSLORE , -1 , POINTS ) )
+				SendSysMessage( who , "I can't quite tell . . ." );
+				return;
+			endif
+		else
+			SendSysMessage( who , "I can't quite tell . . ." );
+			return;
+		endif
+	endif
+
+	var max_hp := Cint(item.maxhp);
+	var hp := Cint(item.hp);
+	if( !max_hp )
+		max_hp := 1;
+		if( !hp )
+			hp := 1;
+		endif
+	endif
+	
+	var condition	:= Cint( Cdbl(hp) / CDbl(max_hp) * 100 );
+	var cfg	:= ReadConfigFile( ":*:itemdesc" );
+	var base_dmg	:= cfg[item.objtype].Damage;
+	var dmg_mod	:= Cint(item.dmg_mod);
+	var quality	:= item.quality;
+	var space	:= Find( base_dmg , "d" , 1 );
+	var space2a	:= Find( base_dmg , "+" , space+1 );
+	var space2b	:= Find( base_dmg , "-" , space+1 );
+	var dice_a	:= Cint( base_dmg[1,space-1] );
+	var bonus	:= 0;
+	var dice_t;
+	
+	if( (!space2a) and space2b )
+		space2a := space2b;
+	endif
+	
+	if( !space2a )
+		dice_t	:= Cint( base_dmg[space+1,(len(base_dmg)-space)] );
+	else
+		dice_t	:= Cint( base_dmg[space+1, (space2a-space-1)] );
+		bonus	:= Cint( base_dmg[space2a+1, len(base_dmg)-space2a] );
+	endif
+	
+	if( space2b )
+		bonus := 0 - bonus;
+	endif
+
+	var average	:= Cint( (dice_a * (CDbl(dice_t+1)/2)) + bonus );
+	average		:= Cint( average * condition / 100 * quality );
+	average		:= Cint( average + dmg_mod );
+
+	var dmg_desc;
+	if( average > 55 )
+		dmg_desc := "would be extraordinarily deadly";
+	elseif( average > 45 )
+		dmg_desc := "would be a superior weapon";
+	elseif( average > 35 )
+		dmg_desc := "would inflict quite a lot of damage and pain";
+	elseif( average > 25 )
+		dmg_desc := "would probably hurt your opponent a fair amount";
+	elseif( average > 15 )
+		dmg_desc := "would do some damage";
+	elseif( average > 5 )
+		dmg_desc := "would do minimal damage";
+	else
+		dmg_desc := "might scratch your opponent slightly";
+	endif
+	
+	
+	var c_desc;
+	if( condition >= 100  )
+		c_desc := "is brand new.";
+	elseif( condition >= 90 )
+		c_desc := "is almost new.";
+	elseif( condition >= 80 )
+		c_desc := "is barely used, with a few nicks and scrapes.";
+	elseif( condition >= 70 )
+		c_desc := "is in fairly good condition.";
+	elseif( condition >= 60 )
+		c_desc := "suffered some wear and tear.";
+	elseif( condition >= 50 )
+		c_desc := "is well used.";
+	elseif( condition >= 40 )
+		c_desc := "is rather battered.";
+	elseif( condition >= 30 )
+		c_desc := "is somewhat badly damaged.";
+	elseif( condition >= 20 )
+		c_desc := "is flimsy and trustworthy.";
+	else
+		c_desc := "is falling apart.";
+	endif
+	
+	SendSysMessage( who , "This " + TruncateArticle(item.desc) + " " + dmg_desc + " and " + c_desc );
+
+endfunction

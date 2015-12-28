@@ -1,0 +1,119 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/bard";
+include "include/eventid";
+include "include/checkcity";
+include "include/dotempmods";
+program cast_owlsight( player )
+	SetObjProperty( player , "#Casting", 1 );
+	var singinghp := GetHp( player );
+	var circle := GetCircle( SPELLID_SONG_OF_REMEDY  );
+	var caster := player;
+	var cast_on := player;
+	var instrument := findinstrument( player );
+	var sfx_success;
+	var sfx_failure;
+	case( instrument.graphic )
+		UOBJ_HARP:	sfx_success := SFX_HARP_SUCC;
+				sfx_failure := SFX_HARP_FAIL;
+				break;
+				
+		UOBJ_LUTE:	sfx_success := SFX_LUTE_SUCC;
+				sfx_failure := SFX_LUTE_FAIL;
+				break;
+				
+		UOBJ_DRUM:	sfx_success := SFX_DRUM_SUCC;
+				sfx_failure := SFX_DRUM_FAIL;
+				break;
+				
+		UOBJ_TAMB:	sfx_success := SFX_TAMB_SUCC;
+				sfx_failure := SFX_TAMB_FAIL;
+				break;
+				
+		default:	PrintTextAbovePrivate( player, "You dont have an Instrument!",player );
+				EraseObjProperty( player , "#Casting" );
+				return;
+	endcase
+	
+
+	var peace := GetAttribute(caster, ATTRIBUTEID_PEACEMAKING);
+	var mus := GetAttribute(caster, ATTRIBUTEID_MUSICIANSHIP);
+	var spec := GetObjProperty(player,"IsBard");
+	var ps;
+	if (!spec)
+		spec := 0;	
+	endif
+	var dmod;
+	var duration;
+	var proped := array();
+	var drain :=  10 + (circle*2)-(spec+5);
+	var difficulty := (circle*9)+(Random(25)-(spec*8));
+	var affected;
+	var diffi;
+	var increase;
+	//PrintTextAbove(player,"Difficulty:"+difficulty);
+	PerformAction( player, 0X021 );
+if (difficulty > peace or difficulty > mus or !spec)
+		PlaySoundEffect( caster , sfx_failure );
+		EraseObjProperty( caster , "#Casting" );
+		PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+		ps := GetStamina( player ) -(drain/2);
+		if (ps < 0 )
+			ps := 0;
+		endif
+		GetStamina( player ) := ps;
+		return;
+	elseif ((GetStamina( player ) -drain) <  0)
+		PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+		PrintTextAbovePrivate( player, "Out of Stamina!",player );
+		PlaySoundEffect( caster , sfx_failure );
+	else
+		ps := GetStamina( player ) -drain;
+		if (ps < 0 )
+			ps := 0;
+		endif
+		GetStamina( player ) := ps;
+		sleep(2);
+		if (GetHp( player ) < singinghp)
+			PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+			PrintTextAbovePrivate( player, "You were interrupted!",player );
+			PlaySoundEffect( caster , sfx_failure );
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		else
+			PerformAction( player, 0X021 );
+			PlaySoundEffect( caster , sfx_success );
+			PrintTextAbove(player,"Deporto Eiusmodi Impurus Veneno");
+		endif
+		sleep(2);
+		dmod := (peace/10) + spec*5;
+		duration := dmod*10;
+		affected := ListMobilesNearLocation( cast_on.x , cast_on.y , cast_on.z , cint( (spec+1) * 2 ) );
+		foreach cast_near in affected
+			if( cast_near.poisoned )
+				diffi := (PoisonLevel(cast_near) * 15)+60;
+				increase := GetObjProperty( cast_near , "HealingIncrease" );
+				if( increase )
+					diffi := diffi - (increase * 10);
+					if( diffi < 0 )
+						diffi := 10;
+					endif
+				endif
+			endif
+			if( GetObjProperty( player , CLASSEID_BARD ) )
+				diffi := Cint( diffi / CLASSE_BONUS );
+			endif
+			if( CheckSkill( player , SKILLID_PEACEMAKING , diffi , 0 ) )
+				CurePoison( cast_near , SFX_SPELL_CURE , player.name+ " has CURED you!" );
+			        PlaySoundEffect( cast_near, SFX_SPELL_CURE );
+			endif
+			PlayObjectCenteredEffect( cast_near, FX_SPELL_CURE , SPEED_SPELL_CURE , LOOP_SPELL_CURE );
+		endforeach
+	endif
+		EraseObjProperty( caster , "#Casting" );
+		
+endprogram

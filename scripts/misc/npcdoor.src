@@ -1,0 +1,77 @@
+use cfgfile;
+use os;
+use uo;
+
+include "include/client";
+include "include/objtype";
+include "include/doors";
+
+Const KEYSTART := 0x100E;
+Const KEYEND := 0x1013;
+Const KEYRING := 0x1011;
+
+program textcmd_door(me)
+
+	set_critical(0);
+	var whenopened := ReadGameClock();
+
+	var itemdesc := ReadConfigFile( ":doors:itemdesc" );
+
+	var Doors := ListItemsNearLocation(cint(me.x), cint(me.y), cint(me.z),2);
+	var OpenDoors := {};
+	foreach door in Doors
+
+		if (door.IsA( POLCLASS_DOOR ))
+			var closesound;
+			var opensound;
+			case (itemdesc[door.objtype].doortype)
+				"stone":
+				opensound := SFX_OPEN_METAL_DOOR;
+				closesound := SFX_CLOSE_METAL_DOOR;
+				"metal": 
+				opensound := SFX_OPEN_METAL_DOOR;
+				closesound := SFX_CLOSE_METAL_DOOR;
+				default:
+		        	"wood": 
+                		opensound := SFX_OPEN_WOODEN_DOOR;
+				closesound := SFX_CLOSE_WOODEN_DOOR;
+			endcase
+
+			if (!door.locked )
+				if (door.graphic = door.objtype)
+					SetObjProperty( door, "#WhenOpened", whenopened );
+					PlaySoundEffect( door, opensound );
+					open_door(door);
+					OpenDoors[ len(OpenDoors)+1 ] := door;
+				endif
+			endif
+		endif
+
+	endforeach
+
+	Detach();
+	set_critical(0);
+	sleep( 10 );
+
+	foreach door in OpenDoors
+		if (itemdesc[door.objtype].doortype)
+			var closesound;
+			case (itemdesc[door.objtype].doortype)
+				"stone":
+				closesound := SFX_CLOSE_METAL_DOOR;
+				"metal": 
+				closesound := SFX_CLOSE_METAL_DOOR;
+				default:
+		        	"wood": 
+				closesound := SFX_CLOSE_WOODEN_DOOR;
+			endcase
+
+			if (GetObjProperty( door, "#WhenOpened" ) = whenopened)
+				PlaySoundEffect( door, closesound );
+				close_door(door);
+				EraseObjProperty( door, "#WhenOpened" );
+			endif
+        	endif
+    	endforeach
+
+endprogram

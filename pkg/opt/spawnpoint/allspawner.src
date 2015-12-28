@@ -1,0 +1,17 @@
+use os;
+use uo;
+
+include "include/managers";
+
+program allspawner( delay )
+
+	if( !delay )
+		return 0;
+	endif
+
+	while( 1 )
+		SendSpawnPointEvent(EVID_SPAWNPOINT_SPAWN_ALL);
+		Sleep(delay);
+	endwhile
+	
+endprogram

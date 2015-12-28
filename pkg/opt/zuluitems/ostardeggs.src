@@ -1,0 +1,71 @@
+// Fixed the little problem where if the eggs where stacked, it would destroy all the eggs in the
+// stack. -MontuZ (MontuZ@MontuZ.com) And added every type of ostard to the list.
+
+Use uo;
+
+Include "include/random";
+
+Program ostardeggs( who, item )
+
+    If( !ReserveItem( item ) )
+    Return;
+    Endif
+
+    SendSysMessage( who, "The egg begins to move..." );
+
+    Var ostard;
+    Var masteralone := Random( 100 );
+
+    Case( Random( 29 ) )
+    0:    ostard := "goldenostard";
+    1:    ostard := "plainsostard";
+    2:    ostard := "mountainostard";
+    3:    ostard := "swampostard";
+    4:    ostard := "highlandostard";
+    5:    ostard := "shadowostard";
+    6:    ostard := "vallyostard";
+    7:    ostard := "stoneostard";
+    8:    ostard := "emeraldostard";
+    9:    ostard := "forestostard";
+    10:    ostard := "amethystostard";
+    11:    ostard := "sapphireostard";
+    12:    ostard := "mistostard";
+    13:    ostard := "earthostard";
+    14:    ostard := "necroostard";
+    15:    ostard := "terrorostard";
+    16:    ostard := "phasedostard";
+    17:    ostard := "bloodostard";
+    18:    ostard := "plumostard";
+    19:    ostard := "windostard";
+    20:    ostard := "jungleostard";
+    21:    ostard := "waterostard";
+    22:    ostard := "obsidianostard";
+    23:    ostard := "rubyostard";
+    24:    ostard := "tropicalostard";
+    25:    ostard := "snowostard";
+    26:    ostard := "iceostard";
+    27:    ostard := "fireostard";
+    28:    ostard := "heavenlyostard";
+    Endcase
+
+    Var newpet := CreateNpcFromTemplate( ostard, who.x, who.y, who.z );
+
+    If( !newpet )
+    SendSysMessage( who, "The poor creature died just after hatching." );
+    Return;
+    Endif
+
+    If( Random( 100 ) < 75 )
+    SendSysMessage( who, newpet.name + " hatches from the egg and accepts you as his master!" );
+    SetObjProperty( newpet, "master", who.serial );
+    SetObjProperty( newpet, "script", newpet.script );
+    newpet.setmaster( who );
+    newpet.script := "tamed";
+    RestartScript( newpet );
+    Else
+    SendSysMessage( who, newpet.name + " hatches from the egg." );
+    Endif
+
+    SubtractAmount( item, 1 );
+
+EndProgram

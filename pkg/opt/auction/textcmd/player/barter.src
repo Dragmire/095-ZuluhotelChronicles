@@ -1,0 +1,63 @@
+use uo;
+use os;
+
+include "include/client";
+
+program textcmd_testgump(who, text)
+
+  var aucmember := GetObjProperty(who, "auction");
+
+  if (aucmember == 1)
+     barter(who,text);
+  else
+     SendSysMessage( who,"You need to join the auction first");
+  endif
+
+endprogram
+
+
+function barter(who,text)
+
+if (GetObjProperty(who, "barterban"))
+SendSysMessage( who, "You are not allowed to send messages.");
+return;
+endif
+
+var auctioncheck, bartermsgonoff, bartermsg, nextmsg :=CInt(GetObjProperty(who, "#nextbartermsg")), secclock:=ReadGameClock();
+
+if ( secclock< nextmsg)
+SendSysMessage( who, "You have to wait " + (nextmsg-secclock) + " to send another message.");
+return;
+endif
+
+if (!text)
+bartermsg := RequestInput(who, who.backpack, "Type in your barter message:" );
+else
+bartermsg:=text;
+endif
+
+if((bartermsg=="") || (!bartermsg))
+SendSysMessage( who, "Canceled." );
+return;
+endif
+
+if (bartermsg=="on")
+SendSysMessage( who, "You have turned on barter messages.");
+EraseObjProperty(who, "barter");
+return;
+endif
+if (bartermsg=="off")
+SendSysMessage( who, "You have turned off barter messages.");
+SetObjProperty(who, "barter", "off");
+return;
+endif
+
+foreach chr in EnumerateOnlineCharacters()
+   if ((GetObjProperty(chr, "auction") == 1) && (GetObjProperty(chr, "barter")!="off"))
+        SendSysMessage( chr, who.name + " barters: " + bartermsg, FONT_NORMAL, 1301 );
+   endif
+endforeach
+
+SetObjProperty(who, "#nextbartermsg", ReadGameClock() + 10);
+
+endfunction

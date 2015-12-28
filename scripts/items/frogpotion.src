@@ -1,0 +1,42 @@
+use uo;
+use os;
+
+program frog_potion (character, potion)
+const POISON_SOUND := 0x247;
+const DRINK_SOUND := 0x32;
+const UOBJ_EMPTY_BOTTLE := 0x0f0e;
+const EFFECT_BLUE_SPARKLE  := 0x373a;
+const SOUND_EFFECT_CURE	:= 0x1e1;
+const EFFECT_SPARKLE  := 0x374a;
+const HIT_ACTION := 0x148b;
+const MOVING_EFFECT_PURPLE_POTION  := 0x0f0d;
+const SOUND_EFFECT_EXPLOSION	:= 0x208;
+const SOUND_EFFECT_HEAL	:= 0x1f3;
+const EFFECT_EXPLOSION := 0x36b0;
+
+var oldform := character.graphic;
+
+SendSysMessage(character, "You feel funny!");
+    PlaySoundEffect(character, DRINK_SOUND);
+    sleep(1);
+    PlaySoundEffect(character, 0x246);
+    CreateItemInBackpack(character, UOBJ_EMPTY_BOTTLE, 1);
+    DestroyItem(potion);
+    PlayObjectCenteredEffect( character, EFFECT_BLUE_SPARKLE, 10,10); 
+    character.graphic := 0x51;
+
+Detach();
+
+var i;
+
+for (i := 1; i <= 3; i := i + 1)
+        sleep(300);
+endfor
+SendSysMessage(character, "You feel funny!");
+    PlaySoundEffect(character, DRINK_SOUND);
+    sleep(1);
+    PlaySoundEffect(character, 0x246);
+        PlayObjectCenteredEffect( character, EFFECT_BLUE_SPARKLE, 10,10);
+character.graphic := oldform;
+
+endprogram

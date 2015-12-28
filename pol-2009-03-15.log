@@ -1,0 +1,1818 @@
+[03/15 21:31:34] Logfile opened.
+POL095-2003-07-05 (VS.NET) compiled on Jul  5 2003 16:38:41 running.
+[03/15 21:31:36] Logfile opened.
+POL095-2003-07-05 (VS.NET) compiled on Jul  5 2003 16:38:41 running.
+[03/15 21:31:55] Game is active.
+[03/15 21:33:27] Client#1 connected from 82.169.86.182 (1 connections) on interface 85.227.237.129
+Account severijn logged in from 82.169.86.182
+[03/15 21:33:28] Client#1 (82.169.86.182): disconnected (account severijn)
+Client#2 connected from 82.169.86.182 (2 connections) on interface 85.227.237.129
+Account severijn logged in from 82.169.86.182
+[03/15 21:33:56] Client#3 connected from 69.196.138.180 (2 connections) on interface 85.227.237.129
+Account Paulimur logged in from 69.196.138.180
+[03/15 21:33:58] Client#3 (69.196.138.180): disconnected (account Paulimur)
+Client#4 connected from 69.196.138.180 (3 connections) on interface 85.227.237.129
+Account Paulimur logged in from 69.196.138.180
+[03/15 21:34:08] Client#4 (69.196.138.180): disconnected (account Paulimur)
+[03/15 21:34:26] Client#5 connected from 81.226.226.223 (2 connections) on interface 85.227.237.129
+Account thezer0 logged in from 81.226.226.223
+[03/15 21:34:28] Client#6 connected from 83.250.77.86 (3 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 21:34:29] Client#6 (83.250.77.86): disconnected (account Ejdl)
+Client#7 connected from 83.250.77.86 (4 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 21:34:31] Account Ejdl selecting character Ejdl
+Client#5 (81.226.226.223): disconnected (account thezer0)
+Client#8 connected from 81.226.226.223 (4 connections) on interface 85.227.237.129
+Account thezer0 logged in from 81.226.226.223
+Client#9 connected from 85.226.155.159 (4 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:34:32] Account thezer0 selecting character Delkrakk
+[03/15 21:34:33] Client#9 (85.226.155.159): disconnected (account Kieepz)
+Client#10 connected from 85.226.155.159 (4 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:34:34] Account Kieepz selecting character Manlig
+[03/15 21:34:38] Client#11 connected from 81.226.226.223 (5 connections) on interface 85.227.237.129
+Account thezer01 logged in from 81.226.226.223
+Client#11 (81.226.226.223): disconnected (account thezer01)
+Client#12 connected from 81.226.226.223 (6 connections) on interface 85.227.237.129
+Account thezer01 logged in from 81.226.226.223
+[03/15 21:34:39] Account thezer01 selecting character Aven
+[03/15 21:34:41] Client#13 connected from 82.131.26.68 (6 connections) on interface 85.227.237.129
+Account pumpz logged in from 82.131.26.68
+[03/15 21:34:42] Client#13 (82.131.26.68): disconnected (account pumpz)
+Client#14 connected from 82.131.26.68 (6 connections) on interface 85.227.237.129
+Account pumpz logged in from 82.131.26.68
+[03/15 21:34:44] Account pumpz selecting character Flubber
+[03/15 21:35:14] Client#15 connected from 83.183.51.86 (7 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:35:15] Client#15 (83.183.51.86): disconnected (account martine)
+Client#16 connected from 83.183.51.86 (8 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:35:16] Account martine selecting character Smeden Ragnir
+[03/15 21:35:18] Client#10 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:35:21] Client#17 connected from 85.226.155.159 (7 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:35:23] Client#17 (85.226.155.159): disconnected (account Kieepz)
+Client#18 connected from 85.226.155.159 (7 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:35:24] Account Kieepz selecting character Manlig
+[03/15 21:35:52] Client#16 (83.183.51.86): disconnected (account martine)
+[03/15 21:35:57] Client#19 connected from 83.183.51.86 (7 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:35:58] Client#19 (83.183.51.86): disconnected (account martine)
+Client#20 connected from 83.183.51.86 (8 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:35:59] Account martine selecting character Smeden Ragnir
+[03/15 21:36:09] Client#20 (83.183.51.86): disconnected (account martine)
+[03/15 21:36:20] Client#21 connected from 83.183.51.86 (7 connections) on interface 85.227.237.129
+Account martin logged in from 83.183.51.86
+Client#21 (83.183.51.86): disconnected (account martin)
+Client#22 connected from 83.183.51.86 (8 connections) on interface 85.227.237.129
+Account martin logged in from 83.183.51.86
+[03/15 21:36:21] Account martin selecting character YuQi
+[03/15 21:36:23] Client#18 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:36:42] Client#23 connected from 85.226.155.159 (7 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:36:44] Client#23 (85.226.155.159): disconnected (account Kieepz)
+Client#24 connected from 85.226.155.159 (8 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:36:46] Account Kieepz selecting character Manlig
+[03/15 21:36:48] Client#25 connected from 94.214.161.126 (8 connections) on interface 85.227.237.129
+Account Andries logged in from 94.214.161.126
+Client#25 (94.214.161.126): disconnected (account Andries)
+Client#26 connected from 94.214.161.126 (9 connections) on interface 85.227.237.129
+Account Andries logged in from 94.214.161.126
+[03/15 21:36:56] Account Andries selecting character Andries
+[03/15 21:37:02] Client#27 connected from 85.226.155.159 (9 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+Client#27 (85.226.155.159): disconnected (account Kieeps)
+Client#28 connected from 85.226.155.159 (10 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:37:04] Account Kieeps selecting character Anna
+[03/15 21:37:35] Client#29 connected from 86.88.112.215 (10 connections) on interface 85.227.237.129
+Account Sephetroth logged in from 86.88.112.215
+[03/15 21:37:37] Client#29 (86.88.112.215): disconnected (account Sephetroth)
+Client#30 connected from 86.88.112.215 (11 connections) on interface 85.227.237.129
+Account Sephetroth logged in from 86.88.112.215
+[03/15 21:37:39] Account Sephetroth selecting character Lagothrix
+[03/15 21:37:47] Client#31 connected from 94.214.168.107 (11 connections) on interface 85.227.237.129
+Account harry logged in from 94.214.168.107
+[03/15 21:37:51] Client#31 (94.214.168.107): disconnected (account harry)
+Client#32 connected from 94.214.168.107 (11 connections) on interface 85.227.237.129
+Account harry logged in from 94.214.168.107
+[03/15 21:37:54] Client#33 connected from 83.176.226.165 (12 connections) on interface 85.227.237.129
+Incorrect password for account sill from 83.176.226.165
+Client#33 (83.176.226.165): disconnected (account unknown)
+[03/15 21:37:55] Client#34 connected from 86.169.3.142 (12 connections) on interface 85.227.237.129
+Account Ahura logged in from 86.169.3.142
+Client#34 (86.169.3.142): disconnected (account Ahura)
+Client#35 connected from 86.169.3.142 (13 connections) on interface 85.227.237.129
+Account Ahura logged in from 86.169.3.142
+[03/15 21:37:56] Account harry selecting character Harry
+[03/15 21:37:57] Account Ahura selecting character Ahura Mazda
+[03/15 21:37:59] Client#36 connected from 83.176.226.165 (13 connections) on interface 85.227.237.129
+Incorrect password for account sill from 83.176.226.165
+Client#36 (83.176.226.165): disconnected (account unknown)
+[03/15 21:38:00] Client#37 connected from 83.176.226.165 (13 connections) on interface 85.227.237.129
+Incorrect password for account sill from 83.176.226.165
+Client#37 (83.176.226.165): disconnected (account unknown)
+[03/15 21:38:06] Client#38 connected from 83.176.226.165 (13 connections) on interface 85.227.237.129
+[03/15 21:38:07] Account js87 logged in from 83.176.226.165
+[03/15 21:38:11] Client#38 (83.176.226.165): disconnected (account js87)
+Client#39 connected from 83.176.226.165 (14 connections) on interface 85.227.237.129
+Account js87 logged in from 83.176.226.165
+[03/15 21:38:12] Account js87 selecting character Darigaaz
+[03/15 21:38:14] Client#40 connected from 86.169.3.142 (14 connections) on interface 85.227.237.129
+Account Korgan logged in from 86.169.3.142
+[03/15 21:38:16] Client#40 (86.169.3.142): disconnected (account Korgan)
+Client#41 connected from 86.169.3.142 (15 connections) on interface 85.227.237.129
+Account Korgan logged in from 86.169.3.142
+[03/15 21:38:18] Account Korgan selecting character Korgan
+[03/15 21:38:32] Client#2 (82.169.86.182): disconnected (account severijn)
+[03/15 21:38:33] Client#42 connected from 82.169.86.182 (14 connections) on interface 85.227.237.129
+Account severijn logged in from 82.169.86.182
+[03/15 21:38:37] Client#43 connected from 85.225.243.122 (15 connections) on interface 85.227.237.129
+Account Yaska logged in from 85.225.243.122
+[03/15 21:38:38] Client#43 (85.225.243.122): disconnected (account Yaska)
+Client#44 connected from 85.225.243.122 (16 connections) on interface 85.227.237.129
+Account Yaska logged in from 85.225.243.122
+[03/15 21:38:39] Account Yaska selecting character Yaska
+[03/15 21:39:08] Client#45 connected from 94.214.161.126 (16 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#46 connected from 94.214.161.126 (17 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#45 (94.214.161.126): disconnected (account Shevar)
+[03/15 21:39:10] Account Shevar selecting character Luna
+[03/15 21:39:32] Client#46 (94.214.161.126): disconnected (account Shevar)
+[03/15 21:39:35] Client#47 connected from 94.214.161.126 (16 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#48 connected from 94.214.161.126 (17 connections) on interface 85.227.237.129
+Client#47 (94.214.161.126): disconnected (account Shevar)
+Account Shevar logged in from 94.214.161.126
+[03/15 21:39:38] Account Shevar selecting character Luna
+[03/15 21:39:52] Client#42 (82.169.86.182): disconnected (account severijn)
+Client#49 connected from 82.169.86.182 (17 connections) on interface 85.227.237.129
+Account severijn logged in from 82.169.86.182
+[03/15 21:39:53] Account severijn selecting character Trebbor Selur
+[03/15 21:40:09] Client#50 connected from 85.227.237.29 (17 connections) on interface 85.227.237.129
+Account Ragnus logged in from 85.227.237.29
+[03/15 21:40:10] Client#50 (85.227.237.29): disconnected (account Ragnus)
+Client#51 connected from 85.227.237.29 (17 connections) on interface 85.227.237.129
+Account Ragnus logged in from 85.227.237.29
+[03/15 21:40:11] Account Ragnus selecting character Ragnus
+[03/15 21:40:43] Client#48 (94.214.161.126): disconnected (account Shevar)
+[03/15 21:41:50] Client#52 connected from 92.54.109.158 (17 connections) on interface 85.227.237.129
+Account patch logged in from 92.54.109.158
+[03/15 21:41:54] Client#52 (92.54.109.158): disconnected (account patch)
+Client#53 connected from 92.54.109.158 (17 connections) on interface 85.227.237.129
+Account patch logged in from 92.54.109.158
+[03/15 21:41:57] Account patch selecting character Raiden
+[03/15 21:42:14] Client#26 (94.214.161.126): disconnected (account Andries)
+[03/15 21:42:58] Client#54 connected from 70.83.88.55 (17 connections) on interface 85.227.237.129
+Account chester57 logged in from 70.83.88.55
+[03/15 21:42:59] Client#55 connected from 92.54.109.158 (18 connections) on interface 85.227.237.129
+Account nstar logged in from 92.54.109.158
+[03/15 21:43:00] Client#54 (70.83.88.55): disconnected (account chester57)
+Client#56 connected from 70.83.88.55 (19 connections) on interface 85.227.237.129
+Account chester57 logged in from 70.83.88.55
+[03/15 21:43:03] Account chester57 selecting character TurboStroke of Trinsic
+[03/15 21:43:04] Client#55 (92.54.109.158): disconnected (account nstar)
+Client#57 connected from 92.54.109.158 (19 connections) on interface 85.227.237.129
+[03/15 21:43:07] Account nstar logged in from 92.54.109.158
+[03/15 21:43:13] Account nstar selecting character Shattered
+[03/15 21:43:27] Client#58 connected from 94.214.161.126 (19 connections) on interface 85.227.237.129
+Incorrect password for account Shevar from 94.214.161.126
+Client#58 (94.214.161.126): disconnected (account unknown)
+[03/15 21:43:30] Client#59 connected from 94.214.161.126 (19 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#60 connected from 94.214.161.126 (20 connections) on interface 85.227.237.129
+Client#59 (94.214.161.126): disconnected (account Shevar)
+Account Shevar logged in from 94.214.161.126
+[03/15 21:43:32] Account Shevar selecting character Luna
+[03/15 21:43:35] Client#24 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:43:39] Client#61 connected from 85.226.155.159 (19 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:43:40] Client#61 (85.226.155.159): disconnected (account Kieepz)
+Client#62 connected from 85.226.155.159 (19 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:43:41] Client#63 connected from 89.160.118.110 (20 connections) on interface 85.227.237.129
+Account Louise logged in from 89.160.118.110
+[03/15 21:43:42] Account Kieepz selecting character Manlig
+Client#63 (89.160.118.110): disconnected (account Louise)
+Client#64 connected from 89.160.118.110 (20 connections) on interface 85.227.237.129
+Account Louise logged in from 89.160.118.110
+[03/15 21:43:43] Account Louise selecting character Louise
+[03/15 21:43:46] Client#65 connected from 86.169.3.142 (21 connections) on interface 85.227.237.129
+Account Ordos logged in from 86.169.3.142
+[03/15 21:43:48] Client#65 (86.169.3.142): disconnected (account Ordos)
+Client#66 connected from 86.169.3.142 (22 connections) on interface 85.227.237.129
+Account Ordos logged in from 86.169.3.142
+[03/15 21:43:49] Account Ordos selecting character Ordos
+[03/15 21:44:19] Client#67 connected from 92.54.109.158 (22 connections) on interface 85.227.237.129
+Account qwerty logged in from 92.54.109.158
+[03/15 21:44:22] Client#68 connected from 92.54.109.158 (23 connections) on interface 85.227.237.129
+Client#67 (92.54.109.158): disconnected (account qwerty)
+[03/15 21:44:25] Account qwerty logged in from 92.54.109.158
+[03/15 21:44:30] Account qwerty selecting character Rock Star
+[03/15 21:44:49] Client#69 connected from 85.227.232.212 (23 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:44:51] Client#69 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:44:52] Client#70 connected from 85.227.232.212 (23 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+Client#60 (94.214.161.126): disconnected (account Shevar)
+[03/15 21:44:54] Client#71 connected from 94.214.161.126 (23 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#72 connected from 94.214.161.126 (24 connections) on interface 85.227.237.129
+Account Shevar logged in from 94.214.161.126
+Client#71 (94.214.161.126): disconnected (account Shevar)
+[03/15 21:44:56] Account Shevar selecting character Luna
+[03/15 21:45:05] Client#73 connected from 78.37.3.158 (24 connections) on interface 85.227.237.129
+Account s125hg3 logged in from 78.37.3.158
+[03/15 21:45:06] Client#73 (78.37.3.158): disconnected (account s125hg3)
+Client#74 connected from 78.37.3.158 (25 connections) on interface 85.227.237.129
+Account s125hg3 logged in from 78.37.3.158
+[03/15 21:45:08] Account s125hg3 selecting character Ivano Solitelli
+[03/15 21:45:31] Client#70 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:45:42] Client#75 connected from 78.37.3.158 (24 connections) on interface 85.227.237.129
+Account solod logged in from 78.37.3.158
+[03/15 21:45:44] Client#75 (78.37.3.158): disconnected (account solod)
+Client#76 connected from 78.37.3.158 (25 connections) on interface 85.227.237.129
+Account solod logged in from 78.37.3.158
+[03/15 21:45:45] Client#77 connected from 85.227.232.212 (25 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:45:46] Account solod selecting character Metrostroy
+[03/15 21:45:50] Client#77 (85.227.232.212): disconnected (account markieparkie)
+Client#78 connected from 85.227.232.212 (26 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+Client#79 connected from 94.214.161.126 (26 connections) on interface 85.227.237.129
+Incorrect password for account Andries from 94.214.161.126
+Client#79 (94.214.161.126): disconnected (account unknown)
+[03/15 21:45:53] Client#78 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:45:55] Client#80 connected from 94.214.161.126 (25 connections) on interface 85.227.237.129
+Account Andries logged in from 94.214.161.126
+Client#81 connected from 94.214.161.126 (26 connections) on interface 85.227.237.129
+Client#80 (94.214.161.126): disconnected (account Andries)
+Account Andries logged in from 94.214.161.126
+[03/15 21:45:57] Account Andries selecting character Andries
+[03/15 21:45:58] Client#82 connected from 85.227.232.212 (26 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:46:02] Client#82 (85.227.232.212): disconnected (account markieparkie)
+Client#83 connected from 85.227.232.212 (26 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:46:33] Client#62 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:47:08] Client#84 connected from 90.190.20.40 (26 connections) on interface 85.227.237.129
+Account defender logged in from 90.190.20.40
+[03/15 21:47:09] Client#84 (90.190.20.40): disconnected (account defender)
+Client#85 connected from 90.190.20.40 (27 connections) on interface 85.227.237.129
+Account defender logged in from 90.190.20.40
+[03/15 21:47:10] Account defender selecting character Defender
+[03/15 21:47:14] Client#86 connected from 85.226.155.159 (27 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:47:15] Client#86 (85.226.155.159): disconnected (account Kieepz)
+Client#87 connected from 85.226.155.159 (27 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:47:26] Client#88 connected from 90.190.20.40 (28 connections) on interface 85.227.237.129
+Account rastamanas logged in from 90.190.20.40
+[03/15 21:47:27] Client#88 (90.190.20.40): disconnected (account rastamanas)
+Client#89 connected from 90.190.20.40 (29 connections) on interface 85.227.237.129
+Account rastamanas logged in from 90.190.20.40
+[03/15 21:47:28] Account rastamanas selecting character Rastamanas
+[03/15 21:47:31] Client#87 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:47:35] Client#90 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:47:36] Client#90 (85.226.155.159): disconnected (account Kieepz)
+Client#91 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:48:24] Client#91 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:48:41] Client#92 connected from 81.233.49.187 (28 connections) on interface 85.227.237.129
+Account todo logged in from 81.233.49.187
+Client#92 (81.233.49.187): disconnected (account todo)
+Client#93 connected from 81.233.49.187 (29 connections) on interface 85.227.237.129
+Account todo logged in from 81.233.49.187
+Client#28 (85.226.155.159): disconnected (account Kieeps)
+[03/15 21:48:42] Account todo selecting character Todo
+[03/15 21:48:47] Client#94 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:48:48] Client#94 (85.226.155.159): disconnected (account Kieepz)
+Client#95 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:48:51] Account Kieepz selecting character Manlig
+[03/15 21:48:55] Client#95 (85.226.155.159): disconnected (account Kieepz)
+[pkg/std/saver/saver.ecl]: Saving World State
+[03/15 21:48:57] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 21:49:04] Client#96 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:49:05] Client#96 (85.226.155.159): disconnected (account Kieeps)
+Client#97 connected from 85.226.155.159 (28 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:49:07] Account Kieeps selecting character Anna
+[03/15 21:49:22] Client#98 connected from 85.226.155.159 (29 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:49:23] Client#98 (85.226.155.159): disconnected (account Kieepz)
+Client#99 connected from 85.226.155.159 (29 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:49:34] Client#100 connected from 85.225.243.122 (30 connections) on interface 85.227.237.129
+Account Egeborg logged in from 85.225.243.122
+[03/15 21:49:36] Client#100 (85.225.243.122): disconnected (account Egeborg)
+Client#101 connected from 85.225.243.122 (31 connections) on interface 85.227.237.129
+Account Egeborg logged in from 85.225.243.122
+[03/15 21:49:38] Account Egeborg selecting character Durnik
+[03/15 21:50:03] Client#102 connected from 94.214.168.107 (31 connections) on interface 85.227.237.129
+[03/15 21:50:04] Account harry logged in from 94.214.168.107
+[03/15 21:50:06] Client#99 (85.226.155.159): disconnected (account Kieepz)
+Client#103 connected from 94.214.168.107 (31 connections) on interface 85.227.237.129
+Client#102 (94.214.168.107): disconnected (account harry)
+Account harry logged in from 94.214.168.107
+[03/15 21:50:08] Account harry selecting character Harry
+[03/15 21:50:09] Client#32 (94.214.168.107): disconnected (account unknown)
+[03/15 21:50:13] Client#83 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:50:14] Client#104 connected from 85.226.155.159 (29 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:50:15] Client#104 (85.226.155.159): disconnected (account Kieepz)
+Client#105 connected from 85.226.155.159 (30 connections) on interface 85.227.237.129
+Account Kieepz logged in from 85.226.155.159
+[03/15 21:50:18] Client#106 connected from 85.227.232.212 (30 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:50:20] Client#106 (85.227.232.212): disconnected (account markieparkie)
+Client#107 connected from 85.227.232.212 (31 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:50:32] Client#97 (85.226.155.159): disconnected (account Kieeps)
+[03/15 21:50:35] Client#108 connected from 85.226.155.159 (30 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:50:37] Client#108 (85.226.155.159): disconnected (account Kieeps)
+Client#109 connected from 85.226.155.159 (31 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:50:59] Account Kieeps created character 0x17613
+[03/15 21:51:30] Client#110 connected from 206.253.145.244 (31 connections) on interface 85.227.237.129
+[03/15 21:51:31] Account bloodmoon logged in from 206.253.145.244
+Client#110 (206.253.145.244): disconnected (account bloodmoon)
+Client#111 connected from 206.253.145.244 (32 connections) on interface 85.227.237.129
+Account bloodmoon logged in from 206.253.145.244
+[03/15 21:51:32] Client#112 connected from 89.160.118.119 (32 connections) on interface 85.227.237.129
+[03/15 21:51:33] Account bloodmoon selecting character Incognito
+[03/15 21:51:34] Account miki logged in from 89.160.118.119
+[03/15 21:51:35] Client#112 (89.160.118.119): disconnected (account miki)
+Client#113 connected from 89.160.118.119 (33 connections) on interface 85.227.237.129
+Account miki logged in from 89.160.118.119
+[03/15 21:51:36] Account miki selecting character Sirius
+[03/15 21:51:41] Client#109 (85.226.155.159): disconnected (account Kieeps)
+[03/15 21:51:44] Client#114 connected from 85.226.155.159 (32 connections) on interface 85.227.237.129
+[03/15 21:51:45] Account Kieeps logged in from 85.226.155.159
+[03/15 21:51:46] Client#114 (85.226.155.159): disconnected (account Kieeps)
+Client#115 connected from 85.226.155.159 (33 connections) on interface 85.227.237.129
+Account Kieeps logged in from 85.226.155.159
+[03/15 21:51:48] Account Kieeps selecting character Anna
+[03/15 21:51:49] Client#113 (89.160.118.119): disconnected (account miki)
+[03/15 21:51:53] Client#116 connected from 24.235.195.237 (32 connections) on interface 85.227.237.129
+Account devinw logged in from 24.235.195.237
+[03/15 21:51:55] Client#116 (24.235.195.237): disconnected (account devinw)
+Client#117 connected from 24.235.195.237 (33 connections) on interface 85.227.237.129
+Account devinw logged in from 24.235.195.237
+[03/15 21:51:56] Account devinw selecting character Methodz
+[03/15 21:52:01] Client#118 connected from 213.66.21.40 (33 connections) on interface 85.227.237.129
+Account ugge85 logged in from 213.66.21.40
+[03/15 21:52:02] Client#118 (213.66.21.40): disconnected (account ugge85)
+Client#119 connected from 213.66.21.40 (34 connections) on interface 85.227.237.129
+Account ugge85 logged in from 213.66.21.40
+[03/15 21:52:04] Account ugge85 selecting character Atac
+[03/15 21:52:08] Client#120 connected from 89.160.118.119 (34 connections) on interface 85.227.237.129
+[03/15 21:52:09] Account mirza logged in from 89.160.118.119
+[03/15 21:52:10] Client#120 (89.160.118.119): disconnected (account mirza)
+Client#121 connected from 89.160.118.119 (34 connections) on interface 85.227.237.129
+Account mirza logged in from 89.160.118.119
+[03/15 21:52:11] Account mirza selecting character Zan Daar
+[03/15 21:52:13] Client#122 connected from 83.183.51.86 (35 connections) on interface 85.227.237.129
+[03/15 21:52:14] Account martine logged in from 83.183.51.86
+Client#122 (83.183.51.86): disconnected (account martine)
+Client#123 connected from 83.183.51.86 (36 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:52:16] Client#103 (94.214.168.107): disconnected (account harry)
+Account martine selecting character Smeden Ragnir
+[03/15 21:52:21] Client#124 connected from 24.235.195.237 (35 connections) on interface 85.227.237.129
+Account small logged in from 24.235.195.237
+[03/15 21:52:22] Client#124 (24.235.195.237): disconnected (account small)
+Client#125 connected from 24.235.195.237 (35 connections) on interface 85.227.237.129
+Account small logged in from 24.235.195.237
+[03/15 21:52:23] Client#126 connected from 94.214.168.107 (36 connections) on interface 85.227.237.129
+Incorrect password for account koeleman from 94.214.168.107
+Client#126 (94.214.168.107): disconnected (account unknown)
+Account small selecting character Small Cuban Boys
+[03/15 21:52:31] Client#127 connected from 94.214.168.107 (36 connections) on interface 85.227.237.129
+Account koeleman logged in from 94.214.168.107
+[03/15 21:52:34] Client#127 (94.214.168.107): disconnected (account koeleman)
+Client#128 connected from 94.214.168.107 (36 connections) on interface 85.227.237.129
+Account koeleman logged in from 94.214.168.107
+[03/15 21:52:37] Account koeleman selecting character Koeleman
+[03/15 21:52:43] Client#51 (85.227.237.29): disconnected (account Ragnus)
+[03/15 21:52:46] Client#129 connected from 89.160.118.119 (36 connections) on interface 85.227.237.129
+Incorrect password for account mirza from 89.160.118.119
+Client#129 (89.160.118.119): disconnected (account unknown)
+[03/15 21:52:53] Client#130 connected from 89.160.118.119 (36 connections) on interface 85.227.237.129
+Incorrect password for account mirza from 89.160.118.119
+Client#130 (89.160.118.119): disconnected (account unknown)
+[03/15 21:53:09] Client#131 connected from 80.235.111.149 (36 connections) on interface 85.227.237.129
+Account pets logged in from 80.235.111.149
+[03/15 21:53:11] Client#131 (80.235.111.149): disconnected (account pets)
+Client#132 connected from 80.235.111.149 (37 connections) on interface 85.227.237.129
+Account pets logged in from 80.235.111.149
+[03/15 21:53:12] Account pets selecting character Pets of Britain
+[03/15 21:53:22] Account markieparkie created character 0x17615
+[03/15 21:53:23] Client#119 (213.66.21.40): disconnected (account ugge85)
+[03/15 21:53:28] Client#133 connected from 213.66.21.40 (36 connections) on interface 85.227.237.129
+Account ugge85 logged in from 213.66.21.40
+[03/15 21:53:29] Client#133 (213.66.21.40): disconnected (account ugge85)
+Client#134 connected from 213.66.21.40 (37 connections) on interface 85.227.237.129
+Account ugge85 logged in from 213.66.21.40
+[03/15 21:53:31] Account ugge85 selecting character Atac
+[03/15 21:53:56] Account Kieepz selecting character Manlig
+[03/15 21:54:22] Client#135 connected from 90.195.42.90 (37 connections) on interface 85.227.237.129
+Account tomnicklin logged in from 90.195.42.90
+[03/15 21:54:23] Client#135 (90.195.42.90): disconnected (account tomnicklin)
+Client#136 connected from 90.195.42.90 (38 connections) on interface 85.227.237.129
+Account tomnicklin logged in from 90.195.42.90
+[03/15 21:54:24] Account tomnicklin selecting character Manwell
+[03/15 21:54:27] Client#137 connected from 206.253.145.244 (38 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+[03/15 21:54:28] Client#137 (206.253.145.244): disconnected (account silvermoon)
+Client#138 connected from 206.253.145.244 (39 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+[03/15 21:54:30] Account silvermoon selecting character Giles
+[03/15 21:55:25] Client#121 (89.160.118.119): disconnected (account mirza)
+[03/15 21:55:32] Client#139 connected from 94.214.161.126 (38 connections) on interface 85.227.237.129
+Account nagash logged in from 94.214.161.126
+Client#140 connected from 94.214.161.126 (39 connections) on interface 85.227.237.129
+Client#139 (94.214.161.126): disconnected (account nagash)
+Account nagash logged in from 94.214.161.126
+[03/15 21:55:34] Account nagash selecting character Head Admin Nagash
+[03/15 21:55:56] Client#141 connected from 89.160.118.119 (39 connections) on interface 85.227.237.129
+[03/15 21:55:58] Account miki logged in from 89.160.118.119
+[03/15 21:56:01] Client#141 (89.160.118.119): disconnected (account miki)
+Client#142 connected from 89.160.118.119 (40 connections) on interface 85.227.237.129
+Account miki logged in from 89.160.118.119
+[03/15 21:56:03] Account miki selecting character Sirius
+[03/15 21:56:40] Client#143 connected from 89.160.118.110 (40 connections) on interface 85.227.237.129
+Account Louise2 logged in from 89.160.118.110
+Client#143 (89.160.118.110): disconnected (account Louise2)
+Client#144 connected from 89.160.118.110 (41 connections) on interface 85.227.237.129
+Account Louise2 logged in from 89.160.118.110
+[03/15 21:56:41] Account Louise2 selecting character Xilothol
+[03/15 21:56:53] Client#105 (85.226.155.159): disconnected (account Kieepz)
+[03/15 21:57:21] Client#145 connected from 89.160.118.119 (40 connections) on interface 85.227.237.129
+Account mirza logged in from 89.160.118.119
+[03/15 21:57:22] Client#146 connected from 89.160.118.119 (41 connections) on interface 85.227.237.129
+Client#145 (89.160.118.119): disconnected (account mirza)
+Account mirza logged in from 89.160.118.119
+[03/15 21:57:24] Account mirza selecting character Zan Daar
+[03/15 21:57:35] Client#123 (83.183.51.86): disconnected (account martine)
+[03/15 21:57:42] Client#147 connected from 82.95.76.120 (40 connections) on interface 85.227.237.129
+Incorrect password for account Crusha from 82.95.76.120
+Client#147 (82.95.76.120): disconnected (account unknown)
+[03/15 21:57:44] Client#148 connected from 82.95.76.120 (40 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 21:57:45] Client#148 (82.95.76.120): disconnected (account Crusha)
+Client#149 connected from 82.95.76.120 (41 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 21:57:46] Account Crusha selecting character Valnir
+[03/15 21:57:47] Client#150 connected from 94.214.168.107 (41 connections) on interface 85.227.237.129
+Account harry logged in from 94.214.168.107
+[03/15 21:57:51] Client#151 connected from 82.95.76.120 (42 connections) on interface 85.227.237.129
+Account Azhag logged in from 82.95.76.120
+Client#150 (94.214.168.107): disconnected (account harry)
+Client#152 connected from 94.214.168.107 (42 connections) on interface 85.227.237.129
+Account harry logged in from 94.214.168.107
+Client#151 (82.95.76.120): disconnected (account Azhag)
+Client#153 connected from 82.95.76.120 (43 connections) on interface 85.227.237.129
+Account Azhag logged in from 82.95.76.120
+[03/15 21:57:52] Account Azhag selecting character Crusher
+[03/15 21:57:54] Account harry selecting character Harry
+[03/15 21:58:18] Client#107 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:58:20] Client#154 connected from 85.227.232.212 (42 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:58:22] Client#154 (85.227.232.212): disconnected (account markieparkie)
+Client#155 connected from 85.227.232.212 (43 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:58:25] Account markieparkie selecting character Zed'kus
+[03/15 21:58:42] Client#156 connected from 90.190.20.40 (43 connections) on interface 85.227.237.129
+Account defender1 logged in from 90.190.20.40
+[03/15 21:58:43] Client#157 connected from 85.227.237.29 (44 connections) on interface 85.227.237.129
+[03/15 21:58:44] Account Ragnus logged in from 85.227.237.29
+Client#157 (85.227.237.29): disconnected (account Ragnus)
+Client#158 connected from 85.227.237.29 (44 connections) on interface 85.227.237.129
+Account Ragnus logged in from 85.227.237.29
+Client#156 (90.190.20.40): disconnected (account defender1)
+Client#159 connected from 90.190.20.40 (45 connections) on interface 85.227.237.129
+Account defender1 logged in from 90.190.20.40
+[03/15 21:58:45] Account defender1 selecting character Razir D'Amur of Britain
+Account Ragnus selecting character Ragnus
+[03/15 21:59:00] Client#155 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:59:05] Client#160 connected from 85.227.232.212 (44 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:59:06] Client#160 (85.227.232.212): disconnected (account markieparkie)
+Client#161 connected from 85.227.232.212 (45 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 21:59:08] Account markieparkie selecting character Zed'kus
+[03/15 21:59:12] Client#162 connected from 96.40.135.213 (45 connections) on interface 85.227.237.129
+Incorrect password for account dooshbagginss from 96.40.135.213
+Client#162 (96.40.135.213): disconnected (account unknown)
+[03/15 21:59:13] Client#163 connected from 83.183.51.86 (45 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+[03/15 21:59:14] Client#163 (83.183.51.86): disconnected (account martine)
+Client#164 connected from 83.183.51.86 (46 connections) on interface 85.227.237.129
+Account martine logged in from 83.183.51.86
+Account martine selecting character Smeden Ragnir
+[03/15 21:59:16] Client#165 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Incorrect password for account dooshbagginss from 96.40.135.213
+Client#165 (96.40.135.213): disconnected (account unknown)
+[03/15 21:59:22] Client#166 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Account dooshbagginss logged in from 96.40.135.213
+[03/15 21:59:24] Client#166 (96.40.135.213): disconnected (account dooshbagginss)
+Client#167 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Account dooshbagginss logged in from 96.40.135.213
+[03/15 21:59:25] Account dooshbagginss selecting character Shendelzare
+[03/15 21:59:30] Client#161 (85.227.232.212): disconnected (account markieparkie)
+[03/15 21:59:35] Client#168 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Incorrect password for account dooshbaggins from 96.40.135.213
+Client#168 (96.40.135.213): disconnected (account unknown)
+[03/15 21:59:39] Client#169 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Account dooshbaggins logged in from 96.40.135.213
+[03/15 21:59:40] Client#169 (96.40.135.213): disconnected (account dooshbaggins)
+Client#170 connected from 96.40.135.213 (46 connections) on interface 85.227.237.129
+Account dooshbaggins logged in from 96.40.135.213
+[03/15 21:59:41] Account dooshbaggins selecting character Tweaka
+[03/15 21:59:46] Client#171 connected from 82.95.76.120 (47 connections) on interface 85.227.237.129
+Account Arbaal logged in from 82.95.76.120
+[03/15 21:59:47] Client#171 (82.95.76.120): disconnected (account Arbaal)
+Client#172 connected from 82.95.76.120 (48 connections) on interface 85.227.237.129
+Account Arbaal logged in from 82.95.76.120
+[03/15 21:59:48] Account Arbaal selecting character GM Arbaal
+[03/15 22:00:26] Client#173 connected from 85.227.232.212 (48 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 22:00:28] Client#173 (85.227.232.212): disconnected (account markieparkie)
+Client#174 connected from 85.227.232.212 (49 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 22:00:33] Client#174 (85.227.232.212): disconnected (account markieparkie)
+[03/15 22:00:38] Client#175 connected from 85.227.232.212 (48 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 22:00:39] Client#175 (85.227.232.212): disconnected (account markieparkie)
+Client#176 connected from 85.227.232.212 (49 connections) on interface 85.227.237.129
+Account markieparkie logged in from 85.227.232.212
+[03/15 22:00:40] Account markieparkie selecting character Zed'kus
+[03/15 22:01:18] Client#172 (82.95.76.120): disconnected (account Arbaal)
+[03/15 22:01:44] Client#177 connected from 79.65.113.8 (48 connections) on interface 85.227.237.129
+[03/15 22:01:49] Account jet logged in from 79.65.113.8
+[03/15 22:01:52] Client#178 connected from 79.65.113.8 (49 connections) on interface 85.227.237.129
+Client#177 (79.65.113.8): disconnected (account jet)
+Account jet logged in from 79.65.113.8
+Client#179 connected from 89.136.55.220 (49 connections) on interface 85.227.237.129
+Account wobb logged in from 89.136.55.220
+Client#180 connected from 89.136.55.220 (50 connections) on interface 85.227.237.129
+Client#179 (89.136.55.220): disconnected (account wobb)
+Account wobb logged in from 89.136.55.220
+[03/15 22:01:54] Account wobb selecting character wObbin
+[03/15 22:02:01] Account jet selecting character Fruitloaf
+[03/15 22:02:02] Client#181 connected from 85.226.204.229 (50 connections) on interface 85.227.237.129
+Account snorre logged in from 85.226.204.229
+[03/15 22:02:04] Client#181 (85.226.204.229): disconnected (account snorre)
+Client#182 connected from 85.226.204.229 (51 connections) on interface 85.227.237.129
+Account snorre logged in from 85.226.204.229
+[03/15 22:02:05] Account snorre selecting character Norte
+[03/15 22:02:19] Client#183 connected from 83.176.226.165 (51 connections) on interface 85.227.237.129
+Account sill logged in from 83.176.226.165
+[03/15 22:02:20] Client#183 (83.176.226.165): disconnected (account sill)
+Client#184 connected from 83.176.226.165 (52 connections) on interface 85.227.237.129
+Account sill logged in from 83.176.226.165
+[03/15 22:02:21] Account sill selecting character Doggiz
+[03/15 22:03:00] Client#185 connected from 79.65.113.8 (52 connections) on interface 85.227.237.129
+Account hydro logged in from 79.65.113.8
+[03/15 22:03:01] Client#186 connected from 79.65.113.8 (53 connections) on interface 85.227.237.129
+Client#185 (79.65.113.8): disconnected (account hydro)
+Account hydro logged in from 79.65.113.8
+[03/15 22:03:03] Account hydro selecting character Taylor
+[03/15 22:03:08] Client#187 connected from 81.233.48.179 (53 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 22:03:09] Client#187 (81.233.48.179): disconnected (account Zolo)
+Client#188 connected from 81.233.48.179 (54 connections) on interface 85.227.237.129
+[03/15 22:03:10] Account Zolo logged in from 81.233.48.179
+[03/15 22:03:11] Account Zolo selecting character Zoloch
+[03/15 22:03:13] Client#189 connected from 89.136.55.220 (54 connections) on interface 85.227.237.129
+Account wobb2 logged in from 89.136.55.220
+[03/15 22:03:14] Client#189 (89.136.55.220): disconnected (account wobb2)
+Client#190 connected from 89.136.55.220 (55 connections) on interface 85.227.237.129
+Account wobb2 logged in from 89.136.55.220
+[03/15 22:03:15] Account wobb2 selecting character Tanili
+[03/15 22:04:06] Client#191 connected from 85.228.50.235 (55 connections) on interface 85.227.237.129
+Account donnie logged in from 85.228.50.235
+Client#191 (85.228.50.235): disconnected (account donnie)
+Client#192 connected from 85.228.50.235 (56 connections) on interface 85.227.237.129
+Account donnie logged in from 85.228.50.235
+[03/15 22:05:06] Account donnie selecting character Donnie Darko
+[03/15 22:05:57] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 22:05:59] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 22:06:04] Client#193 connected from 69.196.138.180 (56 connections) on interface 85.227.237.129
+Account Paulimur logged in from 69.196.138.180
+[03/15 22:06:07] Client#193 (69.196.138.180): disconnected (account Paulimur)
+Client#194 connected from 69.196.138.180 (57 connections) on interface 85.227.237.129
+Account Paulimur logged in from 69.196.138.180
+[03/15 22:06:10] Account Paulimur selecting character Oats
+[03/15 22:06:25] Client#149 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:06:28] Client#195 connected from 82.95.76.120 (56 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#195 (82.95.76.120): disconnected (account Crusha)
+Client#196 connected from 82.95.76.120 (57 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:06:33] Account Crusha deleting character 0x17232
+[03/15 22:06:34] Account Crusha selecting character Morghaz
+[03/15 22:06:55] Client#197 connected from 68.151.248.24 (57 connections) on interface 85.227.237.129
+Account impala logged in from 68.151.248.24
+[03/15 22:06:56] Client#197 (68.151.248.24): disconnected (account impala)
+Client#198 connected from 68.151.248.24 (57 connections) on interface 85.227.237.129
+Account impala logged in from 68.151.248.24
+[03/15 22:06:57] Account impala selecting character Richard Rahl
+[03/15 22:07:21] Client#199 connected from 201.17.73.184 (58 connections) on interface 85.227.237.129
+Account kutje logged in from 201.17.73.184
+[03/15 22:07:22] Client#199 (201.17.73.184): disconnected (account kutje)
+Client#200 connected from 201.17.73.184 (59 connections) on interface 85.227.237.129
+Account kutje logged in from 201.17.73.184
+[03/15 22:07:24] Account kutje selecting character Kutje
+[03/15 22:08:01] Client#201 connected from 201.17.73.184 (59 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+[03/15 22:08:02] Client#201 (201.17.73.184): disconnected (account hender)
+Client#202 connected from 201.17.73.184 (60 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+[03/15 22:08:04] Account hender selecting character Hender
+[03/15 22:08:19] Client#196 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:08:22] Character 00003B5A tried to drop item 401BC40E, but had not gotten an item.
+Client#203 connected from 82.95.76.120 (59 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:08:23] Client#203 (82.95.76.120): disconnected (account Crusha)
+Client#204 connected from 82.95.76.120 (60 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:08:43] Client#205 connected from 76.68.72.129 (60 connections) on interface 85.227.237.129
+Account dnoord logged in from 76.68.72.129
+[03/15 22:08:45] Client#205 (76.68.72.129): disconnected (account dnoord)
+Client#206 connected from 76.68.72.129 (61 connections) on interface 85.227.237.129
+Account dnoord logged in from 76.68.72.129
+[03/15 22:08:46] Account dnoord selecting character Bij
+[03/15 22:08:57] Client#207 connected from 85.249.164.85 (61 connections) on interface 85.227.237.129
+Account craftx logged in from 85.249.164.85
+[03/15 22:08:58] Client#207 (85.249.164.85): disconnected (account craftx)
+Client#208 connected from 85.249.164.85 (61 connections) on interface 85.227.237.129
+Account craftx logged in from 85.249.164.85
+[03/15 22:09:00] Account craftx selecting character Andrew Mackenzie
+[03/15 22:09:01] Client#209 connected from 77.162.169.36 (62 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+Account Crusha created character 0x17635
+[03/15 22:09:02] Client#7 (83.250.77.86): disconnected (account Ejdl)
+[03/15 22:09:04] Client#210 connected from 77.162.169.36 (62 connections) on interface 85.227.237.129
+Client#209 (77.162.169.36): disconnected (account Whitecash)
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:09:06] Account Whitecash selecting character Dragonkingz
+[03/15 22:09:10] Client#211 connected from 83.250.77.86 (62 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:09:11] Client#211 (83.250.77.86): disconnected (account Ejdl)
+Client#212 connected from 83.250.77.86 (63 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:09:13] Account Ejdl selecting character Ejdl
+[03/15 22:09:22] Client#202 (201.17.73.184): disconnected (account hender)
+[03/15 22:09:27] Client#213 connected from 201.17.73.184 (62 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+[03/15 22:09:29] Client#213 (201.17.73.184): disconnected (account hender)
+Client#214 connected from 201.17.73.184 (63 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+[03/15 22:09:35] Client#204 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:09:36] Client#215 connected from 82.95.76.120 (62 connections) on interface 85.227.237.129
+Incorrect password for account Crusha from 82.95.76.120
+Client#215 (82.95.76.120): disconnected (account unknown)
+[03/15 22:09:39] Client#216 connected from 77.162.169.36 (62 connections) on interface 85.227.237.129
+Account OdinNL logged in from 77.162.169.36
+Client#217 connected from 82.95.76.120 (63 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:09:40] Client#217 (82.95.76.120): disconnected (account Crusha)
+Client#218 connected from 82.95.76.120 (64 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:09:41] Client#219 connected from 77.162.169.36 (64 connections) on interface 85.227.237.129
+Account Crusha selecting character Valnir
+[03/15 22:09:43] Client#216 (77.162.169.36): disconnected (account OdinNL)
+[03/15 22:09:44] Account OdinNL logged in from 77.162.169.36
+[03/15 22:09:47] Account OdinNL selecting character Dragonfishz
+[03/15 22:09:48] Client#220 connected from 85.249.164.85 (64 connections) on interface 85.227.237.129
+Account kornx2 logged in from 85.249.164.85
+Client#220 (85.249.164.85): disconnected (account kornx2)
+Client#221 connected from 85.249.164.85 (64 connections) on interface 85.227.237.129
+Account kornx2 logged in from 85.249.164.85
+[03/15 22:09:49] Client#218 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:09:50] Account kornx2 selecting character Insta Kill
+[03/15 22:09:52] Client#222 connected from 82.95.76.120 (64 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#222 (82.95.76.120): disconnected (account Crusha)
+Client#223 connected from 82.95.76.120 (65 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:09:54] Client#138 (206.253.145.244): disconnected (account silvermoon)
+[03/15 22:09:55] Client#111 (206.253.145.244): disconnected (account bloodmoon)
+[03/15 22:09:56] Account Crusha deleting character 0x17635
+[03/15 22:10:05] Account hender created character 0x17638
+[03/15 22:10:09] Account Crusha created character 0x17639
+[03/15 22:10:10] Client#224 connected from 83.227.166.200 (63 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+[03/15 22:10:11] Client#225 connected from 83.253.229.130 (64 connections) on interface 85.227.237.129
+Account moffegreven logged in from 83.253.229.130
+Client#225 (83.253.229.130): disconnected (account moffegreven)
+Client#226 connected from 83.253.229.130 (65 connections) on interface 85.227.237.129
+Account moffegreven logged in from 83.253.229.130
+[03/15 22:10:13] Client#224 (83.227.166.200): disconnected (account koff3)
+Client#227 connected from 83.227.166.200 (65 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+Account moffegreven selecting character Moffegreven
+[03/15 22:10:15] Account koff3 selecting character Lucius
+[03/15 22:10:51] Client#223 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:10:53] Client#228 connected from 90.202.60.75 (64 connections) on interface 85.227.237.129
+Client#229 connected from 82.95.76.120 (65 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Account mappi2 logged in from 90.202.60.75
+[03/15 22:10:54] Client#229 (82.95.76.120): disconnected (account Crusha)
+Client#230 connected from 82.95.76.120 (66 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#228 (90.202.60.75): disconnected (account mappi2)
+Client#231 connected from 90.202.60.75 (66 connections) on interface 85.227.237.129
+Account mappi2 logged in from 90.202.60.75
+[03/15 22:10:55] Account Crusha selecting character Valnir
+[03/15 22:10:57] Account mappi2 selecting character xyz
+[03/15 22:11:00] Client#212 (83.250.77.86): disconnected (account Ejdl)
+[03/15 22:11:01] Client#232 connected from 206.253.145.244 (65 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+[03/15 22:11:02] Client#232 (206.253.145.244): disconnected (account silvermoon)
+Client#233 connected from 206.253.145.244 (66 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+[03/15 22:11:03] Account silvermoon selecting character Giles
+[03/15 22:11:06] Client#234 connected from 85.249.164.85 (66 connections) on interface 85.227.237.129
+Incorrect password for account kornx3 from 85.249.164.85
+Client#234 (85.249.164.85): disconnected (account unknown)
+Client#235 connected from 83.250.77.86 (66 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:11:07] Client#230 (82.95.76.120): disconnected (account Crusha)
+Client#235 (83.250.77.86): disconnected (account Ejdl)
+Client#236 connected from 83.250.77.86 (66 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:11:08] Client#237 connected from 85.249.164.85 (66 connections) on interface 85.227.237.129
+Incorrect password for account kornx3 from 85.249.164.85
+Client#237 (85.249.164.85): disconnected (account unknown)
+[03/15 22:11:09] Account Ejdl selecting character Ejdl
+Client#238 connected from 82.95.76.120 (66 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#238 (82.95.76.120): disconnected (account Crusha)
+Client#239 connected from 82.95.76.120 (67 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:11:11] Client#240 connected from 85.249.164.85 (67 connections) on interface 85.227.237.129
+Incorrect password for account kornx3 from 85.249.164.85
+Client#240 (85.249.164.85): disconnected (account unknown)
+[03/15 22:11:12] Account Crusha deleting character 0x17639
+[03/15 22:11:13] Client#214 (201.17.73.184): disconnected (account hender)
+[03/15 22:11:15] Client#241 connected from 85.249.164.85 (66 connections) on interface 85.227.237.129
+Account kornx3 logged in from 85.249.164.85
+Client#242 connected from 201.17.73.184 (67 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+Client#241 (85.249.164.85): disconnected (account kornx3)
+Client#243 connected from 85.249.164.85 (68 connections) on interface 85.227.237.129
+[03/15 22:11:16] Account kornx3 logged in from 85.249.164.85
+Client#242 (201.17.73.184): disconnected (account hender)
+Client#244 connected from 201.17.73.184 (68 connections) on interface 85.227.237.129
+Account hender logged in from 201.17.73.184
+[03/15 22:11:18] Account hender selecting character Hender
+Client#243 (85.249.164.85): disconnected (account kornx3)
+Client#245 connected from 85.249.164.85 (67 connections) on interface 85.227.237.129
+Account kornx3 logged in from 85.249.164.85
+[03/15 22:11:19] Client#245 (85.249.164.85): disconnected (account kornx3)
+[03/15 22:11:24] Account Crusha created character 0x17644
+[03/15 22:11:26] Client#246 connected from 85.249.164.85 (67 connections) on interface 85.227.237.129
+Account kornx4 logged in from 85.249.164.85
+Client#246 (85.249.164.85): disconnected (account kornx4)
+Client#247 connected from 85.249.164.85 (67 connections) on interface 85.227.237.129
+Account kornx4 logged in from 85.249.164.85
+[03/15 22:11:29] Account kornx4 selecting character Eba na kopau nah
+[03/15 22:11:35] Client#248 connected from 206.253.145.244 (68 connections) on interface 85.227.237.129
+Account bloodmoon logged in from 206.253.145.244
+Client#248 (206.253.145.244): disconnected (account bloodmoon)
+Client#249 connected from 206.253.145.244 (69 connections) on interface 85.227.237.129
+Account bloodmoon logged in from 206.253.145.244
+[03/15 22:11:37] Account bloodmoon selecting character Incognito
+[03/15 22:11:59] Client#239 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:12:01] Client#250 connected from 82.95.76.120 (68 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#250 (82.95.76.120): disconnected (account Crusha)
+Client#251 connected from 82.95.76.120 (69 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:12:02] Account Crusha selecting character Valnir
+[03/15 22:12:13] Client#252 connected from 90.202.60.75 (69 connections) on interface 85.227.237.129
+Account mappi1 logged in from 90.202.60.75
+[03/15 22:12:14] Client#252 (90.202.60.75): disconnected (account mappi1)
+Client#253 connected from 90.202.60.75 (70 connections) on interface 85.227.237.129
+Account mappi1 logged in from 90.202.60.75
+[03/15 22:12:16] Account mappi1 selecting character zyxadr
+[03/15 22:12:19] Client#251 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:12:21] Client#254 connected from 82.95.76.120 (69 connections) on interface 85.227.237.129
+Incorrect password for account Crusha from 82.95.76.120
+Client#254 (82.95.76.120): disconnected (account unknown)
+[03/15 22:12:26] Client#255 connected from 82.95.76.120 (69 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:12:27] Client#255 (82.95.76.120): disconnected (account Crusha)
+Client#256 connected from 82.95.76.120 (70 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:12:29] Account Crusha deleting character 0x17644
+[03/15 22:12:59] Account Crusha created character 0x17648
+Client#227 (83.227.166.200): disconnected (account koff3)
+[03/15 22:13:02] Client#257 connected from 83.227.166.200 (69 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+[03/15 22:13:04] Client#257 (83.227.166.200): disconnected (account koff3)
+Client#258 connected from 83.227.166.200 (69 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+[03/15 22:13:13] Client#259 connected from 89.253.98.104 (70 connections) on interface 85.227.237.129
+Account belroth logged in from 89.253.98.104
+[03/15 22:13:14] Client#259 (89.253.98.104): disconnected (account belroth)
+Client#260 connected from 89.253.98.104 (70 connections) on interface 85.227.237.129
+Account belroth logged in from 89.253.98.104
+[03/15 22:13:15] Account belroth selecting character Belroth
+[03/15 22:13:28] Client#256 (82.95.76.120): disconnected (account Crusha)
+[03/15 22:13:30] Client#261 connected from 82.95.76.120 (70 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+Client#219 (77.162.169.36): disconnected (account OdinNL)
+Client#261 (82.95.76.120): disconnected (account Crusha)
+Client#262 connected from 82.95.76.120 (70 connections) on interface 85.227.237.129
+Account Crusha logged in from 82.95.76.120
+[03/15 22:13:31] Account Crusha selecting character Valnir
+[03/15 22:13:34] Client#263 connected from 77.162.169.36 (70 connections) on interface 85.227.237.129
+Account OdinNL logged in from 77.162.169.36
+[03/15 22:13:35] Client#264 connected from 77.162.169.36 (71 connections) on interface 85.227.237.129
+Client#263 (77.162.169.36): disconnected (account OdinNL)
+Account OdinNL logged in from 77.162.169.36
+[03/15 22:13:37] Account OdinNL selecting character Dragonfishz
+[03/15 22:13:42] Client#210 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:13:45] Client#265 connected from 77.162.169.36 (70 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:13:55] Client#266 connected from 77.162.169.36 (71 connections) on interface 85.227.237.129
+Client#265 (77.162.169.36): disconnected (account Whitecash)
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:13:56] Account koff3 created character 0x17650
+[03/15 22:14:04] Client#267 connected from 83.172.74.27 (71 connections) on interface 85.227.237.129
+Account Ahsp logged in from 83.172.74.27
+[03/15 22:14:05] Client#267 (83.172.74.27): disconnected (account Ahsp)
+Client#268 connected from 83.172.74.27 (71 connections) on interface 85.227.237.129
+Account Ahsp logged in from 83.172.74.27
+[03/15 22:14:07] Account Ahsp selecting character Dutten
+[03/15 22:14:12] Client#269 connected from 89.253.98.104 (72 connections) on interface 85.227.237.129
+Account moredice logged in from 89.253.98.104
+[03/15 22:14:13] Client#269 (89.253.98.104): disconnected (account moredice)
+Client#270 connected from 89.253.98.104 (72 connections) on interface 85.227.237.129
+Account moredice logged in from 89.253.98.104
+[03/15 22:14:14] Account moredice selecting character Moredice
+[03/15 22:14:15] Client#271 connected from 83.172.74.3 (73 connections) on interface 85.227.237.129
+Account Fors999 logged in from 83.172.74.3
+Client#271 (83.172.74.3): disconnected (account Fors999)
+Client#272 connected from 83.172.74.3 (74 connections) on interface 85.227.237.129
+Account Fors999 logged in from 83.172.74.3
+[03/15 22:14:16] Account Fors999 selecting character Dragon Slayer
+[03/15 22:14:17] Client#270 (89.253.98.104): disconnected (account moredice)
+[03/15 22:14:55] Client#273 connected from 83.172.74.3 (73 connections) on interface 85.227.237.129
+Account Maztro logged in from 83.172.74.3
+Client#273 (83.172.74.3): disconnected (account Maztro)
+Client#274 connected from 83.172.74.3 (73 connections) on interface 85.227.237.129
+Account Maztro logged in from 83.172.74.3
+[03/15 22:14:56] Account Maztro selecting character Markus Aurelius
+[03/15 22:14:57] Client#275 connected from 83.172.75.85 (74 connections) on interface 85.227.237.129
+Account Ahsp999 logged in from 83.172.75.85
+Client#275 (83.172.75.85): disconnected (account Ahsp999)
+Client#276 connected from 83.172.75.85 (75 connections) on interface 85.227.237.129
+Account Ahsp999 logged in from 83.172.75.85
+[03/15 22:14:59] Client#249: Switching to queued data mode (1, 58 bytes)
+Client#249: Leaving queued mode (58 bytes xmitted)
+[03/15 22:15:00] Account Ahsp999 selecting character Diana
+[03/15 22:15:18] Client#266 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:15:21] Client#277 connected from 85.228.50.235 (74 connections) on interface 85.227.237.129
+Account buffy logged in from 85.228.50.235
+Client#277 (85.228.50.235): disconnected (account buffy)
+Client#278 connected from 85.228.50.235 (75 connections) on interface 85.227.237.129
+Account buffy logged in from 85.228.50.235
+[03/15 22:15:23] Client#279 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+Account buffy selecting character Buffy
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:15:25] Client#280 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Client#279 (77.162.169.36): disconnected (account Whitecash)
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:15:42] Client#198 (68.151.248.24): disconnected (account impala)
+[03/15 22:16:21] Account Whitecash created character 0x17656
+[03/15 22:17:08] Client#281 connected from 69.196.135.194 (75 connections) on interface 85.227.237.129
+Incorrect password for account na85 from 69.196.135.194
+Client#281 (69.196.135.194): disconnected (account unknown)
+[03/15 22:17:09] Client#280 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:17:12] Client#282 connected from 77.162.169.36 (74 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:17:13] Client#283 connected from 69.196.135.194 (75 connections) on interface 85.227.237.129
+Account na85 logged in from 69.196.135.194
+[03/15 22:17:15] Client#283 (69.196.135.194): disconnected (account na85)
+Client#284 connected from 69.196.135.194 (76 connections) on interface 85.227.237.129
+Account na85 logged in from 69.196.135.194
+Client#282 (77.162.169.36): disconnected (account Whitecash)
+Client#285 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:17:16] Account na85 selecting character Knock Renfield
+[03/15 22:17:21] Client#285 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:17:26] Client#286 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:17:28] Client#287 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Client#286 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:17:31] Account Whitecash logged in from 77.162.169.36
+[03/15 22:17:36] Client#287 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:17:41] Client#288 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+[03/15 22:17:42] Account Whitecash logged in from 77.162.169.36
+[03/15 22:17:43] Client#289 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Client#288 (77.162.169.36): disconnected (account Whitecash)
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:18:18] Client#290 connected from 74.213.174.185 (76 connections) on interface 85.227.237.129
+Client#290: Unexpected message type f5, 4 bytes (IP:74.213.174.185, Account:None)
+0000: f5 35 01 ae                                        .5...... ........
+[03/15 22:18:21] Client#290 (74.213.174.185): disconnected (account unknown)
+[03/15 22:19:10] Client#291 connected from 86.169.3.142 (76 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:19:11] Client#291 (86.169.3.142): disconnected (account Lithium)
+Client#292 connected from 86.169.3.142 (77 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:19:13] Account Lithium selecting character Anchises
+[03/15 22:19:17] Client#289 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:19:30] Client#292 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:19:31] Client#293 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:19:33] Client#293 (77.162.169.36): disconnected (account Whitecash)
+Client#294 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+[03/15 22:19:36] Account Whitecash logged in from 77.162.169.36
+[03/15 22:19:51] Account Whitecash created character 0x17669
+[03/15 22:20:14] Client#294 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:20:17] Client#295 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:20:20] Client#295 (77.162.169.36): disconnected (account Whitecash)
+Client#296 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:21:20] Account Whitecash selecting character Dragonkingz
+Client#296 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:21:22] Client (Character Pets of Britain) tried to drop an item in a blocked location.
+[03/15 22:21:30] Client#297 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 22:21:35] Client#297 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:21:45] Client#298 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+[03/15 22:21:54] Account Whitecash logged in from 77.162.169.36
+[03/15 22:21:56] Client#299 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Client#298 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:21:59] Account Whitecash logged in from 77.162.169.36
+[03/15 22:22:02] Account Whitecash selecting character Dragonkingz
+Client#299 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:22:05] Client#300 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+[03/15 22:22:08] Account Whitecash logged in from 77.162.169.36
+[03/15 22:22:12] Client#300 (77.162.169.36): disconnected (account Whitecash)
+Client#301 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+[03/15 22:22:13] Account Whitecash logged in from 77.162.169.36
+[03/15 22:22:18] Client#14: Switching to queued data mode (1, 13 bytes)
+[03/15 22:22:20] Client#14: Leaving queued mode (128 bytes xmitted)
+[03/15 22:22:21] Account Whitecash selecting character Dragonkingz
+Client#301 (77.162.169.36): disconnected (account Whitecash)
+[03/15 22:22:31] Client#302 connected from 77.162.169.36 (75 connections) on interface 85.227.237.129
+[03/15 22:22:40] Account Whitecash logged in from 77.162.169.36
+[03/15 22:22:44] Client#303 connected from 77.162.169.36 (76 connections) on interface 85.227.237.129
+Client#302 (77.162.169.36): disconnected (account Whitecash)
+Account Whitecash logged in from 77.162.169.36
+Client (Character Defender) tried to drop an item in a blocked location.
+[03/15 22:22:45] Client#226: Switching to queued data mode (1, 9 bytes)
+[03/15 22:22:47] Account Whitecash selecting character Dragonkingz
+[03/15 22:22:50] Client (Character Pets of Britain) tried to drop an item in a blocked location.
+[03/15 22:22:55] Client (Character Pets of Britain) tried to drop an item in a blocked location.
+[03/15 22:22:59] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 22:23:01] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 22:23:39] Client#304 connected from 82.95.76.120 (76 connections) on interface 85.227.237.129
+Account Arbaal logged in from 82.95.76.120
+[03/15 22:23:40] Client#304 (82.95.76.120): disconnected (account Arbaal)
+Client#305 connected from 82.95.76.120 (77 connections) on interface 85.227.237.129
+Account Arbaal logged in from 82.95.76.120
+[03/15 22:23:41] Account Arbaal selecting character GM Arbaal
+[03/15 22:24:28] Client#14: Switching to queued data mode (1, 8 bytes)
+[03/15 22:24:29] Client#14: Leaving queued mode (27 bytes xmitted)
+[03/15 22:25:34] Client#306 connected from 58.7.191.45 (77 connections) on interface 85.227.237.129
+Account theswift logged in from 58.7.191.45
+[03/15 22:25:38] Client#307 connected from 58.7.191.45 (78 connections) on interface 85.227.237.129
+Client#306 (58.7.191.45): disconnected (account theswift)
+Account theswift logged in from 58.7.191.45
+[03/15 22:25:40] Client#308 connected from 86.169.3.142 (78 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:25:41] Client#308 (86.169.3.142): disconnected (account Lithium)
+Client#309 connected from 86.169.3.142 (79 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:25:42] Account theswift selecting character Micky Swift
+[03/15 22:25:57] Client#226 (83.253.229.130): disconnected (account moffegreven)
+[03/15 22:26:00] Client#310 connected from 90.190.22.248 (78 connections) on interface 85.227.237.129
+Account cyberboy logged in from 90.190.22.248
+[03/15 22:26:01] Client#310 (90.190.22.248): disconnected (account cyberboy)
+Client#311 connected from 90.190.22.248 (79 connections) on interface 85.227.237.129
+[03/15 22:26:02] Account cyberboy logged in from 90.190.22.248
+[03/15 22:26:03] Account cyberboy selecting character Cyberboy
+[03/15 22:26:20] Client#312 connected from 83.253.229.130 (79 connections) on interface 85.227.237.129
+Incorrect password for account moffegreven from 83.253.229.130
+Client#312 (83.253.229.130): disconnected (account unknown)
+[03/15 22:26:24] Client#313 connected from 83.253.229.130 (79 connections) on interface 85.227.237.129
+Account moffegreven logged in from 83.253.229.130
+[03/15 22:26:26] Client#313 (83.253.229.130): disconnected (account moffegreven)
+Client#314 connected from 83.253.229.130 (79 connections) on interface 85.227.237.129
+Account moffegreven logged in from 83.253.229.130
+[03/15 22:26:27] Account moffegreven selecting character Moffegreven
+[03/15 22:26:31] Client#315 connected from 68.151.248.24 (80 connections) on interface 85.227.237.129
+Account impala logged in from 68.151.248.24
+[03/15 22:26:32] Client#315 (68.151.248.24): disconnected (account impala)
+Client#316 connected from 68.151.248.24 (80 connections) on interface 85.227.237.129
+Account impala logged in from 68.151.248.24
+[03/15 22:26:33] Account impala selecting character Richard Rahl
+[03/15 22:27:14] Client#317 connected from 81.233.48.179 (81 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 22:27:15] Client#317 (81.233.48.179): disconnected (account Zoloch)
+Client#318 connected from 81.233.48.179 (82 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 22:27:16] Account Zoloch selecting character Morfian
+[03/15 22:27:38] Client#309 (86.169.3.142): disconnected (account Lithium)
+Client#319 connected from 86.169.3.142 (81 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:27:40] Client#319 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:27:59] Client#320 connected from 89.136.55.220 (81 connections) on interface 85.227.237.129
+Account wobb logged in from 89.136.55.220
+[03/15 22:28:00] Client#321 connected from 89.136.55.220 (82 connections) on interface 85.227.237.129
+Account wobb logged in from 89.136.55.220
+Client#320 (89.136.55.220): disconnected (account wobb)
+[03/15 22:28:02] Account wobb selecting character wObbin
+[03/15 22:28:03] Client#180 (89.136.55.220): disconnected (account unknown)
+[03/15 22:28:08] Client#190 (89.136.55.220): disconnected (account wobb2)
+[03/15 22:28:09] Client#322 connected from 89.136.55.220 (80 connections) on interface 85.227.237.129
+Account wobb2 logged in from 89.136.55.220
+Client#323 connected from 89.136.55.220 (81 connections) on interface 85.227.237.129
+Client#322 (89.136.55.220): disconnected (account wobb2)
+Account wobb2 logged in from 89.136.55.220
+[03/15 22:28:10] Account wobb2 selecting character Tanili
+[03/15 22:28:33] Client#324 connected from 86.169.3.142 (81 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:28:38] Client#324 (86.169.3.142): disconnected (account Lithium)
+Client#325 connected from 86.169.3.142 (82 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:29:11] Account Lithium selecting character Anchises
+[03/15 22:29:15] Client#325 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:29:42] Client#321 (89.136.55.220): disconnected (account wobb)
+[03/15 22:29:56] Client#326 connected from 86.169.3.142 (80 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+Client#326 (86.169.3.142): disconnected (account Lithium)
+Client#327 connected from 86.169.3.142 (81 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:30:07] Client#328 connected from 68.151.248.24 (81 connections) on interface 85.227.237.129
+[03/15 22:30:11] Account chevette logged in from 68.151.248.24
+[03/15 22:30:12] Client#328 (68.151.248.24): disconnected (account chevette)
+Client#329 connected from 68.151.248.24 (82 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:30:15] Account chevette selecting character Ninja
+[03/15 22:30:30] Client#330 connected from 24.244.242.37 (82 connections) on interface 85.227.237.129
+Incorrect password for account ediger1 from 24.244.242.37
+Client#330 (24.244.242.37): disconnected (account unknown)
+[03/15 22:30:34] Client#331 connected from 24.244.242.37 (82 connections) on interface 85.227.237.129
+Account ediger1 logged in from 24.244.242.37
+[03/15 22:30:35] Client#331 (24.244.242.37): disconnected (account ediger1)
+Client#332 connected from 24.244.242.37 (82 connections) on interface 85.227.237.129
+Account ediger1 logged in from 24.244.242.37
+[03/15 22:30:37] Account ediger1 selecting character Stef
+[03/15 22:30:43] Client#327 (86.169.3.142): disconnected (account Lithium)
+Client#333 connected from 86.169.3.142 (82 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+Client#333 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:30:45] Client#334 connected from 86.169.3.142 (82 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:30:48] Client#335 connected from 66.191.90.239 (83 connections) on interface 85.227.237.129
+Account crippledsquirrel logged in from 66.191.90.239
+[03/15 22:30:52] Client#336 connected from 66.191.90.239 (84 connections) on interface 85.227.237.129
+Client#335 (66.191.90.239): disconnected (account crippledsquirrel)
+Account crippledsquirrel logged in from 66.191.90.239
+[03/15 22:30:53] Client#334 (86.169.3.142): disconnected (account Lithium)
+Client#337 connected from 86.169.3.142 (84 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:30:55] Account Lithium selecting character Anchises
+[03/15 22:30:56] Account crippledsquirrel selecting character Crippled
+[03/15 22:31:03] Client#337 (86.169.3.142): disconnected (account Lithium)
+Client#329 (68.151.248.24): disconnected (account chevette)
+[03/15 22:31:06] Client#338 connected from 68.151.248.24 (82 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:31:07] Client#338 (68.151.248.24): disconnected (account chevette)
+Client#339 connected from 68.151.248.24 (82 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:31:23] Client#258 (83.227.166.200): disconnected (account koff3)
+Client (Character Belroth) tried to drop an item out of range.
+[03/15 22:31:27] Account chevette created character 0x17708
+[03/15 22:31:33] Client#340 connected from 24.244.242.37 (82 connections) on interface 85.227.237.129
+Account noxcraft logged in from 24.244.242.37
+[03/15 22:31:34] Client#340 (24.244.242.37): disconnected (account noxcraft)
+Client#341 connected from 24.244.242.37 (82 connections) on interface 85.227.237.129
+Account noxcraft logged in from 24.244.242.37
+[03/15 22:31:37] Account noxcraft selecting character Aibyn
+[03/15 22:31:55] Client#339 (68.151.248.24): disconnected (account chevette)
+[03/15 22:31:59] Client#342 connected from 68.151.248.24 (82 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:32:00] Client#200: Switching to queued data mode (1, 16 bytes)
+[03/15 22:32:01] Client#200: Leaving queued mode (82 bytes xmitted)
+Client#342 (68.151.248.24): disconnected (account chevette)
+Client#343 connected from 68.151.248.24 (83 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:32:04] Account chevette deleting character 0x17708
+[03/15 22:32:21] Account chevette created character 0x17713
+[03/15 22:32:48] Client#343 (68.151.248.24): disconnected (account chevette)
+[03/15 22:32:52] Client#344 connected from 68.151.248.24 (82 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:32:53] Client#344 (68.151.248.24): disconnected (account chevette)
+Client#345 connected from 68.151.248.24 (83 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:32:56] Account chevette deleting character 0x17713
+[03/15 22:33:18] Account chevette created character 0x17720
+[03/15 22:33:38] Client#346 connected from 58.7.191.45 (83 connections) on interface 85.227.237.129
+Account jbigtits logged in from 58.7.191.45
+[03/15 22:34:35] Client#345 (68.151.248.24): disconnected (account chevette)
+[03/15 22:35:14] Client#347 connected from 68.151.248.24 (83 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:35:15] Client#347 (68.151.248.24): disconnected (account chevette)
+Client#348 connected from 68.151.248.24 (83 connections) on interface 85.227.237.129
+Account chevette logged in from 68.151.248.24
+[03/15 22:35:18] Account chevette deleting character 0x17720
+[03/15 22:35:20] Account chevette selecting character Ninja
+[03/15 22:35:30] Client#200 (201.17.73.184): disconnected (account kutje)
+[03/15 22:35:35] Client#349 connected from 201.17.73.184 (83 connections) on interface 85.227.237.129
+Account velius logged in from 201.17.73.184
+[03/15 22:35:36] Client#349 (201.17.73.184): disconnected (account velius)
+Client#350 connected from 201.17.73.184 (83 connections) on interface 85.227.237.129
+Account velius logged in from 201.17.73.184
+[03/15 22:35:39] Client#346 (58.7.191.45): disconnected (account jbigtits)
+[03/15 22:35:53] Client#56 (70.83.88.55): disconnected (account chester57)
+[03/15 22:36:04] Client#351 connected from 83.227.166.200 (82 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+[03/15 22:36:05] Client#351 (83.227.166.200): disconnected (account koff3)
+Client#352 connected from 83.227.166.200 (82 connections) on interface 85.227.237.129
+Account koff3 logged in from 83.227.166.200
+[03/15 22:36:11] Account koff3 deleting character 0x17650
+[03/15 22:36:12] Account koff3 selecting character Lucius
+[03/15 22:36:22] Client#68 (92.54.109.158): disconnected (account qwerty)
+[03/15 22:36:31] Client#353 connected from 58.7.191.45 (82 connections) on interface 85.227.237.129
+Account jbigtits logged in from 58.7.191.45
+[03/15 22:36:35] Client#354 connected from 58.7.191.45 (83 connections) on interface 85.227.237.129
+Client#353 (58.7.191.45): disconnected (account jbigtits)
+Account jbigtits logged in from 58.7.191.45
+[03/15 22:36:37] Account jbigtits selecting character bigtits
+[03/15 22:38:02] Account velius created character 0x17737
+[03/15 22:38:59] Client#355 connected from 85.227.237.29 (83 connections) on interface 85.227.237.129
+Account Admin logged in from 85.227.237.29
+Client#355 (85.227.237.29): disconnected (account Admin)
+Client#356 connected from 85.227.237.29 (84 connections) on interface 85.227.237.129
+Account Admin logged in from 85.227.237.29
+[03/15 22:39:01] Account Admin selecting character Developer Snocks
+[03/15 22:39:18] Client#357 connected from 74.213.174.185 (84 connections) on interface 85.227.237.129
+Client#357: Unexpected message type f5, 4 bytes (IP:74.213.174.185, Account:None)
+0000: f5 35 01 ae                                        .5...... ........
+[03/15 22:39:20] Client#357 (74.213.174.185): disconnected (account unknown)
+[03/15 22:39:37] Client#358 connected from 85.249.166.236 (84 connections) on interface 85.227.237.129
+Account ihateyou1337 logged in from 85.249.166.236
+[03/15 22:39:38] Client#358 (85.249.166.236): disconnected (account ihateyou1337)
+Client#359 connected from 85.249.166.236 (84 connections) on interface 85.227.237.129
+Account ihateyou1337 logged in from 85.249.166.236
+[03/15 22:39:39] Account ihateyou1337 selecting character Little Jacob
+[03/15 22:40:01] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 22:40:03] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 22:40:54] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 22:42:50] Client#354 (58.7.191.45): disconnected (account jbigtits)
+[03/15 22:42:52] Client#360 connected from 92.54.109.158 (84 connections) on interface 85.227.237.129
+Account qwerty logged in from 92.54.109.158
+[03/15 22:42:55] Client#360 (92.54.109.158): disconnected (account qwerty)
+Client#361 connected from 92.54.109.158 (85 connections) on interface 85.227.237.129
+Account qwerty logged in from 92.54.109.158
+[03/15 22:43:00] Account qwerty selecting character Rock Star
+[03/15 22:43:40] Client#362 connected from 85.249.166.236 (85 connections) on interface 85.227.237.129
+Account kornx logged in from 85.249.166.236
+[03/15 22:43:41] Client#362 (85.249.166.236): disconnected (account kornx)
+Client#363 connected from 85.249.166.236 (85 connections) on interface 85.227.237.129
+Account kornx logged in from 85.249.166.236
+[03/15 22:43:42] Account kornx selecting character I kill u easy
+[03/15 22:43:49] Client#348 (68.151.248.24): disconnected (account chevette)
+[03/15 22:44:34] Client#364 connected from 58.7.191.45 (85 connections) on interface 85.227.237.129
+Account jbigtits logged in from 58.7.191.45
+[03/15 22:44:37] Client#365 connected from 58.7.191.45 (86 connections) on interface 85.227.237.129
+Client#364 (58.7.191.45): disconnected (account jbigtits)
+Account jbigtits logged in from 58.7.191.45
+[03/15 22:44:39] Account jbigtits selecting character bigtits
+[03/15 22:44:44] Client#236 (83.250.77.86): disconnected (account Ejdl)
+[03/15 22:44:58] Client#366 connected from 58.7.191.45 (85 connections) on interface 85.227.237.129
+Account Dingo1970 logged in from 58.7.191.45
+[03/15 22:45:02] Client#367 connected from 58.7.191.45 (86 connections) on interface 85.227.237.129
+Client#366 (58.7.191.45): disconnected (account Dingo1970)
+Account Dingo1970 logged in from 58.7.191.45
+[03/15 22:45:06] Account Dingo1970 selecting character Admin Dingo
+[03/15 22:45:07] Client#368 connected from 83.250.77.86 (86 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:45:08] Client#368 (83.250.77.86): disconnected (account Ejdl)
+Client#369 connected from 83.250.77.86 (87 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:45:09] Account Ejdl selecting character Ejdl
+[03/15 22:47:11] Client#369 (83.250.77.86): disconnected (account Ejdl)
+[03/15 22:47:21] Client#370 connected from 83.250.77.86 (86 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:47:22] Client#370 (83.250.77.86): disconnected (account Ejdl)
+Client#371 connected from 83.250.77.86 (86 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 22:47:24] Account Ejdl selecting character Ejdl
+[03/15 22:47:35] Client#372 connected from 79.65.113.8 (87 connections) on interface 85.227.237.129
+Account chicken logged in from 79.65.113.8
+[03/15 22:47:36] Client#373 connected from 79.65.113.8 (88 connections) on interface 85.227.237.129
+Client#372 (79.65.113.8): disconnected (account chicken)
+Account chicken logged in from 79.65.113.8
+[03/15 22:48:11] Account chicken created character 0x17763
+[03/15 22:48:14] Client#316 (68.151.248.24): disconnected (account impala)
+[03/15 22:48:39] Client#186 (79.65.113.8): disconnected (account hydro)
+[03/15 22:48:42] Character 00003A9E tried to drop item 4013074A, but had not gotten an item.
+[03/15 22:48:54] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 22:48:57] Client#374 connected from 79.65.113.8 (86 connections) on interface 85.227.237.129
+Account hydro logged in from 79.65.113.8
+[03/15 22:48:58] Client#375 connected from 79.65.113.8 (87 connections) on interface 85.227.237.129
+Client#374 (79.65.113.8): disconnected (account hydro)
+Account hydro logged in from 79.65.113.8
+[03/15 22:49:00] Account hydro selecting character Taylor
+[03/15 22:49:42] Client#367 (58.7.191.45): disconnected (account Dingo1970)
+[03/15 22:49:56] Client#350 (201.17.73.184): disconnected (account velius)
+[03/15 22:51:46] Client#376 connected from 99.246.223.232 (85 connections) on interface 85.227.237.129
+Account heat logged in from 99.246.223.232
+[03/15 22:51:49] Client#377 connected from 99.246.223.232 (86 connections) on interface 85.227.237.129
+Client#376 (99.246.223.232): disconnected (account heat)
+Account heat logged in from 99.246.223.232
+[03/15 22:51:52] Account heat selecting character Vengeance
+[03/15 22:51:55] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 22:52:24] Character 00003A9E tried to drop item 401BDDE9, but had not gotten an item.
+[03/15 22:52:49] Client#318 (81.233.48.179): disconnected (account Zoloch)
+[03/15 22:52:53] Client#188 (81.233.48.179): disconnected (account Zolo)
+[03/15 22:53:18] Client#378 connected from 86.169.3.142 (84 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:53:19] Client#378 (86.169.3.142): disconnected (account Lithium)
+Client#379 connected from 86.169.3.142 (85 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:53:22] Account Lithium selecting character Anchises
+[03/15 22:53:55] Client#380 connected from 81.233.48.179 (85 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 22:53:56] Client#380 (81.233.48.179): disconnected (account Zolo)
+Client#381 connected from 81.233.48.179 (85 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 22:53:59] Account Zolo selecting character Zoloch
+[03/15 22:54:04] Client#379 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:54:06] Client#382 connected from 86.169.3.142 (85 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+Client#382 (86.169.3.142): disconnected (account Lithium)
+Client#383 connected from 86.169.3.142 (86 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:54:10] Account Lithium selecting character Anchises
+[03/15 22:55:13] Client#383 (86.169.3.142): disconnected (account Lithium)
+[03/15 22:55:15] Client#381 (81.233.48.179): disconnected (account Zolo)
+[03/15 22:55:18] Client#384 connected from 86.169.3.142 (84 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+Client#384 (86.169.3.142): disconnected (account Lithium)
+Client#385 connected from 86.169.3.142 (85 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 22:55:19] Account Lithium selecting character Anchises
+[03/15 22:55:36] Client#386 connected from 99.246.223.232 (85 connections) on interface 85.227.237.129
+Account Salvor logged in from 99.246.223.232
+[03/15 22:55:38] Client#386 (99.246.223.232): disconnected (account Salvor)
+Client#387 connected from 99.246.223.232 (86 connections) on interface 85.227.237.129
+Account Salvor logged in from 99.246.223.232
+[03/15 22:55:41] Account Salvor selecting character Hondroid
+[03/15 22:55:42] Client#388 connected from 85.227.179.203 (86 connections) on interface 85.227.237.129
+Client#388 (85.227.179.203): disconnected (account unknown)
+[03/15 22:56:20] Client#389 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 22:56:21] Client#389 (81.233.48.179): disconnected (account Zolo)
+Client#390 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 22:56:23] Account Zolo selecting character Zoloch
+[03/15 22:56:27] Character 00003A9E tried to drop item 4013074A, but had not gotten an item.
+[03/15 22:57:03] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 22:57:05] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 22:57:07] Client#391 connected from 85.227.179.203 (87 connections) on interface 85.227.237.129
+Client#391 (85.227.179.203): disconnected (account unknown)
+[03/15 22:57:39] Client#392 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Incorrect password for account Maximax2 from 92.101.157.239
+Client#392 (92.101.157.239): disconnected (account unknown)
+[03/15 22:57:41] Client#393 connected from 85.227.179.203 (87 connections) on interface 85.227.237.129
+Client#393: Unexpected message type 84, 62 bytes (IP:85.227.179.203, Account:None)
+0000: 84 51 64 3f 86 24 2c ee  c5 b9 59 47 fd 9d b0 bf   .Qd?.$,. ..YG....
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 42   ...G...6 ...G...B
+0020: 75 b5 d3 17 d1 fe 4f da  d7 96 31 aa 98 e4 da 31   u.....O. ..1....1
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 22:57:53] Client#394 connected from 92.101.157.239 (88 connections) on interface 85.227.237.129
+Account Maximax logged in from 92.101.157.239
+[03/15 22:57:55] Client#394 (92.101.157.239): disconnected (account Maximax)
+Client#395 connected from 92.101.157.239 (89 connections) on interface 85.227.237.129
+Account Maximax logged in from 92.101.157.239
+[03/15 22:57:58] Account Maximax selecting character Max
+[03/15 22:58:09] Client#396 connected from 92.101.157.239 (89 connections) on interface 85.227.237.129
+Account Max21 logged in from 92.101.157.239
+[03/15 22:58:10] Client#396 (92.101.157.239): disconnected (account Max21)
+Client#397 connected from 92.101.157.239 (90 connections) on interface 85.227.237.129
+Account Max21 logged in from 92.101.157.239
+[03/15 22:58:11] Account Max21 selecting character ShowTime
+Client#393: Unexpected message type 2d, 62 bytes (IP:85.227.179.203, Account:None)
+0000: 2d 52 02 a7 71 31 a9 1a  26 4c ca 76 c4 e8 6f c6   -R..q1.. &L.v..o.
+0010: 70 ee 9a bc bf 47 c5 90  ad 36 9a bc bf 47 c5 e4   p....G.. .6...G..
+0020: df 57 40 46 09 9b ad ec  7f 77 d6 02 32 91 f8 a6   .W@F.... .w..2...
+0030: 9c b3 9a bc bf 47 c5 90  ad 36 9a bc bf b8         .....G.. .6......
+[03/15 22:58:33] Client#393 (85.227.179.203): disconnected (account unknown)
+[03/15 22:58:45] Client#158 (85.227.237.29): disconnected (account Ragnus)
+[03/15 22:58:46] Client#356 (85.227.237.29): disconnected (account Admin)
+[03/15 22:59:17] Client#398 connected from 85.227.179.203 (87 connections) on interface 85.227.237.129
+[03/15 22:59:18] Client#398 (85.227.179.203): disconnected (account unknown)
+[03/15 22:59:26] Client#233 (206.253.145.244): disconnected (account silvermoon)
+[03/15 22:59:32] Client#399 connected from 92.101.157.239 (86 connections) on interface 85.227.237.129
+Client#399 (92.101.157.239): disconnected (account unknown)
+[03/15 22:59:38] Client#400 connected from 92.101.157.239 (86 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 22:59:39] Client#400 (92.101.157.239): disconnected (account Maximax2)
+Client#401 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 22:59:42] Account Maximax2 selecting character Boss of Jhelom
+[03/15 22:59:43] Client#249 (206.253.145.244): disconnected (account bloodmoon)
+[03/15 22:59:52] Client#307 (58.7.191.45): disconnected (account theswift)
+[03/15 22:59:54] Client#390 (81.233.48.179): disconnected (account Zolo)
+[03/15 23:00:10] Client#402 connected from 206.253.145.244 (84 connections) on interface 85.227.237.129
+Account bloodmoon logged in from 206.253.145.244
+[03/15 23:00:11] Client#402 (206.253.145.244): disconnected (account bloodmoon)
+Client#403 connected from 206.253.145.244 (85 connections) on interface 85.227.237.129
+Account bloodmoon logged in from 206.253.145.244
+[03/15 23:00:13] Account bloodmoon selecting character Incognito
+[03/15 23:00:19] Client#404 connected from 81.233.48.179 (85 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:00:20] Client#404 (81.233.48.179): disconnected (account Zolo)
+Client#405 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:00:25] Account Zolo selecting character Zoloch
+[03/15 23:00:26] Client#406 connected from 206.253.145.244 (86 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+Client#406 (206.253.145.244): disconnected (account silvermoon)
+Client#407 connected from 206.253.145.244 (87 connections) on interface 85.227.237.129
+Account silvermoon logged in from 206.253.145.244
+[03/15 23:00:28] Account silvermoon selecting character Giles
+[03/15 23:00:38] Client#408 connected from 74.213.174.185 (87 connections) on interface 85.227.237.129
+Client#408: Unexpected message type f5, 4 bytes (IP:74.213.174.185, Account:None)
+0000: f5 35 01 ae                                        .5...... ........
+[03/15 23:00:41] Client#408 (74.213.174.185): disconnected (account unknown)
+[03/15 23:00:49] Client#409 connected from 85.227.179.203 (87 connections) on interface 85.227.237.129
+Client#409 (85.227.179.203): disconnected (account unknown)
+[03/15 23:00:51] Client#405 (81.233.48.179): disconnected (account Zolo)
+[03/15 23:01:28] Client#410 connected from 85.227.179.203 (86 connections) on interface 85.227.237.129
+Client#410 (85.227.179.203): disconnected (account unknown)
+[03/15 23:01:36] Client#411 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+Client#411 (81.233.48.179): disconnected (account Zolo)
+Client#412 connected from 81.233.48.179 (87 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:01:38] Account Zolo selecting character Zoloch
+[03/15 23:02:23] Client#413 connected from 85.227.179.203 (87 connections) on interface 85.227.237.129
+Client#413: Unexpected message type 84, 62 bytes (IP:85.227.179.203, Account:None)
+0000: 84 51 64 3f 86 24 4e ee  8c 83 12 92 94 1e 09 05   .Qd?.$N. ........
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 52   ...G...6 ...G...R
+0020: 9a c7 76 b8 47 60 22 7b  30 43 af 1b 22 60 dd 8e   ..v.G`"{ 0C.."`..
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:02:28] Client#414 connected from 201.17.73.184 (88 connections) on interface 85.227.237.129
+Client#414: Unexpected message type 84, 62 bytes (IP:201.17.73.184, Account:None)
+0000: 84 43 60 3d 81 34 5f ee  bb fe fd 48 07 2d d2 0d   .C`=.4_. ...H.-..
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 55   ...G...6 ...G...U
+0020: f2 98 7f 6c d9 5a 28 1b  c1 f3 57 e3 bd f5 07 a5   ...l.Z(. ..W.....
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:02:39] Client#414 (201.17.73.184): disconnected (account unknown)
+[03/15 23:02:48] Client#415 connected from 201.17.73.184 (88 connections) on interface 85.227.237.129
+Client#415: Unexpected message type 84, 62 bytes (IP:201.17.73.184, Account:None)
+0000: 84 43 60 3d 81 34 5f ee  bb fe fd 48 07 2d d2 0d   .C`=.4_. ...H.-..
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 55   ...G...6 ...G...U
+0020: f2 98 7f 6c d9 5a 28 1b  c1 f3 57 e3 bd f5 07 a5   ...l.Z(. ..W.....
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:02:51] Client#415 (201.17.73.184): disconnected (account unknown)
+[03/15 23:02:53] Client#89 (90.190.20.40): disconnected (account rastamanas)
+[03/15 23:03:10] Client#412 (81.233.48.179): disconnected (account Zolo)
+[03/15 23:03:12] Client#395 (92.101.157.239): disconnected (account Maximax)
+Client#397 (92.101.157.239): disconnected (account Max21)
+Client#401 (92.101.157.239): disconnected (account Maximax2)
+[03/15 23:03:31] Client#416 connected from 90.190.20.40 (83 connections) on interface 85.227.237.129
+Account rastamanas logged in from 90.190.20.40
+[03/15 23:03:33] Client#416 (90.190.20.40): disconnected (account rastamanas)
+Client#417 connected from 90.190.20.40 (84 connections) on interface 85.227.237.129
+Account rastamanas logged in from 90.190.20.40
+[03/15 23:03:35] Account rastamanas selecting character Rastamanas
+[03/15 23:04:00] Client#413 (85.227.179.203): disconnected (account unknown)
+[03/15 23:04:02] Client#418 connected from 81.233.48.179 (83 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:04:03] Client#418 (81.233.48.179): disconnected (account Zolo)
+Client#419 connected from 81.233.48.179 (84 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:04:04] Account Zolo selecting character Zoloch
+[03/15 23:04:19] Client#420 connected from 58.7.191.45 (84 connections) on interface 85.227.237.129
+Account theswift logged in from 58.7.191.45
+[03/15 23:04:22] Client#421 connected from 58.7.191.45 (85 connections) on interface 85.227.237.129
+Client#420 (58.7.191.45): disconnected (account theswift)
+Account theswift logged in from 58.7.191.45
+[03/15 23:04:23] Account theswift selecting character Micky Swift
+[03/15 23:04:41] Client#422 connected from 85.227.179.203 (85 connections) on interface 85.227.237.129
+Account danne logged in from 85.227.179.203
+[03/15 23:04:47] Client#423 connected from 92.101.157.239 (86 connections) on interface 85.227.237.129
+Account Maximax logged in from 92.101.157.239
+[03/15 23:04:48] Client#423 (92.101.157.239): disconnected (account Maximax)
+Client#424 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account Maximax logged in from 92.101.157.239
+[03/15 23:04:49] Account Maximax selecting character Max
+[03/15 23:05:17] Client#425 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account Max21 logged in from 92.101.157.239
+Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 23:05:18] Client#425 (92.101.157.239): disconnected (account Max21)
+Client#426 connected from 92.101.157.239 (88 connections) on interface 85.227.237.129
+Account Max21 logged in from 92.101.157.239
+[03/15 23:05:20] Account Max21 selecting character ShowTime
+[03/15 23:05:32] Client#422 (85.227.179.203): disconnected (account danne)
+Client#194 (69.196.138.180): disconnected (account Paulimur)
+[03/15 23:05:40] Client#427 connected from 85.227.179.203 (86 connections) on interface 85.227.237.129
+Account danne logged in from 85.227.179.203
+[03/15 23:06:03] Client#428 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:06:04] Client#428 (92.101.157.239): disconnected (account Maximax2)
+Client#429 connected from 92.101.157.239 (88 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:06:06] Account Maximax2 selecting character Boss of Jhelom
+[03/15 23:06:13] Client#419 (81.233.48.179): disconnected (account Zolo)
+[03/15 23:06:22] Client#371 (83.250.77.86): disconnected (account Ejdl)
+[03/15 23:06:26] Client#264 (77.162.169.36): disconnected (account OdinNL)
+[03/15 23:06:36] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 23:06:42] Client (Character Cyberboy) tried to drop an item in a blocked location.
+[03/15 23:07:15] Client#427 (85.227.179.203): disconnected (account danne)
+[03/15 23:07:19] Client#430 connected from 66.191.85.229 (84 connections) on interface 85.227.237.129
+Client#430 (66.191.85.229): disconnected (account unknown)
+[03/15 23:07:25] Client#385 (86.169.3.142): disconnected (account Lithium)
+[03/15 23:07:33] Client#431 connected from 83.250.77.86 (83 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 23:07:34] Client#431 (83.250.77.86): disconnected (account Ejdl)
+Client#432 connected from 83.250.77.86 (83 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 23:07:35] Account Ejdl selecting character Ejdl
+[03/15 23:07:37] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 23:07:45] Client#433 connected from 66.191.85.229 (84 connections) on interface 85.227.237.129
+Account mushufasa logged in from 66.191.85.229
+[03/15 23:08:04] Client#434 connected from 201.17.73.184 (85 connections) on interface 85.227.237.129
+Account velius logged in from 201.17.73.184
+[03/15 23:08:06] Client#434 (201.17.73.184): disconnected (account velius)
+Client#435 connected from 201.17.73.184 (86 connections) on interface 85.227.237.129
+Account velius logged in from 201.17.73.184
+[03/15 23:08:07] Account velius selecting character Velius
+[03/15 23:08:12] Client#436 connected from 66.191.85.229 (86 connections) on interface 85.227.237.129
+Client#433 (66.191.85.229): disconnected (account mushufasa)
+Account mushufasa logged in from 66.191.85.229
+[03/15 23:08:14] Client#437 connected from 77.162.169.36 (86 connections) on interface 85.227.237.129
+[03/15 23:08:17] Account OdinNL logged in from 77.162.169.36
+[03/15 23:08:24] Client#437 (77.162.169.36): disconnected (account OdinNL)
+Client#438 connected from 77.162.169.36 (87 connections) on interface 85.227.237.129
+Account OdinNL logged in from 77.162.169.36
+[03/15 23:08:29] Account OdinNL selecting character Dragonfishz
+[03/15 23:08:50] Client#429 (92.101.157.239): disconnected (account Maximax2)
+[03/15 23:08:52] Client#439 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:08:53] Client#439 (81.233.48.179): disconnected (account Zolo)
+Client#440 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:08:55] Account Zolo selecting character Zoloch
+[03/15 23:09:08] Client#440 (81.233.48.179): disconnected (account Zolo)
+[03/15 23:09:49] Client#441 connected from 189.68.224.109 (86 connections) on interface 85.227.237.129
+Client#441: Unexpected message type 84, 62 bytes (IP:189.68.224.109, Account:None)
+0000: 84 07 35 62 db 75 14 ee  53 c2 fa f6 1f d3 ad 99   ..5b.u.. S.......
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 43   ...G...6 ...G...C
+0020: cb ba 26 f0 61 7a 59 9c  0c 7e 9f 01 53 d1 91 ed   ..&.azY. .~..S...
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:09:51] Client#441 (189.68.224.109): disconnected (account unknown)
+[03/15 23:09:52] Client#442 connected from 189.68.224.109 (86 connections) on interface 85.227.237.129
+Client#442: Unexpected message type 84, 62 bytes (IP:189.68.224.109, Account:None)
+0000: 84 07 35 62 db 75 14 ee  53 c2 fa f6 1f d3 ad 99   ..5b.u.. S.......
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 43   ...G...6 ...G...C
+0020: cb ba 26 f0 61 7a 59 9c  0c 7e 9f 01 53 d1 91 ed   ..&.azY. .~..S...
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:09:57] Character 00003A9E tried to drop item 401BE8DD, but had not gotten an item.
+[03/15 23:10:10] Client#442 (189.68.224.109): disconnected (account unknown)
+[03/15 23:10:21] Client#443 connected from 189.68.224.109 (86 connections) on interface 85.227.237.129
+Client#443: Unexpected message type 84, 62 bytes (IP:189.68.224.109, Account:None)
+0000: 84 07 35 62 db 75 14 ee  53 c2 fa f6 1f d3 ad 99   ..5b.u.. S.......
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 43   ...G...6 ...G...C
+0020: cb ba 26 f0 61 7a 59 9c  0c 7e 9f 01 53 d1 91 ed   ..&.azY. .~..S...
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:10:26] Client#443 (189.68.224.109): disconnected (account unknown)
+[03/15 23:11:50] Client#444 connected from 92.101.157.239 (86 connections) on interface 85.227.237.129
+[03/15 23:11:55] Account Maximax2 logged in from 92.101.157.239
+Client#444 (92.101.157.239): disconnected (account Maximax2)
+[03/15 23:11:58] Client#445 connected from 92.101.157.239 (86 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:12:03] Client#445 (92.101.157.239): disconnected (account Maximax2)
+Client#446 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:12:04] Character 00003A9E tried to drop item 401BE8DD, but had not gotten an item.
+[03/15 23:12:09] Account Maximax2 deleting character 0x17328
+[03/15 23:12:21] Account Maximax2 selecting character Craft
+[03/15 23:12:39] Client#436 (66.191.85.229): disconnected (account mushufasa)
+[03/15 23:12:40] Client#403: Switching to queued data mode (1, 7 bytes)
+[03/15 23:12:41] Client#403: Leaving queued mode (155 bytes xmitted)
+[03/15 23:12:54] Client#447 connected from 189.68.224.109 (86 connections) on interface 85.227.237.129
+Client#447: Unexpected message type 84, 62 bytes (IP:189.68.224.109, Account:None)
+0000: 84 07 35 62 db 75 14 ee  53 c2 fa f6 1f d3 ad 99   ..5b.u.. S.......
+0010: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 90 ad 43   ...G...6 ...G...C
+0020: cb ba 26 f0 61 7a 59 9c  0c 7e 9f 01 53 d1 91 ed   ..&.azY. .~..S...
+0030: 9a bc bf 47 c5 90 ad 36  9a bc bf 47 c5 6f         ...G...6 ...G.o..
+[03/15 23:13:01] Client#447 (189.68.224.109): disconnected (account unknown)
+[03/15 23:13:10] Client#448 connected from 66.191.85.229 (86 connections) on interface 85.227.237.129
+Account mushufasa logged in from 66.191.85.229
+[03/15 23:13:13] Client#449 connected from 66.191.85.229 (87 connections) on interface 85.227.237.129
+Client#448 (66.191.85.229): disconnected (account mushufasa)
+Account mushufasa logged in from 66.191.85.229
+[03/15 23:14:05] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 23:14:07] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 23:14:32] Client#450 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account maximax3 logged in from 92.101.157.239
+Client#81 (94.214.161.126): disconnected (account Andries)
+[03/15 23:14:35] Client#450 (92.101.157.239): disconnected (account maximax3)
+Client#451 connected from 92.101.157.239 (87 connections) on interface 85.227.237.129
+Account maximax3 logged in from 92.101.157.239
+[03/15 23:15:01] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 23:15:10] Client#452 connected from 94.214.161.126 (87 connections) on interface 85.227.237.129
+Account Andries logged in from 94.214.161.126
+Client#453 connected from 94.214.161.126 (88 connections) on interface 85.227.237.129
+Client#452 (94.214.161.126): disconnected (account Andries)
+Account Andries logged in from 94.214.161.126
+[03/15 23:15:12] Account maximax3 created character 0x17845
+[03/15 23:15:13] Account Andries selecting character Andries
+[03/15 23:15:17] Account mushufasa created character 0x17846
+[03/15 23:16:05] Client#454 connected from 81.233.48.179 (88 connections) on interface 85.227.237.129
+[03/15 23:16:07] Account Zolo logged in from 81.233.48.179
+[03/15 23:16:08] Client#454 (81.233.48.179): disconnected (account Zolo)
+Client#455 connected from 81.233.48.179 (88 connections) on interface 85.227.237.129
+Account Zolo logged in from 81.233.48.179
+[03/15 23:16:11] Account Zolo selecting character Zoloch
+[03/15 23:17:00] Client#361 (92.54.109.158): disconnected (account qwerty)
+[03/15 23:17:24] Client#438 (77.162.169.36): disconnected (account OdinNL)
+[03/15 23:17:37] Client#303 (77.162.169.36): disconnected (account Whitecash)
+[03/15 23:17:38] Client#456 connected from 85.226.204.229 (86 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:17:40] Client#456 (85.226.204.229): disconnected (account snorre1)
+Client#457 connected from 85.226.204.229 (87 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:17:41] Account snorre1 selecting character Gruvarbetern
+[03/15 23:17:51] Character 00003A9E tried to drop item 401BE874, but had not gotten an item.
+[03/15 23:17:57] Client#446 (92.101.157.239): disconnected (account Maximax2)
+[03/15 23:18:06] Client#458 connected from 77.162.169.36 (86 connections) on interface 85.227.237.129
+[03/15 23:18:07] Account OdinNL logged in from 77.162.169.36
+[03/15 23:18:10] Client (Character Defender) tried to drop an item out of range.
+[03/15 23:18:14] Client#459 connected from 77.162.169.36 (87 connections) on interface 85.227.237.129
+Client (Character Defender) tried to drop an item in a blocked location.
+Account OdinNL logged in from 77.162.169.36
+[03/15 23:18:16] Account OdinNL selecting character Dragonfishz
+[03/15 23:18:19] Client#458 (77.162.169.36): disconnected (account OdinNL)
+[03/15 23:18:22] Client (Character Defender) tried to drop an item in a blocked location.
+[03/15 23:18:29] Client (Character Defender) tried to drop an item in a blocked location.
+[03/15 23:18:32] Client (Character Defender) tried to drop an item in a blocked location.
+[03/15 23:18:35] Client (Character Defender) tried to drop an item in a blocked location.
+[03/15 23:18:43] Client#170: Switching to queued data mode (1, 58 bytes)
+Client#170: Leaving queued mode (174 bytes xmitted)
+[03/15 23:18:55] Client#167: Switching to queued data mode (1, 62 bytes)
+Client#167: Leaving queued mode (4416 bytes xmitted)
+Client#167: Switching to queued data mode (1, 62 bytes)
+Client#167: Leaving queued mode (62 bytes xmitted)
+[03/15 23:18:57] Client#460 connected from 94.214.161.126 (87 connections) on interface 85.227.237.129
+Account nagash logged in from 94.214.161.126
+[03/15 23:18:58] Client#460 (94.214.161.126): disconnected (account nagash)
+Client#461 connected from 94.214.161.126 (88 connections) on interface 85.227.237.129
+Account nagash logged in from 94.214.161.126
+[03/15 23:19:00] Account nagash selecting character Head Admin Nagash
+Client#140 (94.214.161.126): disconnected (account unknown)
+[03/15 23:20:03] Client#159 (90.190.20.40): disconnected (account defender1)
+[03/15 23:20:56] Client#457 (85.226.204.229): disconnected (account snorre1)
+[03/15 23:21:21] Client#462 connected from 74.213.174.185 (85 connections) on interface 85.227.237.129
+Client#462: Unexpected message type f5, 4 bytes (IP:74.213.174.185, Account:None)
+0000: f5 35 01 ae                                        .5...... ........
+[03/15 23:21:24] Client#462 (74.213.174.185): disconnected (account unknown)
+[03/15 23:21:25] Character 00003A9E tried to drop item 401BF568, but had not gotten an item.
+[03/15 23:21:35] Client#463 connected from 90.190.20.40 (85 connections) on interface 85.227.237.129
+Account defender1 logged in from 90.190.20.40
+[03/15 23:21:37] Client#463 (90.190.20.40): disconnected (account defender1)
+Client#464 connected from 90.190.20.40 (86 connections) on interface 85.227.237.129
+Account defender1 logged in from 90.190.20.40
+[03/15 23:21:38] Account defender1 selecting character Razir D'Amur of Britain
+[03/15 23:21:39] Client (Character Cyberboy) tried to drop an item out of range.
+[03/15 23:22:04] Client#403: Switching to queued data mode (1, 9 bytes)
+Client#403: Leaving queued mode (81 bytes xmitted)
+[03/15 23:22:20] Client#465 connected from 81.233.48.179 (86 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 23:22:22] Client#465 (81.233.48.179): disconnected (account Zoloch)
+Client#466 connected from 81.233.48.179 (87 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 23:22:23] Account Zoloch selecting character Morfian
+[03/15 23:25:00] Client#132: Switching to queued data mode (1, 9 bytes)
+[03/15 23:25:02] Client#132: Leaving queued mode (181 bytes xmitted)
+[03/15 23:25:57] Client#467 connected from 77.162.169.36 (87 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 23:26:00] Client#467 (77.162.169.36): disconnected (account Whitecash)
+Client#468 connected from 77.162.169.36 (88 connections) on interface 85.227.237.129
+Account Whitecash logged in from 77.162.169.36
+[03/15 23:26:03] Account Whitecash selecting character Dragonkingz
+[03/15 23:26:38] Client#469 connected from 86.169.3.142 (88 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 23:26:39] Client#469 (86.169.3.142): disconnected (account Lithium)
+Client#470 connected from 86.169.3.142 (89 connections) on interface 85.227.237.129
+Account Lithium logged in from 86.169.3.142
+[03/15 23:27:53] Client#470 (86.169.3.142): disconnected (account Lithium)
+[03/15 23:28:43] Client#461 (94.214.161.126): disconnected (account nagash)
+[03/15 23:29:03] Client#93 (81.233.49.187): disconnected (account todo)
+[03/15 23:29:30] Client#471 connected from 92.54.109.158 (86 connections) on interface 85.227.237.129
+[03/15 23:29:31] Account qwerty logged in from 92.54.109.158
+[03/15 23:29:37] Client#471 (92.54.109.158): disconnected (account qwerty)
+Client#472 connected from 92.54.109.158 (87 connections) on interface 85.227.237.129
+Account qwerty logged in from 92.54.109.158
+[03/15 23:29:38] Client#473 connected from 85.226.204.229 (87 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:29:40] Client#473 (85.226.204.229): disconnected (account snorre1)
+Client#474 connected from 85.226.204.229 (88 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:29:41] Account snorre1 selecting character Gruvarbetern
+[03/15 23:29:48] Account qwerty selecting character Rock Star
+[03/15 23:31:07] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 23:31:09] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 23:32:56] Client#475 connected from 70.83.88.55 (88 connections) on interface 85.227.237.129
+Account chester57 logged in from 70.83.88.55
+[03/15 23:32:57] Client#475 (70.83.88.55): disconnected (account chester57)
+Client#476 connected from 70.83.88.55 (89 connections) on interface 85.227.237.129
+Account chester57 logged in from 70.83.88.55
+[03/15 23:33:03] Account chester57 selecting character TurboStroke of Trinsic
+[03/15 23:33:42] Client#477 connected from 89.253.98.104 (89 connections) on interface 85.227.237.129
+Account viktor logged in from 89.253.98.104
+Client#477 (89.253.98.104): disconnected (account viktor)
+Client#478 connected from 89.253.98.104 (89 connections) on interface 85.227.237.129
+Account viktor logged in from 89.253.98.104
+[03/15 23:33:43] Account viktor selecting character Mrs Dalton
+Client#468: Unexpected message type 3a, 6 bytes (IP:77.162.169.36, Account:Whitecash)
+0000: 3a 00 06 00 03 01                                  :....... ........
+Client#468: Unexpected message type 3a, 6 bytes (IP:77.162.169.36, Account:Whitecash)
+0000: 3a 00 06 00 03 02                                  :....... ........
+Client#468: Unexpected message type 3a, 6 bytes (IP:77.162.169.36, Account:Whitecash)
+0000: 3a 00 06 00 03 00                                  :....... ........
+Client#468: Unexpected message type 3a, 6 bytes (IP:77.162.169.36, Account:Whitecash)
+0000: 3a 00 06 00 03 01                                  :....... ........
+[03/15 23:37:56] Client#479 connected from 64.230.63.199 (90 connections) on interface 85.227.237.129
+Account iToke logged in from 64.230.63.199
+[03/15 23:37:57] Client#479 (64.230.63.199): disconnected (account iToke)
+Client#480 connected from 64.230.63.199 (91 connections) on interface 85.227.237.129
+Account iToke logged in from 64.230.63.199
+[03/15 23:37:58] Account iToke selecting character iToke
+[03/15 23:39:15] Client#336 (66.191.90.239): disconnected (account crippledsquirrel)
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 2b 01                                  :...+... ........
+[03/15 23:42:17] Client#481 connected from 74.213.174.185 (90 connections) on interface 85.227.237.129
+Client#481: Unexpected message type f5, 4 bytes (IP:74.213.174.185, Account:None)
+0000: f5 35 01 ae                                        .5...... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 2a 01                                  :...*... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 2a 02                                  :...*... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 2b 01                                  :...+... ........
+[03/15 23:42:23] Client#481 (74.213.174.185): disconnected (account unknown)
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 2b 02                                  :...+... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 29 01                                  :...)... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 29 02                                  :...)... ........
+[03/15 23:42:27] Client#474 (85.226.204.229): disconnected (account snorre1)
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 05 01                                  :....... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 05 02                                  :....... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 28 01                                  :...(... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 28 02                                  :...(... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 1b 01                                  :....... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 1b 02                                  :....... ........
+[03/15 23:42:30] Client#482 connected from 85.226.204.229 (89 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+Client#483 connected from 85.227.237.29 (90 connections) on interface 85.227.237.129
+Account Admin logged in from 85.227.237.29
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 1f 01                                  :....... ........
+Client#464: Unexpected message type 3a, 6 bytes (IP:90.190.20.40, Account:defender1)
+0000: 3a 00 06 00 1f 02                                  :....... ........
+[03/15 23:42:31] Client#482 (85.226.204.229): disconnected (account snorre1)
+Client#484 connected from 85.226.204.229 (90 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:42:33] Account snorre1 selecting character Gruvarbetern
+[03/15 23:42:35] Client#484 (85.226.204.229): disconnected (account snorre1)
+[03/15 23:42:37] Client#483 (85.227.237.29): disconnected (account Admin)
+Client#485 connected from 85.227.237.29 (89 connections) on interface 85.227.237.129
+Account Admin logged in from 85.227.237.29
+[03/15 23:42:38] Account Admin selecting character Developer Snocks
+[03/15 23:42:44] Client#486 connected from 85.226.204.229 (90 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:42:46] Client#486 (85.226.204.229): disconnected (account snorre1)
+Client#487 connected from 85.226.204.229 (91 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:42:47] Client#485 (85.227.237.29): disconnected (account Admin)
+[03/15 23:42:48] Client#487 (85.226.204.229): disconnected (account snorre1)
+[03/15 23:42:51] Client#464: Switching to queued data mode (1, 8 bytes)
+[03/15 23:42:53] Client#464: Leaving queued mode (162 bytes xmitted)
+[03/15 23:42:54] Client#488 connected from 85.227.237.29 (89 connections) on interface 85.227.237.129
+Account Ragnus logged in from 85.227.237.29
+Client#488 (85.227.237.29): disconnected (account Ragnus)
+Client#489 connected from 85.227.237.29 (90 connections) on interface 85.227.237.129
+Account Ragnus logged in from 85.227.237.29
+[03/15 23:42:56] Account Ragnus selecting character Ragnus
+[03/15 23:43:04] Client#464: Switching to queued data mode (1, 9 bytes)
+[03/15 23:43:06] Client#464: Leaving queued mode (91 bytes xmitted)
+[03/15 23:43:09] Client#464: Switching to queued data mode (1, 9 bytes)
+[03/15 23:43:11] Client#464: Leaving queued mode (56 bytes xmitted)
+[03/15 23:43:15] Client#464: Switching to queued data mode (1, 8 bytes)
+[03/15 23:43:17] Client#464: Leaving queued mode (99 bytes xmitted)
+Client#449: Unexpected message type 3a, 6 bytes (IP:66.191.85.229, Account:mushufasa)
+0000: 3a 00 06 00 2e 01                                  :....... ........
+Client#449: Unexpected message type 3a, 6 bytes (IP:66.191.85.229, Account:mushufasa)
+0000: 3a 00 06 00 2e 02                                  :....... ........
+Client#449: Unexpected message type 3a, 6 bytes (IP:66.191.85.229, Account:mushufasa)
+0000: 3a 00 06 00 2e 00                                  :....... ........
+[03/15 23:43:42] Client#490 connected from 85.226.204.229 (90 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:43:43] Client#490 (85.226.204.229): disconnected (account snorre1)
+Client#491 connected from 85.226.204.229 (90 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:43:45] Account snorre1 selecting character Gruvarbetern
+[03/15 23:44:09] Client#464: Switching to queued data mode (1, 9 bytes)
+[03/15 23:44:11] Client#464: Leaving queued mode (110 bytes xmitted)
+[03/15 23:44:45] Client#492 connected from 85.227.237.29 (91 connections) on interface 85.227.237.129
+Account minerman logged in from 85.227.237.29
+Client#492 (85.227.237.29): disconnected (account minerman)
+Client#493 connected from 85.227.237.29 (92 connections) on interface 85.227.237.129
+Account minerman logged in from 85.227.237.29
+[03/15 23:44:47] Account minerman selecting character MinerMan
+[03/15 23:46:15] Client#494 connected from 83.172.74.27 (92 connections) on interface 85.227.237.129
+Account Ahspen logged in from 83.172.74.27
+Client#494 (83.172.74.27): disconnected (account Ahspen)
+Client#495 connected from 83.172.74.27 (92 connections) on interface 85.227.237.129
+Account Ahspen logged in from 83.172.74.27
+[03/15 23:46:45] Client#491 (85.226.204.229): disconnected (account snorre1)
+[03/15 23:46:48] Client#496 connected from 85.226.204.229 (92 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:46:49] Client#496 (85.226.204.229): disconnected (account snorre1)
+Client#497 connected from 85.226.204.229 (92 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:46:51] Account snorre1 deleting character 0x15426
+[03/15 23:46:57] Account Ahspen created character 0x17966
+[03/15 23:47:12] Client#498 connected from 89.253.98.104 (93 connections) on interface 85.227.237.129
+Account moredice logged in from 89.253.98.104
+Client#498 (89.253.98.104): disconnected (account moredice)
+Client#499 connected from 89.253.98.104 (93 connections) on interface 85.227.237.129
+Account moredice logged in from 89.253.98.104
+[03/15 23:47:13] Account moredice selecting character Moredice
+[03/15 23:47:41] Client#466 (81.233.48.179): disconnected (account Zoloch)
+[03/15 23:47:45] Client#500 connected from 81.233.48.179 (93 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 23:47:46] Account snorre1 created character 0x17970
+Client#500 (81.233.48.179): disconnected (account Zoloch)
+Client#501 connected from 81.233.48.179 (94 connections) on interface 85.227.237.129
+Account Zoloch logged in from 81.233.48.179
+[03/15 23:47:47] Account Zoloch selecting character Morfian
+[03/15 23:48:09] [pkg/std/saver/saver.ecl]: Saving World State
+[03/15 23:48:11] [pkg/std/saver/saver.ecl]: World state saved (0 seconds)
+[03/15 23:49:20] Client#451 (92.101.157.239): disconnected (account maximax3)
+[03/15 23:49:29] Client#502 connected from 92.101.157.239 (93 connections) on interface 85.227.237.129
+Account maximax3 logged in from 92.101.157.239
+[03/15 23:49:32] Client#502 (92.101.157.239): disconnected (account maximax3)
+Client#503 connected from 92.101.157.239 (94 connections) on interface 85.227.237.129
+Account maximax3 logged in from 92.101.157.239
+[03/15 23:49:40] Client#503 (92.101.157.239): disconnected (account maximax3)
+[03/15 23:49:54] Client#504 connected from 92.101.157.239 (93 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:49:58] Client#504 (92.101.157.239): disconnected (account Maximax2)
+Client#505 connected from 92.101.157.239 (94 connections) on interface 85.227.237.129
+Account Maximax2 logged in from 92.101.157.239
+[03/15 23:50:04] Client#505 (92.101.157.239): disconnected (account Maximax2)
+[03/15 23:51:12] Client#495 (83.172.74.27): disconnected (account Ahspen)
+[03/15 23:54:14] Client#311 (90.190.22.248): disconnected (account cyberboy)
+[03/15 23:55:22] Character 00004632 tried to equip item 401c0a9b, which did not exist in gotten_items.
+[03/15 23:55:53] Client#497 (85.226.204.229): disconnected (account snorre1)
+[03/15 23:56:03] Client#432 (83.250.77.86): disconnected (account Ejdl)
+[03/15 23:56:09] Client#506 connected from 83.250.77.86 (89 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 23:56:10] Client#506 (83.250.77.86): disconnected (account Ejdl)
+Client#507 connected from 83.250.77.86 (89 connections) on interface 85.227.237.129
+Account Ejdl logged in from 83.250.77.86
+[03/15 23:56:12] Account Ejdl selecting character Ejdl
+[03/15 23:56:39] Client#508 connected from 85.226.204.229 (90 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:56:40] Client#508 (85.226.204.229): disconnected (account snorre1)
+Client#509 connected from 85.226.204.229 (91 connections) on interface 85.227.237.129
+Account snorre1 logged in from 85.226.204.229
+[03/15 23:56:41] Account snorre1 selecting character Feskern
+[03/15 23:58:41] Client#499 (89.253.98.104): disconnected (account moredice)
+[03/15 23:58:46] Client#176 (85.227.232.212): disconnected (account markieparkie)

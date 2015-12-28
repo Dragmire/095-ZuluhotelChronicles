@@ -1,0 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "ctf1";
+include "include/random";       
+include "include/attributes";
+
+
+program deadtimer(who)
+
+removetech(who);
+
+sleep(30);
+
+putinplayer(who);
+
+endprogram

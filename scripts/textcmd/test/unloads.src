@@ -1,0 +1,20 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+use uo;
+use os;
+
+program reloadpkg( who, text )
+  var ret := unload_scripts( text );
+
+  if ( !text )
+    SendSysMessage( who, "Unloading all packages: " + ret );
+  else
+    SendSysMessage( who, "Unloading package " + text + ": " + ret);
+  endif
+endprogram

@@ -1,0 +1,80 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/objtype";
+include "include/canAccess";
+
+const STARTWHEEL := 0x1015;
+const ENDWHEEL := 0x101e;
+
+program use_thread(who, thread)
+
+  if(!can_access(who, thread))
+    return;
+  endif
+  if(thread.movable == 0)
+    SendSysMessage(who, "You cannot use that.");
+    return;
+  endif
+
+  if(!ReserveItem(thread))
+    SendSysMessage(who,"that is already in use.");
+    return;
+  endif
+  if ( !NearAWheel( who ) )
+    SendSysMessage(who,"You can only use that on a loom.");
+    return;
+  else
+    MakeCloth(who, thread);
+  endif
+  
+endprogram
+
+function MakeCloth(character, yarn)
+  if(!Accessible(character, yarn))
+    SendSysMessage(character, "You don't have any thread!");
+    return;
+  endif
+  if(yarn.amount >= 5)
+    set_critical(1);
+    if( yarn.amount >= 5)
+      if(SubtractAmount(yarn, 5))
+        var cloth := CreateItemInBackpack(character, UOBJ_CLOTH, 1);
+        SendSysMessage(character, "You use some thread and create a bolt of cloth.");
+        set_critical(0);
+      endif
+    else
+       SendSysMessage(character, "You don't have enough thread for the bolt of cloth.");
+       set_critical(0);
+    endif
+  else
+    SendSysMessage(character, "You don't have enough thread for the bolt of cloth.");
+    set_critical(0);
+  endif
+endfunction
+
+function NearAWheel(me)
+
+	foreach item in ListItemsNearLocation(me.x, me.y, me.z,2)
+		if ( (item.objtype >= STARTWHEEL && item.objtype <= ENDWHEEL) ||
+		   (item.objtype >= 0x10a4 && item.objtype <= 0x10a6) )
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function NearALoom(me)
+
+	foreach item in ListItemsNearLocation(me.x, me.y, me.z,2)
+		if (item.objtype >= UOBJ_LOOM_START && item.objtype <= UOBJ_LOOM_END)
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction

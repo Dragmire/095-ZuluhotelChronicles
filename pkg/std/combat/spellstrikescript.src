@@ -1,0 +1,38 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+include "include/spelldata";
+include "include/random";
+
+program spellstrikescript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var chance := Cint(GetObjProperty(weapon, "ChanceOfEffect"));
+	if(RandomDiceStr("1d100") <= chance)
+		var spellid := GetObjProperty( weapon , "HitWithSpell" );
+		var circle := Cint(GetObjProperty(weapon, "EffectCircle"));
+		var targ;
+		var caster;
+
+		if (GetObjProperty( weapon , "Cursed"))
+			targ := attacker;
+			caster := defender;
+		else
+			targ := defender;
+			caster := attacker;
+		endif
+
+		var spellparms := { };
+		spellparms[1] := "#MOB";
+		spellparms[2] := caster;
+		spellparms[3] := targ;
+		spellparms[4] := circle;
+		spellparms[5] := 1;
+		Start_Script( GetScript( spellid ) , spellparms );
+
+	endif
+	
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage + 10 );
+	DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+endprogram

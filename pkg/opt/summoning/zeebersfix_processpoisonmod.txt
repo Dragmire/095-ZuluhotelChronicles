@@ -1,0 +1,25 @@
+	if( !current )
+		who.SetPoisoned();
+		if( msg )
+			PrintTextAbovePrivate( who, msg, who );
+		endif
+		currentmod := mmod;
+	else
+		AddToPoisonMod( currentmod, mmod );
+	endif
+
+	SetObjProperty( who, "poison", currentmod );
+
+	set_critical(0);
+
+	duration:=duration+1;
+
+while(  duration >= 0 )
+duration:=duration-10;
+sleep( 5 );
+if( GetHp(who) == 0 )
+
+ApplyRawDamage( who, 1 );
+endif
+
+endwhile

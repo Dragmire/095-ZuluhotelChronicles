@@ -1,0 +1,25 @@
+use uo;
+use os;
+
+program textcmd_fixcontainer( who )
+
+	var container := Target(who);
+	if( !container )
+		return 0;
+	elseif( !container.IsA(POLCLASS_CONTAINER) )
+		return 0;
+	endif
+
+	var root_items := {};
+	foreach item in EnumerateItemsInContainer(container)
+		if( item.container == container )
+			root_items.append(item);
+			MoveItemToLocation(item, who.x, who.y, who.z, MOVEITEM_FORCELOCATION);
+		endif
+	endforeach
+
+
+
+	SendSysMessage( who, "Done." );
+
+endprogram

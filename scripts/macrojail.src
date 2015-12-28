@@ -1,0 +1,69 @@
+use os;
+use uo;
+use util;
+use basic;
+
+include "include/random";
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+
+var layout := {
+	"page 0",
+	"noclose",
+	"nomove",
+	"nodispose",
+	"gumppic 200 200 2500",
+	"button 280 310 2128 2129 1 0 1",
+	"text 235 225 995 0",
+	"text 235 240 995 1",
+	"text 235 255 995 2",
+	"text 235 270 995 3",
+	"text 235 285 995 4",
+};
+
+var data := {
+	"This is a check for",
+	"macroing. You have",
+	"10 minutes to press",
+	"'ok' before you",
+	"will be jailed.",
+};
+
+program warn_gump(player)
+	var x:=220+Random(400);
+	var y:=140+Random(400);
+
+	layout[ 5]:="gumppic "+x+" "+y+" 2500";
+	layout[ 6]:="button "+(x+80)+" "+(y+110)+" 2128 2129 1 0 1";
+	layout[ 7]:="text "+(x+35)+" "+(y+25)+" 995 0";
+	layout[ 8]:="text "+(x+35)+" "+(y+40)+" 995 1";
+	layout[ 9]:="text "+(x+35)+" "+(y+55)+" 995 2";
+	layout[10]:="text "+(x+35)+" "+(y+70)+" 995 3";
+	layout[11]:="text "+(x+35)+" "+(y+85)+" 995 4";
+
+
+	setobjproperty(player,"starttime",readgameclock());
+	SetObjProperty( player, "#macrotest", 1 );
+	start_script(":zuluitems:macrotimer", player);
+	SendDialogGump( player, layout, data );
+
+	if (!GetObjProperty(player,"starttime") && !GetObjProperty( player, "#macrotest"))
+	return;
+	else
+	eraseobjproperty(player,"starttime");
+	EraseObjProperty( player, "#macrotest");
+	endif
+
+	PlayLightningBoltEffect( player );
+endprogram

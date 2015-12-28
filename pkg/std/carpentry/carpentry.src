@@ -1,0 +1,721 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  carpentry.src - carpentry tool doubleclick script
+//
+//  Modifications:
+//	19990414 ENS restructured logic a bit
+//	19990423 RAC set created objects movable
+//      20010329 Jaleem added colored fishing poles (inherit colors from logs)
+//  NOTE: Furnature only faces one way, the "open" armoire gfx doesnt open as a
+//		Container and wont switch to the closed gfx.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use cfgfile;
+use os;
+use math;
+
+include "util/key";
+include "include/attributes";
+include "util/repair";
+include "include/yesno";
+include "include/client";
+include "include/classes";
+include "include/objtype";
+include "include/itemutil";
+include "include/random";
+include "include/autoloop";
+
+
+const GOLD_COLOR	:= 0x0033;
+const CARPENTER_SOUND	:= 0x23e;
+const DIVIDER		:= 4;
+const APPEAR_AT		:= -10;
+const POINTS_MULTIPLIER	:= 10;
+const TINKER_LOCKABLE	:= 90;
+const FAME_BONUS	:= 200;
+const ID_LOGS		:= 1;
+const ID_INGOTS		:= 2;
+const ID_CLOTH		:= 3;
+
+
+var carpenter_cfg	:= ReadConfigFile( "carpentry" );
+var carpenter_items	:= ReadConfigFile( ":carpentry:itemdesc" );
+var varcfg;
+var ressource_diff;
+var ressource_name;
+var ressource_qual;
+var use_with;
+var use_with_diff := 0;
+var use_with_qual := 1;
+var use_with_name;
+
+
+program MakeCarpentryItems( character, tool )
+
+	if( !ReserveItem(tool) )
+		return 0;
+	endif
+
+	SendSysMessage(character, "What would you like to use that on?");
+	var use_on := Target(character, TGTOPT_CHECK_LOS);
+	var item;
+
+	if( !use_on )
+		return 0;
+	
+	elseif( !Accessible(character, use_on) )
+		SendSysMessage( character, "You can't reach that." );
+		return 0;
+	
+	elseif( !ReserveItem(use_on) )
+		return 0;
+	
+	elseif( !IsInContainer(character.backpack, use_on) )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return 0;
+	
+	elseif( use_on.objtype == UOBJ_BARREL_LID || use_on.objtype == UOBJ_BARREL_STAVE || use_on.objtype == UOBJ_BARREL_HOOPS )
+		TryToCreateKeg( character, use_on );
+	
+	elseif( IsLog(use_on))
+		ressource_diff := carpenter_cfg[use_on.objtype].Difficulty;
+		ressource_name := carpenter_cfg[use_on.objtype].Name;
+		ressource_qual := carpenter_cfg[use_on.objtype].quality;
+		item := MakeAndProcessMenu( character, use_on, ID_LOGS );
+
+	elseif( IsIngot(use_on) )
+	   	var cfg := ReadConfigFile( ":blacksmithy:blacksmithy" );
+	   	use_with := use_on;
+	   	use_with_name := cfg[use_on.objtype].Name;
+		use_with_diff := cfg[use_on.objtype].Difficulty;
+		use_with_qual := cfg[use_on.objtype].quality;
+		item := MakeAndProcessMenu( character, use_on, ID_INGOTS );
+
+	elseif( IsCloth(use_on) )
+		use_with := use_on;
+		item := MakeAndProcessMenu( character, use_on, ID_CLOTH );
+
+	elseif( use_on.hp && use_on.quality && carpenter_items[use_on.objtype] )
+		repair_item( character, use_on, SKILLID_CARPENTRY );
+
+	else
+		SendSysMessage( character, "You don't know how to use those items together." );
+	endif
+
+	if( !item )
+		return 0;
+	else
+		return TryToCreateItem( character, use_on, item );
+	endif
+
+endprogram
+
+
+function TryToCreateKeg( character, use_on )
+
+	var needed_parts := { UOBJ_BARREL_LID,
+				UOBJ_BARREL_STAVE,
+				UOBJ_BARREL_HOOPS };
+
+
+	var parts := { use_on };
+	var itemname;
+	var points;
+	var skill;
+
+	foreach objtype in needed_parts
+		if( objtype != use_on.objtype )
+			var have_it := FindObjtypeInContainer( character.backpack, objtype );
+			if( !have_it )
+				SendSysMessage( character, "You miss some parts to make the barrel." );
+				return;
+
+			else
+				if( ReserveItem( have_it ) )
+					parts.append( have_it );
+				else
+					return;
+				endif
+			endif
+		endif
+	endforeach
+
+	//Integrity check
+	if( len( parts ) != len( needed_parts ) )
+		SendSysMessage( character, "You miss some parts to make the barrel." );
+		return;
+	endif
+
+	var menu := CreateMenu( "What would you like to make?" );
+	AddMenuItem( menu, UOBJ_KEG, "Keg" );
+	AddMenuItem( menu, UOBJ_BARREL, "Barrel" );
+
+	var choice := SelectMenuItem2( character, menu ).objtype;
+	if( !choice )
+		return;
+	endif
+
+	var element := FindConfigElem( carpenter_cfg, choice );
+	if( element )
+		itemname := element.Name;
+		skill 	 := element.Skill;
+	else
+		return;
+	endif
+
+	points	:= CInt( skill * POINTS_MULTIPLIER );
+
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+
+	var result_color;
+	foreach item in parts
+		if( item.color != 0 )
+			result_color := item.color;
+		endif
+
+		DestroyItem( item );
+	endforeach
+
+	if( CheckSkill( character, CInt(SKILLID_CARPENTRY), CInt(skill), CInt(points) ) )
+
+		var theitem := CreateItemInBackpack( character, choice );
+		if( !theitem )
+			SendSysMessage( character, "Your backpack is full." );
+			return;
+		endif
+
+		theitem.movable := 1;
+		if( result_color )
+			theitem.color := result_color;
+		endif
+
+		SetName( theitem, itemname );
+		SendSysMessage( character, "You create the " + itemname + " and place it in your pack." );
+
+	else
+		SendSysMessage( character, "You fail to create the" + itemname + " and destroy the material." );
+	endif
+
+endfunction
+
+
+function TryToCreateItem( character, use_on, item, sfx := CARPENTER_SOUND )
+
+	var skillid := SKILLID_CARPENTRY;
+	var skillid2;
+	var skill;
+	var skill2;
+	var element;
+	var material;
+	var material2 := 0;
+	var points;
+	var points2;
+	var itemname;
+	var result_qual;
+	var give_deed;
+	var is_excep;
+	var lockable;
+	var undyeable;
+
+	item := item.objtype;
+
+	element := FindConfigElem( carpenter_cfg, item );
+
+	if( element )
+		material := element.Material;
+		if( use_with )
+			material2 := element.CoMaterial;
+		endif
+	else
+		return;
+	endif
+
+	AutoLoop_init( character );
+	while( AutoLoop_more() && use_on.amount >= material && not character.dead)
+
+
+	// check for comaterial
+	if( use_with )
+		if( use_with.amount >= material2 )
+			// refreshing skill2 stuff
+			skillid2 := element.CoSkillid;
+			material2 := element.CoMaterial;
+			skill2 := element.CoSkill;
+		else
+			AutoLoop_finish();
+			return;
+		endif
+	endif
+
+	// refreshing stuff =)
+	itemname := element.Name;
+	material := element.Material;
+	skill 	 := element.Skill;
+	give_deed := element.MakeDeed;
+	undyeable := element.Undyeable;
+	is_excep := 0;
+	lockable := 0;
+
+
+	PlaySoundEffect( character, sfx );
+	sleep(2);
+	PlaySoundEffect( character, sfx );
+	sleep(2);
+	PlaySoundEffect( character, sfx );
+	sleep(2);
+
+	skill := skill + CInt( ressource_diff / DIVIDER );
+	result_qual := ressource_qual;
+
+	if( skill2 )
+		skill2 := skill + CInt( use_with_diff / DIVIDER );
+		result_qual := CDbl( (result_qual + use_with_qual) / 2 );
+		points2 := CInt( (skill2 + CInt(material2 / 3)) * POINTS_MULTIPLIER / 3 );
+		if( skill2 < 1 )
+			skill2 := 1;
+		elseif( skill2 > 180 )
+			skill2 := 180;
+		endif
+	endif
+
+	if( skill < 1 )
+		skill := 1;
+	elseif( skill > 130 )
+		skill := 130;
+	endif
+
+	points	:= CInt( (skill + CInt(material / 3)) * POINTS_MULTIPLIER );
+
+	if( !CheckSkill( character, CInt(skillid), CInt(skill), CInt(points) ) )
+		var carpentry	:= GetEffectiveSkill( character, skillid );
+		var destroy	:= 75 - CInt( carpentry / 2 );
+
+		if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+			destroy := CInt( destroy / ClasseBonus( character, CLASSEID_CRAFTER ) );
+		endif
+
+		if( destroy > 50 )
+			destroy	:= 50;
+		endif
+
+		var to_be_destroyed	:= CInt( material * destroy / 100 );
+		if( to_be_destroyed < 1 )
+			to_be_destroyed	:= 1;
+		endif
+
+		SubtractAmount( use_on, to_be_destroyed );
+		var res_name1 := GetRessourceName( use_on );
+
+		if( use_with )
+			var res_name2 := GetRessourceName( use_with );
+			var to_be_destroyed2	:= CInt( material2 * destroy / 100 );
+			if( to_be_destroyed2 < 1 )
+				to_be_destroyed2	:= 1;
+			endif
+
+			SubtractAmount( use_with, to_be_destroyed2 );
+			SendSysMessage( character, "You destroyed " + to_be_destroyed + " " + res_name1 + " and " + to_be_destroyed2 + " " + res_name2 + "." );
+		else
+			SendSysMessage( character, "You destroyed " + to_be_destroyed + " " + res_name1 + "." );
+		endif
+
+	// if first check goes OK then GO ON
+	else
+
+	if( ( skillid2 ) &&  !CheckSkill( character, CInt(skillid2), CInt(skill2), CInt(points2) )  )
+			var the_skill	:= GetEffectiveSkill( character, skillid2 );
+			var destroy	:= 75 - CInt( the_skill / 2 );
+
+			if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+				destroy := CInt( destroy / ClasseBonus( character, CLASSEID_CRAFTER ) );
+			endif
+
+			if( destroy > 50 )
+				destroy	:= 50;
+			endif
+
+			var res_name1 := GetRessourceName( use_on );
+			var res_name2 := GetRessourceName( use_with );
+
+			var to_be_destroyed	:= CInt( material * destroy / 100 );
+			if( to_be_destroyed < 1 )
+				to_be_destroyed	:= 1;
+			endif
+
+			SubtractAmount( use_on, to_be_destroyed );
+
+			var to_be_destroyed2	:= CInt( material2 * destroy / 100 );
+			if( to_be_destroyed2 < 1 )
+				to_be_destroyed2	:= 1;
+			endif
+
+			SubtractAmount( use_with, to_be_destroyed2 );
+			SendSysMessage( character, "You destroyed " + to_be_destroyed + " " + res_name1 + " and " + to_be_destroyed2 + " " + res_name2 + "." );
+
+
+	// if second check goes ok as well or there is no second check GO ON
+	else
+
+	var excep_ch	:= 10;
+
+
+	if( use_with_name )
+		if( ressource_name )
+			itemname := use_with_name + " & " + ressource_name + " " + itemname;
+		else
+			itemname := use_with_name + " " + itemname;
+		endif
+
+	elseif( ressource_name )
+		itemname := ressource_name + " " + itemname;
+	endif
+
+
+  	if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+		excep_ch := CInt( excep_ch * ClasseBonus( character, CLASSEID_CRAFTER ) );
+	else
+		skill := skill + 20;
+	endif
+
+
+	if( skill < 90 )
+		skill := 90;
+	endif
+
+
+	if( carpenter_cfg[item].lockable )
+		if( CheckSkill( character, CInt(SKILLID_TINKERING), CInt(TINKER_LOCKABLE), 0 ) )
+			lockable := 1;
+		endif
+	endif
+
+
+	if( element.Exceptional && (Random(100) < excep_ch) )
+		if( CheckSkill( character, CInt(skillid), CInt(skill), 0 ) )
+			//Made something Exceptional
+			var armslore := GetAttribute( character, ATTRIBUTEID_ARMSLORE );
+			var multiplier := 5 + CInt( armslore / 10 );
+
+			if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+				multiplier := CInt( multiplier * ClasseBonus( character, CLASSEID_CRAFTER ) );
+			endif
+
+			multiplier	:= 100 + multiplier;
+			var newquality := CInt(result_qual * multiplier);
+			newquality := CDbl(newquality);
+			newquality := newquality / 100;
+			result_qual := newquality;
+			itemname := "Exceptional " + itemname + " [Crafted by " + character.name + "]";
+			is_excep := 1;
+		endif
+	endif
+
+	var theitem;
+	var item_cfg := ReadConfigFile( ":*:itemdesc" );
+
+	if( give_deed )
+		var sell_price := item_cfg[give_deed].VendorBuysFor;
+		theitem := CreateItemInBackpack( character, give_deed );
+		SetObjProperty( theitem, "ItemBaseName", itemname );
+		SetObjProperty( theitem, "ItemQuality", result_qual );
+		itemname := "deed for : " + itemname;
+		if( lockable )
+			SetObjProperty( theitem, "ItemIsLockable", 1 );
+		endif
+
+		if( is_excep )
+			SendSysMessage( character, "You place the deed for the exceptional item in your pack." );
+			SetObjProperty( theitem, "ItemIsExceptional", 1 );
+			if( sell_price )
+				theitem.buyprice := CInt( sell_price * 2 );
+			endif
+		else
+			SendSysMessage( character, "You place the deed in your pack." );
+		endif
+		/*
+		if( sell_price )
+			theitem.buyprice := Cint( Pow( sell_price , result_qual ) );
+		endif
+		*/
+	else
+		theitem := CreateItemInBackpack( character, item );
+		theitem.movable := 1;
+		if( theitem.quality && result_qual )
+			if( theitem.skillid )
+				result_qual := CInt(result_qual * 110);
+				result_qual := CDbl(result_qual);
+				result_qual := result_qual / 100;
+			endif
+			theitem.quality := result_qual;
+		endif
+
+		if( lockable )
+			SetObjProperty(theitem, "lockable","1");
+			var lockid := AllocLockId();
+			theitem.locked := 1;
+			var thekey := CreateItemInBackpack( character, UOBJ_COPPER_KEY );
+			SetObjProperty( thekey,  "lockid", lockid );
+			SetObjProperty( theitem, "lockid", lockid );
+			SendSysMessage( character, "You will find the key in your backpack.");
+		endif
+
+		theitem.hp := theitem.maxhp;
+		SetObjProperty( theitem, "BaseName", itemname );
+		var sell_price := item_cfg[item].VendorBuysFor;
+
+		if( is_excep )
+			SendSysMessage( character, "You make an exceptional item and put it in your pack" );
+			SetObjProperty( theitem, "IsExceptional", 1 );
+			if( sell_price )
+				theitem.buyprice := CInt( sell_price * 2 );
+			endif
+
+			if( skill >= 130 )
+				SendSysMessage( character, "This masterpiece will make you famous around the world." );
+				AwardFame( character, FAME_BONUS );
+			elseif( GetObjProperty( character, CLASSEID_CRAFTER ) && skill >= 110 )
+				SendSysMessage( character, "This masterpiece will make you famous around the world." );
+				AwardFame( character, FAME_BONUS );
+			endif
+		else
+			SendSysMessage( character, "You create the item and place it in your pack." );
+		endif
+/*
+		if( sell_price )
+			theitem.buyprice := Cint( Pow( sell_price , result_qual ) );
+		endif*/
+	endif
+
+	var result_color;
+	if( use_with && (use_with.color != 0) && (use_with.objtype != UOBJ_GOLD_INGOT) )
+		if( use_with.objtype == UOBJ_GOLD_INGOT )
+			result_color := GOLD_COLOR;
+		else
+			result_color := use_with.color;
+		endif
+	elseif( use_on.color != 0 )
+		result_color := use_on.color;
+	endif
+
+	if( result_color && !undyeable )
+		theitem.color := result_color;
+	endif
+
+        /******* colored fishing pole (item type 0x0dbf) *******/
+        if (theitem.objtype == 0x0dbf)
+                theitem.color := use_on.color;
+        endif
+        /************************************/
+
+	SetName( theitem, itemname );
+
+	SubtractAmount( use_on, material );
+	if( use_with )
+		SubtractAmount( use_with, material2 );
+	endif
+
+
+	// endif for first check else
+	endif
+
+	// endif for second check else
+	endif
+
+	endwhile
+	AutoLoop_finish();
+
+endfunction
+
+
+function MakeAndProcessMenu( character, byref use_on, id )
+
+	var carpentry := GetAttribute( character, ATTRIBUTEID_CARPENTRY );
+	if( use_with_diff && carpentry < use_with_diff )
+		SendSysMessage( character, "You aren't skilled enough to make anything with this yet." );
+		return;
+	endif
+
+	var second_res;
+
+	if( id == ID_INGOTS || id == ID_CLOTH )
+		SendSysMessage( character, "What logs type would you like to use?" );
+		second_res := Target( character, TGTOPT_CHECK_LOS );
+
+		if( !second_res )
+			return;
+		endif
+
+		if( !Accessible( character, second_res ) )
+			SendSysMessage( character, "You can't reach that." );
+			return;
+		endif
+
+		if( !ReserveItem( second_res ) )
+			return;
+		endif
+
+		if( (second_res.objtype == UOBJ_LOGS) || ((second_res.objtype >= UOBJ_LOGS_START) && (second_res.objtype <= UOBJ_LOGS_END)) )
+			use_on := second_res;
+			ressource_diff := carpenter_cfg[second_res.objtype].Difficulty;
+			ressource_name := carpenter_cfg[second_res.objtype].Name;
+			ressource_qual := carpenter_cfg[second_res.objtype].quality;
+
+			if( !IsInContainer( character.backpack, use_on ) )
+				SendSysMessage( character, "That item has to be in your backpack." );
+				return;
+			endif
+		else
+			SendSysMessage( character, "You must choose some logs." );
+			return;
+		endif
+	endif
+
+	if( carpentry < ressource_diff )
+		SendSysMessage( character, "You aren't skilled enough to make anything with this yet." );
+		return;
+	endif
+
+	var elemkeys := GetConfigStringKeys( carpenter_cfg );
+	var can_make;
+	var choice;
+
+	var menu := CreateMenu( "What would you like to make?" );
+
+	case( id )
+
+		ID_LOGS:	AddMenuItem( menu, 0x0b56, "Chairs" );
+				AddMenuItem( menu, 0x0e42, "Container" );
+				AddMenuItem( menu, 0x0b7c, "Tables" );
+				AddMenuItem( menu, 0x0e81, "Staffs and Poles" );
+				AddMenuItem( menu, 0x1b7a, "Shields and Other Items" );
+				break;
+
+		ID_INGOTS:	AddMenuItem( menu, 0x0fb1, "Smith Furniture" );
+				AddMenuItem( menu, 0x1922, "Cook Furniture" );
+				AddMenuItem( menu, 0x0fea, "Mage Furniture" );
+				AddMenuItem( menu, 0x0945, "Home Decoration" );
+				AddMenuItem( menu, 0x12d9, "Large Statues" );
+
+		ID_CLOTH:	AddMenuItem( menu, 0x0a80, "House Furniture" );
+				AddMenuItem( menu, 0x0eb2, "Musical Instruments" );
+				AddMenuItem( menu, 0x1070, "Tools and Training Items" );
+				break;
+
+	endcase
+
+	choice := SelectMenuItem2( character, menu ).index;
+	if( !choice )
+		return;
+	endif
+
+	choice := (id * 10) + choice;
+
+	menu := CreateMenu( "What would you like to make?" );
+
+	foreach key in elemkeys
+		if( carpenter_cfg[key].Type == choice )
+			if( CanMake( character, key, use_on ) )
+				AddMenuItem( menu, CInt(key), carpenter_cfg[key].Name );
+				can_make := 1;
+			endif
+		endif
+	endforeach
+
+	if( can_make )
+		return SelectMenuItem2( character, menu );
+	else
+		SendSysMessage( character, "You can't make anything of this category." );
+		return;
+	endif
+
+endfunction
+
+
+function CanMake( who, key, ressource )
+
+	var diff := carpenter_cfg[key].Skill + CInt( ressource_diff / DIVIDER );
+	if( diff < 1 )
+		diff := 1;
+	elseif( diff > 130 )
+		diff := 130;
+	endif
+
+	if( GetAttribute( who, ATTRIBUTEID_CARPENTRY ) >= ( diff + APPEAR_AT ) )
+		if( ressource.amount >= carpenter_cfg[key].Material )
+			var skillid2 := carpenter_cfg[key].CoSkillid;
+			if( skillid2 )
+				var diff2 := carpenter_cfg[key].CoSkill + CInt( use_with_diff / DIVIDER );
+				if( diff2 < 1 )
+					diff2 := 1;
+				elseif( diff2 > 130 )
+					diff2 := 130;
+				endif
+
+				if( GetEffectiveSkill( who, skillid2 ) >= ( diff2 + APPEAR_AT ) )
+					if( use_with.amount >= carpenter_cfg[key].CoMaterial )
+						return 1;
+					endif
+				endif
+			else
+				return 1;
+			endif
+		endif
+	endif
+
+	return 0;
+
+endfunction
+
+
+function GetRessourceName( ressource )
+
+	var t_name := ressource.desc;
+
+	if( ressource.amount > 1 )
+		var i := len( t_name );
+		var amt := ressource.amount;
+		var count := 2;
+		while( CInt(amt / 10) )
+			count := count + 1;
+			amt := CInt( amt / 10 );
+		endwhile
+
+		t_name := t_name[count+1, i - count];
+	endif
+
+	return t_name;
+
+endfunction
+
+
+function MakeYoungOakStaff( character, oak )
+
+	if( oak.amount < 15 )
+		SendSysMessage( character, "You don't have enough young oak wood to make a staff." );
+		return;
+	endif
+
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+	PlaySoundEffect( character, CARPENTER_SOUND );
+	sleep(2);
+
+	var diff := 100;
+	SubtractAmount( oak, 15 );
+	if( CheckSkill( character, CInt(SKILLID_CARPENTRY), CInt(diff), CInt(diff * POINTS_MULTIPLIER) ) )
+		CreateItemInBackpack( character, 0xba28 );
+		SendSysMessage( character, "You successfully crafted a young oak staff." );
+	else
+		SendSysMessage( character, "You failed in your attemp to create a young oak staff." );
+	endif
+
+endfunction

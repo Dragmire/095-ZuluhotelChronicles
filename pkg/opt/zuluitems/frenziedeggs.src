@@ -1,0 +1,72 @@
+// Fixed the little problem where if the eggs where stacked, it would destroy all the eggs in the
+// stack. -MontuZ (MontuZ@aol.com) And added every type of frenzied ostard to the list.
+
+Use uo;
+
+Include "include/random";
+
+Program frenziedeggs( who, item )
+
+    If( !ReserveItem( item ) )
+    Return;
+    Endif
+
+    SendSysMessage( who, "The egg begins to move..." );
+
+    Var ostard;
+    Var masteralone := Random( 100 );
+
+    Case( Random( 30 ) )
+    0:
+    1:    ostard := "frenziedostard";
+    2:    ostard := "goldenfrenziedostard";
+    3:    ostard := "plainsfrenziedostard";
+    4:    ostard := "mountainfrenziedostard";
+    5:    ostard := "swampfrenziedostard";
+    6:    ostard := "highlandfrenziedostard";
+    7:    ostard := "shadowfrenziedostard";
+    8:    ostard := "valleyfrenziedostard";
+    9:    ostard := "stonefrenziedostard";
+    10:    ostard := "emeraldfrenziedostard";
+    11:    ostard := "rubyfrenziedostard";
+    12:    ostard := "tropicalfrenziedostard";
+    13:    ostard := "snowfrenziedostard";
+    14:    ostard := "icefrenziedostard";
+    15:    ostard := "firefrenziedostard";
+    16:    ostard := "amethystfrenziedostard";
+    17:    ostard := "sapphirefrenziedostard";
+    18:    ostard := "mistfrenziedostard";
+    19:    ostard := "earthfrenziedostard";
+    20:    ostard := "necrofrenziedostard";
+    21:    ostard := "terrorfrenziedostard";
+    22:    ostard := "phasedfrenziedostard";
+    23:    ostard := "bloodfrenziedostard";
+    24:    ostard := "plumfrenziedostard";
+    25:    ostard := "windfrenziedostard";
+    26:    ostard := "junglefrenziedostard";
+    27:    ostard := "waterfrenziedostard";
+    28:    ostard := "obsidianfrenziedostard";
+    29:    ostard := "heavenlyfrenziedostard";
+    Endcase
+
+    Var newpet := CreateNpcFromTemplate( ostard, who.x, who.y, who.z );
+
+    If( !newpet )
+    SendSysMessage( who, "The poor creature died just after hatching." );
+    Return;
+    Endif
+
+    If( Random( 100 ) < 75 )
+    SendSysMessage( who, newpet.name + " hatches from the egg and accepts you as his master!" );
+    SetObjProperty( newpet, "master", who.serial );
+    SetObjProperty( newpet, "script", newpet.script );
+    newpet.setmaster( who );
+    newpet.script := "tamed";
+    RestartScript( newpet );
+    Else
+    SendSysMessage( who, newpet.name + " hatches from the egg." );
+    Endif
+
+    SubtractAmount( item, 1 );
+
+EndProgram

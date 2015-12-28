@@ -1,0 +1,60 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Mar 03, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use http;
+Use uo;
+
+Include "include/time";
+Include "include/ulregister";
+
+Program Create_Account( )
+
+    Var SessionID := QueryParam( "Session" );
+    Var SessionData := FindSession( SessionID );
+    Var AcctName := SessionData[1];
+    Var AcctPass := SessionData[2];
+    Var AcctEmail := SessionData[3];
+    Var AcctIP := SessionData[4];
+
+    WriteHtml( "<html><head><title>Chaotic Realm Second Age</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000  text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+
+    If( !SessionData )
+    WriteHtml("<div align=center><font size=2>Couldn't find your session id. Please contact Chaotic via email anjo_brunoveiga@hotmail.com.</font></div></body></html>");
+    Else
+    Var ret := CreateAccount( AcctName, AcctPass, 1 );
+        If( ret == error )
+        WriteHtml(
+        "<div align=center><font size=2>Account creation failed.<br>"
+        +"Error: " + AcctName + " " + ret.errortext + "</font></div></body></html>"
+        );
+        Else
+        Print( "Account Activated: " + AcctName );
+        WriteHtml(
+        "<div align=center><font size=2>Account activated successfully.<br>"
+        +"Don't forget to download the Files in Download session.<br><br>"
+        +"Remember: Your email is the only way to get your password back!</font></div></body></html>"
+        );
+        SetEmail( AcctEmail );
+        SetIP( AcctIP );
+        //EndSession( SessionID );
+        
+        Var account := FindAccount( AcctName );
+        account.SetProp( "CreatedEmail", AcctEmail );
+        account.SetProp( "IP", AcctIP );
+        account.SetProp( "Notes", "<None>" );
+        account.SetProp( "Release", 0 );
+        Endif
+    Endif
+
+Endprogram

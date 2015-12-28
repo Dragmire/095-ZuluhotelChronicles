@@ -1,0 +1,45 @@
+use uo;
+use os;
+
+include "include/spelldata";
+
+
+const DELAY_BETWEEN_USE	:= 20;
+
+program item_lifestream( who, item )
+
+	/*if( !ReserveItem( item ) )
+		return;
+	endif
+
+	var last_use := CInt(GetObjProperty( item, "#last_use" ));
+	if( last_use && last_use > CInt(ReadGameClock() - DELAY_BETWEEN_USE) )
+		SendSysMessage( who, "You must wait before using it again." );
+		return;
+	endif
+	
+	var charges := GetObjProperty( item, "charges" );
+	if( !charges )
+		SendSysMessage( who, "This " + item.desc + " is out of charges!" );
+		return;
+	endif
+
+	SetObjProperty( item, "#last_use", CInt(ReadGameClock()) );
+	SetObjProperty( item, "charges", charges - 1 );
+
+	Detach();
+
+	foreach mobile in ListMobilesNearLocation( who.x, who.y, who.z, 10 );
+		var spellparms := { };
+		spellparms[1] := "#MOB";
+		spellparms[2] := who;
+		spellparms[3] := mobile;
+		spellparms[4] := 10;
+		
+		start_script( ":spells:bless", spellparms );
+	endforeach
+
+	sleep( DELAY_BETWEEN_USE );
+	EraseObjProperty( item, "#last_use" );
+*/
+endprogram

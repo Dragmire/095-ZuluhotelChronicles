@@ -1,0 +1,41 @@
+
+use uo;
+
+include "include/damages";
+include "include/random";
+
+program deflectiononhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var chance := GetObjProperty( armor , "ChanceOfEffect" );
+	if(RandomDiceStr("1d100") <= chance)
+
+		var targ;
+		if( GetObjProperty( armor , "Cursed" ) )
+			targ := defender;
+			rawdamage := rawdamage * 2;
+		else
+			targ := attacker;
+		endif
+
+		ApplyTheDamage( targ , defender , rawdamage );
+		
+	else
+		
+		if( basedamage != rawdamage )
+			rawdamage := rawdamage - 5;
+			if( rawdamage < 1 )
+				rawdamage := 1;
+			endif
+		endif
+	
+		ApplyTheDamage( defender , attacker , rawdamage );
+	endif
+
+endprogram

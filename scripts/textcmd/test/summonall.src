@@ -1,0 +1,23 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+
+Include "include/yesno";
+
+Program textcmd_mount( who )
+
+    Foreach player in EnumerateOnlineCharacters()
+    MoveCharacterToLocation( player, who.x , who.y, who.z );
+    Sleep( 1 );
+    Endforeach
+    
+    SendSysMessage( Who, "Done summoning all" );
+
+Endprogram

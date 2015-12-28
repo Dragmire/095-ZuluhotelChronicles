@@ -1,0 +1,46 @@
+use uo;
+
+program llama(who,mobile)
+if(who.dead)
+sendsysmessage(who , "You're dead!");
+return;
+endif
+
+foreach mobile in ListMobilesNearLocation( who.x, who.y , who.z , 10 )
+case(mobile.npctemplate)
+"llama": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"horse": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"desertostard": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"forestostard": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"Vortex1": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"frenziedostard": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"polar": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+"drake1": RevokePrivilege( mobile, "invul" );
+setobjproperty( mobile, "guardkill", 1);
+ApplyRawDamage( mobile, Cint(mobile.hp+3) );
+endcase
+endforeach
+var ncolor := 0;
+var name := "llama";
+var mounttype := 0x3ea6;
+var mymount := CreateItemAtLocation(5288,1176,0,0xF021,1);
+mymount.graphic := mounttype;
+mymount.color := ncolor;
+setobjproperty(mymount,"npctemplate", name);
+equipitem(who, mymount);
+sendsysmessage(who,"LokauM: You get a llama",3,1156);
+endprogram

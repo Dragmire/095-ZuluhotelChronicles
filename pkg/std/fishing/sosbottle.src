@@ -1,0 +1,53 @@
+use uo;
+use cfgfile;
+use os;
+
+include "include/client";
+//include "include/objtype";
+include "include/starteqp";
+//include "include/skillpoints";
+include "include/coords";
+include "include/random";
+
+Const UOBJ_SOS_BOTLE_TILE := 0xA365;
+Const UOBJ_SOS_BOTLE := 0xA360;
+Const UOBJ_SOS_MESSAGE := 0xA363;
+Const MSG_COUNT := 5;
+
+program use_bottle( who, bottle )
+/*
+if(!ReserveItem(bottle)) return; endif
+
+
+
+var effect:= RandomInt(6000);
+	
+	var res    := 0;
+	if( effect <= 999 )
+		res := CreateItemInContainer(who.backpack, 0xa327);
+	elseif( effect <= 1999 )
+		res := CreateItemInContainer(who.backpack, 0xa322);
+	elseif( effect <= 2999 )
+		res := CreateItemInContainer(who.backpack, 0xa323);
+	elseif( effect <= 3999)
+		res := CreateItemInContainer(who.backpack, 0xa324);
+	elseif( effect <= 4999 )
+		res := CreateItemInContainer(who.backpack, 0xa325);
+	elseif( effect <= 6000 )
+		res := CreateItemInContainer(who.backpack, 0xa326);
+	endif
+
+subtractamount(bottle, 1);
+if(res)
+	sendsysmessage(who, "You have extracted a message from the bottle!");
+	return;
+else 
+	destroyitem(res);
+	sendsysmessage(who, "You find nothing inside!");
+	return;
+
+
+endif
+sendsysmessage(who, "You find nothing inside!");
+*/
+endprogram

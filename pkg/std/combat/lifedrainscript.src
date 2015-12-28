@@ -1,0 +1,35 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+include "include/damages";
+include "include/client";
+
+
+program lifedrainscript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var drained;
+	var drainer;
+		
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage );
+	
+	if( GetObjProperty( weapon , "Cursed" ) )
+		drained := attacker;
+		drainer := defender;
+	else
+		drained := defender;
+		drainer := attacker;
+	endif
+
+	var amount := rawdamage / 2;
+	
+	ApplyTheDamage( drained , attacker , amount );
+	SethP( drainer, GetHP(drainer) + amount);
+	if( GetHP(drainer) > GetMaxHP(drainer))
+		SetHP(drainer, GetMaxHP(drainer) );
+	endif
+	
+	DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+endprogram
+

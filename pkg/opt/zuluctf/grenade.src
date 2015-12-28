@@ -1,0 +1,70 @@
+use uo;
+use os;
+
+include "include/random";
+include "include/spelldata";
+
+program use_grenade(who,grenade)
+
+if (GetObjProperty(grenade,"new"))
+EraseObjProperty(grenade,"new");
+if (random(10)<=5) PlaySoundEffectPrivate(who,180,who); endif
+grenade.movable:=1;
+MoveItemToContainer( grenade, who.backpack);
+grenade.movable:=0;
+return;
+endif
+
+if( !Accessible(who,grenade)) return; endif
+
+SendSysMessage(who,"Select a target");
+
+var where:=TargetCoordinates(who);
+
+if(!where) return; endif
+
+var gtype:=grenade.objtype, explode:=0x2d40, sndfx:=175, power:=random(20)+10;
+
+SubtractAmount( grenade, 1 );
+
+if (gtype==0x2d22) explode:=0x2d49; sndfx:=11; power:=power/2; endif
+if (gtype==0x2d52) explode:=0x2d49; sndfx:=11; power:=power/2; endif
+
+PlayMovingEffectXYZ(who.x,who.y,who.z+15,where.x, where.y, where.z,gtype,8,0,0);
+
+var i,rndnum:=random(3)+2,test:=CreateItemAtLocation(where.x,where.y,where.z+2,gtype,1);
+
+if (rndnum>2) PlaySoundEffect(test,179); endif
+
+Detach();
+sleep(rndnum);
+DestroyItem(test);
+
+test:=CreateItemAtLocation(where.x,where.y,where.z+2,explode,1);
+
+PlaySoundEffect(test,sndfx);
+
+for(i:=explode;i<=explode+8;i:=i+1)
+    test.graphic:=i;
+    sleepms(100);
+endfor
+
+DestroyItem(test);
+
+foreach critter in ListMobilesNearLocationEx(where.x,where.y,where.z,power,LISTEX_FLAG_NORMAL+LISTEX_FLAG_HIDDEN);
+ApplyElementalDamageNoResist(critter,who,power,0x01);
+if (gtype==0x2d22) critter.setlightlevel(30,random(8)+10); endif
+if (gtype==0x2d52) critter.paralyzed:=1; endif
+endforeach
+
+if (gtype==0x2d52)
+Detach();
+sleep(random(8)+10);
+
+foreach critter in ListMobilesNearLocationEx(where.x,where.y,where.z,power,LISTEX_FLAG_NORMAL+LISTEX_FLAG_HIDDEN);
+if (critter.paralyzed) critter.paralyzed:=0; endif
+endforeach
+
+endif
+
+endprogram

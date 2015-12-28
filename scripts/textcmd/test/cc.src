@@ -1,0 +1,32 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use math;
+Use os;
+Use uo;
+
+Include "include/classes";
+
+Program textcmd_mount( Who, Text )
+
+    Var Value := CInt( Text );
+    Var xRawDamage := ArmorCalc( 100, Value );
+    
+SendSysMessage( Who, "" + xRawDamage );
+
+Endprogram
+
+Function ArmorCalc( BaseMod, Value, Divider := 3, Multiplier := 0.01 )
+
+    Var Percent := ( ( BaseMod / Divider ) * Multiplier );
+    Var xDamage := ( Value * Percent );
+    Var iDamage := ( Value - xDamage );
+    
+    Return iDamage;
+
+Endfunction

@@ -1,0 +1,17 @@
+// command .where  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated June 25, 2000
+
+use uo;
+
+include "include/time";
+
+program textcmd_where( who )
+
+    Var Seconds := polcore().systime;
+
+    SendSysMessage( Who , "Today's Date is " + GetDateString( Seconds ) );
+    
+    SendSysMessage( Who , "Server Time is " + GetTimeString( Seconds ) );
+
+endprogram

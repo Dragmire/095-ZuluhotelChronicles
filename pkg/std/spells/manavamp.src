@@ -1,0 +1,86 @@
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING := MOVING_SPELL_MANA_VAMPIRE;
+const SPELL_EFFECT_ID		 := FX_SPELL_MANA_VAMPIRE;
+const SPELL_EFFECT_SPEED	 := SPEED_SPELL_MANA_VAMPIRE;
+const SPELL_EFFECT_LOOP		 := LOOP_SPELL_MANA_VAMPIRE;
+
+program mana_drain ( parms )
+
+	var circle := 7;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack(cast_on, caster, SPELLID_MANA_VAMPIRE);
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+	PlaySoundEffect( caster, SFX_SPELL_MANA_VAMPIRE );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	var magery := ModifyWithMagicEfficiency( caster, GetEffectiveSkill( caster, SKILLID_MAGERY ) );
+	var resist := GetEffectiveSkill( cast_on, SKILLID_MAGICRESISTANCE );
+
+	if( immunity == CURSED )
+		magery := magery * 2;
+		resist := CInt(resist / 2);
+	endif
+
+	if( GetObjProperty( cast_on, CLASSEID_MAGE ) )
+		resist := CInt( resist * CLASSE_BONUS );
+	endif
+
+	if( resist >= magery + 5 )
+		PrintTextAbovePrivate( caster, cast_on.name + "'s will is too strong!", caster );
+	else
+		var amount := Resisted( caster, cast_on, circle, magery );
+		if( amount > GetMana(cast_on) )
+			amount := GetMana(cast_on);
+		endif
+
+		SetMana(cast_on, GetMana(cast_on) - amount);
+		SetMana(caster, GetMana(caster) + amount);
+		if( GetMana(caster) > GetMaxMana(caster) )
+			SetMana(caster, caster.maxmana);
+		endif
+
+		PrintTextAbovePrivate( cast_on,
+				       "You drained " + amount + " mana out of " + cast_on.name + "'s aura!",
+				       caster );
+	endif
+
+endprogram

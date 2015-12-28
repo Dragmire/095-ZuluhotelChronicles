@@ -1,0 +1,19 @@
+use uo;
+use os;
+
+include "include/objtype";
+include "include/yesno";
+include "include/attributes";
+
+
+program skill( who )
+
+
+
+	Var tgt := Target( who );
+
+	SendSysMessage( who, "Attribute: "+CStr(GetAttribute( tgt, ATTRIBUTEID_BLACKSMITHY) ) );
+	SendSysMessage( who, "EffectiveSkill: "+GetEffectiveSkill( tgt, SKILLID_BLACKSMITHY) );
+
+
+endprogram

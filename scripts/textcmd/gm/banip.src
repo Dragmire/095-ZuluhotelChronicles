@@ -1,0 +1,46 @@
+// .unban <accountname>
+//
+use uo;
+Use cfgfile;
+
+program textcmd_ban( who )
+
+	var Player := Target( who );
+
+/*
+    Logging System Added.
+*/
+
+    Var bannedips:=ReadConfigFile("bannedips");
+
+    If (bannedips)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "IPMatch",  player.ip });
+
+    AppendConfigFileElem("bannedips", "BannedIP", "", elem);
+    UnloadConfigFile("bannedips");
+    EndIf
+
+    SendSysMessage( who, "IP '"+player.ip+"' banned." );
+    
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_banned");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "IP",    player.ip });
+
+    AppendConfigFileElem("logging_banned", "Banned", "IP", elem);
+    UnloadConfigFile("logging_banned");
+    EndIf
+
+endprogram

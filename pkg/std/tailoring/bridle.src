@@ -1,0 +1,46 @@
+use os;
+use uo;
+use cfgfile;
+
+program usebridle(me, bridle)
+
+if(!ReserveItem(bridle)) return; endif
+
+	SendSysMessage(me,"Use on what?");
+	var horse := Target(me);
+	if (!horse)
+		return;
+	endif
+
+	if ( Distance(me, horse) > 2 )
+		SendSysMessage(me,"Too far away!");
+		return;
+	endif
+
+	if (horse.script != "tamed")
+		PrintTextAbove(horse,"The wild beast refuses the bridle");
+		return;
+	endif
+
+	if ( GetObjProperty(horse,"master") != me.serial )
+		PrintTextAbovePrivate(horse,"This isn't your animal!",me);
+		return;
+	endif
+
+	case (horse.graphic)
+	0xcc:
+	0xe4:
+	0xc8:
+	0xe2:
+		horse.graphic := 0x123;
+		DestroyItem(bridle);
+		RestartScript(horse);
+	0xdc:
+		horse.graphic := 0x124;
+		DestroyItem(bridle);
+		RestartScript(horse);
+	default:
+		PrintTextAbove(horse,"The beast refuses!");
+	endcase
+
+endprogram

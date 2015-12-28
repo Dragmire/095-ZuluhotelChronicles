@@ -1,0 +1,10 @@
+use os;
+use uo;
+
+program showf( who )
+	var f := GetObjProperty(who,"Fame");
+	if (!f)
+		f := 0;
+	endif
+	SendSysmessage( who , "Fame : "+f );
+endprogram

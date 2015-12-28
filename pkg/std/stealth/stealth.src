@@ -1,0 +1,48 @@
+/////////////////////////////////////////////////////////////////////////////
+// stealth.src											
+//														
+// TODO: just about everything.						   
+//
+// Created: Syzygy 19990429
+//														
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+
+include "include/client";
+include "include/classes";
+
+const POINTS	:= 100;
+
+program skill_stealth( chr )
+
+	if( GetEffectiveSkill( chr, SKILLID_HIDING ) < 80 )
+		PrintTextAbovePrivate( chr, "You are not good enough at Hiding to do that", chr );
+		return;
+	endif
+
+	if( !chr.hidden )
+		PrintTextAbovePrivate( chr, "You must be hidden to use stealth", chr );
+		return;
+	endif
+
+	var thief;
+	if (GetObjProperty(chr,"IsThief")) 
+		thief := GetObjProperty( chr , CLASSEID_THIEF );
+	endif
+	if( !CheckSkill( chr , SKILLID_STEALTH , -2 , 200 ) )
+		chr.hidden := 0;
+		PrintTextAbovePrivate( chr , "You have revealed yourself!" , chr );
+		return;
+	endif
+	
+	var steps := Cint( GetEffectiveSkill( chr , SKILLID_STEALTH ) / 12 ) + 1;
+	
+	if( thief )
+		steps := Cint( steps * CLASSE_BONUS );
+	endif
+	
+	chr.stealthsteps := steps;
+	PrintTextAbovePrivate( chr , "You are now moving stealthily" , chr );
+
+endprogram

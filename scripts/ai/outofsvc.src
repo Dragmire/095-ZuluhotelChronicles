@@ -1,0 +1,43 @@
+////////////////////////////////////////////////////////////////////////////
+//
+//  MERCHANT.SRC - Control script for Player Merchants
+//
+//      
+////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use basic;
+use os;
+use uo;
+include "include/eventid";
+include "include/randname";
+include "include/utility";
+include "include/mrcspawn";
+include "ai/setup/modsetup";
+
+set_priority( 50 );
+var me := Self();
+
+
+if( me.name["<random>"] )
+   SetName ( me , RandomName( me ) );
+endif
+
+program merchant()
+
+while (1)
+    var ev;
+    ev := os::wait_for_event( 30 );
+    if (ev)
+        case (ev.type)
+            SYSEVENT_SPEECH:
+		Say( "Sorry friend, I am not open for business" );
+        endcase  
+    endif
+     
+endwhile
+endprogram
+
+
+
+

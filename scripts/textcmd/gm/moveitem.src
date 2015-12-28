@@ -1,0 +1,25 @@
+Use uo;
+
+program textcmd_moveitem( who )
+
+    SendSysMessage( who, "Select an item to move." );
+    
+    var What := TargetCoordinates( who );
+    
+    If ( What )
+        What.movable := 1;
+    endif
+    
+    SendSysMessage( who, "Now select a location on the ground." );
+    
+    var Where := TargetCoordinates( who );
+    
+    MoveItemToLocation( What.item, Where.x, Where.y, Where.z, MOVECHAR_FORCELOCATION );
+    
+    If ( What )
+        What.movable := 1;
+    endif
+    
+    SendSysMessage( who, "The item has been moved." );
+    
+endprogram

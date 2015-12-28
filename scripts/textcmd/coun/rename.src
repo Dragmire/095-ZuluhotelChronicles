@@ -1,0 +1,32 @@
+use os;
+use uo;
+Use cfgfile;
+
+program textcmd_rename( speaker, newname )
+    var thetarg := target(speaker);
+    if (thetarg)
+    var oldname := thetarg.name;
+        setname(thetarg, newname);
+        
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_renamed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  speaker.name });
+    elem.append({ "Staff Serial",  hex(speaker.serial) });
+    elem.append({ "Thing Serial",    hex(thetarg.serial) });
+    elem.append({ "Old Name",    oldname });
+    elem.append({ "New Name",    newname });
+
+    AppendConfigFileElem("logging_renamed", "Renamed", "", elem);
+    UnloadConfigFile("logging_renamed");
+    EndIf
+        
+    endif
+endprogram

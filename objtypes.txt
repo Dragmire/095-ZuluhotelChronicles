@@ -1,0 +1,3271 @@
+# 0x1 unused
+0x2 ank1a
+0x3 ank1b
+0x4 ank2a
+0x5 ank2b
+# 0x6 - 0xd unused
+0xe [n/a] lighting
+0xf [n/a] lighting
+# 0x10 - 0x21 unused
+0x22 [n/a] lighting
+0x23 [n/a] lighting
+# 0x24 - 0x3a unused
+0x3b [n/a] lighting
+# 0x3c - 0x56 unused
+0x57 wallofstone2
+# 0x58 - 0x5b unused
+0x5c [n/a] lighting
+# 0x5d unused
+0x5e [n/a] lighting
+0x5f wallofstone
+# 0x60 - 0x82 unused
+0x83 [n/a] lighting
+# 0x84 - 0x8c unused
+0x8d [n/a] lighting
+# 0x8e - 0x97 unused
+0x98 [n/a] lighting
+0x99 [n/a] lighting
+# 0x9a - 0xb8 unused
+0xb9 [n/a] lighting
+0xba [n/a] lighting
+0xbb [n/a] lighting
+0xbc [n/a] lighting
+# 0xbd - 0xc9 unused
+0xca [n/a] lighting
+0xcb [n/a] lighting
+# 0xcc - 0xe9 unused
+0xea BlueThickStoneSecretSSE doors
+# 0xeb unused
+0xec BlueThickStoneSecretSNW doors
+# 0xed unused
+0xee BlueThickStoneSecretSNE doors
+# 0xef unused
+0xf0 BlueThickStoneSecretESE doors
+0xf1 BlueThickStoneSecretSSW doors
+0xf2 BlueThickStoneSecretENE doors
+# 0xf3 unused
+0xf4 BlueThickStoneSecretESW doors
+# 0xf5 unused
+0xf6 BlueThickStoneSecretENW doors
+# 0xf7 - 0xfb unused
+0xfc [n/a] lighting
+# 0xfd - 0x101 unused
+0x102 [n/a] lighting
+# 0x103 - 0x107 unused
+0x108 [n/a] lighting
+# 0x109 - 0x139 unused
+0x13a [n/a] lighting
+0x13b [n/a] lighting
+# 0x13c - 0x153 unused
+0x154 [n/a] lighting
+0x155 [n/a] lighting
+0x156 [n/a] lighting
+0x157 [n/a] lighting
+# 0x158 - 0x15b unused
+0x15c [n/a] lighting
+0x15d [n/a] lighting
+# 0x15e - 0x162 unused
+0x163 [n/a] lighting
+# 0x164 - 0x1c3 unused
+0x1c4 [n/a] lighting
+0x1c5 [n/a] lighting
+# 0x1c6 - 0x1d2 unused
+0x1d3 [n/a] lighting
+# 0x1d4 - 0x206 unused
+0x207 [n/a] lighting
+0x208 [n/a] lighting
+0x209 [n/a] lighting
+# 0x20a - 0x251 unused
+0x252 [n/a] lighting
+0x253 [n/a] lighting
+0x254 [n/a] lighting
+# 0x255 - 0x294 unused
+0x295 [n/a] lighting
+# 0x296 - 0x29a unused
+0x29b [n/a] lighting
+# 0x29c - 0x2ab unused
+0x2ac [n/a] lighting
+# 0x2ad - 0x315 unused
+0x316 DarkThinStoneSecretSSE doors
+0x317 KoboldEliteWeapon combat
+0x318 DarkThinStoneSecretSNW doors
+0x319 KoboldWarlockWeapon combat
+0x31a DarkThinStoneSecretSNE doors
+0x31b KoboldGeneralWeapon combat
+0x31c DarkThinStoneSecretESE doors
+0x31d DarkThinStoneSecretSSW doors
+0x31e DarkThinStoneSecretENE doors
+0x31f Kobold3Weapon combat
+0x320 DarkThinStoneSecretESW doors
+0x321 Kobold4Weapon combat
+0x322 DarkThinStoneSecretENW doors
+0x323 KoboldSoldierWeapon combat
+0x324 DarkThickStoneSecretSSW doors
+0x325 KoboldcaptainWeapon combat
+0x326 DarkThickStoneSecretSSE doors
+0x327 KoboldPriestWeapon combat
+0x328 DarkThickStoneSecretSNW doors
+0x329 KoboldMercenaryWeapon combat
+0x32a DarkThickStoneSecretSNE doors
+0x32b KoboldEnchanterWeapon combat
+0x32c DarkThickStoneSecretESE doors
+0x32d KoboldOrchelm combat
+0x32e DarkThickStoneSecretENE doors
+0x32f KoboldRingmailTunic combat
+0x330 DarkThickStoneSecretESW doors
+0x331 KoboldRingmailSleeves combat
+0x332 DarkThickStoneSecretENW doors
+0x333 KoboldRingmailLeggings combat
+0x334 DarkWoodSecretSSW doors
+0x335 KoboldRingmailGloves combat
+0x336 DarkWoodSecretSSE doors
+0x337 KoboldCloak combat
+0x338 DarkWoodSecretSNW doors
+0x339 KoboldThighboots combat
+0x33a DarkWoodSecretSNE doors
+0x33b KoboldIcebow combat
+0x33c DarkWoodSecretESE doors
+0x33d holyshield combat
+0x33e DarkWoodSecretENE doors
+0x33f breastofholy combat
+0x340 DarkWoodSecretESW doors
+0x341 legsofholy combat
+0x342 DarkWoodSecretENW doors
+0x343 helmofholy combat
+0x344 LightWoodSecretSSW doors
+0x345 gorgetofholy combat
+0x346 LightWoodSecretSSE doors
+0x347 armsofholy combat
+0x348 LightWoodSecretSNW doors
+0x349 glovesofholy combat
+0x34a LightWoodSecretSNE doors
+0x34b LeatherGorgetofHoly tailoring
+0x34c LightWoodSecretESE doors
+0x34d LeatherGlovesofHoly tailoring
+0x34e LightWoodSecretENE doors
+0x34f leatherarmsofHoly tailoring
+0x350 LightWoodSecretESW doors
+0x351 leatherLegsofHoly tailoring
+0x352 LightWoodSecretENW doors
+0x353 leatherTunicofHoly tailoring
+0x354 LightThickStoneSecretSSW doors
+0x355 maskofHoly tailoring
+0x356 LightThickStoneSecretSSE doors
+# 0x357 unused
+0x358 LightThickStoneSecretSNW doors
+# 0x359 unused
+0x35a LightThickStoneSecretSNE doors
+# 0x35b unused
+0x35c LightThickStoneSecretESE doors
+# 0x35d unused
+0x35e LightThickStoneSecretENE doors
+# 0x35f unused
+0x360 LightThickStoneSecretESW doors
+# 0x361 unused
+0x362 LightThickStoneSecretENW doors
+# 0x363 - 0x3dc unused
+0x3dd [n/a] lighting
+0x3de [n/a] lighting
+# 0x3df - 0x461 unused
+0x462 [n/a] lighting
+# 0x463 - 0x46a unused
+0x46b [n/a] lighting
+# 0x46c - 0x474 unused
+0x475 [n/a] lighting
+# 0x476 - 0x47a unused
+0x47b [n/a] lighting
+# 0x47c - 0x674 unused
+0x675 [n/a] doors
+# 0x676 unused
+0x677 [n/a] doors
+# 0x678 - 0x67a unused
+0x67b [n/a] doors
+# 0x67c unused
+0x67d [n/a] doors
+# 0x67e unused
+0x67f [n/a] doors
+# 0x680 - 0x684 unused
+0x685 [n/a] doors
+# 0x686 unused
+0x687 [n/a] doors
+# 0x688 - 0x68c unused
+0x68d [n/a] doors
+# 0x68e unused
+0x68f [n/a] doors
+# 0x690 - 0x694 unused
+0x695 [n/a] doors
+# 0x696 unused
+0x697 [n/a] doors
+# 0x698 - 0x69c unused
+0x69d [n/a] doors
+# 0x69e unused
+0x69f [n/a] doors
+# 0x6a0 - 0x6a4 unused
+0x6a5 [n/a] doors
+# 0x6a6 unused
+0x6a7 [n/a] doors
+# 0x6a8 unused
+0x6a9 [n/a] doors
+# 0x6aa unused
+0x6ab [n/a] doors
+# 0x6ac unused
+0x6ad [n/a] doors
+# 0x6ae unused
+0x6af [n/a] doors
+# 0x6b0 - 0x6b4 unused
+0x6b5 [n/a] doors
+# 0x6b6 unused
+0x6b7 [n/a] doors
+# 0x6b8 - 0x6bc unused
+0x6bd [n/a] doors
+# 0x6be unused
+0x6bf [n/a] doors
+# 0x6c0 - 0x6c4 unused
+0x6c5 [n/a] doors
+# 0x6c6 unused
+0x6c7 [n/a] doors
+# 0x6c8 - 0x6cc unused
+0x6cd [n/a] doors
+# 0x6ce unused
+0x6cf [n/a] doors
+# 0x6d0 - 0x6d4 unused
+0x6d5 [n/a] doors
+# 0x6d6 unused
+0x6d7 [n/a] doors
+# 0x6d8 - 0x6dc unused
+0x6dd [n/a] doors
+# 0x6de unused
+0x6df [n/a] doors
+# 0x6e0 - 0x6e4 unused
+0x6e5 [n/a] doors
+# 0x6e6 unused
+0x6e7 [n/a] doors
+# 0x6e8 - 0x6ec unused
+0x6ed [n/a] doors
+# 0x6ee unused
+0x6ef [n/a] doors
+# 0x6f0 - 0x721 unused
+0x722 nazshield combat
+# 0x723 - 0x824 unused
+0x825 [n/a] doors
+0x826 [n/a] doors
+0x827 [n/a] doors
+# 0x828 unused
+0x829 [n/a] doors
+0x82a [n/a] doors
+# 0x82b unused
+0x82c [n/a] doors
+0x82d [n/a] doors
+# 0x82e unused
+0x82f [n/a] doors
+# 0x830 - 0x838 unused
+0x839 [n/a] doors
+# 0x83a unused
+0x83b [n/a] doors
+# 0x83c unused
+0x83d [n/a] doors
+# 0x83e unused
+0x83f [n/a] doors
+# 0x840 unused
+0x841 [n/a] doors
+# 0x842 unused
+0x843 [n/a] doors
+# 0x844 unused
+0x845 [n/a] doors
+# 0x846 unused
+0x847 [n/a] doors
+# 0x848 - 0x84b unused
+0x84c [n/a] doors
+0x84d [n/a] doors
+# 0x84e unused
+0x84f [n/a] doors
+# 0x850 unused
+0x851 [n/a] doors
+0x852 [n/a] doors
+# 0x853 unused
+0x854 [n/a] doors
+# 0x855 - 0x856 unused
+0x857 [n/a] doors
+# 0x858 unused
+0x859 [n/a] doors
+# 0x85a - 0x865 unused
+0x866 [n/a] doors
+# 0x867 unused
+0x868 [n/a] doors
+# 0x869 unused
+0x86a [n/a] doors
+# 0x86b unused
+0x86c [n/a] doors
+# 0x86d unused
+0x86e [n/a] doors
+# 0x86f unused
+0x870 [n/a] doors
+# 0x871 unused
+0x872 [n/a] doors
+# 0x873 unused
+0x874 [n/a] doors
+# 0x875 - 0x903 unused
+0x904 silverware2 tinkering
+# 0x905 - 0x919 unused
+0x91a usedbeehive farming
+0x91b swarmofbees farming
+# 0x91c - 0x92a unused
+0x92b [n/a] lighting
+# 0x92c - 0x92f unused
+0x930 [n/a] lighting
+# 0x931 - 0x934 unused
+0x935 [n/a] lighting
+# 0x936 unused
+0x937 [n/a] lighting
+# 0x938 - 0x942 unused
+0x943 [n/a] lighting
+# 0x944 unused
+0x945 [n/a] lighting
+# 0x946 - 0x952 unused
+0x953 [n/a] lighting
+# 0x954 - 0x960 unused
+0x961 [n/a] lighting
+# 0x962 - 0x974 unused
+0x975 cauldron tinkering
+0x976 slabofbacon cooking
+0x977 SlabOfBacon2 cooking
+0x978 baconstrip cooking
+0x979 baconstrip2 cooking
+0x97a rawfishsteak cooking
+0x97b CookedFishSteak cooking
+0x97c smallwedgeofcheese cooking
+0x97d largewedgeofcheese cooking
+0x97e wheelofcheese cooking
+0x97f fryingpan cooking
+# 0x980 - 0x98b unused
+0x98c frenchbread cooking
+# 0x98d - 0x993 unused
+0x994 Pear2 cooking
+# 0x995 - 0x99a unused
+0x99b bottleofliquor cooking
+# 0x99c - 0x99e unused
+0x99f bottleofale cooking
+# 0x9a0 - 0x9a6 unused
+0x9a7 emptypitcher cooking
+0x9a8 BrassBox1
+0x9a9 SmallCrate
+0x9aa WoodenBox
+0x9ab SilverChest1
+0x9ac LargeBasket
+0x9ad pitcherofmilk cooking
+# 0x9ae - 0x9af unused
+0x9b0 Pouch1
+0x9b1 SmallBasket
+# 0x9b2 - 0x9b4 unused
+0x9b5 egg cooking
+0x9b6 friedegg cooking
+0x9b7 cookedbird cooking
+0x9b8 CookedBird2 cooking
+0x9b9 rawbird cooking
+0x9ba RawBird2 cooking
+# 0x9bb - 0x9bf unused
+0x9c0 rawsausage cooking
+0x9c1 cookedsausage cooking
+# 0x9c2 - 0x9c6 unused
+0x9c7 bottleofwine cooking
+0x9c8 jugofcider cooking
+0x9c9 rawham cooking
+# 0x9ca - 0x9cb unused
+0x9cc fish1 fishing
+0x9cd fish2 fishing
+0x9ce fish3 fishing
+0x9cf fish4 fishing
+0x9d0 apple cooking
+0x9d1 grapes2 cooking
+0x9d2 peach2 cooking
+0x9d3 ham2 cooking
+# 0x9d4 - 0x9e8 unused
+0x9e9 cake cooking
+0x9ea muffin cooking
+# 0x9eb unused
+0x9ec honey cooking
+0x9ed Kettle tinkering
+0x9ee mugofale cooking
+0x9ef mugofaleold cooking
+# 0x9f0 unused
+0x9f1 rawrib cooking
+0x9f2 CookedRib cooking
+# 0x9f3 - 0x9fa unused
+0x9fb wallsconce3 lighting
+# 0x9fc unused
+0x9fd wallsconce4 lighting
+# 0x9fe - 0x9ff unused
+0xa00 wallsconce2 lighting
+# 0xa01 unused
+0xa02 wallsconce1 lighting
+# 0xa03 - 0xa04 unused
+0xa05 Torch5 lighting
+# 0xa06 unused
+0xa07 Torch6 lighting
+# 0xa08 - 0xa09 unused
+0xa0a Torch3 lighting
+# 0xa0b unused
+0xa0c Torch4 lighting
+# 0xa0d - 0xa0e unused
+0xa0f candle1 lighting
+# 0xa10 - 0xa11 unused
+0xa12 Torch2 lighting
+# 0xa13 unused
+0xa14 Torch7 lighting
+0xa15 lantern5 lighting
+# 0xa16 - 0xa17 unused
+0xa18 lantern6 lighting
+# 0xa19 - 0xa21 unused
+0xa22 lantern1 lighting
+0xa23 lantern2 lighting
+0xa24 lantern3 lighting
+0xa25 lantern4 lighting
+0xa26 candle4 lighting
+0xa27 candelabra4 lighting
+0xa28 candle2 lighting
+0xa29 candelabra2 lighting
+0xa2a Stool carpentry
+0xa2b Stool2 carpentry
+0xa2c ChestofDrawers
+0xa2d Drawer1
+0xa2e Drawer2
+0xa2f Drawer3
+0xa30 ChestDrawerDark
+0xa31 DrawerDark1
+0xa32 DrawerDark2
+0xa33 DrawerDark3
+0xa34 ChestOfDrawersSW
+0xa35 DrawersSW1
+0xa36 DrawersSW2
+0xa37 DrawersSW3
+0xa38 ChestDrawersDarkSW
+0xa39 DrawersDarkSW1
+0xa3a DrawersDarkSW2
+0xa3b DrawersDarkSW3
+0xa3c Dresser1
+0xa3d Dresser2
+0xa3e Dresser3
+0xa3f Dresser4
+0xa40 Dresser5
+0xa41 Dresser6
+0xa42 Dresser7
+0xa43 Dresser8
+0xa44 Dresser9
+0xa45 Dresser10
+0xa46 Dresser11
+0xa47 Dresser12
+0xa48 Dresser13
+0xa49 Dresser14
+0xa4a Dresser15
+0xa4b Dresser16
+0xa4c ArmoireDark
+0xa4d ArmoireDark2
+0xa4e ArmoireLight
+0xa4f ArmoireLight2
+0xa50 ArmoireDark3
+0xa51 ArmoireDark4
+0xa52 ArmoireLight3
+0xa53 ArmoireLight4
+# 0xa54 - 0xa57 unused
+0xa58 bedroll1 camping
+0xa59 bedroll2 camping
+# 0xa5a - 0xa96 unused
+0xa97 Bookcase1
+0xa98 Bookcase2
+0xa99 Bookcase3
+0xa9a Bookcase4
+0xa9b Bookcase5
+0xa9c Bookcase6
+0xa9d EmptyBookShelf
+0xa9e Bookcase8Empty
+# 0xa9f - 0xad0 unused
+0xad1 carpet tailoring
+0xad2 carpetcorner tailoring
+0xad3 carpetcorner2 tailoring
+0xad4 carpetcorner3 tailoring
+0xad5 carpetcorner4 tailoring
+0xad6 carpetedge tailoring
+0xad7 carpetedge2 tailoring
+0xad8 carpetedge3 tailoring
+0xad9 carpetedge4 tailoring
+# 0xada - 0xb19 unused
+0xb1a candle3 lighting
+# 0xb1b - 0xb1c unused
+0xb1d candelabra3 lighting
+# 0xb1e - 0xb1f unused
+0xb20 lamppost1 lighting
+0xb21 lamppost2 lighting
+0xb22 lamppost3 lighting
+0xb23 lamppost4 lighting
+0xb24 lamppost5 lighting
+0xb25 lamppost6 lighting
+0xb26 candelabra1 lighting
+# 0xb27 - 0xb2c unused
+0xb2d Bench carpentry
+# 0xb2e unused
+0xb2f Nice Chair carpentry
+# 0xb30 - 0xb31 unused
+0xb32 Throne carpentry
+# 0xb33 - 0xb44 unused
+0xb45 largevase2 tinkering
+0xb46 smallvase2 tinkering
+0xb47 largevase1 tinkering
+0xb48 smallvase1 tinkering
+# 0xb49 - 0xb52 unused
+0xb53 Cushioned Chair carpentry
+# 0xb54 - 0xb55 unused
+0xb56 Chair carpentry
+# 0xb57 - 0xb59 unused
+0xb5a Simple Chair carpentry
+# 0xb5b - 0xbce unused
+0xbcf woodensign1 housing
+0xbd0 woodensign housing
+0xbd1 brasssign1 housing
+0xbd2 brasssign housing
+# 0xbd3 - 0xc3a unused
+0xc3b driedflowers1 decorations
+0xc3c driedflowers2 decorations
+0xc3d driedflowers3 decorations
+0xc3e driedflowers4 decorations
+0xc3f driedonions1 decorations
+0xc40 driedonions2 decorations
+0xc41 driedherbs1 decorations
+0xc42 driedherbs2 decorations
+# 0xc43 - 0xc4e unused
+0xc4f cotton1 farming
+0xc50 cotton2 farming
+0xc51 cotton farming
+# 0xc52 - 0xc55 unused
+0xc56 wheat2 farming
+0xc57 wheat1 farming
+0xc58 wheat3 farming
+# 0xc59 unused
+0xc5a wheat4 farming
+0xc5b wheat5 farming
+0xc5c watermelon cooking
+0xc5d watermelon2 cooking
+# 0xc5e - 0xc60 unused
+0xc61 turnips1 farming
+0xc62 turnips2 farming
+0xc63 turnips3 farming
+0xc64 yellowgourd1 cooking
+0xc65 yellowgourd cooking
+0xc66 greengourd cooking
+0xc67 greengourd2 cooking
+# 0xc68 - 0xc69 unused
+0xc6a pumpkin cooking
+0xc6b pumpkin2 cooking
+0xc6c pumpkin3 cooking
+0xc6d onion cooking
+0xc6e onion2 cooking
+0xc6f onion1 farming
+0xc70 lettuce cooking
+0xc71 lettuce2 cooking
+0xc72 squash cooking
+0xc73 squash2 cooking
+0xc74 honeydew1 cooking
+0xc75 honeydew cooking
+0xc76 carrots1 farming
+0xc77 carrot cooking
+0xc78 carrot2 cooking
+0xc79 canteloupe2 cooking
+0xc7a canteloupe cooking
+0xc7b cabbage1 cooking
+0xc7c cabbage cooking
+0xc7d corn1 farming
+0xc7e corn2 farming
+0xc7f cornear farming
+# 0xc80 - 0xc81 unused
+0xc82 corn cooking
+0xc83 flower1 botanic
+# 0xc84 - 0xc85 unused
+0xc86 flower2 botanic
+# 0xc87 unused
+0xc88 flower3 botanic
+# 0xc89 - 0xcaa unused
+0xcab bananatree botanic
+# 0xcac - 0xcbc unused
+0xcbd onion3 cooking
+# 0xcbe - 0xd19 unused
+0xd1a grapes cooking
+# 0xd1b - 0xd37 unused
+0xd38 flower4 botanic
+0xd39 turnipbulb farming
+0xd3a turnip cooking
+# 0xd3b - 0xdbe unused
+0xdbf FishingPole fishing
+# 0xdc0 - 0xdd5 unused
+0xdd6 fish5 fishing
+0xdd7 fish6 fishing
+0xdd8 fish7 fishing
+0xdd9 fish8 fishing
+0xdda redmoongate
+# 0xddb - 0xde0 unused
+0xde1 kindling camping
+0xde2 kindling2 camping
+0xde3 campfire lighting
+# 0xde4 - 0xdef unused
+0xdf0 BlackStaff carpentry
+# 0xdf1 unused
+0xdf2 Wand tinkering
+# 0xdf3 - 0xdf7 unused
+0xdf8 wool farming
+# 0xdf9 - 0xe04 unused
+0xe05 WigStand tinkering
+# 0xe06 - 0xe16 unused
+0xe17 Cards
+# 0xe18 - 0xe1b unused
+0xe1c backgammonboard1 zulugames
+0xe1d BallOfYarn tailoring
+# 0xe1e - 0xe1f unused
+0xe20 BloodyBandages healing
+0xe21 Bandages healing
+# 0xe22 - 0xe26 unused
+0xe27 [n/a] zuluitems
+# 0xe28 - 0xe2c unused
+0xe2d Crystalball1 lighting
+0xe2e Crystalball2 lighting
+# 0xe2f - 0xe30 unused
+0xe31 brazier1 lighting
+# 0xe32 - 0xe33 unused
+0xe34 blankscroll
+# 0xe35 - 0xe3b unused
+0xe3c LargeCrate
+0xe3d LargeCrate2
+# 0xe3e unused
+0xe3f MediumCrate
+0xe40 MetalChest
+0xe41 MetalChest1
+0xe42 WoodenChest
+0xe43 TentChest
+# 0xe44 - 0xe45 unused
+0xe46 emptyjars1 decorations
+# 0xe47 - 0xe5b unused
+0xe5c glowingcrune decorations
+# 0xe5d - 0xe5e unused
+0xe5f glowinghrune decorations
+# 0xe60 - 0xe61 unused
+0xe62 glowingmrune decorations
+# 0xe63 - 0xe65 unused
+0xe66 glowingorune decorations
+# 0xe67 unused
+0xe68 glowingwrune decorations
+# 0xe69 - 0xe72 unused
+0xe73 cannonball zuluitems
+# 0xe74 unused
+0xe75 Backpack
+0xe76 Bag
+0xe77 Barrel
+0xe78 Basin
+0xe79 Pouch
+0xe7a PicnicBasket
+# 0xe7b unused
+0xe7c SilverChest
+0xe7d WoodenBox1
+0xe7e WoodenBox2
+0xe7f powderkeg zuluitems
+0xe80 BrassBox
+0xe81 ShepherdsCrook herding
+# 0xe82 unused
+0xe83 EmptyTub
+# 0xe84 unused
+0xe85 Pickaxe combat
+# 0xe86 unused
+0xe87 Pitchfork combat
+# 0xe88 - 0xe89 unused
+0xe8a Quarterstaff carpentry
+0xe8b [n/a] zuluitems
+0xe8c [n/a] zuluitems
+0xe8d [n/a] zuluitems
+0xe8e [n/a] zuluitems
+0xe8f [n/a] zuluitems
+0xe90 [n/a] zuluitems
+0xe91 [n/a] zuluitems
+0xe92 [n/a] zuluitems
+0xe93 [n/a] zuluitems
+0xe94 [n/a] zuluitems
+0xe95 [n/a] zuluitems
+0xe96 [n/a] zuluitems
+# 0xe97 - 0xe9a unused
+0xe9b Mortar alchemy
+0xe9c Drum musicianship
+0xe9d Tamborine musicianship
+# 0xe9e unused
+0xe9f portrait decorations
+0xea0 largepaiting decorations
+# 0xea1 - 0xea2 unused
+0xea3 smallpainting1 decorations
+0xea4 smallpainting2 decorations
+# 0xea5 - 0xea6 unused
+0xea7 smallpainting3 decorations
+0xea8 smallpainting4 decorations
+# 0xea9 - 0xeb0 unused
+0xeb1 StandingHarp musicianship
+0xeb2 Harp musicianship
+0xeb3 Lute musicianship
+# 0xeb4 unused
+0xeb5 MusicStand tinkering
+# 0xeb6 - 0xec1 unused
+0xec2 Cleaver combat
+# 0xec3 unused
+0xec4 SkinningKnife combat
+# 0xec5 unused
+0xec6 dressform decorations
+# 0xec7 - 0xec9 unused
+0xeca bones9
+0xecb bones8
+0xecc bones7
+0xecd bones6
+0xece bones5
+0xecf bones4
+0xed0 bones3
+0xed1 bones2
+0xed2 bones
+# 0xed3 - 0xed6 unused
+0xed7 SmallGravestone tinkering
+# 0xed8 - 0xeda unused
+0xedb LargeGravestone tinkering
+# 0xedc - 0xee2 unused
+0xee3 spiderweb2 decorations
+0xee4 spiderweb1 decorations
+# 0xee5 - 0xeec unused
+0xeed GoldCoin blacksmithy
+# 0xeee - 0xef9 unused
+0xefa Spellbook
+# 0xefb - 0xefe unused
+0xeff [n/a] zuluitems
+# 0xf00 - 0xf0d unused
+0xf0e EmptyBottle
+0xf0f Starsapphire
+0xf10 Emerald
+0xf11 Sapphire
+# 0xf12 unused
+0xf13 Ruby
+# 0xf14 unused
+0xf15 Citrine
+0xf16 Amethyst
+# 0xf17 unused
+0xf18 Tourmaline
+# 0xf19 - 0xf24 unused
+0xf25 Amber
+# 0xf26 - 0xf2f unused
+0xf30 Diamond
+# 0xf31 - 0xf35 unused
+0xf36 hay farming
+# 0xf37 - 0xf38 unused
+0xf39 Shovel mining
+# 0xf3a - 0xf3e unused
+0xf3f arrow
+# 0xf40 - 0xf42 unused
+0xf43 Hatchet combat
+# 0xf44 unused
+0xf45 ExecutionersAxe combat
+# 0xf46 unused
+0xf47 BattleAxe combat
+# 0xf48 unused
+0xf49 Axe combat
+# 0xf4a unused
+0xf4b DoubleAxe combat
+# 0xf4c - 0xf4d unused
+0xf4e Bardiche combat
+0xf4f Crossbow combat
+# 0xf50 unused
+0xf51 Dagger combat
+# 0xf52 - 0xf5b unused
+0xf5c Mace combat
+# 0xf5d unused
+0xf5e BroadSword combat
+# 0xf5f unused
+0xf60 Longsword combat
+# 0xf61 - 0xf62 unused
+0xf63 Spear combat
+0xf64 Torch1 lighting
+# 0xf65 unused
+0xf66 easel1 decorations
+# 0xf67 unused
+0xf68 easel2 decorations
+# 0xf69 - 0xf6b unused
+0xf6c bluemoongate
+# 0xf6d - 0xf77 unused
+0xf78 Batwing
+0xf79 Blackmoor
+0xf7a BlackPearl
+0xf7b BloodMoss
+0xf7c Bloodspawn
+0xf7d VialOfBlood
+0xf7e Bone
+0xf7f Brimstone
+0xf80 DaemonBone
+0xf81 FertileDirt
+0xf82 DragonsBlood
+0xf83 ExecutionersCap
+0xf84 Garlic
+0xf85 Ginseng
+0xf86 MandrakeRoot
+0xf87 EyeOfNewt
+0xf88 Nightshade
+0xf89 Obsidian
+0xf8a PigIron
+0xf8b Pumice
+0xf8c SulphurousAsh
+0xf8d SpiderSilk
+0xf8e SerpentsScales
+0xf8f VolcanicAsh
+0xf90 Deadwood
+0xf91 WormsHeart
+# 0xf92 - 0xf94 unused
+0xf95 boltofcloth tailoring
+# 0xf96 - 0xf9b unused
+0xf9c ColorStainedSewingKit tailoring
+0xf9d SewingKit tailoring
+0xf9e Scissors tailoring
+# 0xf9f unused
+0xfa0 Thread1 tailoring
+0xfa1 Thread2 tailoring
+0xfa2 cards1
+# 0xfa3 - 0xfa5 unused
+0xfa6 Checkerboard zulugames
+0xfa7 diceandcup zulugames
+# 0xfa8 unused
+0xfa9 dyes dyeitems
+0xfaa specialtub specialdyetub
+0xfab dyetub dyeitems
+0xfac firepit lighting
+0xfad backgammonboard2 zulugames
+0xfae Barrel1
+0xfaf anvil tinkering
+# 0xfb0 unused
+0xfb1 forge tinkering
+# 0xfb2 - 0xfba unused
+0xfbb Tongs blacksmithy
+# 0xfbc - 0xfbe unused
+0xfbf penandink songbook
+# 0xfc0 unused
+0xfc1 paintsandbrush tinkering
+# 0xfc2 - 0xfee unused
+0xfef goldenbook1 sysbook
+0xff0 book sysbook
+0xff1 goldenbook2 sysbook
+0xff2 bigbook sysbook
+0xff3 smallopenbook sysbook
+0xff4 bigopenbook sysbook
+# 0xff5 - 0x1009 unused
+0x100a butte1 training
+0x100b butte2 training
+# 0x100c - 0x100d unused
+0x100e copperkey
+0x100f goldkey
+0x1010 ironkey
+0x1011 keyring
+0x1012 magickey
+0x1013 rustyironkey
+# 0x1014 - 0x1027 unused
+0x1028 Dovetailsaw carpentry
+# 0x1029 unused
+0x102a Hammer carpentry
+# 0x102b unused
+0x102c mouldingplane carpentry
+# 0x102d - 0x102f unused
+0x1030 Jointingplane carpentry
+# 0x1031 unused
+0x1032 Smoothingplane carpentry
+# 0x1033 - 0x1034 unused
+0x1035 Saw carpentry
+# 0x1036 - 0x1038 unused
+0x1039 Flour2 cooking
+0x103a OpenFlour cooking
+0x103b bread cooking
+0x103c bread2 cooking
+0x103d Dough cooking
+# 0x103e unused
+0x103f CookieMix cooking
+0x1040 pizza cooking
+0x1041 pie cooking
+0x1042 unbakedpie cooking
+0x1043 rollingpin cooking
+0x1044 spam cooking
+0x1045 flour cooking
+0x1046 OpenFlour2 cooking
+0x1047 globe decorations
+0x1048 globe1
+# 0x1049 - 0x104b unused
+0x104c clock
+# 0x104d unused
+0x104e Clockframe tinkering
+# 0x104f - 0x1050 unused
+0x1051 Axleandgears tinkering
+# 0x1052 unused
+0x1053 Gears tinkering
+# 0x1054 unused
+0x1055 Hinge tinkering
+# 0x1056 unused
+0x1057 Sextant
+# 0x1058 unused
+0x1059 Sextantparts tinkering
+# 0x105a - 0x1068 unused
+0x1069 stretchedhide1 decorations
+# 0x106a - 0x106f unused
+0x1070 trainingdummy training
+# 0x1071 - 0x1073 unused
+0x1074 trainingdummy2 training
+# 0x1075 - 0x1077 unused
+0x1078 hides
+0x1079 hides2
+# 0x107a - 0x107b unused
+0x107c strectedhide2 decorations
+# 0x107d - 0x1082 unused
+0x1083 uncookedpizza cooking
+# 0x1084 unused
+0x1085 necklace tinkering
+0x1086 bracelet tinkering
+0x1087 earrings tinkering
+0x1088 necklace1 tinkering
+0x1089 necklace2 tinkering
+0x108a ring tinkering
+# 0x108b - 0x10e3 unused
+0x10e4 drawknife carpentry
+0x10e5 Froe carpentry
+0x10e6 inshave carpentry
+0x10e7 Scorp carpentry
+# 0x10e8 - 0x10f4 unused
+0x10f5 flametrap1 traps
+# 0x10f6 - 0x10fb unused
+0x10fc flametrap2 traps
+# 0x10fd - 0x1102 unused
+0x1103 sawtrap1 traps
+# 0x1104 - 0x1107 unused
+0x1108 wallspikes1 traps
+# 0x1109 - 0x110e unused
+0x110f flametrap3 traps
+# 0x1110 - 0x1115 unused
+0x1116 sawtrap2 traps
+# 0x1117 - 0x111a unused
+0x111b wallspikes2 traps
+# 0x111c - 0x1124 unused
+0x1125 mushroom1 traps
+# 0x1126 - 0x112a unused
+0x112b darttrap1 traps
+# 0x112c - 0x112e unused
+0x112f darttrap2 traps
+# 0x1130 - 0x1132 unused
+0x1133 axetrap4 traps
+# 0x1134 - 0x1140 unused
+0x1141 axetrap1 traps
+# 0x1142 - 0x114a unused
+0x114b axetrap2 traps
+# 0x114c - 0x1192 unused
+0x1193 axetrap3 traps
+# 0x1194 - 0x1199 unused
+0x119a floorspikes2 traps
+# 0x119b - 0x119f unused
+0x11a0 floorspikes1 traps
+# 0x11a1 - 0x11ab unused
+0x11ac sawtrap3 traps
+# 0x11ad - 0x11b0 unused
+0x11b1 sawtrap4 traps
+# 0x11b2 - 0x11c5 unused
+0x11c6 flowerpot tinkering
+0x11c7 largeflowerpot tinkering
+0x11c8 flower8 botanic
+0x11c9 flower9 botanic
+0x11ca flower5 botanic
+0x11cb flower6 botanic
+0x11cc flower7 botanic
+# 0x11cd - 0x1223 unused
+0x1224 statue1 decorations
+0x1225 statue2 decorations
+0x1226 statue3 decorations
+0x1227 statue4 decorations
+0x1228 statue5 decorations
+# 0x1229 - 0x122c unused
+0x122d blood
+# 0x122e - 0x12ab unused
+0x12ac Tarot tinkering
+# 0x12ad - 0x12b2 unused
+0x12b3 malletandchisel tinkering
+# 0x12b4 - 0x12c9 unused
+0x12ca bust decorations
+# 0x12cb - 0x1363 unused
+0x1364 catapultrock zuluitems
+0x1365 rock1
+# 0x1366 - 0x1371 unused
+0x1372 Brush
+# 0x1373 unused
+0x1374 bridle tailoring
+# 0x1375 - 0x13ae unused
+0x13af WarAxe combat
+# 0x13b0 - 0x13b1 unused
+0x13b2 Bow combat
+0x13b3 Club combat
+# 0x13b4 unused
+0x13b5 Scimitar combat
+# 0x13b6 - 0x13b8 unused
+0x13b9 VikingSword combat
+# 0x13ba unused
+0x13bb ChainmailCoif combat
+# 0x13bc - 0x13bd unused
+0x13be ChainmailLeggings combat
+0x13bf ChainmailTunic combat
+0x13c0 ChainmailCoif2 combat
+# 0x13c1 - 0x13c2 unused
+0x13c3 ChainmailLeggings2 combat
+0x13c4 ChainmailTunic2 combat
+# 0x13c5 unused
+0x13c6 LeatherGloves tailoring
+0x13c7 LeatherGorget tailoring
+# 0x13c8 - 0x13ca unused
+0x13cb LeatherLeggings tailoring
+0x13cc LeatherTunic tailoring
+0x13cd LeatherSleeves tailoring
+# 0x13ce - 0x13d2 unused
+0x13d3 LeatherTunic2 tailoring
+0x13d4 StuddedSleeves tailoring
+0x13d5 StuddedGloves tailoring
+0x13d6 StuddedGorget tailoring
+# 0x13d7 - 0x13d9 unused
+0x13da StuddedLeggings tailoring
+0x13db StuddedTunic tailoring
+# 0x13dc - 0x13e2 unused
+0x13e3 SmithyHammer blacksmithy
+# 0x13e4 - 0x13eb unused
+0x13ec RingmailTunic combat
+0x13ed RingmailTunic2 combat
+0x13ee RingmailSleeves combat
+0x13ef RingmailSleeves2 combat
+0x13f0 RingmailLeggings combat
+0x13f1 RingmailLeggings2 combat
+0x13f2 RingmailGloves combat
+# 0x13f3 - 0x13f5 unused
+0x13f6 ButcherKnife combat
+# 0x13f7 - 0x13f8 unused
+0x13f9 GnarledStaff carpentry
+0x13fa LargeBattleAxe combat
+# 0x13fb - 0x13fc unused
+0x13fd HeavyCrossbow combat
+0x13fe Katana combat
+# 0x13ff - 0x1400 unused
+0x1401 Kryss combat
+0x1402 ShortSpear combat
+0x1403 ThunderCrossbow combat
+0x1404 WarFork combat
+# 0x1405 unused
+0x1406 WarMace combat
+# 0x1407 unused
+0x1408 CloseHelm combat
+0x1409 CloseHelm2 combat
+0x140a Helmet combat
+0x140b Helmet2 combat
+0x140c Bascinet combat
+0x140d Bascinet2 combat
+0x140e NoseHelm combat
+0x140f NoseHelm2 combat
+0x1410 PlatemailArms combat
+0x1411 PlatemailLegs combat
+0x1412 PlateHelm combat
+0x1413 PlatemailGorget combat
+0x1414 PlatemailGloves combat
+0x1415 PlatemailBreastplate combat
+0x1416 PlatemailBreastplate2 combat
+0x1417 PlatemailArms2 combat
+0x1418 PlatemailGloves2 combat
+0x1419 PlateHelm2 combat
+0x141a PlatemailLegs2 combat
+0x141b orcmask tailoring
+0x141c orcmask2 tailoring
+# 0x141d - 0x1421 unused
+0x1422 Beeswax tinkering
+# 0x1423 - 0x1427 unused
+0x1428 dippingstick tinkering
+# 0x1429 unused
+0x142a PotofWax tinkering
+# 0x142b unused
+0x142c candle5 lighting
+# 0x142d - 0x142e unused
+0x142f candle6 lighting
+0x1430 candle7 lighting
+# 0x1431 - 0x1432 unused
+0x1433 candle8 lighting
+0x1434 candle9 lighting
+# 0x1435 - 0x1436 unused
+0x1437 candle0 lighting
+0x1438 WarHammer combat
+# 0x1439 unused
+0x143a Maul combat
+# 0x143b unused
+0x143c HammerPick combat
+# 0x143d unused
+0x143e Halberd combat
+# 0x143f unused
+0x1440 Cutlass combat
+# 0x1441 unused
+0x1442 TwoHandedAxe combat
+# 0x1443 - 0x144d unused
+0x144e Bonearms combat
+0x144f Bonetunic combat
+0x1450 Bonegloves combat
+0x1451 Bonehelm combat
+0x1452 Bonelegs combat
+# 0x1453 - 0x14ea unused
+0x14eb blankmap2 cartography
+# 0x14ec unused
+0x14ed rolledmap cartography
+0x14ee rolledmap2 cartography
+# 0x14ef - 0x14f0 unused
+0x14f1 shipdeed
+0x14f2 shipdeed2
+0x14f3 shipmodel tinkering
+# 0x14f4 unused
+0x14f5 Spyglass moonphases
+0x14f6 Spyglass2 moonphases
+# 0x14f7 - 0x14fa unused
+0x14fb lockpick lockpicking
+# 0x14fc - 0x1514 unused
+0x1515 cloak tailoring
+0x1516 skirt tailoring
+0x1517 shirt tailoring
+# 0x1518 - 0x1519 unused
+0x151a DecorativeArmor blacksmithy
+# 0x151b - 0x152d unused
+0x152e shortpants tailoring
+# 0x152f - 0x1534 unused
+0x1535 goldbelt tinkering
+# 0x1536 unused
+0x1537 kilt tailoring
+# 0x1538 unused
+0x1539 longpants tailoring
+# 0x153a unused
+0x153b halfapron tailoring
+# 0x153c unused
+0x153d fullapron tailoring
+# 0x153e unused
+0x153f bandana tailoring
+# 0x1540 unused
+0x1541 bodysash tailoring
+# 0x1542 unused
+0x1543 skullcap tailoring
+# 0x1544 unused
+0x1545 bearmask tailoring
+0x1546 bearmask2 tailoring
+0x1547 deermask tailoring
+0x1548 deermask2 tailoring
+0x1549 tribalmask tailoring
+0x154a tribalmask2 tailoring
+0x154b voodoomask tailoring
+0x154c voodoomask2 tailoring
+0x154d waterbarrel decorations
+# 0x154e - 0x155c unused
+0x155d decweap1 decorations
+0x155e decweap2 decorations
+# 0x155f - 0x1560 unused
+0x1561 decweap3 decorations
+0x1562 decweap4 decorations
+# 0x1563 - 0x1568 unused
+0x1569 decweap5 decorations
+0x156a DecorativeWeapons blacksmithy
+# 0x156b unused
+0x156c decweap7 decorations
+0x156d decweap8 decorations
+0x156e decweap9 decorations
+0x156f decweap10 decorations
+# 0x1570 - 0x15f1 unused
+0x15f2 banner tailoring
+# 0x15f3 - 0x15f7 unused
+0x15f8 woodenbowl cooking
+0x15f9 bowlcarrot cooking
+0x15fa bowlcorn cooking
+0x15fb bowllettuce cooking
+0x15fc bowlpea cooking
+# 0x15fd unused
+0x15fe bowlcarrot2 cooking
+0x15ff bowlcorn2 cooking
+0x1600 bowllettuce2 cooking
+0x1601 bowlpea2 cooking
+0x1602 bowlpotatoes2 cooking
+# 0x1603 - 0x1606 unused
+0x1607 rawchickenleg cooking
+0x1608 friedchickenleg cooking
+0x1609 rawlegoflamb cooking
+0x160a cookedlegoflamb cooking
+0x160b panofcookies cooking
+0x160c plateofcookies cooking
+# 0x160d - 0x1639 unused
+0x163a largepillow tailoring
+0x163b pillow tailoring
+0x163c smallpillow tailoring
+# 0x163d - 0x163f unused
+0x1640 shackles tinkering
+# 0x1641 - 0x166d unused
+0x166e leatherwhip tailoring
+0x166f leatherwhip2 tailoring
+# 0x1670 - 0x170a unused
+0x170b LeatherBoots tailoring
+# 0x170c unused
+0x170d sandals tailoring
+# 0x170e unused
+0x170f shoes tailoring
+# 0x1710 unused
+0x1711 ThighBoots tailoring
+# 0x1712 unused
+0x1713 floppyhat tailoring
+0x1714 widebrimhat tailoring
+0x1715 cap tailoring
+0x1716 tallhat tailoring
+0x1717 strawhat tailoring
+0x1718 wizardhat tailoring
+0x1719 bonnet tailoring
+0x171a featheredhat tailoring
+0x171b tricornehat tailoring
+0x171c jesterhat tailoring
+# 0x171d - 0x171e unused
+0x171f banana cooking
+0x1720 banana2 cooking
+0x1721 bananabunch1 cooking
+0x1722 bananabunch2 cooking
+0x1723 leakingcoconut1 cooking
+0x1724 leakingcoconut2 cooking
+0x1725 clompcoconut dundee
+0x1726 coconut cooking
+0x1727 dates cooking
+0x1728 lemon cooking
+0x1729 cutlemons cooking
+0x172a lime cooking
+0x172b cutlimes cooking
+0x172c peach cooking
+0x172d pear cooking
+0x172e ritualstone ritual stone
+# 0x172f - 0x180f unused
+0x1810 hourglass tinkering
+# 0x1811 - 0x1829 unused
+0x182a frogpotion
+# 0x182b - 0x1848 unused
+0x1849 heatingstand alchemyplus
+0x184a heatingstand2 lighting
+# 0x184b - 0x184c unused
+0x184d heatingstand3 lighting
+0x184e heatingstand4 lighting
+# 0x184f - 0x1851 unused
+0x1852 scales decorations
+0x1853 skullcandle1 lighting
+0x1854 skullcandle2 lighting
+# 0x1855 - 0x1856 unused
+0x1857 skullcandle3 lighting
+0x1858 skullcandle4 lighting
+# 0x1859 - 0x186d unused
+0x186e RedVirtueStone
+# 0x186f - 0x18dd unused
+0x18de rawmandrake farming
+0x18df mandrake1 farming
+0x18e0 mandrake2 farming
+0x18e1 garlic1 farming
+0x18e2 garlic2 farming
+0x18e3 rawgarlic farming
+# 0x18e4 unused
+0x18e5 nightshade1 farming
+0x18e6 nightshade2 farming
+0x18e7 rawnightshade farming
+# 0x18e8 unused
+0x18e9 ginseng1 farming
+0x18ea ginseng2 farming
+0x18eb rawginseng farming
+# 0x18ec - 0x191f unused
+0x1920 mill1back cooking
+# 0x1921 unused
+0x1922 mill1front cooking
+# 0x1923 - 0x192b unused
+0x192c mill2back cooking
+# 0x192d unused
+0x192e mill2front cooking
+# 0x192f - 0x193f unused
+0x1940 potionkeg alchemyplus
+0x1941 glassmugs tinkering
+# 0x1942 unused
+0x1943 tankards tinkering
+# 0x1944 - 0x1979 unused
+0x197a bellows tinkering
+# 0x197b - 0x197d unused
+0x197e [n/a] lighting
+# 0x197f - 0x1981 unused
+0x1982 largeforgeend tinkering
+# 0x1983 - 0x1989 unused
+0x198a [n/a] lighting
+# 0x198b - 0x19a1 unused
+0x19a2 largeforge tinkering
+# 0x19a3 - 0x19a9 unused
+0x19aa brazier2 lighting
+0x19ab firepit2 lighting
+# 0x19ac - 0x19ba unused
+0x19bb brazier3 lighting
+# 0x19bc - 0x1a98 unused
+0x1a99 flax1 farming
+0x1a9a flax2 farming
+0x1a9b flax3 farming
+0x1a9c flax farming
+# 0x1a9d unused
+0x1a9e hops1 farming
+0x1a9f hops2 farming
+0x1aa0 hops3 farming
+0x1aa1 hops4 farming
+0x1aa2 hopscones farming
+# 0x1aa3 - 0x1ad2 unused
+0x1ad3 donuts cooking
+# 0x1ad4 - 0x1ad5 unused
+0x1ad6 potionkeg1 alchemyplus
+0x1ad7 potionkeg2 alchemyplus
+# 0x1ad8 - 0x1ae1 unused
+0x1ae2 Skull tinkering
+# 0x1ae3 - 0x1b71 unused
+0x1b72 BronzeShield combat
+0x1b73 Buckler combat
+0x1b74 KiteShield combat
+0x1b75 KiteShield2 combat
+0x1b76 HeaterShield combat
+0x1b77 HeaterShield2 combat
+0x1b78 KiteShieldB1 carpentry
+0x1b79 KiteShieldB2 carpentry
+0x1b7a WoodenShield carpentry
+0x1b7b MetalShield combat
+# 0x1b7c - 0x1bc2 unused
+0x1bc3 Chaosshield combat
+0x1bc4 Ordershield combat
+# 0x1bc5 - 0x1bd0 unused
+0x1bd1 feather
+# 0x1bd2 - 0x1bd3 unused
+0x1bd4 ArrowShaft
+# 0x1bd5 - 0x1bdc unused
+0x1bdd logs lumberjacking
+# 0x1bde - 0x1bfa unused
+0x1bfb bolt
+# 0x1bfc - 0x1bff unused
+0x1c00 LeatherShorts tailoring
+# 0x1c01 unused
+0x1c02 FemaleStudded tailoring
+# 0x1c03 unused
+0x1c04 FemalePlate combat
+# 0x1c05 unused
+0x1c06 FemaleLeather tailoring
+# 0x1c07 unused
+0x1c08 LeatherSkirt tailoring
+# 0x1c09 unused
+0x1c0a LeatherBustier tailoring
+# 0x1c0b unused
+0x1c0c StuddedBustier tailoring
+# 0x1c0d - 0x1c11 unused
+0x1c12 BellofCourage
+0x1c13 BookofTruth
+0x1c14 CandleofLove
+# 0x1c15 - 0x1c19 unused
+0x1c1a oilflask1 traps
+# 0x1c1b - 0x1d96 unused
+0x1d97 ank3a
+0x1d98 ank3b
+# 0x1d99 - 0x1d9e unused
+0x1d9f Torso
+# 0x1da0 - 0x1dad unused
+0x1dae Head tinkering
+# 0x1daf - 0x1db8 unused
+0x1db9 LeatherCap tailoring
+# 0x1dba - 0x1e14 unused
+0x1e15 rawfishwithhead1 cooking
+0x1e16 rawfishwithhead2 cooking
+0x1e17 rawfishwithouthead1 cooking
+0x1e18 rawfishwithouthead2 cooking
+# 0x1e19 - 0x1e1b unused
+0x1e1c cookedfish1 cooking
+0x1e1d lemonherbfish cooking
+0x1e1e smokedsalmon cooking
+0x1e1f hamslices cooking
+# 0x1e20 - 0x1e2e unused
+0x1e2f dartboard tinkering
+# 0x1e30 - 0x1e5b unused
+0x1e5c ank4a
+0x1e5d ank4b
+0x1e5e Messageboard
+0x1e5f Messageboard2
+# 0x1e60 - 0x1e61 unused
+0x1e62 fishtrophy1 fishing
+# 0x1e63 - 0x1e68 unused
+0x1e69 fishtrophy2 fishing
+# 0x1e6a - 0x1e7f unused
+0x1e80 SmallWoodenBox1
+0x1e81 SmallWoodenBox2
+# 0x1e82 - 0x1e89 unused
+0x1e8a lard cooking
+# 0x1e8b - 0x1eb9 unused
+0x1eba Toolkit
+# 0x1ebb unused
+0x1ebc TinkersTools tinkering
+0x1ebd wheatsheaf farming
+# 0x1ebe - 0x1ebf unused
+0x1ec0 pickpocket1 training
+# 0x1ec1 - 0x1ec2 unused
+0x1ec3 pickpocket2 training
+# 0x1ec4 - 0x1efc unused
+0x1efd fancyshirt tailoring
+# 0x1efe unused
+0x1eff fancydress tailoring
+# 0x1f00 unused
+0x1f01 plaindress tailoring
+# 0x1f02 unused
+0x1f03 Robe tailoring
+# 0x1f04 - 0x1f0a unused
+0x1f0b Orchelm combat
+# 0x1f0c - 0x1f13 unused
+0x1f14 recallrune runebook
+0x1f15 recallrune2
+# 0x1f16 - 0x1f29 unused
+0x1f2a pedestal tinkering
+0x1f2b brazier4 lighting
+# 0x1f2c unused
+0x1f2d reactivearmorscroll zulumagic
+0x1f2e clumsyscroll zulumagic
+0x1f2f createfoodscroll zulumagic
+0x1f30 feeblemindscroll zulumagic
+0x1f31 healscroll zulumagic
+0x1f32 magicarrowscroll zulumagic
+0x1f33 nightsightscroll zulumagic
+0x1f34 weakenscroll zulumagic
+0x1f35 agilityscroll zulumagic
+0x1f36 cunningscroll zulumagic
+0x1f37 curescroll zulumagic
+0x1f38 harmscroll zulumagic
+0x1f39 magictrapscroll zulumagic
+0x1f3a magicuntrapscroll zulumagic
+0x1f3b protectionscroll zulumagic
+0x1f3c strengthscroll zulumagic
+0x1f3d blessscroll zulumagic
+0x1f3e fireballscroll zulumagic
+0x1f3f magiclockscroll zulumagic
+0x1f40 poisonscroll zulumagic
+0x1f41 telekinesisscroll zulumagic
+0x1f42 teleportscroll zulumagic
+0x1f43 magicunlockscroll zulumagic
+0x1f44 wallofstonescroll zulumagic
+0x1f45 archcurescroll zulumagic
+0x1f46 archprotectionscroll zulumagic
+0x1f47 cursecroll zulumagic
+0x1f48 firefieldscroll zulumagic
+0x1f49 greaterhealscroll zulumagic
+0x1f4a lightningscroll zulumagic
+0x1f4b manadrainscroll zulumagic
+0x1f4c recallscroll zulumagic
+0x1f4d bladespiritscroll zulumagic
+0x1f4e dispelfieldscroll zulumagic
+0x1f4f incognitoscroll zulumagic
+0x1f50 magicrelfectscroll zulumagic
+0x1f51 mindblastscroll zulumagic
+0x1f52 paralyzescroll zulumagic
+0x1f53 poisonfieldscroll zulumagic
+0x1f54 summoncreaturescroll zulumagic
+0x1f55 dispelscroll zulumagic
+0x1f56 energyboltscroll zulumagic
+0x1f57 explosionscroll zulumagic
+0x1f58 invisibilityscroll zulumagic
+0x1f59 markscroll zulumagic
+0x1f5a masscursescroll zulumagic
+0x1f5b paralyzefieldscroll zulumagic
+0x1f5c revealscroll zulumagic
+0x1f5d chainlightningscroll zulumagic
+0x1f5e energyfieldscroll zulumagic
+0x1f5f flamestrikescroll zulumagic
+0x1f60 gatetravelscroll zulumagic
+0x1f61 manavampirescroll zulumagic
+0x1f62 massdispelscroll zulumagic
+0x1f63 meteorswarmscroll zulumagic
+0x1f64 polymorphscroll zulumagic
+0x1f65 earthquakescroll zulumagic
+0x1f66 energyvortexscroll zulumagic
+0x1f67 resurrectionscroll zulumagic
+0x1f68 summonairelemscroll zulumagic
+0x1f69 summondaemonscroll zulumagic
+0x1f6a summonearthelemscroll zulumagic
+0x1f6b summonfireelemscroll zulumagic
+0x1f6c summonwaterelemscroll zulumagic
+# 0x1f6d - 0x1f7a unused
+0x1f7b doublet tailoring
+# 0x1f7c unused
+0x1f7d glassofcider cooking
+# 0x1f7e - 0x1f80 unused
+0x1f81 emptyglass cooking
+# 0x1f82 - 0x1f84 unused
+0x1f85 glassofliquor cooking
+0x1f86 leavingstone ritual stone
+# 0x1f87 - 0x1f88 unused
+0x1f89 glassofmilk cooking
+# 0x1f8a - 0x1f8c unused
+0x1f8d glassofwine cooking
+# 0x1f8e - 0x1f90 unused
+0x1f91 glassofwater cooking
+# 0x1f92 - 0x1f95 unused
+0x1f96 pitcherofale cooking
+# 0x1f97 unused
+0x1f98 pitcherofcider cooking
+# 0x1f99 unused
+0x1f9a pitcherofliquor cooking
+# 0x1f9b unused
+0x1f9c pitcherofwine cooking
+# 0x1f9d unused
+0x1f9e pitcherofwater cooking
+0x1f9f jestersuit tailoring
+# 0x1fa0 unused
+0x1fa1 tunic tailoring
+# 0x1fa2 - 0x1fd3 unused
+0x1fd4 blackmoongate
+# 0x1fd5 - 0x1fe6 unused
+0x1fe7 whitemoongate
+# 0x1fe8 - 0x1ffc unused
+0x1ffd surcoat tailoring
+0x1ffe checkeredsurcoat tailoring
+# 0x1fff - 0x2003 unused
+0x2004 [n/a] zuluitems
+0x2005 [n/a] zuluitems
+0x2006 Corpse loot
+0x2007 ritualbook1 sysbook
+0x2008 ritualbook2 sysbook
+0x2009 ritualbook3 sysbook
+0x200a ritualbook4 sysbook
+0x200b ritualbook5 sysbook
+0x200c ritualbook6 sysbook
+0x200d ritualbook7 sysbook
+0x200e ritualbook8 sysbook
+0x200f ritualbook9 sysbook
+0x2010 ritualbook10 sysbook
+0x2011 ritualbook11 sysbook
+0x2012 ritualbook12 sysbook
+0x2013 ritualbook13 sysbook
+0x2014 ritualbook14 sysbook
+0x2015 ritualbook15 sysbook
+0x2016 ritualbook16 sysbook
+0x2017 ritualbook17 sysbook
+0x2018 ritualbook18 sysbook
+0x2019 ritualbook19 sysbook
+0x201a ritualbook20 sysbook
+0x201b ritualbook21 sysbook
+0x201c ritualbook22 sysbook
+0x201d ritualbook23 sysbook
+0x201e ritualbook24 sysbook
+0x201f ritualbook25 sysbook
+0x2020 ritualbook26 sysbook
+0x2021 ritualbook27 sysbook
+0x2022 ritualbook28 sysbook
+0x2023 ritualbook29 sysbook
+0x2024 ritualbook30 sysbook
+0x2025 ritualbook31 sysbook
+0x2026 ritualbook32 sysbook
+0x2027 ritualbook33 sysbook
+# 0x2028 - 0x203a unused
+0x203b [n/a] zuluitems
+0x203c [n/a] zuluitems
+0x203d [n/a] zuluitems
+0x203e [n/a] zuluitems
+0x203f [n/a] zuluitems
+0x2040 [n/a] zuluitems
+0x2041 [n/a] zuluitems
+# 0x2042 - 0x2043 unused
+0x2044 [n/a] zuluitems
+0x2045 [n/a] zuluitems
+0x2046 [n/a] zuluitems
+0x2047 [n/a] zuluitems
+0x2048 [n/a] zuluitems
+0x2049 [n/a] zuluitems
+0x204a [n/a] zuluitems
+0x204b [n/a] zuluitems
+0x204c [n/a] zuluitems
+0x204d [n/a] zuluitems
+# 0x204e unused
+0x204f staffrobe combat
+# 0x2050 - 0x20ce unused
+0x20cf [n/a] zuluitems
+# 0x20d0 - 0x20e5 unused
+0x20e6 [n/a] zuluitems
+# 0x20e7 - 0x20f5 unused
+0x20f6 [n/a] zuluitems
+# 0x20f7 - 0x2100 unused
+0x2101 [n/a] zuluitems
+# 0x2102 unused
+0x2103 [n/a] zuluitems
+# 0x2104 - 0x2107 unused
+0x2108 [n/a] zuluitems
+# 0x2109 - 0x2117 unused
+0x2118 [n/a] zuluitems
+0x2119 [n/a] zuluitems
+0x211a [n/a] zuluitems
+0x211b [n/a] zuluitems
+0x211c [n/a] zuluitems
+0x211d [n/a] zuluitems
+0x211e [n/a] zuluitems
+0x211f [n/a] zuluitems
+0x2120 [n/a] zuluitems
+0x2121 [n/a] zuluitems
+0x2122 [n/a] zuluitems
+0x2123 [n/a] zuluitems
+0x2124 [n/a] zuluitems
+0x2125 [n/a] zuluitems
+0x2126 [n/a] zuluitems
+0x2127 [n/a] zuluitems
+# 0x2128 - 0x2134 unused
+0x2135 [n/a] zuluitems
+0x2136 [n/a] zuluitems
+0x2137 [n/a] zuluitems
+# 0x2138 - 0x352c unused
+0x352d splash1 fishing
+# 0x352e - 0x3708 unused
+0x3709 firecol lighting
+# 0x370a - 0x37cb unused
+0x37cc [n/a] zuluitems
+# 0x37cd - 0x3913 unused
+0x3914 poisonfield_ns
+# 0x3915 - 0x391f unused
+0x3920 poisonfield_ew
+# 0x3921 - 0x3945 unused
+0x3946 energyfield
+# 0x3947 - 0x3954 unused
+0x3955 energyfieldew
+# 0x3956 - 0x3966 unused
+0x3967 parafield1
+# 0x3968 - 0x3978 unused
+0x3979 parafield2
+# 0x397a - 0x398b unused
+0x398c firefield
+# 0x398d - 0x3995 unused
+0x3996 firefieldew
+# 0x3997 - 0x3d84 unused
+0x3d85 moongatea1 zuluitems
+# 0x3d86 unused
+0x3d87 Dragonscale Wire
+0x3d88 Animal Pack
+0x3d89 Sunglasses
+# 0x3d8a - 0x3fff unused
+# 0x4000 converts to 0x6040
+# 0x4001 converts to 0x6040
+# 0x4002 converts to 0x6040
+# 0x4003 converts to 0x6040
+# 0x4004 converts to 0x6041
+# 0x4005 converts to 0x6041
+# 0x4006 converts to 0x6041
+# 0x4007 converts to 0x6041
+# 0x4008 converts to 0x6042
+# 0x4009 converts to 0x6042
+# 0x400a converts to 0x6042
+# 0x400b converts to 0x6042
+# 0x400c converts to 0x6043
+# 0x400d converts to 0x6043
+# 0x400e converts to 0x6043
+# 0x400f converts to 0x6043
+# 0x4010 converts to 0x6044
+# 0x4011 converts to 0x6044
+# 0x4012 converts to 0x6044
+# 0x4013 converts to 0x6044
+# 0x4014 converts to 0x6045
+# 0x4015 converts to 0x6045
+# 0x4016 converts to 0x6045
+# 0x4017 converts to 0x6045
+# 0x4018 - 0x4063 unused
+# 0x4064 converts to 0x6064
+# 0x4065 unused
+# 0x4066 converts to 0x6066
+# 0x4067 unused
+# 0x4068 converts to 0x6068
+# 0x4069 unused
+# 0x406a converts to 0x606a
+# 0x406b unused
+# 0x406c converts to 0x606c
+# 0x406d unused
+# 0x406e converts to 0x606e
+# 0x406f unused
+# 0x4070 converts to 0x6070
+# 0x4071 unused
+# 0x4072 converts to 0x6072
+# 0x4073 unused
+# 0x4074 converts to 0x6074
+# 0x4075 unused
+# 0x4076 converts to 0x6076
+# 0x4077 unused
+# 0x4078 converts to 0x6078
+# 0x4079 unused
+# 0x407a converts to 0x607a
+# 0x407b unused
+# 0x407c converts to 0x607c
+# 0x407d unused
+# 0x407e converts to 0x607e
+# 0x407f - 0x408b unused
+# 0x408c converts to 0x608c
+# 0x408d converts to 0x608d
+# 0x408e - 0x4095 unused
+# 0x4096 converts to 0x6096
+# 0x4097 unused
+# 0x4098 converts to 0x6098
+# 0x4099 unused
+# 0x409a converts to 0x609a
+# 0x409b unused
+# 0x409c converts to 0x609c
+# 0x409d unused
+# 0x409e converts to 0x609e
+# 0x409f unused
+# 0x40a0 converts to 0x60a0
+# 0x40a1 unused
+# 0x40a2 converts to 0x60a2
+# 0x40a3 - 0x4bb7 unused
+# 0x4bb8 converts to 0x6bb8
+# 0x4bb9 - 0x5014 unused
+0x5015 wristwatch tinkering
+# 0x5016 - 0x5387 unused
+# 0x5388 converts to 0x6388
+# 0x5389 - 0x6000 unused
+0x6001 blankmap cartography
+0x6002 moongate
+0x6003 level1map treasuremap
+0x6004 level2map treasuremap
+0x6005 level3map treasuremap
+0x6006 level4map treasuremap
+0x6007 level5map treasuremap
+0x6008 Diggingtool treasuremap
+0x6009 IronOre mining
+0x600a BronzeOre mining
+0x600b DullCopperOre mining
+0x600c CopperOre mining
+0x600d OnyxOre mining
+0x600e PyriteOre mining
+0x600f MalachiteOre mining
+0x6010 AzuriteOre mining
+0x6011 IronIngot mining
+0x6012 BronzeIngot mining
+0x6013 DullCopperIngot mining
+0x6014 CopperIngot mining
+0x6015 OnyxIngot mining
+0x6016 PyriteIngot mining
+0x6017 MalachiteIngot mining
+0x6018 AzuriteIngot mining
+0x6019 smallstoneandplasterhousedeed housing
+0x601a smallstonehousedeed housing
+0x601b smallwoodenhousedeed housing
+0x601c smallplasterhousedeed housing
+0x601d smallwoodandstrawhousedeed housing
+0x601e bluetentdeed housing
+0x601f greententdeed housing
+0x6020 largebrickhousedeed housing
+0x6021 twostorywoodandplasterhousedeed housing
+0x6022 twostorystoneandplasterhousedeed housing
+0x6023 towerdeed housing
+0x6024 keepdeed housing
+0x6025 castledeed housing
+0x6026 largepatiohousedeed housing
+0x6027 smallboatdeed boat
+0x6028 smalldragonboatdeed boat
+0x6029 mediumboatdeed boat
+0x602a mediumdragonboatdeed boat
+0x602b largeboatdeed boat
+0x602c largedragonboatdeed boat
+# 0x602d - 0x603f unused
+0x6040 smallboat boat
+0x6041 smalldragonboat boat
+0x6042 mediumboat boat
+0x6043 mediumdragonboat boat
+0x6044 largeboat boat
+0x6045 largedragonboat boat
+0x6046 CoifOfWonders combat
+0x6047 TunicOfWonders combat
+0x6048 SleevesOfWonders combat
+0x6049 LeggingsOfWonders combat
+0x604a GlovesOfWonders combat
+0x604b BootsOfWonders combat
+0x604c ShieldOfWonders combat
+0x604d SwordOfWonders combat
+# 0x604e - 0x604f unused
+0x6050 firebow combat
+0x6051 firearrow
+# 0x6052 - 0x6063 unused
+0x6064 smallstoneandplasterhouse housing
+# 0x6065 unused
+0x6066 smallstonehouse housing
+# 0x6067 unused
+0x6068 smallstonehouse2 housing
+# 0x6069 unused
+0x606a smallwoodenhouse housing
+# 0x606b unused
+0x606c smallplasterhouse housing
+# 0x606d unused
+0x606e smallwoodandstrawhouse housing
+# 0x606f unused
+0x6070 bluetent housing
+# 0x6071 unused
+0x6072 greentent housing
+# 0x6073 unused
+0x6074 largebrickhouse housing
+# 0x6075 unused
+0x6076 twostorywoodandplasterhouse housing
+# 0x6077 unused
+0x6078 twostorystoneandplasterhouse housing
+# 0x6079 unused
+0x607a tower housing
+# 0x607b unused
+0x607c keep housing
+# 0x607d unused
+0x607e castle housing
+# 0x607f - 0x608b unused
+0x608c largepatiohouse housing
+0x608d largeranchpatio housing
+# 0x608e - 0x6095 unused
+0x6096 largemarblepatiohouse housing
+# 0x6097 unused
+0x6098 smalltower housing
+# 0x6099 unused
+0x609a twostorylogcabin housing
+# 0x609b unused
+0x609c sandstonepatiohouse housing
+# 0x609d unused
+0x609e twostoryvilla housing
+# 0x609f unused
+0x60a0 smallstoneshop housing
+# 0x60a1 unused
+0x60a2 smallmarbleshop housing
+# 0x60a3 - 0x60ff unused
+0x6100 runebook runebook
+0x6101 explorer areas
+# 0x6102 - 0x610f unused
+0x6110 magicwand1 zulumagic
+0x6111 magicwand2 zulumagic
+0x6112 magicwand3 zulumagic
+0x6113 magicwand4 zulumagic
+0x6114 magicwand5 zulumagic
+0x6115 magicwand6 zulumagic
+0x6116 magicwand7 zulumagic
+0x6117 magicwand8 zulumagic
+0x6118 magicwand9 zulumagic
+0x6119 magicwand10 zulumagic
+0x611a magicwand11 zulumagic
+0x611b magicwand12 zulumagic
+0x611c magicwand13 zulumagic
+0x611d magicwand14 zulumagic
+0x611e magicwand15 zulumagic
+0x611f magicwand16 zulumagic
+0x6120 magicwand17 zulumagic
+0x6121 magicwand18 zulumagic
+0x6122 magicwand19 zulumagic
+0x6123 magicwand20 zulumagic
+0x6124 magicwand21 zulumagic
+0x6125 magicwand22 zulumagic
+0x6126 magicwand23 zulumagic
+0x6127 magicwand24 zulumagic
+0x6128 magicwand25 zulumagic
+0x6129 magicwand26 zulumagic
+0x612a magicwand27 zulumagic
+0x612b magicwand28 zulumagic
+0x612c magicwand29 zulumagic
+0x612d magicwand30 zulumagic
+0x612e magicwand31 zulumagic
+0x612f magicwand32 zulumagic
+0x6130 magicwand33 zulumagic
+0x6131 magicwand34 zulumagic
+0x6132 magicwand35 zulumagic
+0x6133 magicwand36 zulumagic
+0x6134 magicwand37 zulumagic
+0x6135 magicwand38 zulumagic
+0x6136 magicwand39 zulumagic
+0x6137 magicwand40 zulumagic
+0x6138 magicwand41 zulumagic
+0x6139 magicwand42 zulumagic
+0x613a magicwand43 zulumagic
+0x613b magicwand44 zulumagic
+0x613c magicwand45 zulumagic
+0x613d magicwand46 zulumagic
+0x613e magicwand47 zulumagic
+0x613f magicwand48 zulumagic
+0x6140 magicwand49 zulumagic
+0x6141 magicwand50 zulumagic
+0x6142 magicwand51 zulumagic
+0x6143 magicwand52 zulumagic
+0x6144 magicwand53 zulumagic
+0x6145 magicwand54 zulumagic
+0x6146 magicwand55 zulumagic
+0x6147 magicwand56 zulumagic
+0x6148 magicwand57 zulumagic
+0x6149 magicwand58 zulumagic
+0x614a magicwand59 zulumagic
+0x614b magicwand60 zulumagic
+0x614c magicwand61 zulumagic
+0x614d magicwand62 zulumagic
+0x614e magicwand63 zulumagic
+0x614f magicwand64 zulumagic
+0x6150 magicwand65 zulumagic
+0x6151 magicwand66 zulumagic
+0x6152 magicwand67 zulumagic
+# 0x6153 - 0x6165 unused
+0x6166 HolyBook holybook
+0x6167 holyscroll1 holybook
+0x6168 holyscroll2 holybook
+0x6169 holyscroll3 holybook
+0x616a holyscroll4 holybook
+0x616b holyscroll5 holybook
+0x616c holyscroll6 holybook
+0x616d holyscroll7 holybook
+0x616e holyscroll8 holybook
+0x616f holyscroll9 holybook
+0x6170 holyscroll10 holybook
+0x6171 holyscroll11 holybook
+0x6172 holyscroll12 holybook
+0x6173 holyscroll13 holybook
+0x6174 holyscroll14 holybook
+0x6175 holyscroll15 holybook
+0x6176 holyscroll16 holybook
+0x6177 SongBook songbook
+0x6178 songscroll1 songbook
+0x6179 songscroll2 songbook
+0x617a songscroll3 songbook
+0x617b songscroll4 songbook
+0x617c songscroll5 songbook
+0x617d songscroll6 songbook
+0x617e songscroll7 songbook
+0x617f songscroll8 songbook
+0x6180 songscroll9 songbook
+0x6181 songscroll10 songbook
+0x6182 songscroll11 songbook
+0x6183 songscroll12 songbook
+0x6184 songscroll13 songbook
+0x6185 songscroll14 songbook
+0x6186 songscroll15 songbook
+0x6187 songscroll16 songbook
+# 0x6188 - 0x61ff unused
+0x6200 systemteleporter
+0x6201 systemmoongate dirmoongates
+0x6202 AstralBlackStaff astralfights
+0x6203 SAstralBlackStaff astralfights
+0x6204 MAstralBlackStaff astralfights
+0x6205 StygianAstralBlackStaff astralfights
+0x6206 PsychicBlackStaff astralfights
+0x6207 SPsychicBlackStaff astralfights
+0x6208 MPsychicBlackStaff astralfights
+0x6209 StygianPsychicBlackStaff astralfights
+0x620a BlankSkillGate shilitems
+0x620b RPersGateMage shilitems
+0x620c RPersGateRanger shilitems
+0x620d BattleGroundsGate shilitems
+0x620e TrashCanOfWonders shilitems
+# 0x620f - 0x6226 unused
+0x6227 smallstoneshopdeed housing
+0x6228 smallmarbleshopdeed housing
+0x6229 smalltowerdeed housing
+0x622a sandstonepatiohousedeed housing
+0x622b twostorylogcabindeed housing
+0x622c twostoryvilladeed housing
+0x622d largemarblepatiohousedeed housing
+0x622e minaxcastledeed housing
+0x622f logcabindeed housing
+0x6230 largeranchpatiodeed housing
+0x6231 smallstonehousedeed2 housing
+# 0x6232 - 0x6301 unused
+0x6302 [n/a] cartography
+0x6303 [n/a] cartography
+0x6304 [n/a] cartography
+0x6305 [n/a] cartography
+0x6306 [n/a] cartography
+0x6307 [n/a] cartography
+0x6308 [n/a] cartography
+0x6309 [n/a] cartography
+0x630a [n/a] cartography
+0x630b [n/a] cartography
+0x630c [n/a] cartography
+0x630d [n/a] cartography
+0x630e [n/a] cartography
+0x630f [n/a] cartography
+0x6310 [n/a] cartography
+0x6311 [n/a] cartography
+0x6312 [n/a] cartography
+0x6313 [n/a] cartography
+0x6314 [n/a] cartography
+0x6315 [n/a] cartography
+0x6316 [n/a] cartography
+0x6317 [n/a] cartography
+0x6318 [n/a] cartography
+0x6319 [n/a] cartography
+0x631a [n/a] cartography
+0x631b [n/a] cartography
+0x631c [n/a] cartography
+0x631d [n/a] cartography
+# 0x631e - 0x6387 unused
+0x6388 minaxcastle housing
+# 0x6389 - 0x6bb7 unused
+0x6bb8 logcabin housing
+# 0x6bb9 - 0x6fff unused
+0x7000 ank11a zuluitems
+0x7001 ank11b zuluitems
+0x7002 moongatea zuluitems
+0x7003 moongateb zuluitems
+0x7004 DragonEgg zuluitems
+0x7005 OstardEgg zuluitems
+0x7006 FrenziedEgg zuluitems
+0x7007 trashcan zuluitems
+0x7008 playervendordeed zuluitems
+0x7009 trashcandeed zuluitems
+0x700a moongate_fixmod delayfixes
+# 0x700b unused
+0x700c moongatec zuluitems
+0x700d moongated zuluitems
+# 0x700e - 0x700f unused
+0x7010 bluemoongate2
+0x7011 redmoongate2
+0x7012 blackmoongate2
+0x7013 whitemoongate2
+0x7014 Backpackauc auction
+# 0x7015 - 0x701f unused
+0x7020 rathide tailoring
+0x7021 dragonhide tailoring
+0x7022 trollhide tailoring
+0x7023 lizardhide tailoring
+0x7024 serpenthide tailoring
+0x7025 ostardhide tailoring
+0x7026 balronhide tailoring
+0x7027 lavahide tailoring
+0x7028 necromancerhide tailoring
+0x7029 lichehide tailoring
+0x702a wyrmhide tailoring
+0x702b golddragonhide tailoring
+0x702c wolfhide tailoring
+0x702d bearhide tailoring
+0x702e icecrystalhide tailoring
+0x702f balroghide tailoring
+0x7030 daemonhide tailoring
+# 0x7031 - 0x7054 unused
+0x7055 straightrazor
+# 0x7056 unused
+0x7057 lifecrystal dundee
+0x7058 walkon dundee
+0x7059 NewPotion alchemyplus
+# 0x705a - 0x7060 unused
+0x7061 [n/a] serpentpillar
+0x7062 [n/a] serpentpillar
+0x7063 [n/a] serpentpillar
+0x7064 [n/a] serpentpillar
+# 0x7065 - 0x7068 unused
+0x7069 potionbook alchemyplus
+# 0x706a - 0x7084 unused
+0x7085 poisontrap1 traps
+0x7086 poisontrap2 traps
+0x7087 poisontrap3 traps
+# 0x7088 - 0x72ff unused
+0x7300 pinetreelog lumberjacking
+0x7301 cherrylog lumberjacking
+0x7302 oaklog lumberjacking
+0x7303 purplepassionlog lumberjacking
+0x7304 goldenreflectionslog lumberjacking
+0x7305 jadelog lumberjacking
+0x7306 darkwoodlog lumberjacking
+0x7307 stonewoodlog lumberjacking
+0x7308 sunlog lumberjacking
+0x7309 swamplog lumberjacking
+0x730a stardustlog lumberjacking
+0x730b silverleaflog lumberjacking
+0x730c stormteallog lumberjacking
+0x730d emeraldlog lumberjacking
+0x730e bloodlog lumberjacking
+0x730f crystallog lumberjacking
+0x7310 doomlog lumberjacking
+0x7311 zululog lumberjacking
+0x7312 hardrangerlog lumberjacking
+0x7313 gauntletlog lumberjacking
+0x7314 bloodhorselog lumberjacking
+0x7315 darknesslog lumberjacking
+0x7316 elvenlog lumberjacking
+# 0x7317 - 0x7567 unused
+0x7568 StygianRobe tailoring
+0x7569 RasRadiance
+# 0x756a - 0x7573 unused
+0x7574 FemalePlateofDrakon combat
+0x7575 PlateHelmofDrakon combat
+0x7576 PlateArmsofDrakon combat
+0x7577 PlateLeggingsofDrakon combat
+0x7578 PlateGlovesofDrakon combat
+0x7579 PlateGorgetofDrakon combat
+0x757a PlatemailofDrakon combat
+0x757b AxeofAnias combat
+0x757c TjaldursStaffofHaste carpentry
+0x757d KatanaOfKieri combat
+0x757e LanceOfLothian combat
+0x757f ScalpelofTrevize combat
+0x7580 AnubissMaceOfDeath combat
+0x7581 BardicheofLynx combat
+0x7582 DekeronsThunder combat
+0x7583 BalthazaarsChillingScimitar combat
+0x7584 OmerosPickaxe combat
+0x7585 XarafaxsAxe combat
+0x7586 WarMaceofErik combat
+0x7587 waterpent1 zuluitems
+0x7588 waterpent2 zuluitems
+0x7589 waterpent3 zuluitems
+0x758a waterpent4 zuluitems
+0x758b waterpent5 zuluitems
+0x758c waterpent6 zuluitems
+0x758d waterpent7 zuluitems
+0x758e waterpent8 zuluitems
+0x758f waterpent9 zuluitems
+# 0x7590 unused
+0x7591 breastofwater combat
+0x7592 legsofwater combat
+0x7593 helmofwater combat
+0x7594 gorgetofwater combat
+0x7595 leathergorgetofwater tailoring
+0x7596 leatherarmsofwater tailoring
+0x7597 leatherglovesofwater tailoring
+0x7598 maskofwater tailoring
+0x7599 leatherlegsofwater tailoring
+0x759a armsofwater combat
+0x759b glovesofwater combat
+0x759c waterfork combat
+0x759d SLongsword combat
+0x759e SWarAxe combat
+0x759f SIcebow combat
+0x75a0 leathertunicofwater tailoring
+# 0x75a1 - 0x75ff unused
+0x7600 SBow combat
+0x7601 Sfirebow combat
+# 0x7602 unused
+0x7603 SCrossbow combat
+0x7604 SHeavyCrossbow combat
+# 0x7605 unused
+0x7606 SAxe combat
+0x7607 SBattleAxe combat
+0x7608 SDoubleAxe combat
+0x7609 SExecutionersAxe combat
+0x760a SLargeBattleAxe combat
+0x760b STwoHandedAxe combat
+0x760c SHammerPick combat
+0x760d SMace combat
+0x760e SMaul combat
+0x760f SWarHammer combat
+0x7610 SWarMace combat
+0x7611 SBardiche combat
+0x7612 SHalberd combat
+0x7613 SShortSpear combat
+0x7614 SSpear combat
+0x7615 SWarFork combat
+0x7616 SBroadSword combat
+0x7617 SCutlass combat
+0x7618 SDagger combat
+0x7619 SKatana combat
+0x761a SKryss combat
+0x761b SScimitar combat
+0x761c SVikingSword combat
+0x761d SHatchet combat
+# 0x761e unused
+0x761f SButcherKnife combat
+0x7620 SCleaver combat
+0x7621 SSkinningKnife combat
+0x7622 SClub combat
+0x7623 SPitchfork combat
+0x7624 SBlackStaff carpentry
+0x7625 SGnarledStaff carpentry
+0x7626 SQuarterstaff carpentry
+0x7627 SShepherdsCrook carpentry
+0x7628 MLongsword combat
+0x7629 MWarAxe combat
+0x762a MIcebow combat
+0x762b MBow combat
+0x762c Mfirebow combat
+# 0x762d unused
+0x762e MCrossbow combat
+0x762f MHeavyCrossbow combat
+# 0x7630 unused
+0x7631 MAxe combat
+0x7632 MBattleAxe combat
+0x7633 MDoubleAxe combat
+0x7634 MExecutionersAxe combat
+0x7635 MLargeBattleAxe combat
+0x7636 MTwoHandedAxe combat
+0x7637 MHammerPick combat
+0x7638 MMace combat
+0x7639 MMaul combat
+0x763a MWarHammer combat
+0x763b MWarMace combat
+0x763c MBardiche combat
+0x763d MHalberd combat
+0x763e MShortSpear combat
+0x763f MSpear combat
+0x7640 MWarFork combat
+0x7641 MBroadSword combat
+0x7642 MCutlass combat
+0x7643 MDagger combat
+0x7644 MKatana combat
+0x7645 MKryss combat
+0x7646 MScimitar combat
+0x7647 MVikingSword combat
+0x7648 MHatchet combat
+# 0x7649 unused
+0x764a MButcherKnife combat
+0x764b MCleaver combat
+0x764c MSkinningKnife combat
+0x764d MClub combat
+0x764e MPitchfork combat
+0x764f MBlackStaff carpentry
+0x7650 MGnarledStaff carpentry
+0x7651 MQuarterstaff carpentry
+0x7652 MShepherdsCrook carpentry
+0x7653 StygianLongsword combat
+0x7654 StygianWarAxe combat
+0x7655 StygianIcebow combat
+0x7656 StygianBow combat
+0x7657 Stygianfirebow combat
+# 0x7658 unused
+0x7659 StygianCrossbow combat
+# 0x765a - 0x7669 unused
+0x766a StygianHeavyCrossbow combat
+# 0x766b unused
+0x766c StygianAxe combat
+0x766d StygianBattleAxe combat
+0x766e StygianDoubleAxe combat
+0x766f StygianExecutionersAxe combat
+0x7670 StygianLargeBattleAxe combat
+0x7671 StygianTwoHandedAxe combat
+0x7672 StygianHammerPick combat
+0x7673 StygianMace combat
+0x7674 StygianMaul combat
+0x7675 StygianWarHammer combat
+0x7676 StygianWarMace combat
+0x7677 StygianBardiche combat
+0x7678 StygianHalberd combat
+0x7679 StygianShortSpear combat
+0x767a StygianSpear combat
+0x767b StygianWarFork combat
+0x767c StygianBroadSword combat
+0x767d StygianCutlass combat
+0x767e StygianDagger combat
+0x767f StygianKatana combat
+0x7680 StygianKryss combat
+0x7681 StygianScimitar combat
+0x7682 StygianVikingSword combat
+0x7683 StygianHatchet combat
+# 0x7684 unused
+0x7685 StygianButcherKnife combat
+0x7686 StygianCleaver combat
+0x7687 StygianSkinningKnife combat
+0x7688 StygianClub combat
+0x7689 StygianPitchfork combat
+0x768a StygianBlackStaff carpentry
+0x768b StygianGnarledStaff carpentry
+0x768c StygianQuarterstaff carpentry
+0x768d StygianShepherdsCrook carpentry
+# 0x768e unused
+0x768f Armor1 combat
+0x7690 Armor5 combat
+0x7691 Armor10 combat
+0x7692 Armor15 combat
+0x7693 Armor20 combat
+0x7694 Armor25 combat
+0x7695 Armor30 combat
+0x7696 Armor35 combat
+0x7697 Armor40 combat
+0x7698 Armor45 combat
+0x7699 Armor50 combat
+0x769a Armor55 combat
+0x769b Armor60 combat
+0x769c Armor65 combat
+0x769d Armor70 combat
+0x769e Armor75 combat
+0x769f Armor80 combat
+0x76a0 Armor85 combat
+0x76a1 Armor90 combat
+0x76a2 Armor95 combat
+0x76a3 Armor100 combat
+0x76a4 Redbonehelm combat
+0x76a5 Greenbonehelm combat
+0x76a6 Bluebonehelm combat
+0x76a7 guardnosehelm combat
+0x76a8 guardbreastplate combat
+0x76a9 guardplatearms combat
+0x76aa guardplatelegs combat
+0x76ab guardplategloves combat
+0x76ac guardplategorget combat
+0x76ad Armor30Shroud combat
+0x76ae Blackgloves combat
+0x76af Blackboots combat
+0x76b0 DarkBlueGloves combat
+0x76b1 BlackPants combat
+0x76b2 DarkBlueStuddedTunic combat
+0x76b3 DarkBlueBoneArms combat
+0x76b4 DarkBlueBoneHelm combat
+0x76b5 DarkBlueBoneGloves combat
+0x76b6 DarkBlueBoneLeggings combat
+0x76b7 DarkBlueBoneTunic combat
+# 0x76b8 - 0x76cf unused
+0x76d0 Shield5 combat
+0x76d1 Shield10 combat
+0x76d2 Shield15 combat
+0x76d3 Shield20 combat
+0x76d4 Shield25 combat
+0x76d5 Redbonegloves combat
+0x76d6 Greenbonegloves combat
+0x76d7 Bluebonegloves combat
+0x76d8 Shield30 combat
+0x76d9 Shield35 combat
+0x76da Shield40 combat
+0x76db Shield45 combat
+0x76dc Shield50 combat
+0x76dd AnimationShield combat
+# 0x76de unused
+0x76df TaintedWarriorShield combat
+# 0x76e0 - 0x76ff unused
+0x7700 OgreWeapon combat
+0x7701 EttinWeapon combat
+0x7702 ZombieWeapon combat
+0x7703 GargoyleWeapon combat
+0x7704 OrcLordWeapon combat
+0x7705 CorpserWeapon combat
+0x7706 DaemonWeapon combat
+0x7707 DaemonknightWeapon combat
+0x7708 Dragon1Weapon combat
+0x7709 AirElementalWeapon combat
+0x770a EarthElementalWeapon combat
+0x770b FireElementalWeapon combat
+0x770c WaterElementalWeapon combat
+# 0x770d unused
+0x770e Ettin2Weapon combat
+0x770f GiantSerpentWeapon combat
+0x7710 GazerWeapon combat
+0x7711 LicheWeapon combat
+0x7712 SpectreWeapon combat
+0x7713 SpiderWeapon combat
+0x7714 GorillaWeapon combat
+0x7715 EagleWeapon combat
+0x7716 BirdWeapon combat
+0x7717 HarpyWeapon combat
+0x7718 HeadlessWeapon combat
+0x7719 Lizardman1Weapon combat
+0x771a Lizardman2Weapon combat
+0x771b Lizardman3Weapon combat
+0x771c MongbatWeapon combat
+# 0x771d unused
+0x771e Ratman1Weapon combat
+# 0x771f unused
+0x7720 ReaperWeapon combat
+0x7721 ScorpWeapon combat
+0x7722 SkeletonWeapon combat
+0x7723 SlimeWeapon combat
+0x7724 SnakeWeapon combat
+0x7725 Troll1Weapon combat
+0x7726 Troll2Weapon combat
+0x7727 Troll3Weapon combat
+# 0x7728 unused
+0x7729 WispWeapon combat
+0x772a Dragon2Weapon combat
+0x772b Drake1Weapon combat
+0x772c TerathanwarriorWeapon combat
+0x772d TerathandroneWeapon combat
+0x772e TerathanmatriarchWeapon combat
+0x772f TitanWeapon combat
+0x7730 CyclopsWeapon combat
+0x7731 ToadWeapon combat
+0x7732 BullfrogWeapon combat
+0x7733 OphidianmageWeapon combat
+0x7734 Ophidianwarriorweapon combat
+0x7735 OphidianqueenWeapon combat
+0x7736 SeamonsterWeapon combat
+0x7737 SeaserpentWeapon combat
+0x7738 DolphinWeapon combat
+0x7739 HorseWeapon combat
+0x773a CatWeapon combat
+0x773b AlligatorWeapon combat
+0x773c PigWeapon combat
+0x773d RabbitWeapon combat
+0x773e SheepWeapon combat
+0x773f ChickenWeapon combat
+0x7740 GoatWeapon combat
+0x7741 DesertostardWeapon combat
+0x7742 BearWeapon combat
+0x7743 GrizzlyWeapon combat
+0x7744 PantherWeapon combat
+0x7745 GratWeapon combat
+0x7746 CowWeapon combat
+0x7747 DogWeapon combat
+0x7748 FrenziedostardWeapon combat
+0x7749 ForestostardWeapon combat
+0x774a LlamaWeapon combat
+0x774b WalrusWeapon combat
+0x774c WolfWeapon combat
+0x774d BullWeapon combat
+0x774e HartWeapon combat
+0x774f DeerWeapon combat
+0x7750 RatWeapon combat
+0x7751 CougarWeapon combat
+0x7752 PersonWeapon combat
+0x7753 InvisiblemanWeapon combat
+0x7754 VortexWeapon combat
+0x7755 BladespiritWeapon combat
+0x7756 GhostWeapon combat
+0x7757 EvilspellbookWeapon combat
+# 0x7758 unused
+0x7759 Brigand1Weapon combat
+0x775a EvilmageWeapon combat
+0x775b ZuluWeapon combat
+# 0x775c unused
+0x775d BoneknightWeapon combat
+0x775e Troll_lordWeapon combat
+0x775f DirewolfWeapon combat
+0x7760 IceelementalWeapon combat
+0x7761 ShadeWeapon combat
+# 0x7762 unused
+0x7763 Ratman_lordWeapon combat
+# 0x7764 - 0x7766 unused
+0x7767 OrcmageWeapon combat
+0x7768 EntWeapon combat
+0x7769 GreatwyrmWeapon combat
+0x776a BonemageWeapon combat
+0x776b LizardmanshamanWeapon combat
+0x776c LizardmanwarlockWeapon combat
+0x776d LizardmankingWeapon combat
+0x776e LizardmandefenderWeapon combat
+0x776f FlamingskeletonWeapon combat
+0x7770 IceskeletonWeapon combat
+0x7771 OrckingWeapon combat
+0x7772 BlackslimeWeapon combat
+0x7773 RocklizardWeapon combat
+0x7774 FirelizardWeapon combat
+0x7775 BloodlicheWeapon combat
+0x7776 DaemonlieutenantWeapon combat
+0x7777 DarkspawnWeapon combat
+0x7778 DaemonspawnWeapon combat
+0x7779 ImpWeapon combat
+0x777a MinordaemonWeapon combat
+0x777b PhasespiderWeapon combat
+0x777c GreenslimeWeapon combat
+0x777d OgrelordWeapon combat
+0x777e GremlinWeapon combat
+0x777f IcetrollWeapon combat
+# 0x7780 unused
+0x7781 Troll4Weapon combat
+0x7782 Troll5Weapon combat
+0x7783 Troll6Weapon combat
+0x7784 TrollwarlordWeapon combat
+0x7785 TrollkingWeapon combat
+0x7786 TrollshamanWeapon combat
+0x7787 Orc3Weapon combat
+0x7788 Orc4Weapon combat
+0x7789 OrceliteWeapon combat
+0x778a OrccaptainWeapon combat
+0x778b OrcclericWeapon combat
+0x778c OrcdefenderWeapon combat
+0x778d RockspiderWeapon combat
+0x778e RockscorpionWeapon combat
+0x778f StonegargoyleWeapon combat
+0x7790 HildisviniWeapon combat
+0x7791 ValkerieWeapon combat
+0x7792 FrostspiderWeapon combat
+0x7793 FrostgazerWeapon combat
+0x7794 EfreetiWeapon combat
+0x7795 LichelordWeapon combat
+0x7796 HellhoundWeapon combat
+0x7797 FrostwolfWeapon combat
+0x7798 RabiddogWeapon combat
+0x7799 RabidcatWeapon combat
+0x779a SkeletalassassinWeapon combat
+0x779b BonewarlockWeapon combat
+0x779c FlamegargoyleWeapon combat
+0x779d FrostdrakeWeapon combat
+0x779e SpectraldrakeWeapon combat
+0x779f Lizardman4Weapon combat
+0x77a0 Lizardman5Weapon combat
+0x77a1 FlamingspiderWeapon combat
+0x77a2 OrcmastermageWeapon combat
+0x77a3 BlackwispWeapon combat
+0x77a4 OgrerockthrowerWeapon combat
+0x77a5 AirmasterWeapon combat
+0x77a6 BewitchedarmorWeapon combat
+0x77a7 EvilbirdWeapon combat
+0x77a8 DeadlizardWeapon combat
+0x77a9 BeholderWeapon combat
+0x77aa FirecrowWeapon combat
+0x77ab BloodelementalWeapon combat
+0x77ac PoisonelementalWeapon combat
+0x77ad WingedAvengerWeapon combat
+0x77ae SandwormWeapon combat
+0x77af MummyWeapon combat
+0x77b0 SwampBoarWeapon combat
+0x77b1 GoldendragonWeapon combat
+0x77b2 DrowWeapon combat
+0x77b3 RaptorWeapon combat
+0x77b4 WardogWeapon combat
+0x77b5 BirddogWeapon combat
+0x77b6 HuntingDogWeapon combat
+0x77b7 GuarddogWeapon combat
+0x77b8 GoldenhawkWeapon combat
+0x77b9 AirelementallordWeapon combat
+0x77ba EarthelementallordWeapon combat
+0x77bb FireelementallordWeapon combat
+0x77bc WaterelementallordWeapon combat
+0x77bd SkeletalwarriorWeapon combat
+0x77be PensheepWeapon combat
+0x77bf Vampire1Weapon combat
+0x77c0 Vampire2Weapon combat
+0x77c1 DraculaWeapon combat
+0x77c2 FrankensteinWeapon combat
+0x77c3 PlaguedratWeapon combat
+0x77c4 BatWeapon combat
+0x77c5 Quest_targetWeapon combat
+0x77c6 NecromancerWeapon combat
+0x77c7 NightmareWeapon combat
+0x77c8 GoldenfrenziedostardWeapon combat
+0x77c9 TropicalfrenziedostardWeapon combat
+0x77ca TropicalostardWeapon combat
+0x77cb TerathanavengerWeapon combat
+0x77cc OphidianshamanWeapon combat
+0x77cd OphidiandefenderWeapon combat
+0x77ce OphidianavengerWeapon combat
+0x77cf LessershadowWeapon combat
+0x77d0 PoisonDragonWeapon combat
+0x77d1 UndeadFlayerWeapon combat
+0x77d2 BehemothWeapon combat
+0x77d3 DjinnWeapon combat
+0x77d4 BalronWeapon combat
+0x77d5 Ophidianapprenticemageweapon combat
+0x77d6 Ophidianjusticarweapon combat
+0x77d7 Ophidianknighterrantweapon combat
+0x77d8 Ophidianzealotweapon combat
+0x77d9 Rabidrabbitweapon combat
+0x77da Greatershadowweapon combat
+0x77db Shadowlordweapon combat
+0x77dc Radiantwispweapon combat
+0x77dd Wyvernweapon combat
+0x77de Phoenixweapon combat
+# 0x77df - 0x77ee unused
+0x77ef Revenantweapon combat
+# 0x77f0 unused
+0x77f1 Firedrakeweapon combat
+0x77f2 Infernodragonweapon combat
+0x77f3 Frostdragonweapon combat
+0x77f4 Waterdrakeweapon combat
+0x77f5 Tidaldragonweapon combat
+0x77f6 Earthdrakeweapon combat
+0x77f7 Rockdragonweapon combat
+0x77f8 Airdrakeweapon combat
+0x77f9 Stormdragonweapon combat
+0x77fa Shadowdragonweapon combat
+0x77fb Poisondrakeweapon combat
+0x77fc Undeaddrakeweapon combat
+0x77fd Dracolicheweapon combat
+0x77fe Heavenlydrakeweapon combat
+0x77ff Celestialdragonweapon combat
+# 0x7800 unused
+0x7801 Magehunterweapon combat
+0x7802 guardweapon combat
+0x7803 townpersonweapon combat
+0x7804 healerweapon combat
+0x7805 humucweapon combat
+# 0x7806 - 0x7900 unused
+0x7901 textbook1 sysbook
+0x7902 textbook2 sysbook
+0x7903 textbook3 sysbook
+0x7904 textbook4 sysbook
+0x7905 textbook5 sysbook
+0x7906 textbook6 sysbook
+0x7907 textbook7 sysbook
+0x7908 textbook8 sysbook
+0x7909 textbook9 sysbook
+0x790a textbook10 sysbook
+0x790b textbook11 sysbook
+0x790c textbook12 sysbook
+0x790d textbook13 sysbook
+0x790e textbook14 sysbook
+0x790f textbook15 sysbook
+0x7910 textbook16 sysbook
+0x7911 textbook17 sysbook
+0x7912 textbook18 sysbook
+0x7913 textbook19 sysbook
+0x7914 textbook20 sysbook
+0x7915 textbook21 sysbook
+0x7916 textbook22 sysbook
+0x7917 textbook23 sysbook
+0x7918 textbook24 sysbook
+0x7919 textbook25 sysbook
+0x791a textbook26 sysbook
+0x791b textbook27 sysbook
+0x791c textbook28 sysbook
+0x791d textbook29 sysbook
+0x791e textbook30 sysbook
+0x791f textbook31 sysbook
+0x7920 textbook32 sysbook
+0x7921 textbook33 sysbook
+0x7922 textbook34 sysbook
+0x7923 textbook35 sysbook
+0x7924 textbook36 sysbook
+0x7925 textbook37 sysbook
+0x7926 textbook38 sysbook
+0x7927 textbook39 sysbook
+0x7928 textbook40 sysbook
+0x7929 textbook41 sysbook
+0x792a textbook42 sysbook
+0x792b textbook43 sysbook
+0x792c textbook44 sysbook
+0x792d textbook45 sysbook
+0x792e textbook46 sysbook
+# 0x792f - 0x80ad unused
+0x80ae fishshell1 fishing
+# 0x80af - 0x80bd unused
+0x80be fishshell2 fishing
+# 0x80bf - 0x80cd unused
+0x80ce fishshell3 fishing
+# 0x80cf - 0x80dd unused
+0x80de fishshell4 fishing
+# 0x80df - 0x80ed unused
+0x80ee fishshell5 fishing
+# 0x80ef - 0x81ad unused
+0x81ae fishshell6 fishing
+# 0x81af - 0x81bd unused
+0x81be fishshell7 fishing
+# 0x81bf - 0x81cd unused
+0x81ce fishshell8 fishing
+# 0x81cf - 0x81dd unused
+0x81de fishshell9 fishing
+# 0x81df - 0x8227 unused
+0x8228 FemalePlateofRyous combat
+0x8229 PlateHelmofRyous combat
+0x822a PlateArmsofRyous combat
+0x822b PlateLeggingsofRyous combat
+0x822c PlateGlovesofRyous combat
+0x822d PlateGorgetofRyous combat
+0x822e PlatemailofRyous combat
+0x822f FemalePlateofDarkness combat
+0x8230 PlateHelmofDarkness combat
+0x8231 PlateArmsofDarkness combat
+0x8232 PlateLeggingsofDarkness combat
+0x8233 PlateGlovesofDarkness combat
+0x8234 PlateGorgetofDarkness combat
+0x8235 PlatemailofDarkness combat
+0x8236 ElvenFemalePlate combat
+0x8237 ElvenPlateHelm combat
+0x8238 ElvenPlateArms combat
+0x8239 ElvenPlateLeggings combat
+0x823a ElvenPlateGloves combat
+0x823b ElvenPlateGorget combat
+0x823c ElvenPlatemail combat
+0x823d ZephyrChainmailCoif combat
+0x823e ZephyrChainmailLeggings combat
+0x823f ZephyrChainmailTunic combat
+0x8240 InfernalRingmailTunic combat
+0x8241 InfernalRingmailSleeves combat
+0x8242 InfernalRingmailLeggings combat
+0x8243 InfernalRingmailGloves combat
+0x8244 SylvianStuddedGorget tailoring
+0x8245 SylvianStuddedGloves tailoring
+0x8246 SylvianStuddedSleeves tailoring
+0x8247 SylvianStuddedLeggings tailoring
+0x8248 SylvianStuddedTunic tailoring
+0x8249 SylvianFemaleStudded tailoring
+0x824a SylvianLeatherCap tailoring
+0x824b HalberdOfAlcatraz combat
+0x824c SpearofRenah combat
+0x824d weaponofzulu combat
+0x824e thunderbolt
+# 0x824f unused
+0x8250 ShieldofDrakon combat
+0x8251 Shieldofryous combat
+0x8252 Shieldofdarkness combat
+0x8253 ElvenShield combat
+# 0x8254 - 0x825e unused
+0x825f ChaoticSword combat
+# 0x8260 - 0x86de unused
+0x86df Chaosshieldguard combat
+# 0x86e0 - 0x86ee unused
+0x86ef Ordershieldguard combat
+# 0x86f0 - 0x8889 unused
+0x888a infernotrap zuluitems
+# 0x888b - 0x90f9 unused
+0x90fa sitemspecialdyetub donatordye
+0x90fb sanimalspecialdyetub donatordye
+0x90fc itemspecialdyetub donatordye
+0x90fd animalspecialdyetub donatordye
+0x90fe MMGate minesgate
+# 0x90ff - 0x91b9 unused
+0x91ba LockBox1 lockboxes
+0x91bb LockBox2 lockboxes
+0x91bc LockBox3 lockboxes
+0x91bd LockBox4 lockboxes
+0x91be LockBox5 lockboxes
+# 0x91bf - 0x91ef unused
+0x91f0 SHorseEgg donatoreggs
+0x91f1 Sllamaegg donatoreggs
+0x91f2 SplainsostardEgg donatoreggs
+0x91f3 SfrenziedostardEgg donatoreggs
+0x91f4 SridgebackEgg donatoreggs
+0x91f5 SsphinxEgg donatoreggs
+0x91f6 SunicornEgg donatoreggs
+0x91f7 SbeetleEgg donatoreggs
+0x91f8 SskeletaldrakeEgg donatoreggs
+0x91f9 SskeletalhorseEgg donatoreggs
+0x91fa SpolarbearEgg donatoreggs
+# 0x91fb - 0x9911 unused
+0x9912 bowofairas combat
+# 0x9913 - 0x99fb unused
+0x99fc antidupegate name check
+0x99fd oldantidupegate name check
+# 0x99fe - 0x99ff unused
+0x9a00 BonearmsofTerror combat
+0x9a01 BonetunicofTerror combat
+0x9a02 BoneglovesofTerror combat
+0x9a03 BonehelmofTerror combat
+0x9a04 BonelegsofTerror combat
+# 0x9a05 - 0x9a0b unused
+0x9a0c DartthrowerofTerror combat
+0x9a0d CorruptedTerathanWeapon combat
+0x9a0e DarklingSlimeWeapon combat
+0x9a0f Darkstranglerweapon combat
+# 0x9a10 unused
+0x9a11 StygianConstrictorWeapon combat
+0x9a12 DireWeaverWeapon combat
+0x9a13 TwistedBrambleWeapon combat
+0x9a14 UmbralFlickerWeapon combat
+0x9a15 EvisceratedCarcassWeapon combat
+0x9a16 TaintedMageStaff combat
+0x9a17 TaintedWarriorHalberd combat
+0x9a18 TaintedWarriorSword combat
+0x9a19 Twistedanimationweapon combat
+0x9a1a Taintedrangerweapon combat
+0x9a1b magestalkerweapon combat
+0x9a1c AncientWyrmWeapon combat
+# 0x9a1d - 0x9a21 unused
+0x9a22 nazweapon combat
+0x9a23 nazcloak combat
+# 0x9a24 - 0x9a80 unused
+0x9a81 humanracegate zuluitems
+0x9a82 elfracegate zuluitems
+0x9a83 darkelfracegate zuluitems
+0x9a84 goblinracegate zuluitems
+0x9a85 vampireracegate zuluitems
+0x9a86 dwarfracegate zuluitems
+0x9a87 BoostStone zuluitems
+# 0x9a88 - 0x9a90 unused
+0x9a91 britiangate zuluitems
+# 0x9a92 - 0x9a9b unused
+0x9a9c minocgate zuluitems
+0x9a9d craftergate zuluitems
+# 0x9a9e - 0x9aff unused
+0x9b00 staffhandbook dotscorner
+# 0x9b01 - 0x9b29 unused
+0x9b2a teamgate zuluitems
+# 0x9b2b - 0xa0ff unused
+0xa100 CodexDamnorum necro
+0xa101 ControlUndeadScroll necro
+0xa102 DarknessScroll necro
+0xa103 DecayingRayScroll necro
+0xa104 SpectresTouchScroll necro
+0xa105 AbyssalFlameScroll necro
+0xa106 AnimateDeadScroll necro
+0xa107 SacrificeScroll necro
+0xa108 WraithsBreathScroll necro
+0xa109 SorcerersBaneScroll necro
+0xa10a SummonSpiritScroll necro
+0xa10b WraithformScroll necro
+0xa10c WyvernStrikeScroll necro
+0xa10d KillScroll necro
+0xa10e LicheScroll necro
+0xa10f PlagueScroll necro
+0xa110 SpellbindScroll necro
+# 0xa111 - 0xa1ff unused
+0xa200 ArenaVendor arena
+0xa201 ArenaScoreBoard arena
+# 0xa202 - 0xa2ff unused
+0xa300 SpawnPoint spawnpoint
+# 0xa301 converts to 0xa300
+# 0xa302 - 0xa31d unused
+0xa31e towndeed townstone
+0xa31f playertownstone townstone
+0xa320 townstone townstone
+0xa321 voterune townstone
+0xa322 sosmessage1 fishing
+0xa323 sosmessage2 fishing
+0xa324 sosmessage3 fishing
+0xa325 sosmessage4 fishing
+0xa326 sosmessage5 fishing
+0xa327 sosmessage6 fishing
+# 0xa328 - 0xa35f unused
+0xa360 sosbotle fishing
+# 0xa361 - 0xa362 unused
+0xa363 sosmessage fishing
+# 0xa364 unused
+0xa365 sostile fishing
+0xa366 fishingnet fishing
+# 0xa367 unused
+0xa368 magicfish1 fishing
+0xa369 magicfish2 fishing
+0xa36a magicfish3 fishing
+0xa36b magicfish4 fishing
+0xa36c magicfish5 fishing
+0xa36d magicfish6 fishing
+0xa36e magicfish7 fishing
+0xa36f magicfish8 fishing
+0xa370 magicfish9 fishing
+# 0xa371 - 0xa38f unused
+0xa390 gstone guildstone
+0xa391 guilddeed guildstone
+0xa392 PvPStone
+0xa393 CWStone
+0xa394 CWPStone
+0xa395 CWToken
+0xa396 legendcoin
+0xa397 QuestStone
+0xa398 QuestPrizeStone
+0xa399 warriorforhiredeed
+0xa39a CWReadyStone
+# 0xa39b unused
+0xa39c PvPStone2vs2
+0xa39d MagePvPStone
+0xa39e JoustStone
+# 0xa39f - 0xa401 unused
+0xa402 wordofpowergate
+# 0xa403 - 0xb0ff unused
+0xb100 BookoftheEarth earth
+0xb101 Antidotescroll earth
+0xb102 Owlsightscroll earth
+0xb103 Shiftingearthscroll earth
+0xb104 Summonmammalsscroll earth
+0xb105 Calllightningscroll earth
+0xb106 Earthblessingscroll earth
+0xb107 Earthportalscroll earth
+0xb108 Naturestouchscroll earth
+0xb109 Gustofairscroll earth
+0xb10a Risingfirescroll earth
+0xb10b Shapeshiftscroll earth
+0xb10c Icestrikescroll earth
+0xb10d Earthspiritscroll earth
+0xb10e Flamespiritscroll earth
+0xb10f Stormspiritscroll earth
+0xb110 Waterspiritscroll earth
+# 0xb111 - 0xb1ff unused
+0xb200 icearrow
+0xb201 Icebow combat
+# 0xb202 - 0xba2f unused
+0xba30 BagOfInfiniteReagents shilitems
+0xba31 WandOfIdentification shilitems
+0xba32 ShrinkDolly shrunk
+0xba33 BagOfInfiniteNormalReagents shilitems
+0xba34 BagOfInfinitePaganReagents shilitems
+0xba35 BagOfInfiniteGems shilitems
+0xba36 SagesRobe tailoring
+0xba37 WordOfPowerTeleporter shilitems
+0xba38 WordOfPowerTeleporterOn shilitems
+0xba39 Rank1Robe tailoring
+0xba3a Rank2Robe tailoring
+0xba3b Rank3Robe tailoring
+0xba3c Rank4Robe tailoring
+0xba3d Rank5Robe tailoring
+# 0xba3e - 0xbbff unused
+0xbc00 Stooldeed carpentry
+0xbc01 Stooldeed2 carpentry
+0xbc02 Benchdeed carpentry
+0xbc03 Chairdeed carpentry
+0xbc04 Thronedeed carpentry
+0xbc05 Chairdeed2 carpentry
+0xbc06 Chairdeed3 carpentry
+0xbc07 Chairdeed4 carpentry
+0xbc08 Chairdeed5 carpentry
+0xbc09 FootStooldeed carpentry
+0xbc0a Benchdeed2 carpentry
+0xbc0b Benchdeed3 carpentry
+0xbc0c Benchdeed4 carpentry
+0xbc0d ChestOfDrawersdeed carpentry
+0xbc0e ChestOfDrawersdeed2 carpentry
+0xbc0f Armoiredeed carpentry
+0xbc10 Armoiredeed2 carpentry
+0xbc11 Armoiredeed3 carpentry
+0xbc12 Armoiredeed4 carpentry
+0xbc13 BookShelfdeed carpentry
+0xbc14 BookShelfdeed2 carpentry
+0xbc15 Chestdeed carpentry
+0xbc16 Pouchdeed carpentry
+# 0xbc17 unused
+0xbc18 Boxdeed carpentry
+0xbc19 StrongBoxdeed carpentry
+0xbc1a SmallCratedeed carpentry
+0xbc1b MediumCratedeed carpentry
+0xbc1c LargeCratedeed carpentry
+0xbc1d WritingDeskdeed carpentry
+0xbc1e Tabledeed carpentry
+0xbc1f Tabledeed2 carpentry
+0xbc20 Tabledeed3 carpentry
+0xbc21 Tabledeed4 carpentry
+0xbc22 Tabledeed5 carpentry
+0xbc23 Tabledeed6 carpentry
+0xbc24 Tabledeed7 carpentry
+0xbc25 Tabledeed8 carpentry
+0xbc26 Tabledeed9 carpentry
+0xbc27 DartBoarddeed carpentry
+0xbc28 MusicStanddeed carpentry
+# 0xbc29 unused
+0xbc2a WaterTroughdeed carpentry
+0xbc2b Anvildeed carpentry
+0xbc2c Forgedeed carpentry
+0xbc2d Forgedeed2 carpentry
+0xbc2e FlourMilldeed carpentry
+0xbc2f FlourMilldeed2 carpentry
+0xbc30 Ovendeed carpentry
+0xbc31 Ovendeed2 carpentry
+0xbc32 Pentagramdeed carpentry
+0xbc33 Altardeed carpentry
+0xbc34 Dresserdeed carpentry
+0xbc35 LoomBenchdeed carpentry
+0xbc36 Loomdeed carpentry
+0xbc37 Loomdeed2 carpentry
+0xbc38 SpinningWheeldeed carpentry
+0xbc39 Beddeed carpentry
+0xbc3a Beddeed2 carpentry
+0xbc3b Beddeed3 carpentry
+0xbc3c Beddeed4 carpentry
+0xbc3d PickpocketsDipdeed carpentry
+0xbc3e TrainingDummydeed carpentry
+0xbc3f DressFormdeed carpentry
+0xbc40 Fireplacedeed carpentry
+0xbc41 Fireplacedeed2 carpentry
+0xbc42 Paintingdeed carpentry
+0xbc43 Paintingdeed2 carpentry
+0xbc44 Statuedeed carpentry
+0xbc45 Statuedeed2 carpentry
+0xbc46 Statuedeed3 carpentry
+0xbc47 Vatdeed carpentry
+0xbc48 Vatdeed2 carpentry
+0xbc49 Vatdeed3 carpentry
+0xbc4a StoneChairdeed carpentry
+0xbc4b StoneTabledeed carpentry
+0xbc4c StoneBenchdeed carpentry
+# 0xbc4d - 0xbf00 unused
+0xbf01 stickyweb
+# 0xbf02 - 0xc000 unused
+0xc001 CommCrystalMaster communication crystals
+0xc002 CommCrystalReceiver communication crystals
+0xc003 burin
+0xc004 sigilviewer
+# 0xc005 - 0xc4ff unused
+0xc500 PlatinumOre mining
+0xc501 LavarockOre mining
+0xc502 MysticOre mining
+0xc503 NewZuluOre mining
+0xc504 SpikeOre mining
+0xc505 FruityOre mining
+0xc506 IcerockOre mining
+0xc507 SilverrockOre mining
+0xc508 SpectralOre mining
+0xc509 UndeadOre mining
+0xc50a DarkpaganOre mining
+0xc50b OldbritainOre mining
+0xc50c VirginityOre mining
+0xc50d BlackdwarfOre mining
+0xc50e RedelvenOre mining
+# 0xc50f unused
+0xc510 PlatinumIngot mining
+0xc511 LavarockIngot mining
+0xc512 MysticIngot mining
+0xc513 NewZuluIngot mining
+0xc514 SpikeIngot mining
+0xc515 FruityIngot mining
+0xc516 IceRock mining
+0xc517 SilverrockIngot mining
+0xc518 SpectralIngot mining
+0xc519 UndeadIngot mining
+0xc51a DarkpaganIngot mining
+0xc51b OldbritainIngot mining
+0xc51c VirginityIngot mining
+0xc51d BlackdwarfIngot mining
+0xc51e RedelvenIngot mining
+0xc51f DripstoneIngot mining
+0xc520 ExecutorIngot mining
+0xc521 PeachBlueIngot mining
+0xc522 DestructionIngot mining
+0xc523 AnraIngot mining
+0xc524 GoddessIngot mining
+0xc525 CrystalIngot mining
+0xc526 DoomIngot mining
+0xc527 EbonIngot mining
+0xc528 DarkRuby1 mining
+0xc529 RadiantDiamond1 mining
+# 0xc52a - 0xc52f unused
+0xc530 DripstoneOre mining
+0xc531 ExecutorOre mining
+0xc532 PeachBlueOre mining
+0xc533 DestructionOre mining
+0xc534 AnraOre mining
+0xc535 GoddessOre mining
+0xc536 CrystalOre mining
+0xc537 DoomOre mining
+0xc538 EbonSapphire mining
+0xc539 DarkRuby mining
+0xc53a RadiantDiamond mining
+0xc53b DisguiseKit thiefkit
+# 0xc53c - 0xc53d unused
+0xc53e SnoopingGloves snooping
+# 0xc53f - 0xc639 unused
+0xc63a onionbulb farming
+# 0xc63b - 0xc7ff unused
+0xc800 cornmeal cooking
+0xc801 sweetdough cooking
+0xc802 cakebatter cooking
+0xc803 pizzacrust cooking
+0xc804 piecrust cooking
+0xc805 ballofdough cooking
+# 0xc806 - 0xc8fe unused
+0xc8ff cookbook cooking
+0xc900 cheesepizza cooking
+0xc901 sausagepizza cooking
+0xc902 vegetarianpizza cooking
+0xc903 onionpizza cooking
+# 0xc904 - 0xc90f unused
+0xc910 cornmuffin cooking
+0xc911 garlicbread cooking
+0xc912 pancakes cooking
+# 0xc913 - 0xc91f unused
+0xc920 bakedham cooking
+0xc921 honeybakedham cooking
+0xc922 beefjerky cooking
+0xc923 sushi cooking
+# 0xc924 - 0xc92f unused
+0xc930 carrotcake cooking
+0xc931 applecake cooking
+0xc932 applefritters cooking
+0xc933 lemontarts cooking
+0xc934 limecake cooking
+0xc935 lemoncake cooking
+0xc936 coconutcake cooking
+# 0xc937 - 0xc93f unused
+0xc940 applepie cooking
+0xc941 peachcobbler cooking
+0xc942 mincemeatpie cooking
+0xc943 chickenpotpie cooking
+0xc944 pumpkinpie cooking
+0xc945 lemonmeringuepie cooking
+0xc946 coconutcreampie cooking
+0xc947 keylimepie cooking
+0xc948 [n/a]
+# 0xc949 - 0xc94f unused
+0xc950 onionrings cooking
+# 0xc951 - 0xca63 unused
+0xca64 barbarianracegate zuluitems
+# 0xca65 unused
+0xca66 killnpcgate zuluitems
+0xca67 orcracegate zuluitems
+0xca68 frostelfracegate zuluitems
+# 0xca69 - 0xccc1 unused
+0xccc2 ank11e
+0xccc3 ank11f
+0xccc4 Covewarningbell
+# 0xccc5 - 0xccec unused
+0xcced blackheart
+# 0xccee - 0xda00 unused
+0xda01 flaxseed farming
+0xda02 cottonseed farming
+0xda03 carrotseed farming
+0xda04 wheatseed farming
+# 0xda05 unused
+0xda06 hopseed farming
+# 0xda07 - 0xda08 unused
+0xda09 garlicseed farming
+0xda0a mandrakeseed farming
+0xda0b nightshadeseed farming
+0xda0c ginsengseed farming
+# 0xda0d - 0xda0f unused
+0xda10 beehive farming
+0xda11 SnoopersDip ulitems
+0xda12 StealersDip ulitems
+0xda13 TamersDip ulitems
+0xda14 VetsDip ulitems
+# 0xda15 - 0xdc00 unused
+0xdc01 LightHealPotion alchemy
+0xdc02 HealPotion alchemy
+0xdc03 GreaterHealPotion alchemy
+0xdc04 LesserPoisonPotion alchemy
+0xdc05 PoisonPotion alchemy
+0xdc06 GreaterPoisonPotion alchemy
+0xdc07 GreaterExplosionPotion alchemy
+0xdc08 LesserExplosionPotion alchemy
+0xdc09 ExplosionPotion alchemy
+0xdc0a orchide tailoring
+0xdc0b LesserAgilityPotion alchemy
+0xdc0c AgilityPotion alchemy
+0xdc0d GreaterAgilityPotion alchemy
+0xdc0e RefreshPotion alchemy
+0xdc0f RefreshFullPotion alchemy
+0xdc10 LesserStrengthPotion alchemy
+0xdc11 StrengthPotion alchemy
+0xdc12 GreaterStrengthPotion alchemy
+0xdc13 terathanhide tailoring
+0xdc14 LesserCurePotion alchemy
+0xdc15 CurePotion alchemy
+0xdc16 GreaterCurePotion alchemy
+0xdc17 DeadlyPoisonPotion alchemy
+# 0xdc18 - 0xdce5 unused
+0xdce6 NightsightPotion alchemy
+# 0xdce7 - 0xdfff unused
+0xe000 grapevinesseed botanic
+0xe001 appletreeseed botanic
+0xe002 peachtreeseed botanic
+0xe003 peartreeseed botanic
+0xe004 bananatreeseed botanic
+0xe005 botanicscissor botanic
+0xe006 appletree botanic
+0xe007 peartree botanic
+0xe008 peachtree botanic
+# 0xe009 - 0xee00 unused
+0xee01 rescob1
+0xee02 rescob2
+0xee03 rescob3
+0xee04 rescob4
+# 0xee05 - 0xee17 unused
+0xee18 sand blacksmithy
+0xee19 clay mining
+# 0xee1a - 0xee1f unused
+0xee20 glass blacksmithy
+# 0xee21 - 0xf002 unused
+0xf003 chessboard zulugames
+# 0xf004 - 0xf00e unused
+0xf00f LeverController noemonitems
+0xf010 Tillerman boat
+0xf011 gangplank boat
+0xf012 gangplank2 boat
+0xf013 Hold boat
+# 0xf014 - 0xf01e unused
+0xf01f $HorseMount ulitems
+0xf020 Wrestling
+0xf021 mount
+# 0xf022 - 0xf02e unused
+0xf02f $LlamaMount ulitems
+# 0xf030 - 0xf03e unused
+0xf03f $OstardMount ulitems
+# 0xf040 - 0xf041 unused
+0xf042 glovesofearth combat
+0xf043 armsofearth combat
+0xf044 gorgetofearth combat
+0xf045 helmofearth combat
+0xf046 legsofearth combat
+0xf047 breastofearth combat
+# 0xf048 unused
+0xf049 leatherTunicofearth tailoring
+# 0xf04a - 0xf04e unused
+0xf04f $FrenziedOstardMount ulitems
+0xf050 leatherLegsofearth tailoring
+0xf051 leatherarmsofearth tailoring
+0xf052 LeatherGlovesofearth tailoring
+0xf053 LeatherGorgetofearth tailoring
+0xf054 maskofearth tailoring
+0xf055 WarHammerofearth combat
+0xf056 Earthpent1 zuluitems
+0xf057 Earthpent2 zuluitems
+0xf058 Earthpent3 zuluitems
+0xf059 Earthpent4 zuluitems
+# 0xf05a - 0xf05e unused
+0xf05f $RidgeBackMount ulitems
+0xf060 Earthpent5 zuluitems
+0xf061 Earthpent6 zuluitems
+0xf062 Earthpent7 zuluitems
+0xf063 Earthpent8 zuluitems
+0xf064 Earthpent9 zuluitems
+0xf065 Airpent1 zuluitems
+0xf066 Airpent2 zuluitems
+0xf067 Airpent3 zuluitems
+0xf068 Airpent4 zuluitems
+0xf069 Airpent5 zuluitems
+# 0xf06a - 0xf06e unused
+0xf06f $sphinxmount ulitems
+0xf070 Airpent6 zuluitems
+0xf071 Airpent7 zuluitems
+0xf072 Airpent8 zuluitems
+0xf073 Airpent9 zuluitems
+0xf074 bowofair combat
+0xf075 breastofair combat
+0xf076 legsofair combat
+0xf077 helmofair combat
+0xf078 gorgetofair combat
+0xf079 armsofair combat
+# 0xf07a - 0xf07e unused
+0xf07f $unicornmount ulitems
+0xf080 glovesofair combat
+0xf081 LeatherGorgetofair tailoring
+0xf082 LeatherGlovesofair tailoring
+0xf083 leatherarmsofair tailoring
+0xf084 leatherLegsofair tailoring
+0xf085 leatherTunicofair tailoring
+0xf086 maskofair tailoring
+0xf087 Firepent1 zuluitems
+0xf088 Firepent2 zuluitems
+0xf089 Firepent3 zuluitems
+# 0xf08a - 0xf08e unused
+0xf08f $beetlemount ulitems
+0xf090 Firepent4 zuluitems
+0xf091 Firepent5 zuluitems
+0xf092 Firepent6 zuluitems
+0xf093 Firepent7 zuluitems
+0xf094 Firepent8 zuluitems
+0xf095 Firepent9 zuluitems
+0xf096 Katanaoffire combat
+0xf097 breastoffire combat
+0xf098 legsoffire combat
+0xf099 helmoffire combat
+# 0xf09a - 0xf09e unused
+0xf09f $skeletaldrakemount ulitems
+# 0xf0a0 - 0xf0ff unused
+0xf100 gorgetoffire combat
+0xf101 armsoffire combat
+0xf102 glovesoffire combat
+0xf103 LeatherGorgetoffire tailoring
+0xf104 LeatherGlovesoffire tailoring
+0xf105 leatherarmsoffire tailoring
+0xf106 leatherLegsoffire tailoring
+0xf107 leatherTunicoffire tailoring
+0xf108 maskoffire tailoring
+0xf109 Shadowpent1 zuluitems
+# 0xf10a - 0xf10e unused
+0xf10f $skeletalhorsemount ulitems
+0xf110 Shadowpent2 zuluitems
+0xf111 Shadowpent3 zuluitems
+0xf112 Shadowpent4 zuluitems
+0xf113 Shadowpent5 zuluitems
+0xf114 Shadowpent6 zuluitems
+0xf115 shadowpent7 zuluitems
+0xf116 Shadowpent8 zuluitems
+0xf117 Shadowpent9 zuluitems
+0xf118 Pitchforkofshadow combat
+0xf119 breastofshadow combat
+# 0xf11a - 0xf11f unused
+0xf120 legsofshadow combat
+0xf121 helmofshadow combat
+0xf122 gorgetofshadow combat
+0xf123 armsofshadow combat
+0xf124 glovesofshadow combat
+0xf125 LeatherGorgetofshadow tailoring
+0xf126 LeatherGlovesofshadow tailoring
+0xf127 leatherarmsofshadow tailoring
+0xf128 leatherLegsofshadow tailoring
+0xf129 leatherTunicofshadow tailoring
+# 0xf12a - 0xf12f unused
+0xf130 maskcofshadow tailoring
+0xf131 Poisonpent1 zuluitems
+0xf132 Poisonpent2 zuluitems
+0xf133 Poisonpent3 zuluitems
+0xf134 Poisonpent4 zuluitems
+0xf135 Poisonpent5 zuluitems
+0xf136 Poisonpent6 zuluitems
+0xf137 Poisonpent7 zuluitems
+0xf138 Poisonpent8 zuluitems
+0xf139 Poisonpent9 zuluitems
+# 0xf13a - 0xf13f unused
+0xf140 Kryssofpoison combat
+0xf141 breastofpoison combat
+0xf142 legsofpoison combat
+0xf143 helmofpoison combat
+0xf144 gorgetofpoison combat
+0xf145 armsofpoison combat
+0xf146 glovesofpoison combat
+0xf147 LeatherGorgetofpoison tailoring
+0xf148 LeatherGlovesofpoison tailoring
+0xf149 leatherarmsofpoison tailoring
+# 0xf14a - 0xf14f unused
+0xf150 leatherLegsofpoison tailoring
+0xf151 leatherTunicofpoison tailoring
+0xf152 maskofpoison tailoring
+# 0xf153 - 0xf6ff unused
+0xf700 mysticstone aspoxitems
+0xf701 Corruptcouncyshroud combat
+0xf702 HolyWispWeapon combat
+# 0xf703 - 0xf722 unused
+0xf723 nazrobe combat
+0xf724 lcoloweapon combat
+# 0xf725 - 0xfeff unused
+0xff00 corruptcouncystaff combat
+0xff01 SecureTradeContainer
+0xff02 WornItemsContainer
+# 0xff03 - 0xff16 unused
+0xff17 Angelhide tailoring
+0xff18 SilverDragonhide tailoring
+# 0xff19 - 0xffff unused

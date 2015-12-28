@@ -1,0 +1,263 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/npcbackpacks";
+include "include/attributes";
+include "include/myutil";
+include "include/itemutil";
+include "include/yesno";
+
+program shrunkspawn( who, dolly )
+
+	var delay;
+	var max_npcs;
+	var range;
+
+	if( who.cmdlevel < 2 )
+		SendSysMessage( who, "You don't have the privileges needed to use this." );
+		return;
+	endif
+
+	if( GetObjProperty( dolly, "#running" ) )
+		var want := YesNo( who, "Stop it?" );
+		if( !want )
+			return;
+		else
+			EraseObjProperty( dolly, "#running" );
+		endif
+		dolly.movable := 1;
+
+	else
+		var want := YesNo( who, "Start it?" );
+		if( !want )
+			return;
+		endif
+	
+		SendSysMessage( who, "What will be the delay in seconds between spawns?" );
+		delay := CInt(RequestInput( who, who.backpack, "Enter a delay in seconds ."));
+		if( !delay )
+			SendSysMessage( who, "Canceled." );
+			return;
+		endif
+	
+		SendSysMessage( who, "What will be the max number of mobiles spawned at a time?" );
+		max_npcs := CInt(RequestInput( who, who.backpack, "Enter the max amount."));
+		if( !max_npcs )
+			SendSysMessage( who, "Canceled." );
+			return;
+		endif
+	
+		SendSysMessage( who, "What is the max range for the spawn to check for the npc/s?" );
+		range := CInt(RequestInput( who, who.backpack, "Enter the max range."));
+		if( !range )
+			SendSysMessage( who, "Canceled." );
+			return;
+		endif
+		dolly.movable := 0;
+		SetObjProperty( dolly, "#running", 1 );
+	endif
+
+	Detach();
+
+	var the_npcs := {};
+	while( GetObjProperty( dolly, "#running" ) )
+
+		the_npcs := RefreshArray( the_npcs, dolly, range );
+		if( len(the_npcs) < max_npcs )
+			var mob := UnshrinkNpc( dolly );
+			if( mob )
+				the_npcs.append( mob );
+			endif
+		endif
+	
+		sleep( delay );
+	
+	endwhile
+
+endprogram
+
+
+function RefreshArray( the_array, dolly, range )
+
+	var new_array := {};
+
+	foreach mobile in the_array
+		if( Distance( dolly, mobile ) <= range )
+			new_array.append( mobile );
+		endif
+	endforeach
+
+	return new_array;
+
+endfunction
+
+
+function UnshrinkNpc( dolly )
+
+	var mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				dolly.x, dolly.y, dolly.z, 0);
+			
+	if( !mobile )
+		mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				dolly.x+1, dolly.y, dolly.z,0);
+	endif
+
+	if( !mobile )
+		mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				dolly.x, dolly.y+1, dolly.z,0);
+	endif
+
+	if( !mobile )
+		mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				dolly.x-1, dolly.y, dolly.z,0);
+	endif
+
+	if( !mobile )
+		mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				dolly.x, dolly.y-1, dolly.z,0);
+	endif
+
+	if( !mobile )
+		return 0;
+	endif
+			
+	var mykeywords := { };
+	if ( GetObjProperty(dolly,"mykeywords") )
+		mykeywords := GetObjProperty(dolly,"mykeywords");
+		SetObjProperty(mobile,"mykeywords",mykeywords);
+		foreach word in mykeywords
+			var keywordreply := GetObjProperty(dolly,word);
+			SetObjProperty(mobile,word,keywordreply);
+		endforeach
+	endif
+	mobile.script := GetObjProperty(dolly,"script");
+	RestartScript(mobile);
+	if (!mobile.backpack)
+		var newbackpack := CreateItemAtLocation(5288, 1176, 0, 0xe75,1);
+		EquipItem(mobile, newbackpack);
+	endif
+	mobile.name := dolly.name;
+	mobile.graphic := GetObjProperty(dolly,"graphic");
+	mobile.color := dolly.color;
+	SetObjProperty(mobile,"color",mobile.color);
+	var equippackserial := GetObjProperty(dolly,"equippack");
+	var equippack := 0;
+	foreach item in ListRootItemsInContainer(dolly)
+		if ( item.serial == equippackserial )
+			equippack := item;
+		endif
+	endforeach
+	SetBaseStrength(mobile,GetObjProperty(dolly,"str"));
+	SetBaseIntelligence(mobile,GetObjProperty(dolly,"int"));
+	SetBaseDexterity(mobile,GetObjProperty(dolly,"dex"));
+	SetStrengthMod(mobile, GetObjProperty(dolly,"strmod"));
+	SetIntelligenceMod(mobile, GetObjProperty(dolly,"intmod"));
+	SetDexterityMod(mobile, GetObjProperty(dolly,"dexmod"));
+	SetHp(mobile, mobile.maxhp);
+	SetMana(mobile, mobile.maxmana);
+	SetStamina(mobile, mobile.maxstamina);
+	if ( equippack )
+		foreach item in ListEquippedItems( mobile )
+			MoveItemToContainer( item, mobile.backpack );
+			DestroyItem( item );
+		endforeach
+	
+		foreach item in ListRootItemsInContainer(equippack)
+			var newitem := CreateItemAtLocation(5228, 1776, 0, item.objtype, 1);
+			if (!EquipItem(mobile,newitem))
+				DestroyItem(newitem);
+			else
+				DupeItem( item, newitem );
+				if( item.usescript )
+					newitem.usescript := item.usescript;
+				endif
+			endif
+		endforeach
+	endif
+	var lootbagserial := GetObjProperty(dolly,"lootbag");
+	var lootbag := 0;
+	foreach item in ListRootItemsInContainer(dolly)
+		if ( item.serial == lootbagserial )
+			lootbag := item;
+		endif
+	endforeach
+	if ( lootbag )
+		foreach item in ListRootItemsInContainer(lootbag)
+			var newitem := CreateItemInContainer(mobile.backpack, item.objtype, item.amount);
+			DupeItem( item, newitem );
+			if( item.usescript )
+				newitem.usescript := item.usescript;
+			endif
+		endforeach
+	endif
+
+	var skills := GetObjProperty(dolly,"skills");
+	for i := 1 to 49
+		SetBaseSkillBaseValue( mobile, i - 1, skills[i] * 10 );
+	endfor
+
+	if ( GetObjProperty(dolly,"gender") )
+		mobile.gender := GetObjProperty(dolly,"gender");
+	endif
+
+	if( GetObjProperty(dolly,"graphic") )
+		mobile.graphic := GetObjProperty(dolly,"graphic");
+	endif
+
+      	if(GetObjProperty(dolly, "untamable"))
+		SetObjProperty(mobile, "untamable", 1);
+	endif
+
+	if (GetObjProperty(dolly, "tamableAt"))
+		SetObjProperty(mobile, "tamableAt", GetObjProperty(dolly, "tamableAt"));
+	endif
+
+	if(GetObjProperty(dolly, "summoned"))
+		SetObjProperty(mobile, "summoned", GetObjProperty(dolly, "summoned"));
+	endif
+
+	if(GetObjProperty(dolly, "Animated"))
+		SetObjProperty(mobile, "Animated", GetObjProperty(dolly, "Animated"));
+	endif
+
+	if(GetObjProperty(dolly, "Karma"))
+		SetObjProperty(mobile, "Karma", GetObjProperty(dolly, "Karma"));
+	endif
+
+	if(GetObjProperty(dolly, "Fame"))
+		SetObjProperty(mobile, "Fame", GetObjProperty(dolly, "Fame"));
+	endif
+
+	if(GetObjProperty(dolly, "noloot"))
+		SetObjProperty(mobile, "noloot", GetObjProperty(dolly, "noloot"));
+	endif
+
+	if(GetObjProperty(dolly, "Type"))
+		SetObjProperty(mobile, "Type", GetObjProperty(dolly, "Type"));
+	endif
+
+	var possible_prots := { "PermPoisonImmunity",
+			 	  "PermMagicImmunity",
+			 	  "Permmr",
+			 	  "FireProtection",
+			 	  "WaterProtection",
+			 	  "AirProtection",
+			 	  "EarthProtection",
+			 	  "FreeAction",
+			 	  "NecroProtection",
+			 	  "HolyProtection",
+			 	  "PhysicalProtection",
+			 	  "HealingIncrease" };
+			 	 
+	foreach prot in possible_prots
+		if( GetObjProperty( dolly, prot ) )
+			SetObjProperty( mobile, prot, GetObjProperty( dolly, prot ) );
+		endif
+	endforeach
+
+	mobile.truecolor := GetObjProperty( dolly, "TrueColor" );
+
+	return mobile;
+
+endfunction

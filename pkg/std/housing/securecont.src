@@ -1,0 +1,54 @@
+use os;
+use uo;
+
+include "setup";
+
+program use_securecont( character, chest )
+
+	var house := SystemFindObjectBySerial( GetObjProperty( chest, "houseserial" ));
+	var secure;
+
+	if( (GetObjProperty( house, "ownerserial" ) == character.serial) ||
+	    (GetObjProperty( house, "owneracct" ) == character.acctname) )
+		secure := 1;
+	elseif( character.cmdlevel>=3 )
+		secure := 1;
+	else
+		var i;
+		for(i := 1; (i <= MAX_FRIENDS) && (!secure); i := i + 1)
+			if( GetObjProperty( house, "friend" + i ) == character.serial )
+				secure := 1;
+			endif
+		endfor
+		for(i := 1; (i <= MAX_CO_OWNERS) && (!secure); i := i + 1)
+			if( GetObjProperty( house, "Co-owner" + i ) == character.serial )
+				secure := 1;
+			endif
+		endfor
+	endif
+
+	if ((!secure) && (!GetObjProperty( house, "ownerserial" )))
+		chest.usescript := "";
+		return;
+	endif
+
+	if (!secure)
+		SendSysMessage( character, "You can't use this." );
+		return;
+	endif
+
+	var boxs := CInt( GetObjProperty( chest, "boxserial" ) );
+	var boxo := SystemFindObjectBySerial( boxs );
+
+	foreach item in EnumerateItemsInContainer(chest)
+		if (item.serial != boxs)
+			if (item.container.serial == chest.serial)
+				MoveItemToContainer(item, boxo,1,1);
+			endif
+		endif
+	endforeach
+
+	SendOpenSpecialContainer( character, boxo);
+	SendSysMessage( character, "You open the secure container." );
+
+endprogram

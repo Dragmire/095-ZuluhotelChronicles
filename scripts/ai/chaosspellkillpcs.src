@@ -1,0 +1,168 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  spellpcs.src: spell caster AI
+//
+//
+//  Author: DCT, stealing most from ENS's killpc.src
+//
+//  Created: 6/98
+
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/chaoskillpcsloop";
+include "ai/combat/chaosfight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+var runaway := 0;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+       
+	main_AI_loop();
+
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  These types fight singlemindedly, until the quarry is dead.
+//  There is no way out but death.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+var Near;
+Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+var kwall := 0;
+var runaround := 0;
+foreach item in Near
+if (item.objtype == 0x5f or item.objtype == 0x57 or item.objtype == 0x3946 or item.objtype == 0x3955)
+if (kwall = 0)
+	if (!CheckLineOfSight( me, opponent))
+		if (Random(2) = 1 )
+			SetMana( me, GetMana(me) + 50);
+			CastSpell(me,me,"dispel_field");
+			kwall := 1;
+		else	
+			while (runaround < 15)
+				runaround := runaround + 1;
+				RunToward(opponent);
+			endwhile
+			runaround := 0;
+		endif
+	endif
+endif
+endif
+endforeach
+  var sleepdelay := 300 - (CInt(GetDexterity(me)) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+	var d:=distance(me,opponent);
+	if ( d > 10 )
+		RunToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+    case d
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if (GetMana(me) > (GetMaxMana(me)/3))
+				RunAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+			if (runaway = 15)
+				turntoward( opponent );
+			endif
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (GetMana(me) < (GetMaxMana(me)/3))
+			RunToward( opponent );
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			if (GetObjProperty(me,"lastnolos") != opponent.name)
+				if (runrandom(opponent))
+					Sleepms(sleepdelay);
+				endif
+			endif
+			SetObjProperty(me,"lastnolos",opponent.name);
+			foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 9 )
+				if (CheckLineOfSight( me, mobile ) and !mobile.npctemplate )
+					opponent := mobile;
+		
+				endif
+			endforeach
+			var choice := Random (4) + 1;
+			if (choice = 1)
+				EraseObjProperty(me,"lastnolos");
+				RestartScript(me);
+			elseif (choice = 2)
+				runaround := 0;
+				while (runaround < 15)
+					RunToward(opponent);
+					runaround := runaround + 1;
+				endwhile
+			elseif (choice = 3)
+				EraseObjProperty(me,"lastnolos");
+				spellattack(opponent);
+			elseif (choice = 4)
+				runaround := 0;
+				while (runaround < 10)
+					runrandom(opponent);
+					runaround := runaround + 1;
+				endwhile
+			endif
+			return 2;
+		else
+			spellattack(opponent);
+		endif
+		return 1;
+    endcase
+
+endfunction
+
+		

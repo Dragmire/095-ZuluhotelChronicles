@@ -1,0 +1,22 @@
+/*
+   Author(s): MontuZ && Firedancer (MontuZ@Gmail.com) Mar 08, 2006.
+   Version: 1.0
+   Bugs: None.
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use util;
+
+Program TextCMD_Whisper( Who )
+
+
+    Var Tar := TargetCoordinates( who );
+    If( !Tar )
+    Return 0;
+    Endif
+    
+    SendSysMessage( Who, "Coord" + Tar );
+ 
+Endprogram

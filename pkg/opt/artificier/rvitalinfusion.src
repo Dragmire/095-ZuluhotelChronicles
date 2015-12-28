@@ -1,0 +1,103 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+const STRENGTH		:= 1;
+const INTELLIGENCE	:= 2;
+const DEXTERITY		:= 3;
+
+program rvitalinfusion( parms )
+
+	var layout := array(
+				"page 0",
+				"resizepic 50  0   2600 250 150",
+				"resizepic 100 255 5100 150 25",
+				"text 99 30 5 0",
+			
+				"page 1",
+				"text 85 60 0 1",
+				"text 85 80 0 2",
+				"text 85 100 0 3",
+				"button 250 65 2118 2117 1 0 " + STRENGTH,
+				"button 250 85 2118 2117 1 0 " + INTELLIGENCE,
+				"button 250 105 2118 2117 1 0 " + DEXTERITY );
+			
+	var data := array(
+				"Select an attribute",
+				"Strength",
+				"Intelligence",
+				"Dexterity" );
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_VITAL_INFUSION, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+
+	//Ask for the regeneration type
+	SendSysMessage( caster, "Select an attribute" );
+	var stat := SendDialogGump( caster, layout, data );
+	if( !stat[0] )
+		SendSysMessage( caster, "The ritual is aborted" );
+		return;
+	endif
+
+	//Apply the enchantment
+	case( stat )
+		STRENGTH:
+			var previous := GetObjProperty( item, "str" );
+			if( !previous )
+				SetObjProperty( item, "str", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now have an increased strength." );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's a stronger enchantment already on this item" );
+			endif
+			break;
+		
+		INTELLIGENCE:
+			var previous := GetObjProperty( item, "int" );
+			if( !previous )
+				SetObjProperty( item, "int", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now have an increased intelligence." );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+	
+		DEXTERITY:
+			var previous := GetObjProperty( item, "dex" );
+			if( !previous)
+				SetObjProperty( item, "dex", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now have an increased dexterity." );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+		
+	endcase
+
+endprogram

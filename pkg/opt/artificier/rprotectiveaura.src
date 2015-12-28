@@ -1,0 +1,37 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program rprotectiveaura( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_PROTECTIVE_AURA, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	SetObjProperty( item, "ArBonus", power );
+	SendSysMessage( caster, "This " + item.desc + " will now grant a protective aura to his wearer" );
+	SetNameByEnchant( item );
+
+endprogram

@@ -1,0 +1,185 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 21, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use cfgfile;
+
+Include "include/client";
+
+Program OnUse_SkillStone( Who )
+
+    Var Boosted := GetObjProperty( who, "Detsoob" );
+    If( Boosted >= 3 )
+    SendSysmessage( who, "You've chosen 3 skills already.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+
+    Var mllayout := {
+    "Page 0",
+    "ReSizePic 350 200 3600 150 80",
+    "Text 390 220 2494 0",
+    "Button 370 222 2118 2117 1 0 1",
+    "Text 390 240 2494 1",
+    "Button 370 242 2118 2117 1 0 2",
+    };
+
+    Var mldata := {
+    "Boost Skills",
+    "Skip Boost",
+    };
+
+    Var Effect := SendDialogGump( who, mllayout, mldata );
+    
+    If( !Effect )
+    SendSysMessage( who, "Cancelled.", FONT_NORMAL, 2600 );
+    Return;
+    Endif
+
+    Case( Effect[0] )
+
+    1:
+    ChangeFromSkillList( who );
+    
+    2:
+    SetObjProperty( who, "SkippedBoost", 1 );
+    SendSysmessage( who, "Alrighty.", FONT_NORMAL, 2600 );
+
+    EndCase
+
+EndProgram
+
+Function ChangeFromSkillList( who )
+
+    Var layout2 := array(
+    "Page 0",
+    "ReSizePic 0 0 3600 250 450",
+    "Text 75 30 2494 0",
+    );
+
+    Var data2 := array(
+    "Select a Skill"
+    );
+
+    Var cfg     := ReadConfigFile( ":combat:modenchantdesc" );
+    Var count	:= 0;
+    Var done	:= 0;
+    Var page	:= 1;
+    Var perpage	:= 17;
+    Var y 	:= 55;
+    Var i;
+
+    layout2.append( "page " + page );
+    If( SKILLID__HIGHEST > perpage )
+    layout2.append( "Button 150 406 5540 5541 0 " + ( page + 1 ) );
+    Endif
+
+    For( i := 1; i <= SKILLID__HIGHEST + 1; i := i + 1 )
+    If( done == perpage )
+    done  := 0;
+    page  := page + 1;
+    y 	  := 55;
+
+    layout2.append( "Page " + page );
+    layout2.append( "Button 80 406 5537 5538 0 " + ( page - 1 ) );
+        If( SKILLID__HIGHEST > ( count + perpage ) )
+        layout2.append( "button 150 406 5540 5541 0 " + ( page + 1 ) );
+        Endif
+    Endif
+
+    layout2.append( "Text 25 " + y + " 2597 " + len( data2 ) );
+    layout2.append( "Button 200 " + ( y + 5 ) + " 2104 2103 1 0 " + i );
+    data2.append( cfg[i-1].Skill );
+
+    y 	:= y + 20;
+    done 	:= done + 1;
+    count 	:= count + 1;
+    Endfor
+
+    Var res := SendDialogGump( who, layout2, data2 );
+
+    If( !res[0] )
+    SendSysmessage( who, "Cancelled.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    
+    Var Boosted := GetObjProperty( who, "Detsoob" );
+    
+    If( !Boosted )
+    SendSysMessage( who, "First Skill Set to 130", FONT_NORMAL, 2600 );
+    SetBaseSkillBaseValue( who, res[0]-1, 1300 );
+    SetObjProperty( who, "Detsoob", 1 );
+    ChangeFromSkillList( who );
+    Endif
+    
+If( Boosted == 1 )
+    SendSysMessage( who, "Second Skill Set to 130", FONT_NORMAL, 2600 );
+    SetBaseSkillBaseValue( who, res[0]-1, 1300 );
+    EraseObjProperty( who, "Detsoob" );
+    SetObjProperty( who, "Detsoob", 2 );
+    ChangeFromSkillList( who );
+    Endif
+
+If( Boosted == 2 )
+    SendSysMessage( who, "Third Skill Set to 130", FONT_NORMAL, 2600 );
+    SetBaseSkillBaseValue( who, res[0]-1, 1300 );
+    EraseObjProperty( who, "Detsoob" );
+    SetObjProperty( who, "Detsoob", 3 );
+    BoostStat( Who );
+    Endif
+
+EndFunction
+
+Function BoostStat( Who )
+
+    // Text X = <- +>, Y = Up- Down+, Hue, Rank
+
+    Var mllayout := {
+    "Page 0",
+    "ReSizePic 350 200 3600 160 120",
+    "Text 370 220 2494 0",
+
+    "Text 390 240 2494 1",
+    "Button 370 245 2104 2103 1 0 1",
+
+    "Text 390 260 2494 2",
+    "Button 370 265 2104 2103 1 0 2",
+    
+    "Text 390 280 2494 3",
+    "Button 370 285 2104 2103 1 0 3",
+    };
+
+    Var mldata := {
+    "( Boost a Stat )",
+    "Strength",
+    "Dexterity",
+    "Intelligence",
+    };
+
+    Var Effect := SendDialogGump( who, mllayout, mldata );
+
+    If( !Effect )
+    SendSysMessage( who, "Last chance to boost a stat.", FONT_NORMAL, 2600 );
+    BoostStat( Who );
+    Return;
+    Endif
+
+    Case( Effect[0] )
+
+    1:
+    SetBaseStrength( Who, 130 );
+    SendSysMessage( who, "Now choose a race.", FONT_NORMAL, 2600 );
+    2:
+    SetBaseDexterity( Who, 130 );
+    SendSysMessage( who, "Now choose a race.", FONT_NORMAL, 2600 );
+    3:
+    SetBaseIntelligence( Who, 130 );
+    SendSysMessage( who, "Now choose a race.", FONT_NORMAL, 2600 );
+
+    EndCase
+
+EndFunction

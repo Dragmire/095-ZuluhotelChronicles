@@ -1,0 +1,457 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+
+//  warriorkillpcs.src: Advanced anti-player ai
+//
+//
+//  Only works with humanoid types!
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+include "ai/combat/defaultcombatevent";
+include "ai/setup/killpcssetup";
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "include/npcbackpacks";
+include "include/dotempmods";
+include "include/myutil";
+include "include/yesno";
+include "include/random";
+include "ai/setup/modsetup";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+var runaway := 0;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+	if (!GetObjProperty(me,"Setup"))
+		SetMeUp();
+	endif
+	SetWarMode( 0 );
+       
+	main_AI_loop();
+
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+var weaponone;
+var weapontwo;
+var ppd;
+var tempmana;
+var omfg;
+var sleepdelay := 0;
+
+//Anti-Wall & Lure Code
+var Near;
+Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+var kwall := 0;
+var wallpanic;
+foreach item in Near
+if (item.objtype == 0x5f or item.objtype == 0x57 or item.objtype == 0x3946 or item.objtype == 0x3955)
+	if (!CheckLineOfSight( me, opponent) and Random(2) == 1 )
+		while (Distance(me,opponent) < 15 or wallpanic > 20)
+			RunAwayFrom(opponent);
+			wallpanic := wallpanic + 1;
+		endwhile	
+	endif
+endif
+endforeach
+//
+
+//HEALING
+omfg := 0;
+if (me.hp < (me.maxhp/1.5))
+   	while (distance(me, opponent) <= 6 and omfg < 15)
+		RunAwayFrom(opponent);
+		omfg := omfg + 1;
+	endwhile	
+	me.hidden := 1;
+	sleep (4);
+	me.hidden := 0;
+	sleep (1);
+	me.hp := me.hp + 100;
+	sleep(1);
+	if (omfg > 14)
+		ReadySword ();
+		turntoward( opponent );
+	endif		
+endif
+//
+
+//ANTI GANK
+var gank := 0;
+omfg := 0;
+foreach critter in ListMobilesInLineOfSight( me, 3 )
+	if (critter.name != me.name )
+		gank := gank +1;
+	endif
+endforeach
+if (gank > 1)
+	me.stamina := me.maxstamina;
+	while (distance(me, opponent) <= 10 and omfg < 30)
+		RunAwayFrom(opponent);
+		omfg := omfg + 1;
+	endwhile
+	if (omfg > 29)
+		ReadySword ();
+		turntoward( opponent );
+		me.mana := me.mana + 30;
+	endif
+endif
+//
+			
+//RETARGET IF NO LOS
+if (!CheckLineOfSight( me, opponent) )
+	if (GetObjProperty(me,"lastnolos") != opponent.name)
+		if (runrandom(opponent))
+			Sleepms(sleepdelay);
+		endif
+	endif
+	SetObjProperty(me,"lastnolos",opponent.name);
+	RestartScript(me);
+	return;
+endif
+//
+
+var crazymode;
+if (me.poisoned)
+	CurePoison(me,0,me.name + " has CURED you!");
+endif
+//CRAZY MELEE
+var targets := {};
+var notgts := 0;
+var ffs := 0;
+foreach critter in ListMobilesInLineOfSight( me, 10 )		
+	if (critter)
+		if (!critter.npctemplate or GetObjProperty(me,"killnpcs"))
+			notgts := notgts + 1;
+			targets[notgts] := critter;
+		endif
+	endif
+endforeach
+if (notgts > 2 and Random (5) == 1 and !crazymode)
+	crazymode := 1;
+	PlaySoundEffect(me,0x027e);
+	ReadySword();
+	var loop := 0;
+	var ccl := 0;
+	while (loop < notgts)
+		loop := loop + 1;
+		opponent := targets[loop];
+		SetOpponent(opponent);
+		me.warmode := 1;
+		ffs := 0;	
+		while (distance(me,opponent) > 1 and ffs < 30)
+			ffs := ffs + 1;
+			RunToward( opponent );
+			if (me.hp < (me.maxhp/1.5))
+				ffs := 30;
+				loop := notgts;
+			endif
+		endwhile
+		if (ffs == 30)
+			me.mana := me.mana + 30;
+		endif
+		ccl := 0;
+		while ((distance(me,opponent) > 0 and distance(me,opponent) < 2) and ccl < 7)
+			ccl := ccl + 1;
+			RunToward( opponent );
+			if (me.hp < (me.maxhp/1.5))
+				ccl := 7;
+				loop := notgts;
+			endif
+		endwhile
+	endwhile
+endif
+//
+
+//DETERMINE CLASS AND ACT ACCORDINGLY
+var omage := GetObjProperty(opponent,"IsMage");
+var owarr := GetObjProperty(opponent,"IsWarrior");
+var ocraf := GetObjProperty(opponent,"IsCrafter");
+var obard := GetObjProperty(opponent,"IsBard");
+var othief:= GetObjProperty(opponent,"IsThief");
+var orang := GetObjProperty(opponent,"IsRanger");
+var amethod := 0;
+var ow1;
+var ow2;
+	if (omage)
+		if (opponent.mana > 20)
+			amethod := "arch";
+		else
+			amethod := "melee";
+		endif
+	endif
+	if (owarr or ocraf or obard or othief)
+		amethod := "magic";
+	endif
+	if (orang)
+		amethod :="melee";
+	endif
+	ppd := distance(me, opponent);
+
+	//ANTI GM WEAPON
+	ow1 := GetEquipmentByLayer( opponent,  LAYER_HAND1 );
+	ow2 := GetEquipmentByLayer( opponent,  LAYER_HAND2 );
+	ow1 := GetObjProperty(ow1,"IsGMItem");
+	ow2 := GetObjProperty(ow1,"IsGMItem");
+	var wah := 0;
+	if (ow1 or ow2)
+		if  (ow1 == "Balders Dead" or ow2 == "Balders Dead")
+			amethod := "melee";
+		else
+			amethod := "melee";
+			ReadySword();
+			while (distance(me, opponent) < 5 and wah < 20)
+				RunAwayFrom(opponent);	
+				wah := wah + 1;	
+			endwhile
+			TurnToward(opponent);
+		endif
+	endif
+	//
+	
+	//MELEE ARCHERS
+	foreach critter in ListMobilesInLineOfSight( me, 10 )
+		ow1 := GetEquipmentByLayer( critter,  LAYER_HAND1 );
+		ow2 := GetEquipmentByLayer( critter,  LAYER_HAND2 );
+		ow1 := ow1.graphic;
+		ow2 := ow2.graphic;
+		if (ow1 == 0x13b2 or ow2 == 0x13b2 or ow1 == 0x0f4f or ow2 == 0x0f4f or ow1 == 0x13fd or ow2 == 0x13fd)
+if (distance(me, critter) < distance(me, opponent) and (!critter.npctemplate or GetObjProperty(me,"killnpcs")))
+				opponent := critter;
+				SetOpponent(opponent);
+				me.warmode := 1;
+				amethod := "melee";
+			endif
+		endif
+		if (GetObjProperty(ow1,"IsGMItem") == "Balders Dead" or GetObjProperty(ow2,"IsGMItem") == "Balders Dead")
+			opponent := critter;
+			SetOpponent(opponent);
+			me.warmode := 1;
+			amethod := "melee";
+		endif
+	endforeach
+	//
+	
+	if (!amethod)
+		if (opponent.mana > 20 and  ppd > 3)
+			amethod := "arch";
+		else		
+			if (ppd > 3 and me.mana > (me.maxmana/3))
+				amethod := "magic";
+			else
+				amethod := "melee";
+
+			endif
+		endif
+	endif
+	if (!amethod)	
+		amethod := "melee";
+	endif
+	if (amethod == "magic")
+	 	ReadyStaff ();
+		case Distance( me, opponent )
+		        1:              // the most likely, so first 
+		        0:
+		            return 1;
+			default:
+				var mofo := 0;
+				while (distance(me, opponent) > 1 and mofo < 40 and me.hp > (me.maxhp/1.5))
+			        	RunToward( opponent );
+					mofo := mofo + 1;
+			        endwhile   
+				if (mofo > 39 and CheckLineOfSight( me, opponent))
+					me.mana := me.mana + 30;
+				endif
+		endcase
+	endif
+	if (amethod == "arch")
+	 	ReadyBow ();
+		case Distance( me, opponent )
+		        1:              // the most likely, so first 
+		        0:
+		            return 1;
+			default:
+				var mofo := 0;
+				var mofo2 := 0;
+				var mofo3 := 0;
+				while (mofo < 10 and !opponent.dead)
+					while (distance(me, opponent) > 2 and mofo2 < 40 and me.hp > (me.maxhp/1.5))
+			        		RunToward( opponent );
+						mofo2 := mofo2 + 1;
+					endwhile
+					while (distance(me, opponent) < 5 and mofo3 < 10 and me.hp > (me.maxhp/1.5))
+						RunAwayFrom(opponent);
+						mofo3 := mofo3 + 1;
+					endwhile
+					mofo := mofo + 1;
+			        endwhile   
+				if (mofo > 39 and CheckLineOfSight( me, opponent))
+					me.mana := me.mana + 30;
+				endif
+		endcase
+	endif
+	if (amethod == "melee")
+	 	ReadySword ();
+		case Distance( me, opponent )
+		        1:              // the most likely, so first 
+		        0:
+		            return 1;
+			default:
+				var mofo := 0;
+				while (distance(me, opponent) > 1 and mofo < 40 and me.hp > (me.maxhp/1.5))
+			        	RunToward( opponent );
+					mofo := mofo + 1;
+			        endwhile   
+				if (mofo > 39 and CheckLineOfSight( me, opponent))
+					me.mana := me.mana + 30;
+				endif
+		endcase
+	endif
+endfunction
+
+
+function ReadyStaff ()
+	if (GetObjProperty(me,"amethod") != "magic")
+		SetObjProperty(me,"amethod","magic");
+		PlaySoundEffect(me,0x0057);
+		foreach item in EnumerateItemsInContainer( me.backpack )		
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+		endforeach
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,0x7673,1);
+		SetObjProperty( weaponone, "noloot" , 1 );
+		SetObjProperty( weaponone, "SkillPoisoned" , 18 );
+		EquipItem(me,weaponone);	
+		weaponone.name := "Mace of Death";
+		weaponone.desc := "Mace of Death";			
+		weaponone.color := me.color;
+		weaponone.dmg_mod := 30;
+		weapontwo := CreateItemInInventory(me.backpack,0x1b74,1);
+		weapontwo.color := me.color;
+		SetObjProperty( weapontwo, "noloot" , 1 );
+		EquipItem(me,weapontwo);	
+	endif
+endfunction
+
+function ReadySword ()
+	if (GetObjProperty(me,"amethod") != "melee")
+		SetObjProperty(me,"amethod","melee");
+		PlaySoundEffect(me,0x0057);
+		foreach item in EnumerateItemsInContainer( me.backpack )		
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+		endforeach
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,0x9a19,1);
+		SetObjProperty( weaponone, "noloot" , 1 );
+		SetObjProperty( weaponone, "SkillPoisoned" , 18 );
+		EquipItem(me,weaponone);	
+		weaponone.name := "Death Blade";
+		weaponone.desc := "Death Blade";			
+		weaponone.color := me.color;
+		weapontwo := CreateItemInInventory(me.backpack,0x1b74,1);
+		weapontwo.color := me.color;
+		SetObjProperty( weapontwo, "noloot" , 1 );
+		EquipItem(me,weapontwo);	
+	endif
+endfunction
+
+
+function ReadyBow ()
+	if (GetObjProperty(me,"amethod") != "arch")
+		SetObjProperty(me,"amethod","arch");
+		PlaySoundEffect(me,0x0057);
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,0x767a,1);
+		SetObjProperty( weaponone, "noloot" , 1 );
+		SetObjProperty( weaponone, "SkillPoisoned" , 18 );
+		EquipItem(me,weaponone);	
+		weaponone.name := "Spear of Death";
+		weaponone.desc := "Spear of Death";			
+		weaponone.color := me.color;
+		weaponone.dmg_mod := 30;
+		SetObjProperty(weaponone,"OfBlackrock",1);
+		weaponone.hitscript := ":combat:blackrockscript";
+	endif
+endfunction
+
+function SetMeUp()
+	EquipFromTemplate( me , "FullPlate" );
+	foreach thing in listequippeditems(me)
+		thing.color := me.color;
+		SetObjProperty(thing, "noloot",1);
+		thing.name := "Armor of the Void";
+		thing.desc := "Armor of the Void";
+	endforeach
+	SetObjProperty(me,"SetUp",1);
+endfunction

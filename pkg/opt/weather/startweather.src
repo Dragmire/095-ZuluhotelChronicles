@@ -1,0 +1,8 @@
+use uo;
+include "include/weather";
+
+program setweather()
+
+	StartWeather();
+
+endprogram

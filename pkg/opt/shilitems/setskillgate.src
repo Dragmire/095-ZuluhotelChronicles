@@ -1,0 +1,1007 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/classes";
+include "include/client";
+include "include/gumps";
+
+const MIN_CMD_LEVEL	:= 4;
+const SKILL_MODS	:= 0;
+const SKILL_MULTS	:= 1;
+const STAT_MODS		:= 0;
+const STAT_MAX		:= 1;
+const LOCKING_VALUE	:= 9999;
+
+program set_skillgate( who, gate )
+
+	if( !who.cmdlevel )
+		SendSysMessage( who, "I can't think a way to use that." );
+		return;
+	elseif( who.cmdlevel < MIN_CMD_LEVEL )
+		SendSysMessage( who, "Only " + GetCmdLevelName( MIN_CMD_LEVEL ) + " and up can access skill gate functions." );
+		return;
+	endif
+
+	if( !ReserveItem( gate ) )
+		return;
+	endif
+
+	var skill_mods := GetObjProperty( gate, "SkillLevelMod" );
+	if( !skill_mods )
+		skill_mods := array;
+	endif
+
+	var skill_multipliers := GetObjProperty( gate, "SkillMultipliersMod" );
+	if( !skill_multipliers )
+		skill_multipliers := array;
+	endif
+
+	var stat_mods := GetObjProperty( gate, "StatLevelMod" );
+	if( !stat_mods )
+		stat_mods := array;
+	endif
+
+	var max_stats := GetObjProperty( gate, "MaxStatMod" );
+	if( !max_stats )
+		max_stats := array;
+	endif
+
+	var graphic_mods := GetObjProperty( gate, "GraphicMod" );
+	if( !graphic_mods )
+		graphic_mods := array;
+	endif
+
+	var color_mods := GetObjProperty( gate, "ColorMod" );
+	if( !color_mods )
+		color_mods := array;
+	endif
+
+	var name_mod := GetObjProperty( gate, "NameMod" );
+	if( !name_mod )
+		name_mod := array;
+	endif
+
+	var confirmation := GetObjProperty( gate, "ConfirmationMsg" );
+	if( !confirmation )
+		confirmation := array;
+	endif
+
+	var skill_mod_entries	 := array;
+	var skill_mult_entries := array;
+	var stat_mod_entries	 := array;
+	var stat_max_entries	 := array;
+	var graph_mod_entries	 := array;
+	var color_mod_entries	 := array;
+	var name_mod_entries	 := array;
+	var confirm_entries	 := array;
+
+	XGFReset();
+	GFSetRef( 0, 0 );
+
+	// Main page.
+	GFPage(0);
+	GFNoMove();
+	GFNoClose();
+	GFNoDispose();
+	GFResizePic(0, 0, BKGND_STONESLAB, 600, 85 );
+
+	GFTextLine( 225, 5, COLOR_BLUE_LIGHT, "Skill Gate Configuration");
+	GFTextLine( 50, 40, 0, "Skills Mods" );
+	GFTextLine( 50, 60, 0, "Skills Mults" );
+	GFTextLine( 200, 40, 0, "Stats Mods" );
+	GFTextLine( 200, 60, 0, "Stats Max" );
+	GFTextLine( 350, 40, 0, "Graphic Mods" );
+	GFTextLine( 350, 60, 0, "Color Mods" );
+	GFTextLine( 500, 40, 0, "Name Mod" );
+	GFTextLine( 500, 60, 0, "Confirmation" );
+
+	var ok_button		:= GFButtonID( 525, 5, G_BUTTON_OKAY_0, G_BUTTON_OKAY_1, 1 );
+	var cancel_button	:= GFButtonID( 25, 5, G_BUTTON_CANCEL_0, G_BUTTON_CANCEL_1, 1 );
+
+	// Page 1	
+	GFPage(1);
+	GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+	GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+	GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+	GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+	GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+	GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+	GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+	GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+
+	// SKILLWIN Mods ( page 2 to 9 )
+	skill_mod_entries := BuildSkillWindow( skill_mods, 0, 85, 2, SKILL_MODS );
+
+	// SKILLWIN Multipliers ( page 10 to 17 )
+	skill_mult_entries := BuildSkillWindow( skill_multipliers, 0, 85, 10, SKILL_MULTS );
+
+	// STATWIN Mods ( page 18 )
+	stat_mod_entries := BuildStatWindow( stat_mods, 150, 85, 18, STAT_MODS );
+
+	// STATWIN Max ( page 19 )
+	stat_max_entries := BuildStatWindow( max_stats, 150, 85, 19, STAT_MAX );
+
+	// GRAPHIC Mods ( page 20 )
+	graph_mod_entries := BuildGraphicWindow( graphic_mods, 300, 85, 20 );
+
+	// COLOR mods ( page 21 )
+	color_mod_entries := BuildColorWindow( color_mods, 300, 85, 21 );
+
+	// NAME mod ( page 22 )
+	name_mod_entries := BuildNameWindow( name_mod, 330, 85, 22 );
+
+	// CONFIRMATION ( page 23 )
+	confirm_entries := BuildConfirmWindow( confirmation, 410, 85, 23 );
+
+	// Send the gump;
+	var keyret := GFSendGump( who );
+	if( keyret[0] == cancel_button.keyid )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	var i;
+	var level;
+
+	// Store the skill mods
+	for( i := 1; i <= len(skill_mod_entries); i := i + 1 )
+		skill_mods[i] := array;
+		if( keyret[skill_mod_entries[i][1].keyid] )
+			skill_mods[i][1] := 1;
+		else
+			skill_mods[i][1] := 0;
+		endif
+	
+		level := CDbl( GFExtractData( skill_mod_entries[i][2].keyid, keyret ) );
+		if( !level || level < 0.0 )
+			level := 0.0;
+		else
+			level := CInt( level * 10 );
+			level := CDbl( CDbl(level) / 10.0 );
+			if( level > 209.0 )
+				level := 209.0;
+			endif
+		endif
+	
+		skill_mods[i][2] := level;
+	endfor
+
+
+	// Store the skill multipliers
+	for( i := 1; i <= len(skill_mult_entries); i := i + 1 )
+		skill_multipliers[i] := array;
+		if( keyret[skill_mult_entries[i][1].keyid] )
+			skill_multipliers[i][1] := 1;
+		else
+			skill_multipliers[i][1] := 0;
+		endif
+	
+		level := CDbl( GFExtractData( skill_mult_entries[i][2].keyid, keyret ) );
+		if( !level )
+			level := LOCKING_VALUE;
+		else
+			level := CInt( level * 100 );
+			level := CDbl( CDbl(level) / 100.0 );
+			if( level > 209.0 && CInt(level) != LOCKING_VALUE )
+				level := 209.0;
+			endif
+		endif
+	
+		skill_multipliers[i][2] := level;
+	endfor
+
+
+	// Store the stat mods
+	for( i := 1; i <= len(stat_mod_entries); i := i + 1 )
+		stat_mods[i] := array;
+		if( keyret[stat_mod_entries[i][1].keyid] )
+			stat_mods[i][1] := 1;
+		else
+			stat_mods[i][1] := 0;
+		endif
+	
+		level := CInt( GFExtractData( stat_mod_entries[i][2].keyid, keyret ) );
+		if( !level || level < 1 )
+			level := 1;
+		elseif( level > 209 )
+			level := 209;
+		endif
+	
+		stat_mods[i][2] := level;
+	endfor
+
+
+	// Store the stat max
+	for( i := 1; i <= len(stat_max_entries); i := i + 1 )
+		max_stats[i] := array;
+		if( keyret[stat_max_entries[i][1].keyid] )
+			max_stats[i][1] := 1;
+		else
+			max_stats[i][1] := 0;
+		endif
+	
+		level := CInt( GFExtractData( stat_max_entries[i][2].keyid, keyret ) );
+		if( !level || level < 1 )
+			level := 1;
+		elseif( level > 209 )
+			level := 209;
+		endif
+	
+		max_stats[i][2] := level;
+	endfor
+
+
+	// Store the graphic mods
+	for( i := 1; i <= len(graph_mod_entries); i := i + 1 )
+		graphic_mods[i] := array;
+		if( keyret[graph_mod_entries[i][1].keyid] )
+			graphic_mods[i][1] := 1;
+		else
+			graphic_mods[i][1] := 0;
+		endif
+	
+		level := CInt( GFExtractData( graph_mod_entries[i][2].keyid, keyret ) );
+		if( !level || level < 1 )
+			level := 1;
+		endif
+	
+		graphic_mods[i][2] := level;
+	endfor
+
+
+	// Store the color mods
+	for( i := 1; i <= len(color_mod_entries); i := i + 1 )
+		color_mods[i] := array;
+		if( keyret[color_mod_entries[i][1].keyid] )
+			color_mods[i][1] := 1;
+		else
+			color_mods[i][1] := 0;
+		endif
+	
+		level := CInt( GFExtractData( color_mod_entries[i][2].keyid, keyret ) );
+		if( !level || level < 0 )
+			level := 0;
+		endif
+		
+		color_mods[i][2] := level;
+	endfor
+
+
+	// Store the name mod
+	for( i := 1; i <= len(name_mod_entries); i := i + 1 )
+		name_mod[i] := array;
+		if( keyret[name_mod_entries[i][1].keyid] )
+			name_mod[i][1] := 1;
+		else
+			name_mod[i][1] := 0;
+		endif
+	
+		level := CStr( GFExtractData( name_mod_entries[i][2].keyid, keyret ) );
+		if( !level || level["<uninitialized"] )
+			level := "";
+		endif
+		
+		name_mod[i][2] := level;
+	endfor
+
+
+	// Store confirmation message
+	if( keyret[confirm_entries[1].keyid] )
+		confirmation[1] := 1;
+	else
+		confirmation[1] := 0;
+	endif
+
+	level := CStr( GFExtractData( confirm_entries[2].keyid, keyret ) );
+	if( !level || level["<uninitialized"] )
+		level := "";
+	endif
+	confirmation[2] := level;
+
+
+	if( SetObjProperty( gate, "SkillLevelMod", skill_mods ) &&
+	    SetObjProperty( gate, "SkillMultipliersMod", skill_multipliers ) &&
+	    SetObjProperty( gate, "StatLevelMod", stat_mods ) &&
+	    SetObjProperty( gate, "MaxStatMod", max_stats ) &&
+	    SetObjProperty( gate, "GraphicMod", graphic_mods ) &&
+	    SetObjProperty( gate, "ColorMod", color_mods ) &&
+	    SetObjProperty( gate, "NameMod", name_mod ) &&
+	    SetObjProperty( gate, "ConfirmationMsg", confirmation ) )
+	   	SendSysMessage( who, "Data stored successfully." );
+	else
+		SendSysMessage( who, "An error occured, some or all data were lost!" );
+	endif
+
+endprogram
+
+
+function BuildSkillWindow( prop_data, x, y, start_page, type )
+
+	var entries := array;
+
+	// Main skill page
+	GFPage(start_page);
+	SetvarButtonsAndTitle( x, y, type );
+
+	GFTextLine( x+45, y+50, 603, "Bard" );
+	GFTextLine( x+45, y+70, 603, "Crafter" );
+	GFTextLine( x+45, y+90, 603, "Mage" );
+	GFTextLine( x+45, y+110, 603, "Ranger" );
+	GFTextLine( x+45, y+130, 603, "Thief" );
+	GFTextLine( x+45, y+150, 603, "Warrior" );
+	GFTextLine( x+45, y+170, 603, "Others" );
+
+	// Bard line
+	GFGumpPic( x+85, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+60, G_SKILLWIN_LINE_S );
+
+	// Crafter line
+	GFGumpPic( x+100, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+80, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+80, G_SKILLWIN_LINE_S );
+
+	// Mage line
+	GFGumpPic( x+92, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+100, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+100, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+100, G_SKILLWIN_LINE_S );
+
+	// Ranger line
+	GFGumpPic( x+100, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+120, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+120, G_SKILLWIN_LINE_S );
+
+	// Thief line
+	GFGumpPic( x+92, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+100, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+140, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+140, G_SKILLWIN_LINE_S );
+
+	// Warrior line
+	GFGumpPic( x+115, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+160, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+160, G_SKILLWIN_LINE_S );
+		 
+	// Others
+	GFGumpPic( x+100, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+180, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+180, G_SKILLWIN_LINE_S );
+
+	// Page buttons
+	GFButtonPage( x+25, y+52, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+1 );
+	GFButtonPage( x+25, y+72, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+2 );
+	GFButtonPage( x+25, y+92, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+3 );
+	GFButtonPage( x+25, y+112, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+4 );
+	GFButtonPage( x+25, y+132, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+5 );
+	GFButtonPage( x+25, y+152, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+6 );
+	GFButtonPage( x+25, y+172, G_SKILLWIN_ARROW_RIGHT_S, G_SKILLWIN_ARROW_DOWN_S, start_page+7 );
+		
+
+	// Bard Page
+	GFPage(start_page+1);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_BARD, type, start_page );
+
+
+	// Crafter Page
+	GFPage(start_page+2);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_CRAFTER, type, start_page );
+
+
+	// Mage Page
+	GFPage(start_page+3);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_MAGE, type, start_page );
+
+
+	// Ranger Page
+	GFPage(start_page+4);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_RANGER, type, start_page );
+
+
+	// Thief Page
+	GFPage(start_page+5);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_THIEF, type, start_page );
+
+
+	// Warrior Page
+	GFPage(start_page+6);
+	SetSkillPage( entries, prop_data, x, y, CLASSEID_WARRIOR, type, start_page );
+
+	// Others Page
+	GFPage(start_page+7);
+	SetvarButtonsAndTitle( x, y, type );
+
+	GFTextLine( x+45, y+50, 603, "Others"	);
+
+	GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+115, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+60, G_SKILLWIN_LINE_S );
+	
+	var val;
+
+	if( !prop_data[SKILLID_FORENSICS+1] )
+		prop_data[SKILLID_FORENSICS+1] := array;
+	endif
+
+	entries[SKILLID_FORENSICS+1] := array;
+	GFTextLine( x+50, y+70, 0, GetSkillName( SKILLID_FORENSICS ) );
+	if( prop_data[SKILLID_FORENSICS+1][1] )
+		entries[SKILLID_FORENSICS+1][1] := GFCheckBox( x+32, y+72, G_SMALL_SQUARE_CHECKBOX_0, G_SMALL_SQUARE_CHECKBOX_1, 1 );
+	else
+		entries[SKILLID_FORENSICS+1][1] := GFCheckBox( x+32, y+72, G_SMALL_SQUARE_CHECKBOX_0, G_SMALL_SQUARE_CHECKBOX_1, 0 );
+	endif
+	
+	if( !type )
+		val := GetSkillLevel( prop_data, SKILLID_FORENSICS );
+	else
+		val := GetMultiplier( prop_data, SKILLID_FORENSICS );
+	endif
+	
+	entries[SKILLID_FORENSICS+1][2] := GFTextEntry( x+210, y+70, 50, 20, 0, val );
+	GFButtonPage( x+25, y+52, G_SKILLWIN_ARROW_DOWN_S, G_SKILLWIN_ARROW_RIGHT_S, start_page );
+
+	return entries;
+
+endfunction
+
+
+function GetMultiplier( prop_data, skillid )
+
+	var multiplier := CDbl( prop_data[skillid+1] );
+	if( !multiplier )
+		multiplier := "1.00";
+	elseif( CInt( multiplier ) == LOCKING_VALUE )
+		multiplier := "0.00";
+	elseif( CInt( multiplier ) >= 0 )
+		var units	:= CInt( multiplier );
+		var decimals	:= CInt( CInt( multiplier * 100 ) - CInt( units * 100 ) );
+		if( !decimals )
+			decimals := "00";
+		elseif( decimals < 10 )
+			decimals := "0" + decimals;
+		endif
+		multiplier := units + "." + decimals;
+	else
+		var units	:= Abs(CInt( multiplier ));
+		var decimals	:= Abs(CInt( CInt( multiplier * 100 ) - CInt( units * 100 ) ));
+		if( !decimals )
+			decimals := "00";
+		elseif( decimals < 10 )
+			decimals := "0" + decimals;
+		endif
+		multiplier := "-" + units + "." + decimals;
+	endif
+
+	return multiplier;
+
+endfunction
+
+
+function GetSkillLevel( prop_data, skillid )
+
+	if( !prop_data )
+		prop_data[skillid+1] := array;
+	endif
+
+	var level := CDbl( prop_data[skillid+1][2] );
+	if( !level )
+		level := "0.0";
+	else
+		var units	:= CInt( level );
+		var decimals	:= CInt( CInt( level * 10 ) - CInt( units * 10 ) );
+		if( !decimals )
+			decimals := "0";
+		endif
+		level := units + "." + decimals;
+	endif
+
+	return level;
+
+endfunction
+
+
+function GetSkillName( skillid )
+
+	case( skillid )
+		SKILLID_ALCHEMY:	 return "Alchemy";
+		SKILLID_ANATOMY:	 return "Anatomy";
+		SKILLID_ANIMALLORE:	 return "Animal Lore";
+		SKILLID_ITEMID:		 return "Item Identification";
+		SKILLID_ARMSLORE:	 return "Arms Lore";
+		SKILLID_PARRY:		 return "Parrying";
+		SKILLID_BEGGING:	 return "Begging";
+		SKILLID_BLACKSMITHY:	 return "Blacksmithy";
+		SKILLID_BOWCRAFT:	 return "Bowcraft";
+		SKILLID_PEACEMAKING:	 return "Peacemaking";
+		SKILLID_CAMPING:	 return "Camping";
+		SKILLID_CARPENTRY:	 return "Carpentry";
+		SKILLID_CARTOGRAPHY:	 return "Cartography";
+		SKILLID_COOKING:	 return "Cooking";
+		SKILLID_DETECTINGHIDDEN: return "Detecting Hidden";
+		SKILLID_ENTICEMENT:	 return "Enticement";
+		SKILLID_EVALINT:	 return "Evaluating Intelligence";
+		SKILLID_HEALING:	 return "Healing";
+		SKILLID_FISHING:	 return "Fishing";
+		SKILLID_FORENSICS:	 return "Forensic Evaluation";
+		SKILLID_HERDING:	 return "Herding";
+		SKILLID_HIDING:		 return "Hiding";
+		SKILLID_PROVOCATION:	 return "Provocation";
+		SKILLID_INSCRIPTION:	 return "Inscription";
+		SKILLID_LOCKPICKING:	 return "Lockpicking";
+		SKILLID_MAGERY:		 return "Magery";
+		SKILLID_MAGICRESISTANCE: return "Resisting Spells";
+		SKILLID_TACTICS:	 return "Tactics";
+		SKILLID_SNOOPING:	 return "Snooping";
+		SKILLID_MUSICIANSHIP:	 return "Musicianship";
+		SKILLID_POISONING:	 return "Poisoning";
+		SKILLID_ARCHERY:	 return "Archery";
+		SKILLID_SPIRITSPEAK:	 return "Spirit Speak";
+		SKILLID_STEALING:	 return "Stealing";
+		SKILLID_TAILORING:	 return "Tailoring";
+		SKILLID_TAMING:		 return "Animal Taming";
+		SKILLID_TASTEID:	 return "Taste Identification";
+		SKILLID_TINKERING:	 return "Tinkering";
+		SKILLID_TRACKING:	 return "Tracking";
+		SKILLID_VETERINARY:	 return "Veterinary";
+		SKILLID_SWORDSMANSHIP:	 return "Swordsmanship";
+		SKILLID_MACEFIGHTING:	 return "Mace Fighting";
+		SKILLID_FENCING:	 return "Fencing";
+		SKILLID_WRESTLING:	 return "Wrestling";
+		SKILLID_LUMBERJACKING:	 return "Lumberjacking";
+		SKILLID_MINING:		 return "Mining";
+		SKILLID_MEDITATION:	 return "Meditation";
+		SKILLID_STEALTH:	 return "Stealth";
+		SKILLID_REMOVETRAP:	 return "Remove Trap";
+	
+		default:		 return 0;
+	endcase
+
+endfunction
+
+
+function SetvarButtonsAndTitle( x, y, type )
+
+	var title;
+	if( !type )
+		title := "Skill Modifications";
+		GFButtonPage( 25, 40, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+		GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+		GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+		GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+		GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+		GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+		GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+		GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+	
+	else
+		title := "Skill Multipliers";
+		GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+		GFButtonPage( 25, 60, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+		GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+		GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+		GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+		GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+		GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+		GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+	endif
+
+	GFResizePic( x, y, BKGND_SCROLL, 320, 285 );
+
+	GFGumpPic( x+25, y+40, G_SKILLWIN_LINE_L );
+	GFGumpPic( x+25, y+230, G_SKILLWIN_LINE_L );
+
+	GFTextLine( x+70, y+10, 603, title );
+
+endfunction
+
+
+function SetSkillPage( byref entries, prop_data, x, y, classeid, type, start_page )
+
+	SetvarButtonsAndTitle( x, y, type );
+	SetPageSubTitle( x, y, classeid, start_page );
+	var y_mod := 70;
+	var val;
+
+	foreach skillid in GetClasseSkills( classeid )
+		if( !prop_data[skillid+1] )
+			prop_data[skillid+1] := array;
+		endif
+		entries[skillid+1] := array;
+		GFTextLine( x+50, y+y_mod, 0, GetSkillName( skillid ) );
+		if( prop_data[skillid+1][1] )
+			entries[skillid+1][1] := GFCheckBox( x+32, y+y_mod+2, G_SMALL_SQUARE_CHECKBOX_0, G_SMALL_SQUARE_CHECKBOX_1, 1 );
+		else
+			entries[skillid+1][1] := GFCheckBox( x+32, y+y_mod+2, G_SMALL_SQUARE_CHECKBOX_0, G_SMALL_SQUARE_CHECKBOX_1, 0 );
+		endif
+	
+		if( !type )
+			val := GetSkillLevel( prop_data, skillid );
+		else
+			val := GetMultiplier( prop_data, skillid );
+		endif
+	
+		entries[skillid+1][2] := GFTextEntry( x+210, y+y_mod, 50, 20, 0, val );
+	
+		y_mod := y_mod + 20;
+	endforeach
+
+endfunction
+
+
+function SetPageSubTitle( x, y, classeid, start_page )
+
+	var sub_title;
+
+	case( classeid )
+		CLASSEID_BARD:		sub_title := "Bard";
+					GFGumpPic( x+85, y+60, G_SKILLWIN_LINE_S );
+					GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+					break;
+				
+		CLASSEID_CRAFTER:	sub_title := "Crafter";
+					GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+					break;
+				
+		CLASSEID_MAGE:		sub_title := "Mage";
+					GFGumpPic( x+92, y+60, G_SKILLWIN_LINE_S );
+					GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+					break;
+				
+		CLASSEID_RANGER:	sub_title := "Ranger";
+					GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+					break;
+				
+		CLASSEID_THIEF:		sub_title := "Thief";
+					GFGumpPic( x+92, y+60, G_SKILLWIN_LINE_S );
+					GFGumpPic( x+100, y+60, G_SKILLWIN_LINE_S );
+					break;
+				
+		CLASSEID_WARRIOR:	sub_title := "Warrior";
+	endcase
+
+	GFTextLine( x+45, y+50, 603, sub_title	);
+
+	GFGumpPic( x+115, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+130, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+145, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+160, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+175, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+190, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+205, y+60, G_SKILLWIN_LINE_S );
+	GFGumpPic( x+220, y+60, G_SKILLWIN_LINE_S );
+
+	GFButtonPage( x+25, y+52, G_SKILLWIN_ARROW_DOWN_S, G_SKILLWIN_ARROW_RIGHT_S, start_page );
+
+endfunction
+
+
+function BuildStatWindow( prop_data, x, y, page, type )
+
+	var entries := array;
+
+	GFPage(page);
+
+	var title;
+	if( !type )
+		title := "Stat Mods";
+		GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+		GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+		GFButtonPage( 175, 40, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+		GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+		GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+		GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+		GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+		GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+	else
+		title := "Stat Max";
+		GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+		GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+		GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+		GFButtonPage( 175, 60, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+		GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+		GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+		GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+		GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+	endif
+
+	GFResizePic( x, y, BKGND_STONESLAB, 175, 105 );
+	GFTextLine( x+45, y+10, COLOR_BLUE_LIGHT, title );
+
+	var i;
+	var val;
+	var y_mod := 35;
+
+	for( i := 1; i <= 3; i := i + 1 )
+		if( !prop_data[i] )
+			prop_data[i] := array;
+		endif
+		entries[i] := array;
+		GFTextLine( x+40, y+y_mod, 0, GetStatName(i) );
+		if( prop_data[i][1] )
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 1 );
+		else
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 0 );
+		endif
+		
+		entries[i][2] := GFTextEntry( x+125, y+y_mod, 30, 20, 0, CInt(prop_data[i][2]) );
+	
+		y_mod := y_mod + 20;
+	endfor
+
+	return entries;
+
+endfunction
+
+
+function BuildGraphicWindow( prop_data, x, y, page )
+
+	var entries := array;
+
+	GFPage( page );
+	GFResizePic( x, y, BKGND_STONESLAB, 200, 85 );
+	GFTextLine( x+50, y+10, COLOR_BLUE_LIGHT, "Graphic Mods" );
+
+	GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+	GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+	GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+	GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+	GFButtonPage( 325, 40, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+	GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+	GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+	GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+
+	var i;
+	var y_mod := 35;
+
+	for( i := 1; i <= 2; i := i + 1 )
+		if( !prop_data[i] )
+			prop_data[i] := array;
+		endif
+		entries[i] := array;
+		GFTextLine( x+40, y+y_mod, 0, GetGraphicName(i) );
+		if( prop_data[i][1] )
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 1 );
+		else
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 0 );
+		endif
+		
+		entries[i][2] := GFTextEntry( x+135, y+y_mod, 50, 20, 0, CInt(prop_data[i][2]) );
+	
+		y_mod := y_mod + 20;
+	endfor
+
+	return entries;
+
+endfunction
+
+
+function BuildColorWindow( prop_data, x, y, page )
+
+	var entries := array;
+
+	GFPage( page );
+	GFResizePic( x, y, BKGND_STONESLAB, 200, 85 );
+	GFTextLine( x+55, y+10, COLOR_BLUE_LIGHT, "Color Mods" );
+
+	GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+	GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+	GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+	GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+	GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+	GFButtonPage( 325, 60, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+	GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+	GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+
+	var i;
+	var y_mod := 35;
+
+	for( i := 1; i <= 2; i := i + 1 )
+		if( !prop_data[i] )
+			prop_data[i] := array;
+		endif
+		entries[i] := array;
+		GFTextLine( x+40, y+y_mod, 0, GetColorName(i) );
+		if( prop_data[i][1] )
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 1 );
+		else
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 0 );
+		endif
+		
+		entries[i][2] := GFTextEntry( x+125, y+y_mod, 50, 20, 0, CInt(prop_data[i][2]) );
+	
+		y_mod := y_mod + 20;
+	endfor
+
+	return entries;
+
+endfunction
+
+
+function BuildNameWindow( prop_data, x, y, page )
+
+	var entries := array;
+
+	GFPage( page );
+	GFResizePic( x, y, BKGND_STONESLAB, 270, 105 );
+	GFTextLine( x+100, y+10, COLOR_BLUE_LIGHT, "Name Mod" );
+
+	GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+	GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+	GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+	GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+	GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+	GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+	GFButtonPage( 475, 40, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+	GFButtonPage( 475, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 23 );
+
+	var i;
+	var y_mod := 35;
+
+	for( i := 1; i <= 3; i := i + 1 )
+		if( !prop_data[i] )
+			prop_data[i] := array;
+		endif
+		entries[i] := array;
+		GFTextLine( x+40, y+y_mod, 0, GetNameOption(i) );
+	
+		if( prop_data[i][1] )
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 1 );
+		else
+			entries[i][1] := GFCheckBox( x+15, y+y_mod+2, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 0 );
+		endif
+	
+		if( !CStr(prop_data[i][2]) || CStr(prop_data[i][2])["<uninitialized"] )
+			entries[i][2] := GFTextEntry( x+95, y+y_mod, 155, 20, 0, "" );
+		else
+			entries[i][2] := GFTextEntry( x+95, y+y_mod, 155, 20, 0, CStr(prop_data[i][2]) );
+		endif
+	
+		y_mod := y_mod + 20;
+	endfor
+
+	return entries;
+
+endfunction
+
+
+function BuildConfirmWindow( prop_data, x, y, page )
+
+	var entries := array;
+
+	GFPage( page );
+	GFResizePic( x, y, BKGND_STONESLAB, 190, 65 );
+	GFTextLine( x+15, y+10, COLOR_BLUE_LIGHT, "Confirmation Message" );
+
+	GFButtonPage( 25, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 2  );
+	GFButtonPage( 25, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 10 );
+	GFButtonPage( 175, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 18 );
+	GFButtonPage( 175, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 19 );
+	GFButtonPage( 325, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 20 );
+	GFButtonPage( 325, 60, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 21 );
+	GFButtonPage( 475, 40, G_STONE_ARROW_RIGHT, G_STONE_ARROW_DOWN, 22 );
+	GFButtonPage( 475, 60, G_STONE_ARROW_DOWN, G_STONE_ARROW_RIGHT, 1  );
+
+	if( prop_data[1] )
+		entries[1] := GFCheckBox( x+15, y+37, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 1 );
+	else
+		entries[1] := GFCheckBox( x+15, y+37, G_STONE_CHECKBOX_0, G_STONE_CHECKBOX_1, 0 );
+	endif
+
+	if( !CStr(prop_data[2]) || CStr(prop_data[2])["<uninitialized"] )
+		entries[2] := GFTextEntry( x+40, y+35, 100, 20, 0, "" );
+	else
+		entries[2] := GFTextEntry( x+40, y+35, 100, 20, 0, CStr(prop_data[2]) );
+	endif
+
+	return entries;
+
+endfunction
+
+
+function GetStatName( number )
+
+	case( number )
+		1:		return "Strength";
+		2:		return "Dexterity";
+		3:		return "Intelligence";
+		default:	return 0;
+	endcase
+
+endfunction
+
+
+function GetGraphicName( number )
+
+	case( number )
+		1:		return "Graphic";
+		2:		return "True graphic";
+		default:	return 0;
+	endcase
+
+endfunction
+
+
+function GetColorName( number )
+
+	case( number )
+		1:		return "Color";
+		2:		return "True color";
+		default:	return 0;
+	endcase
+
+endfunction
+
+
+function GetNameOption( number )
+
+	case( number )
+		1:		return "Name";
+		2:		return "Prefix";
+		3:		return "Suffix";
+		default:	return 0;
+	endcase
+
+endfunction
+
+
+function GetCmdLevelName( level )
+
+	case( level )
+		0:	return "players";
+		1:	return "counselors";
+		2:	return "seers";
+		3:	return "gms";
+		4:	return "admins";
+		5:	return "developers";
+	endcase
+
+endfunction

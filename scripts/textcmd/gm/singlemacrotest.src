@@ -1,0 +1,18 @@
+use os;
+use uo;
+
+
+program warn_gump(who)
+
+
+	SendSysMessage( who, "Select the person to macro test:" );
+
+	var player:=target(who, TGTOPT_NOCHECK_LOS);
+	if( (ReadGameClock() > Cint(GetObjProperty( player ,"#macrostart" ) +36000 )) && !GetObjProperty( player, "#allowmacro"))
+		start_script( "::macrojail", player );
+	else
+		SendSysMessage( who, "This person is within macro hours!");
+	endif
+
+
+endprogram

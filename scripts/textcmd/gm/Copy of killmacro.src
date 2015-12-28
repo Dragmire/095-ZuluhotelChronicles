@@ -1,0 +1,58 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+program code_equal_to_number( who, client );
+
+    // Variables designed to Store The full array of players, the number of players, and the current player
+    local players := EnumerateOnlineCharacters();
+    local numplayer := len(players);
+    local player;
+
+	before := ReadGameClock(); // DEBUG
+
+    // Counter.
+    local i := 0, online := 0, playercount :=0;
+	var checked := 0;
+
+
+    
+for (i := 1; i <= numplayer; i := i + 1)
+
+	player := players[i];
+    
+    If (player.cmdlevel==0)
+
+	if( ReadGameClock() < Cint(GetObjProperty( player ,"#macrostart" ) +36000 ))
+		SendSysMessage( who, "That person is within macro time!" );
+	endif
+
+	if( GetObjProperty( player, "#allowmacro"));
+		SendSysMessage( who, "That person is within macro time!" );
+	endif
+
+	start_script( "::macrojail", player );
+
+	checked := checked +1;
+	endif
+endfor
+	SendSysMessage( who, "Checked: "+checked);
+	//debug
+	var after := ReadGameClock();
+	timecheck := after - before;
+	var timechecktext := "took " + (after - before) + " seconds to manage through the macrotest";
+	//textcmd_bcast( player, timechecktext );
+endprogram

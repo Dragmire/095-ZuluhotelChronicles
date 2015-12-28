@@ -1,0 +1,86 @@
+//
+// .create command - create items
+// Items created with this command will not decay.
+// Two forms:
+//   ".create [objtype] [amount]" - specify object type and amount
+//       amount defaults to 1
+//   ".create" - show the item creation menu, create one of that item
+//
+
+Use cfgfile;
+Use uo;
+Use os;
+
+Include "include/time";
+Include "include/all";
+
+Program TextCMD_create( staff_member, text )
+
+    If( text )
+
+    Var parameters := SplitWords(text);
+    Var objtype    := CInt(parameters[1]);
+
+        If( !objtype )
+        objtype := GetObjtypeByName(parameters[1]);
+            If( !objtype )
+            SendSysMessage(staff_member, parameters[1] + " isn't recognized as an existing objname.");
+            Return 0;
+            Endif
+        Endif
+        
+    If( objtype > 0x3FFF )
+    
+    Var item_cfg  := ReadConfigFile(":*:itemdesc");
+    Var item_elem := FindConfigElem(item_cfg, objtype);
+    
+        If( !item_elem )
+        SendSysMessage(staff_member, parameters[1] + " isn't recognized as an existing objtype.");
+        Return 0;
+        Endif
+    Endif
+		
+    Var item := CreateItemAtLocation( staff_member.x, staff_member.y, staff_member.z, objtype, 1 );
+    If( !item )
+    CreateItemAtLocation( staff_member.x, staff_member.y, staff_member.z, objtype, 1 );
+    Endif
+    
+    If( item )
+    item.decayat := 0;
+    SetObjProperty( item, "STAFFCREATEDITEM", { staff_member.serial, staff_member.name } );
+    
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("Logging/created");
+
+    If (datafile)
+    
+    Var IsGM := GetObjProperty( item, "IsGMItem" );
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  staff_member.name });
+    elem.append({ "Staff Serial",  hex(staff_member.serial) });
+    elem.append({ "Item Serial",    hex(item.serial) });
+    elem.append({ "TimeOfCreation",  GetDateString( polcore().systime )  });
+    If( IsGM )
+    elem.append({ "IsGMItem", IsGM });
+    Endif
+
+    AppendConfigFileElem("Logging/created", "Item", "Created " + item.desc, elem);
+    UnloadConfigFile("Logging/created");
+    EndIf
+
+    Return 1;
+    Else
+    SendSysMessage(staff_member, item.errortext);
+    Return 0;
+    Endif
+    Else
+    SendSysMessage(staff_member, "Usage is: .create <objtype> or .create <objname>");
+    Return 0;
+    Endif
+
+Endprogram

@@ -1,0 +1,25 @@
+
+use os;
+use uo;
+
+
+
+Program recalltotem (me, thecritter)
+var changetime:=getobjproperty(me, "recalltotem"); 
+  if(ReadGameClock()<changetime)
+    SendSysMessage(me, "You can only recall your totem once a day",3,34);
+    return;
+  endif  
+	thecritter := getobjproperty ( me, "humuc");
+
+if (!(getobjproperty (thecritter, "looting")))
+	thecritter.hidden := 0;
+	sleepms(250);
+	MoveCharacterToLocation( thecritter, me.x, me.y, me.z, MOVECHAR_FORCELOCATION );
+        PrintTextAbove(thecritter,"Kal Ort Por");
+  	setobjproperty(me, "recalltotem",ReadGameClock()+(24*3600));
+else
+	SendSysMessage(me, "You can't recall your totem while he's looting");
+	return;
+endif
+endprogram

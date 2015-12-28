@@ -1,0 +1,10 @@
+use uo;
+
+include "../../logger";
+
+program textcmd_logline(who, parm)
+
+	LogLine("["+who.name+"] " + parm);
+	LogCommit("staff");
+
+endprogram

@@ -1,0 +1,152 @@
+use uo;
+use cfgfile;
+include "include/npcbackpacks";
+include "include/attributes";
+include "include/myutil";
+include "include/itemutil";
+
+program unshrink_npcs( who, dolly )
+	SendSysMessage( who, "Un-shrink where?" );
+	var where := TargetCoordinates( who );
+	if (!where)	SendSysMessage( who, "Canceled" ); return; endif
+	var mobile := CreateNpcFromTemplate(GetObjProperty(dolly,"npctemplate"),
+				where.x, where.y, where.z,0);
+	if (!mobile) SendSysMessage( who, "Canceled" ); return; endif
+	var mykeywords := { };
+	if ( GetObjProperty(dolly,"mykeywords") )
+		mykeywords := GetObjProperty(dolly,"mykeywords");
+		SetObjProperty(mobile,"mykeywords",mykeywords);
+		foreach word in mykeywords
+			var keywordreply := GetObjProperty(dolly,word);
+			SetObjProperty(mobile,word,keywordreply);
+		endforeach
+	endif
+	mobile.script := GetObjProperty(dolly,"script");
+	RestartScript(mobile);
+	if (!mobile.backpack)
+		var newbackpack := CreateItemAtLocation(5288, 1176, 0, 0xe75,1);
+		EquipItem(mobile, newbackpack);
+	endif
+	mobile.name := dolly.name;
+	mobile.graphic := GetObjProperty(dolly,"graphic");
+	mobile.color := dolly.color;
+	SetObjProperty(mobile,"color",mobile.color);
+	var equippackserial := GetObjProperty(dolly,"equippack");
+	var equippack := 0;
+	foreach item in ListRootItemsInContainer(dolly)
+		if ( item.serial == equippackserial )
+			equippack := item;
+		endif
+	endforeach
+	SetBaseStrength(mobile,GetObjProperty(dolly,"str"));
+	SetBaseIntelligence(mobile,GetObjProperty(dolly,"int"));
+	SetBaseDexterity(mobile,GetObjProperty(dolly,"dex"));
+	SetStrengthMod(mobile, GetObjProperty(dolly,"strmod"));
+	SetIntelligenceMod(mobile, GetObjProperty(dolly,"intmod"));
+	SetDexterityMod(mobile, GetObjProperty(dolly,"dexmod"));
+	SetHp(mobile, mobile.maxhp);
+	SetMana(mobile, mobile.maxmana);
+	SetStamina(mobile, mobile.maxstamina);
+	if ( equippack )
+		foreach item in ListEquippedItems( mobile )
+			MoveItemToContainer( item, mobile.backpack );
+			DestroyItem( item );
+		endforeach
+	
+		foreach item in ListRootItemsInContainer(equippack)
+			var newitem := CreateItemAtLocation(5228, 1776, 0, item.objtype, 1);
+			if (!EquipItem(mobile,newitem))
+				DestroyItem(newitem);
+			else
+				DupeItem( item, newitem );
+				if( item.usescript )
+					newitem.usescript := item.usescript;
+				endif
+			endif
+		endforeach
+	endif
+	var lootbagserial := GetObjProperty(dolly,"lootbag");
+	var lootbag := 0;
+	foreach item in ListRootItemsInContainer(dolly)
+		if ( item.serial == lootbagserial )
+			lootbag := item;
+		endif
+	endforeach
+	if ( lootbag )
+		foreach item in ListRootItemsInContainer(lootbag)
+			var newitem := CreateItemInContainer(mobile.backpack, item.objtype, item.amount);
+			DupeItem( item, newitem );
+			if( item.usescript )
+				newitem.usescript := item.usescript;
+			endif
+		endforeach
+	endif
+
+	var skills := GetObjProperty(dolly,"skills");
+	for i := 1 to 49
+		SetBaseSkill( mobile, i - 1, skills[i] );
+	endfor
+
+	if( GetObjProperty(dolly,"gender") )
+		mobile.gender := GetObjProperty(dolly,"gender");
+	endif
+
+	if( GetObjProperty(dolly,"graphic") )
+		mobile.graphic := GetObjProperty(dolly,"graphic");
+	endif
+
+      	if(GetObjProperty(dolly, "untamable"))
+		SetObjProperty(mobile, "untamable", 1);
+	endif
+
+	if (GetObjProperty(dolly, "tamableAt"))
+		SetObjProperty(mobile, "tamableAt", GetObjProperty(dolly, "tamableAt"));
+	endif
+
+	if(GetObjProperty(dolly, "summoned"))
+		SetObjProperty(mobile, "summoned", GetObjProperty(dolly, "summoned"));
+	endif
+
+	if(GetObjProperty(dolly, "Animated"))
+		SetObjProperty(mobile, "Animated", GetObjProperty(dolly, "Animated"));
+	endif
+
+	if(GetObjProperty(dolly, "Karma"))
+		SetObjProperty(mobile, "Karma", GetObjProperty(dolly, "Karma"));
+	endif
+
+	if(GetObjProperty(dolly, "Fame"))
+		SetObjProperty(mobile, "Fame", GetObjProperty(dolly, "Fame"));
+	endif
+
+	if(GetObjProperty(dolly, "noloot"))
+		SetObjProperty(mobile, "noloot", GetObjProperty(dolly, "noloot"));
+	endif
+
+	if(GetObjProperty(dolly, "Type"))
+		SetObjProperty(mobile, "Type", GetObjProperty(dolly, "Type"));
+	endif
+
+	var possible_prots := { "PermPoisonImmunity",
+			 	  "PermMagicImmunity",
+			 	  "Permmr",
+			 	  "FireProtection",
+			 	  "WaterProtection",
+			 	  "AirProtection",
+			 	  "EarthProtection",
+			 	  "FreeAction",
+			 	  "NecroProtection",
+			 	  "HolyProtection",
+			 	  "PhysicalProtection",
+			 	  "HealingIncrease" };
+			 	 
+	foreach prot in possible_prots
+		if( GetObjProperty( dolly, prot ) )
+			SetObjProperty( mobile, prot, GetObjProperty( dolly, prot ) );
+		endif
+	endforeach
+
+	mobile.truecolor := GetObjProperty( dolly, "TrueColor" );
+
+endprogram
+

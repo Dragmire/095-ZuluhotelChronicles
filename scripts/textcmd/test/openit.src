@@ -1,0 +1,17 @@
+use uo;
+
+program openit( character )
+
+	var what := Target( character );
+
+	if( !what )
+		return;
+	endif
+
+	if( !what.isa( POLCLASS_CONTAINER ) )
+		SendsysMessage( character , "That isn't a container." );
+	else
+		SendOpenSpecialContainer( character , what );
+	endif
+
+endprogram

@@ -1,0 +1,56 @@
+/////////////////
+// Web POL Account adder for use with the POL web server
+//
+// * place webacct.ecl and acctadd.html in the pol/scripts/www directory
+// * enable the POL webserver in pol.cfg and set the port for http connections
+// * set WebServerLocalOnly=1 to only allow connections from the server 
+//   set it =0 to allow everyone to access the server and the account adder page
+// * accounts will be available immediately if successfully added
+// 
+// Notes: I don't know if someone's done something that serves this function
+//        but I thought I'd do it just for kicks.
+//
+// Author: Racalac, 2/6/00
+/////////////////
+
+use http;
+use uo;
+
+program account_add()
+
+var acctname := QueryParam( "acctname" );
+var acctpass := QueryParam( "acctpass" );
+var acctemail := QueryParam( "acctemail" );
+var account;
+
+writehtml("<html><head><title><font color=#333333>ZuluHotel Chronicles Account Creator</font></title></head><body>");
+writehtml("<FONT SIZE=4 color=#333333><B>ZuluHotelChronicles Account Creator</B></FONT><HR>");
+
+if( !acctname or !acctpass or !acctemail )
+  writehtml("Accountname, Password or Email was left empty. Please go back and try again");
+else
+  while (acctname["+"])
+        acctname["+"] := " ";
+  endwhile
+  while (acctpass["+"])
+        acctpass["+"] := " ";
+  endwhile
+  while (acctemail["+"])
+	acctemail["+"] := " ";
+  endwhile
+
+  var ret := CreateAccount( acctname, acctpass, 1 );
+
+  if( ret == error )
+    writehtml("Sorry, account creation failed.<P>");
+    writehtml("Error: " + ret.errortext );
+  else
+    account := FindAccount(acctname);
+    account.setprop("Email", acctemail);
+    writehtml("<font color=#333333>Account added successfully.</font>");
+    writehtml("<font color=#333333> LoginServer=login.zhchronicles.com,2593</font>");
+  endif
+endif
+
+endprogram
+

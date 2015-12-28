@@ -1,0 +1,92 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+
+var config;
+var harp;
+
+Const BIGHARP := 0x0EB1;
+
+function play(character,succeed_sound,fail_sound)
+
+	var diff := Cint(GetEffectiveSkill(character,SKILLID_MUSICIANSHIP)-10);
+	if (diff<10) diff := 10; endif
+	var thepoints := diff*2;
+	if (harp == BIGHARP)
+		thepoints := thepoints *2;
+	endif
+	
+
+   	if (CheckSkill(character, SKILLID_MUSICIANSHIP, diff, thepoints))
+      		PlaySoundEffect( character, succeed_sound );
+      		return 1;
+   	else
+      		PlaySoundEffect( character, fail_sound);
+      		return 0;
+   	endif
+
+endfunction
+
+program music(character, instrument, skill)
+
+   var inst_id := instrument.objtype;
+   var ret := 0;
+   harp := inst_id;
+
+   if (!skill)
+	AutoRepeat(character, instrument);
+	return;
+   endif
+ 
+   if (inst_id == UOBJ_HARP)
+      ret := play(character,SFX_HARP_SUCC,SFX_HARP_FAIL);
+   elseif (inst_id == UOBJ_LUTE)
+      ret := play(character,SFX_LUTE_SUCC,SFX_LUTE_FAIL);
+   elseif (inst_id == UOBJ_DRUM)
+      ret := play(character,SFX_DRUM_SUCC,SFX_DRUM_FAIL);
+   elseif (inst_id == UOBJ_TAMB)
+      ret := play(character,SFX_TAMB_SUCC,SFX_TAMB_FAIL);
+   elseif (inst_id == BIGHARP)
+      ret := play(character,SFX_HARP_SUCC,SFX_HARP_FAIL);     
+
+   else
+      PrintTextAbovePrivate( character, "That's not something you can play", character );
+	return 0;
+   endif
+
+   return ret;
+
+endprogram
+
+function AutoRepeat(character, instrument)
+
+	var inst_id := instrument.objtype;
+	var ret := 0;
+	var cx := character.x;
+	var cy := character.y;
+
+	SendSysMessage(character,"You begin playing...");
+	repeat
+ 
+ 	if (inst_id == UOBJ_HARP)
+      		ret := play(character,SFX_HARP_SUCC,SFX_HARP_FAIL);
+   	elseif (inst_id == UOBJ_LUTE)
+      		ret := play(character,SFX_LUTE_SUCC,SFX_LUTE_FAIL);
+   	elseif (inst_id == UOBJ_DRUM)
+      		ret := play(character,SFX_DRUM_SUCC,SFX_DRUM_FAIL);
+   	elseif (inst_id == UOBJ_TAMB)
+      		ret := play(character,SFX_TAMB_SUCC,SFX_TAMB_FAIL);
+	elseif (inst_id == BIGHARP)
+		ret := play(character,SFX_HARP_SUCC,SFX_HARP_FAIL);
+   	else
+      		PrintTextAbovePrivate( character, "That's not something you can play", character );
+		return 0;
+   	endif
+	sleep(2);
+	until ((character.x != cx) or (character.y != cy));
+	SendSysMessage(character,"You stop playing...");
+
+endfunction

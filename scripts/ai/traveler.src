@@ -1,0 +1,243 @@
+//
+//original code by Charles Haustron
+//
+//added gump and tweaked the money code and changed some of the code
+// Zulu - zuluhotel@hotmail.com
+
+use uo;
+use os;
+use npc;
+use math;
+
+include "include/eventid";
+include "include/randname";
+include "include/clock";
+include "ai/setup/modsetup";
+include "include/objtype";
+include "include/client";
+
+var me:= self();
+var locations_cfg := ReadConfigFile("::traveling");
+if( !locations_cfg )
+	return;
+endif
+
+const GATE_PRICE	:= 100;
+
+if( me.name["<random>"] )
+	SetName ( me , RandomName( me ) );
+	EquipFromTemplate( me , "Clothes" );
+endif
+
+
+EnableEvents( SYSEVENT_ITEM_GIVEN);
+EnableEvents( SYSEVENT_SPEECH,2);
+EnableEvents(SYSEVENT_DAMAGED + SYSEVENT_ENGAGED);
+
+while (1)
+	var ev := wait_for_event( 30 );
+	if (ev)
+		case(ev.type)
+			SYSEVENT_SPEECH:
+			if (ev.text["travel"] or ev.text["gate"])
+				BuildTravelGump(ev.source);
+			elseif (ev.text["price"] or ev.text["help"])
+				Say("Each gate costs " + GATE_PRICE + " gold pieces");
+			elseif (ev.text["hello"] )
+				Say("I offer gates to various locations.");
+			endif
+			SYSEVENT_ITEM_GIVEN: ProcessItem(ev.source, ev.item);
+			SYSEVENT_DAMAGED:
+			SYSEVENT_ENGAGED: 	Say("guards!!!");
+					Start_Script( ":areas:callguards" , me );
+		endcase
+		 cleareventque();
+	endif
+endwhile
+
+
+function cleareventque()
+
+	var ev;
+	repeat
+	until(! (ev := os::wait_for_event(0)) );
+
+endfunction
+
+
+function BuildGate( who , vartion_id )
+
+	if( !GetPayment( who ) )
+		return;
+	endif
+	
+	var elem := FindConfigElem( locations_cfg , vartion_id );
+	var tox  := elem.x;
+	var toy  := elem.y;
+	var toz  := elem.z;
+
+	Say( "Thanks!" );
+	Sleepms(500);
+	
+	Say( "Vas Rel Por" );
+	PerformAction( me, ANIM_CAST_DIR );		
+	Sleepms(4500);
+
+	//Create Gates
+	set_critical(1);
+	var makegatex := GetObjProperty(who, "makegatex");
+	var makegatey := GetObjProperty(who, "makegatey");
+	var makegatez := GetObjProperty(who, "makegatez");
+	EraseObjProperty (who, "makegatex");
+	EraseObjProperty (who, "makegatey");
+	EraseObjProperty (who, "makegatez");
+	var gate1 := CreateItemAtLocation( makegatex, makegatey, makegatez, UOBJ_BLUE_MOONGATE, 1 );
+	var gate2 := CreateItemAtLocation( tox , toy , toz , UOBJ_BLUE_MOONGATE , 1 );
+
+	if (!gate1 or !gate2)
+		DestroyItem( gate1 );
+		DestroyItem( gate2 );
+        	return;
+	endif
+	
+	SetObjProperty( gate1, "GateDestX", gate2.x );
+	SetObjProperty( gate1, "GateDestY", gate2.y );
+	SetObjProperty( gate1, "GateDestZ", gate2.z );
+	SetObjProperty( gate2, "GateDestX", gate1.x );
+	SetObjProperty( gate2, "GateDestY", gate1.y );
+	SetObjProperty( gate2, "GateDestZ", gate1.z );
+
+	set_critical(0);
+
+	PlaySoundEffect( me , SFX_SPELL_GATE_TRAVEL );
+
+	var i;
+	for( i := 6899 ; i <= 6907 ; i := i+1 )
+		gate1.graphic := i;
+		gate2.graphic := i;
+		Sleepms( 150 );
+	endfor
+
+	gate1.graphic := UOBJ_BLUE_MOONGATE;
+	gate2.graphic := UOBJ_BLUE_MOONGATE;
+
+	Sleep(30);
+
+	for( i := 6907 ; i >= 6899 ; i := i-1 )
+		gate1.graphic := i;
+		gate2.graphic := i;
+		Sleepms( 150 );
+	endfor
+
+	DestroyItem(gate1);
+	DestroyItem(gate2);
+
+endfunction
+
+
+function ProcessItem(who, item)
+
+	Say("I have no use for this");
+	MoveItemToContainer( item , who.backpack );
+
+endfunction
+
+
+function PlayerGold(who)
+
+	var backpack := EnumerateItemsInContainer (who.backpack);
+	var goldamount := 0;
+
+	foreach item in backpack
+		if (item.objtype = UOBJ_GOLD_COIN)
+			goldamount := goldamount + item.amount;
+		 endif
+	endforeach
+		  
+	return goldamount;
+
+endfunction
+
+
+function GetPayment( who )
+	
+	if( who.spendgold( GATE_PRICE ) )
+		return 1;
+	else
+		say ( "You do not have " + GATE_PRICE + " gold coins!");
+ 		return 0;
+	endif
+
+endfunction
+
+
+function BuildTravelGump(who)
+
+	SetObjProperty(who, "makegatex", who.x);
+	SetObjProperty(who, "makegatey", who.y);
+	SetObjProperty(who, "makegatez", who.z);
+	var layout := {
+			"page 0",
+			"resizepic 0 0 3600 280 250",
+			"tilepic 28 68 3948",
+			"text 20 15 600 0",
+			"text 26 162 600 1",
+			"text 20 210 1117 2",
+			"text 110 210 1117 3",
+			"page 1" };
+
+	var data := {
+			"What destination would you like?",
+			"$" + GATE_PRICE,
+			"Player Gold:",
+			"0" };
+
+	
+	var amount	:= GetConfigMaxIntKey( locations_cfg );
+	var start	:= 1;
+	var last	:= start + amount;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 5;
+	var y 	:= 50;
+	var i;
+	
+	
+	data[4] := PlayerGold(who);
+
+	layout.append( "page " + page );
+	if( amount > perpage )
+		layout.append( "button 230 210 5601 5605 0 " + (page + 1) );
+	endif
+	
+	for( i := start ; i < last ; i := i + 1 )
+		if( done = perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 50;
+			
+			layout.append( "page " + page );
+			layout.append( "button 200 210 5603 5607 0 " + (page - 1) );
+			if( amount > (count + perpage) )
+				layout.append( "button 230 210 5601 5605 0 " + (page + 1) );
+			endif
+		endif
+		
+		layout.append( "text 125 " + y + " 600 " + len(data) );
+		layout.append( "button 90 " + y + " 210 211 1 0 " + i );
+		data.append( locations_cfg[i].name );
+
+		y 	:= y + 30;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+
+	var result := SendDialogGump( who , layout , data );
+	if( !result[0] )
+		Say( "Please drop by again" );
+		return;
+	endif
+	BuildGate( who , result[0] );
+
+endfunction

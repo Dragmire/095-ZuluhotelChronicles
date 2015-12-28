@@ -1,0 +1,454 @@
+/////////////////
+// mining.src
+//
+// By using a shovel or pickaxe on cave tile this script allows
+// the harvesting of ore. Special reagents or colored ore are 
+// possible to find. You get more ore per dig the higher your
+// skill is. 
+//
+// If a shovel is used on a swamp tile, clay is digged up and
+// can be used to make pots, jars, etc.
+//
+// Authors: DreamWeaver: 
+//			   original
+//		  Racalac:
+//			   5/8/99 colored ore, resource use
+/////////////////
+//			   20010324 Jaleem Added autolooping 
+/////////////////
+
+
+use uo;
+use os;
+use util;
+use cfgfile;
+
+include "include/client";
+include "include/classes";
+include "include/objtype";
+include "include/utility";
+include "include/itemutil";
+include "include/random";
+include "include/autoloop";
+
+
+const UACTION_PICK	:= 0x0B;
+const DEFAULT_POINTS	:= 100;
+const POINTS_MULTIPLIER	:= 11;
+const NUM_PERFORM	:= 4;
+const MAX_CHANCE	:= 155;
+
+
+program use_picktool( character , tool )
+
+	if( !ReserveItem( tool ) )
+		return;
+	endif
+	
+	if( tool.objtype != UOBJ_SHOVEL and !IsEquipped( character , tool ) )
+		SendSysMessage( character , "You must equip it to mine." );
+		return;
+	endif
+	
+	SendSysmessage( character , "Select a place to mine." );
+
+	var use_on := TargetCoordinates( character );
+	if (!use_on)
+		return;
+	endif
+
+	var distt := coordist( character.x , character.y , use_on.x , use_on.y );
+	if( distt > 2 )
+		SendSysmessage( character , "That is too far away." );
+		return;
+	endif
+
+  Autoloop_init ( character );
+
+  while (Autoloop_more() && NOT character.dead)
+
+	var info := GetMapInfo( use_on.x , use_on.y );
+	var result;
+	
+	if( IsSwamp( info.landtile ) )
+		SendSysMessage( character , "You start mining..." );
+		result := DigForClay( character , use_on , info );
+		
+	elseif( IsMinable( info.landtile , use_on.objtype ) )
+		SendSysMessage( character , "You start mining..." );
+		result := MineForOre( character , use_on , info , tool );
+		
+	elseif( IsSand( info.landtile ) )
+		SendSysMessage( character , "You start mining..." );
+		result := DigForSand( character , use_on , info );
+		
+	else
+		SendSysmessage( character , "You can't mine or dig anything there." );
+		return;
+	endif
+
+	Sleep( 1 );
+
+
+	/*
+	    result > 0  - Success	- autoloop goes on
+	    result = 0  - Failure	- autoloop goes on
+	    result < 0  - Exausthed	- autoloop stops
+	*/
+
+	if( result > 0)
+		DoSomething( character , tool );
+
+                /*** If tool is broken, autolooping have to stop ***/
+                if (!tool)
+                        Autoloop_finish ();
+                        SendSysMessage( character , "You stop mining." );
+                        return;
+                endif
+        elseif (result < 0)
+                /*** No more to dig here! ****/
+                Autoloop_finish ();
+                SendSysMessage( character , "You stop mining." );
+                return;
+	endif
+
+ endwhile
+
+ Autoloop_finish();
+ SendSysMessage( character , "You stop mining." );
+	
+endprogram
+
+
+
+function GetStuff( character , oreamount , tool )
+
+	var to_make_colored := Cint( GetEffectiveskill( character , SKILLID_MINING ) / 5 ) + 35;
+	var crafter := GetObjProperty( character , CLASSEID_CRAFTER );
+
+	var tool_bon	:= GetObjProperty( tool , "MiningBonus" );
+	if( tool_bon )
+		to_make_colored := to_make_colored + (10 * tool_bon );
+		oreamount	:= oreamount * tool_bon;
+	endif
+	
+	if( to_make_colored > 75 )
+		to_make_colored := 75;
+	endif
+	
+	if( crafter )
+		to_make_colored := Cint( to_make_colored *  ClasseBonus( character , CLASSEID_CRAFTER ) );
+		if( to_make_colored > 90 )
+			to_make_colored := 90;
+		endif
+	endif
+	
+	if( RandomDiceStr("1d100") <= to_make_colored )
+		MakeColoredOre( character , oreamount , tool );
+	else
+		if( crafter )
+			oreamount := Cint( oreamount * ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+		
+		CreateItemInBackpack( character , UOBJ_IRON_ORE , oreamount );
+		SendSysMessage( character , "You put " + oreamount + " iron ore in your backpack." );
+	endif
+   
+endfunction
+
+
+function MakeColoredOre( character , oreamount , tool )
+
+	var skill	:= GetEffectiveskill( character , SKILLID_MINING );
+	var maxamount := Cint( skill / 30 );
+		
+	var tool_bon	:= GetObjProperty( tool , "MiningBonus" );
+	if( tool_bon )
+		maxamount	:= maxamount * tool_bon;
+	endif
+	
+	if( oreamount > maxamount )
+		oreamount := maxamount;
+	endif
+	
+	if( oreamount < 1 )
+		oreamount := 1;
+	endif
+
+	var chance	:= RandomDiceStr( "1d" + MAX_CHANCE );
+	var cfg	:= ReadConfigFile( "itemdesc" );
+	var thekeys	:= GetConfigStringKeys( cfg );
+	var possibles	:= {};
+	var min_chance:= MAX_CHANCE * 2;
+	var the_ore;
+	
+	if( Random(2) )
+		var bonus	:= Cint( skill / 4 );
+		var to_mod	:= 80;
+		if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			bonus		:= Cint( bonus * ClasseBonus( character , CLASSEID_CRAFTER ) );
+			oreamount	:= Cint( oreamount * ClasseBonus( character , CLASSEID_CRAFTER ) );
+			to_mod		:= Cint( to_mod / ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+		
+		if( tool_bon )
+			bonus  := bonus + (6 * tool_bon);
+			to_mod := to_mod - (5 * tool_bon);
+		endif
+
+		if( chance > to_mod )
+			chance := chance - bonus;
+		endif
+	endif
+	
+	foreach key in thekeys
+		var the_chance := Cint( cfg[key].HarvestChance );
+		if( the_chance and chance <= the_chance )
+			if( CheckSkill( character , SKILLID_MINING , Cint(cfg[key].HarvestDiff) , 0 ) )
+				possibles.append( key );
+			endif
+		endif
+	endforeach
+
+	if( len( possibles ) )
+		set_critical(1);
+		foreach key in possibles
+			var hchance := Cint( cfg[key].HarvestChance );
+			if( hchance < min_chance )
+				the_ore := key;
+				min_chance := hchance;
+			endif
+		endforeach
+		set_critical(0);
+		CreateItemInBackpack( character , Cint(the_ore) , oreamount );
+		SendSysMessage( character , "You put " + oreamount + " " + cfg[the_ore].Desc + " in your backpack." );
+	else
+		SendSysMessage( character, "You fail to find any coloured ore." );
+	endif
+
+endfunction
+
+
+
+function DigForClay( character , use_on , info )
+
+	var initial_x	:= character.x;
+	var initial_y	:= character.y;
+	
+	var tdiff := GetHarvestDifficulty( "clay" , use_on.x , use_on.y , info.landtile );
+	var clay_amount := HarvestResource( "clay" , use_on.x , use_on.y , 1 , 2 );
+	if( !clay_amount )
+		SendSysmessage(character, "There's no clay left there.");
+		return -1; //was 0, modified by Jaleem
+	endif
+	
+	var i;
+	for( i := 1 ; i <= NUM_PERFORM ; i := i + 1 )
+		Performaction( character , UACTION_PICK );
+		PlaySoundEffect( character , SFX_PICK );
+		Sleep(1);
+		if( character.x != initial_x or character.y != initial_y )
+			return 0;
+		endif
+	endfor
+
+	if( CheckSkill( character , SKILLID_MINING , tdiff , tdiff * POINTS_MULTIPLIER ) )
+	
+		var theamount;	
+		if( clay_amount < 2 )
+			theamount := 1;
+			
+		else
+			theamount := Random(6)+1;
+		endif
+			
+		var theclay := CreateItemInBackpack( character , UOBJ_CLAY , theamount );
+		SendSysmessage( character , "You put " + theamount + " blocks of clay in your backpack." );
+			
+	else
+		SendSysmessage( character , "You fail to find any clay." );
+		return 0;
+	endif
+	
+	return 1;
+
+endfunction
+
+
+
+function DigForSand( character , use_on , info )
+
+	var initial_x	:= character.x;
+	var initial_y	:= character.y;
+	
+	var tdiff := GetHarvestDifficulty( "sand" , use_on.x , use_on.y , info.landtile );
+	var sandamount := HarvestResource( "sand" , use_on.x , use_on.y , 1 , 2 );
+	if( !sandamount )
+		SendSysmessage(character, "There's no sand left there.");
+		return -1; //was 0, modified by Jaleem
+	endif
+		
+	var i;
+	for( i := 1 ; i <= NUM_PERFORM ; i := i + 1 )
+		Performaction( character , UACTION_PICK );
+		PlaySoundEffect( character , SFX_HAMMER );
+		Sleep(1);
+		if( character.x != initial_x or character.y != initial_y )
+			return 0;
+		endif
+	endfor	
+	
+	if( CheckSkill( character , SKILLID_MINING , tdiff , tdiff * POINTS_MULTIPLIER ) )
+	
+		var theamount;	
+		if( sandamount < 2 )
+			theamount := 1;
+			
+		else
+			theamount := Random(6)+1;
+		endif
+		
+		var thesand := CreateItemInBackpack( character , UOBJ_SAND , theamount );
+		SendSysmessage( character , "You put " + theamount + " units of sand in your backpack." );
+
+	else
+		SendSysmessage( character , "You fail to find any sand." );
+		return 0;
+	endif
+	
+	return 1;
+
+endfunction
+
+
+
+function MineForOre( character , use_on , info , tool )
+	
+	var initial_x	:= character.x;
+	var initial_y	:= character.y;
+	var oreamount := HarvestResource( "ore" , use_on.x , use_on.y , 1 , Cint( GetEffectiveskill( character , SKILLID_MINING ) / 15 )+1 );
+	if( !oreamount )
+		SendSysmessage( character , "There's no ore left there.");
+		return -1; //was 0, modified by Jaleem
+	endif
+
+	var i;
+	for( i := 1 ; i <= NUM_PERFORM ; i := i + 1 )
+		Performaction( character , UACTION_PICK );
+		PlaySoundEffect( character , SFX_HAMMER );
+		Sleep(1);
+		if( character.x != initial_x or character.y != initial_y )
+			return 0;
+		endif
+	endfor
+	
+	if( CheckSkill( character , SKILLID_MINING , -1 , DEFAULT_POINTS ) )
+		GetStuff( character , oreamount , tool ); 
+	else
+		SendSysmessage( character , "You fail to find any ore." );
+		return 0;
+	endif
+	
+	return 1;
+
+endfunction
+
+
+function DoSomething( character , tool )
+	
+	
+
+	var tnum  := Random(100)+1;
+	var bonus := Cint( GetEffectiveSkill( character , SKILLID_MINING ) / 30 );
+	if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+		bonus := Cint( bonus * ClasseBonus( character , CLASSEID_CRAFTER ) ) + 1;
+	endif
+	
+	tnum := tnum + bonus;
+	
+
+	var tool_bon	:= GetObjProperty( tool , "MiningBonus" );
+	if( tool_bon )
+		tnum := tnum + (2 * tool_bon);
+	endif
+	
+	var msg;
+	var objtype;
+	var amount := 1;
+
+
+	case( tnum )
+		1:
+		2:  	
+		3:	
+		4:	msg := "Oh no your tool breaks!";
+			Subtractamount( tool , 1 );
+			break;
+	
+		98:	objtype := 0x6003;
+			msg := "You discover a tattered map!";
+			break;
+		
+		99:	objtype := 0x0F25;
+			msg := "You find a chunk of fossilized sap!";
+			break;
+
+		102:	objtype := 0xc503;
+			msg := "You find a piece of elusive NEW ZULU ORE!";
+			break;
+			
+		103:	objtype := 0x6005;
+			msg := "You discover a tattered map!";
+			break;
+			
+		105:	objtype := 0x0F30;
+			msg := "You find a diamond!";
+			break;
+		
+			
+		107:	if( Random(15) < 1 )
+				case(RandomInt(3))
+					0:	objtype := 0xc538;
+						msg := "You find a strange looking blue gem!";
+						break;
+					1:	objtype := 0xc539;
+						msg := "You find a strange looking red gem!";
+						break;
+					2:	objtype := 0xc53a;
+						msg := "You find a glowing bright white gem!";
+						break;
+				endcase
+			endif
+			break;
+
+		108:	if( Random(5) < 1 )
+				objtype := 0xc538;
+				msg := "You find a strange looking blue gem!";
+				break;
+			endif
+
+		109:	if( Random(10) < 1 )
+				objtype := 0xc539;
+				msg := "You find a strange looking red gem!";
+				break;
+			endif
+
+		110:	if( Random(15) < 1 )
+				objtype := 0xc53a;
+				msg := "You find a glowing bright white gem!";
+			endif
+			break;
+		
+	endcase
+	
+	if( objtype )
+		if( CreateItemInBackpack( character, objtype, amount ) )
+			if( msg )
+				SendSysMessage( character, msg );
+			endif
+		endif
+	elseif( msg )
+		SendSysMessage( character, msg );
+	endif
+	
+endfunction

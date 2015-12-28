@@ -1,0 +1,35 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated by Zulu (zulu@zuluhotel.com) Dec 23, 1999
+// - xmas present
+// updated November 19, 2000
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+include "include/random";
+
+program xmaspres(who,xmas)
+
+    if(!ReserveItem(xmas)) return; endif
+
+    var item,coins,murders:=GetObjProperty(who,"longmurders");
+
+    if (murders.errortext)
+	coins:=Random(400)+200;
+	SendSysMessage(who,"You open your present and find "+coins+".",3,70);
+	CreateItemInBackpack(who,0xeed,coins);
+    elseif (murders<2)
+    	coins:=Random(300)+100;
+	SendSysMessage(who,"You tear open the present and find "+coins+".",3,70);
+	CreateItemInBackpack(who,0xeed,coins);
+    else
+	SendSysMessage( who, "You tear open the present and find a lump of coal.",3,34);
+	item := CreateItemInBackpack(who,0xf8b);
+	item.name:="christmas coal";
+	item.usescript:=":xmas:xmascoal";
+    endif
+
+    DestroyItem(xmas);
+
+endprogram

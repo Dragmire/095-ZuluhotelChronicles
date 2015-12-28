@@ -1,0 +1,19 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+
+Program BritainGate( who )
+
+    MoveCharacterToLocation( Who, 1417, 1715, 20 );
+    SendSysMessage( Who, "Welcome to Britian.", FONT_BOLD, 2600 );
+
+Endprogram

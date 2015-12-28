@@ -1,0 +1,48 @@
+use uo;
+
+
+program use_backpack(who, backpack)
+
+SendSysMessage(who, "On what animal would you like to place this pack?");
+var what := Target(who, TGTOPT_CHECK_LOS);
+
+if (!what)
+	SendSysMessage(who, "Targetting canceled");
+	return;
+endif
+
+case (what.graphic)
+	0xcc: equip_horse(who, backpack, what);
+	0xe4: equip_horse(who, backpack, what);
+	0xc8: equip_horse(who, backpack, what);
+	0xe2: equip_horse(who, backpack, what);
+	0xdc: equip_llama(who, backpack, what);
+	default: SendSysMessage(who, "That creature can't carry a pack!");
+endcase
+
+
+endprogram
+
+function equip_horse(who, backpack, what)
+if (GetObjProperty(what, "master") == who.serial)
+	DestroyItem(backpack);
+	what.graphic := 0x123;
+	SendSysMessage(who, "You equip the horse with the backpack");
+else
+	DestroyItem(backpack);
+	SendSysMessage(who, "The animal destroys the pack in a fit of rage!");
+	return;
+endif
+endfunction
+
+function equip_llama(who, backpack, what)
+if (GetObjProperty(what, "master") == who.serial)
+	DestroyItem(backpack);
+	what.graphic := 0x124;
+	SendSysMessage(who, "You equip the horse with the backpack");
+else
+	DestroyItem(backpack);
+	SendSysMessage(who, "The animal destroys the pack in a fit of rage!");
+	return;
+endif
+endfunction

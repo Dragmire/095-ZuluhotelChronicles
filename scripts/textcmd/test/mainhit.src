@@ -1,0 +1,33 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+
+
+program mainhit( who )
+
+   var dmg := 30;
+
+    var thepacket := "002201";
+    var theserial := Hex(who.serial)-"0x";
+    FixSize(theserial, (8-len(theserial)));
+    dmg := Hex(dmg)-"0x";
+    thepacket := thepacket + theserial + dmg;
+    var size:=len(thepacket)/2;
+    size := size+3;
+    size := Hex(size)-"0x";
+    FixSize(size, (4- len(size)));
+    thepacket := "BF"+size+thepacket;
+    print(thepacket);
+    SendPacket(who, thepacket);
+
+endprogram
+
+function FixSize(byref value, fixamt)
+
+  var i;
+  for(i := 1; i <= CInt(fixamt); i := i+1)
+    value := "0" + value;
+  endfor
+
+endfunction

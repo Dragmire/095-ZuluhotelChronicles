@@ -1,0 +1,68 @@
+////////////////
+// smelting.src
+//
+// Turns normal or colored ore into its respective ingot.
+// Some ores are harder to work with than others.
+//
+// Author: Racalac, 5/8/99
+//
+// Modifications: 
+//	19990525 Syz moved UOBJ_XX definitions to include/objtype.inc
+//
+////////////////
+
+use uo;
+use cfgfile;
+
+include "include/client";
+include "include/objtype";
+
+program smelt_that_ore ( character , ore )
+
+	var cfg := ReadConfigFile( "itemdesc" );
+	var diff := cfg[ore.objtype].SmeltDiff;
+	
+	if( diff )
+		var ingot := cfg[ore.objtype].SmeltTo;
+		SmeltOre( character , ore , ingot , diff );
+	else
+		SendSysmessage( character , "You can't smelt that." );
+	endif
+	
+endprogram
+
+
+function SmeltOre( character , ore , ingot , difficulty )
+
+	if( !ReserveItem(ore) )
+		return;
+	endif
+
+	if( !Accessible( character, ore ) )
+		SendSysmessage( character, "You can't reach that." );
+		return;
+	endif
+
+	var near := ListItemsNearLocation( character.x , character.y , character.z , 1 );
+	foreach forge in near
+		if( ((forge.objtype >= UOBJ_FORGE_START) and (forge.objtype <= UOBJ_FORGE_END)) or (forge.objtype = UOBJ_SMALL_FORGE) )
+
+			if( CheckSkill( character , SKILLID_MINING , difficulty , 0 ) )
+				var ingots := CreateItemInBackpack( character , ingot , GetAmount( ore ) );
+				SendSysmessage( character, "You create " + GetAmount( ore ) + " ingots and place them in your pack." );
+				DestroyItem( ore );
+				return;
+				
+			else
+				SubtractAmount( ore, 1 );
+				SendSysmessage( character, "You destroy some ore." );
+			endif
+			return;
+			
+		endif
+	endforeach
+	
+	SendSysmessage( character, "You must be near a forge to smelt ore!" );
+	
+endfunction
+

@@ -1,0 +1,17 @@
+use os;
+use uo;
+
+program seedling(parms)
+
+	var where := parms[1];
+	var what := parms[2];
+
+	var x:= where.x;
+	var y:= where.y;
+	var z:= where.z;
+
+	sleep(600);
+
+	CreateItemAtLocation(x, y, z, what, 1);
+
+endprogram

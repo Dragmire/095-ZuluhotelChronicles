@@ -1,0 +1,75 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_SANCTUARY;
+const SPELL_EFFECT_ID		:= FX_SPELL_SANCTUARY;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_SANCTUARY;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_SANCTUARY;
+
+program cast_antidote( parms )
+
+	var circle := GetCircle( SPELLID_SANCTUARY );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_SANCTUARY ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+
+	if( !fromhit )
+		EraseObjProperty( caster , "#Casting" );
+		caster := Reflected( caster , caster , circle );
+	else
+		PlayObjectCenteredEffect(caster, 
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+        PlaySoundEffect(caster, SFX_SPELL_SANCTUARY);
+
+        if( caster.poisoned )
+		CurePoison( caster );
+		SendSysmessage( caster , "You cured your patient." );
+	endif
+
+	EraseObjProperty( caster , "#Casting" );
+	var prevprot := GetObjProperty( caster , "PermPoisonImmunity" );
+	if( !prevprot )
+		var magery := GetAttribute( caster , ATTRIBUTEID_MAGERY );
+		var duration := ModifyWithMagicEfficiency( caster , magery * 2 );
+		var power := GetObjProperty(caster, "IsMage");
+		if (!power)
+			power := 0;	
+		endif;
+		power := power + 1;
+		if( duration and power )
+			SetObjProperty( caster, "PermPoisonImmunity" , power );
+			SendSysmessage( caster , "You are now protected from poisonous effects." );	
+			Sleep( duration );
+			EraseObjProperty( caster, "PermPoisonImmunity" );
+		endif
+	endif
+endprogram

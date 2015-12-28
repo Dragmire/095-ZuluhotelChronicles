@@ -1,0 +1,136 @@
+// command .go  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated June 25, 2000
+
+use os;
+use uo;
+use cfgfile;
+
+include "include/math"; // Used for Mod
+include "include/attributes";
+
+const TEXTSTARTLOCY :=  70;  // The location of the top of the gump
+
+var layout := array(      // The layout of the gump with text notes to be added later
+"page 0",
+"nodispose",
+"nomove",
+"resizepic  50   0 2600 540 405", // background
+
+"text 120 59 300 0",
+"text 220 59 300 1",
+"text 270 59 300 2",
+"text 320 59 300 0",
+"text 420 59 300 1",
+"text 470 59 300 2"
+);
+
+var data := array(      // The data array that holds all the text to be displayed in the gump
+       "Location",         //0
+       "Goto",
+       "Send"
+);
+
+program textcmd_go( who, text )
+
+  // Test to see if the user sent a location via command text.  if not show gump, else attempt travel to that location
+  if(!text)
+
+    // The name of the current user of this command
+    var tname := lower(who.name);
+
+    // Create the Array
+    FillInArrays( tname );
+
+    // Display the array and receive a responce from the player
+    var result := SendDialogGump( who, layout, data );
+
+    // If the user canceled, quit
+    if (result[0] == 0)
+      return;
+    endif
+
+    // Open files and set veriables
+    var locs    := ReadConfigFile("golocs");
+    var MaxLocs := GetConfigMaxIntKey(locs);
+    var dest    := locs[mod(result[0], MaxLocs)];
+    var traveler;
+
+    // Determine if we are teleporting ourselves or someone other and set the traveler variable
+    if ( result[0] > MaxLocs ) // teleporting someone else
+       SendSysMessage( who, "Select a MOBILE." );
+       traveler :=  Target( who, TGTOPT_NOCHECK_LOS );
+
+       if(!traveler || !GetStrength(traveler))
+         SendSysMessage( who, "Invalid selection." );
+         return;
+       endif
+    else
+      // Teleporting ourself
+      traveler := who;
+    endif
+
+    // Teleport moble
+    MoveCharacterToLocation(traveler, dest.X, dest.Y, GetMapInfo(dest.X, dest.Y).Z, MOVECHAR_FORCELOCATION );
+  else
+	var params := SplitWords( text );
+    if (len(params) < 3) // didn't pass Z
+        params[3] := GetMapInfo( CInt(params[1]), CInt(params[2]) ).z;
+    endif
+
+	var res := MoveCharacterToLocation( who, CInt(params[1]), CInt(params[2]), CInt(params[3]), MOVECHAR_FORCELOCATION );
+
+    if (!res)
+        SendSysMessage( who, "Unable to go there: " + res.errortext );
+    endif
+
+  endif
+  
+UnloadConfigFile("golocs");
+
+endprogram
+
+function FillInArrays( tname )
+    var telelocations := ReadConfigFile("::golocs");
+    var datalen;
+    var layoutlen;
+    var prev_y := CInt(TEXTSTARTLOCY);
+    var datindx := 2;
+    var buttonret := 1;
+    var i, currloc, rowloc:=120, locationscount := 0;
+    var numlocations := GetConfigMaxIntKey(telelocations);
+
+    for( i := 1; i <= numlocations; i := i + 1  )
+      currloc := telelocations[i];
+      if ((currloc.TYPE == "all") || (currloc.TYPE == tname))
+        locationscount := locationscount + 1;
+        datalen := GetgoDataLength();
+        layoutlen := GetgoLayoutLength();
+        // Store Name
+        datindx := datalen+1;
+        data[datindx] := currloc.Name;
+        if (mod(locationscount, 19) == 1)
+          // Pointer Down
+          if (locationscount >= 18)
+            rowloc :=320;
+          endif
+          prev_y := TEXTSTARTLOCY;
+        endif
+        layout[GetgoLayoutLength()+1] := ("text " + rowloc +" "+ CStr(prev_y + 20) + " 995 " + datalen);
+        layout[GetgoLayoutLength()+1] := ("button " + (rowloc+110) +" "+CStr(prev_y + 25) + " 2103 2104 1 0 " + ((buttonret+1) / 2)); // Go Button
+       layout[GetgoLayoutLength()+1] := ("button " + (rowloc+160) +" "+CStr(prev_y + 25) + " 2103 2104 1 0 " + (((buttonret+1) / 2) + numlocations)); // Send Button
+        prev_y := prev_y + 15;
+      endif
+      buttonret := buttonret + 2;
+    endfor
+endfunction
+
+// Returns the Length of the Layout Gump Array
+function GetgoLayoutLength();
+    return (len(layout));
+endfunction
+
+// Returns the length of the Names Array that populates the gump.
+function GetgoDataLength();
+    return (len(data));
+endfunction

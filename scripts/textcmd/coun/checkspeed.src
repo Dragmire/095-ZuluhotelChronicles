@@ -1,0 +1,245 @@
+use uo;
+use os;
+use math;
+include "include/client";
+include "include/time";
+
+const DEFAULT_INSPECTION_TIME := 10;  //duration in seconds
+const SLEEP_TIME      	      := 2;   //delay of inspection
+
+const DEFAULT_MAX_SPEED       := 660; //max tile/min allowed
+const DEFAULT_SPEED_TRESHOLD  := 12;  //max # of tiles per second
+
+const PROPID_AUTOVELOX_ON := "#autovelox";
+
+
+program textcmd_checkspeed (staff, text)
+
+    var who;
+    var MAX_SPEED;
+    var SPEED_TRESHOLD;
+    var INSPECTION_TIME;
+        
+    /*if (text)
+    	var parms := SplitWords (text);
+    	
+    	if (CInt(parms[1]))
+    		MAX_SPEED := CInt(parms[1]);   		
+    	    		    		
+    		if (CInt(parms[2]))
+    			SPEED_TRESHOLD := CInt (parms[2]);    			
+    			
+    				if (CInt(parms[3]))
+    					INSPECTION_TIME := CInt (parms[3]);
+    				else
+    					INSPECTION_TIME := DEFAULT_INSPECTION_TIME;
+    				endif
+    		else
+    			SPEED_TRESHOLD := DEFAULT_SPEED_TRESHOLD;
+    		endif
+    	else
+    		MAX_SPEED := DEFAULT_MAX_SPEED;
+    	endif
+    	
+    else
+    	MAX_SPEED := DEFAULT_MAX_SPEED;
+    	SPEED_TRESHOLD := DEFAULT_SPEED_TRESHOLD;
+    	INSPECTION_TIME := DEFAULT_INSPECTION_TIME;
+    endif*/
+    
+    MAX_SPEED := DEFAULT_MAX_SPEED;
+    SPEED_TRESHOLD := DEFAULT_SPEED_TRESHOLD;
+    INSPECTION_TIME := DEFAULT_INSPECTION_TIME;
+ 
+    //SendSysMessage (staff, "MAX_SPEED: " + MAX_SPEED + ", SPEED_TRESHOLD: " + SPEED_TRESHOLD, FONT_NORMAL, FONTCOLOR_GREEN);   
+    //SendSysMessage (staff, "INSPECTION TIME: " + INSPECTION_TIME, FONT_NORMAL, FONTCOLOR_GREEN);   
+    
+    //SendSysMessage (staff, "Select a character to check.", FONT_NORMAL, FONTCOLOR_GREEN);
+    //who := Target (staff, TGTOPT_NOCHECK_LOS);
+    
+    text := Upper (text);
+    who := MakeAndProcessGump(staff, text);
+    if( !who )
+    	return;
+    endif
+
+    
+    if (!who.IsA(POLCLASS_MOBILE))
+    	SendSysMessage (staff, "You must select a character.", FONT_NORMAL, FONTCOLOR_GREEN);
+    	return;
+    elseif (who.IsA(POLCLASS_NPC))
+    	SendSysMessage (staff, "You must select a *living* character.", FONT_NORMAL, FONTCOLOR_GREEN);
+    	return;    	
+    elseif (GetObjProperty (who, PROPID_AUTOVELOX_ON))
+    	SendSysMessage (staff, who.name + " is yet under inspection, please wait.", FONT_NORMAL, FONTCOLOR_GREEN);    
+    	return;
+    endif    
+    
+    SetObjProperty (who, PROPID_AUTOVELOX_ON, 1);
+    SendSysMessage (staff, "Inspection begin. Please wait for " + INSPECTION_TIME + " seconds.", FONT_NORMAL, FONTCOLOR_GREEN);
+    
+    var check_start := ReadGameClock();
+    var check_end   := check_start + INSPECTION_TIME;
+    
+    var xpos := {};
+    var ypos := {};
+    
+    set_critical (1);
+    while (ReadGameClock() < check_end)
+    	xpos.append (CInt(who.x));
+    	ypos.append (CInt(who.y));
+        //print (who.name + " - (" + who.x + ", " + who.y + ") ");
+        //SendSysMessage (staff, "Check is running, wait...", FONT_NORMAL, FONTCOLOR_GREEN);
+    	Sleep (SLEEP_TIME);
+    endwhile
+    set_critical (0);
+    
+    var n;
+    var deltax;
+    var deltay;
+    var mediadx := 0;	var sizemediadx := 0;
+    var mediady := 0;   var sizemediady := 0;
+    var warningx := 0;  var warningy := 0;
+    
+    //print ("---> Test results <--- (" + xpos.size() + ")");
+    for (n := 1; n < xpos.size(); n := n + 1)
+        
+        deltax := abs(xpos[n] - xpos[n+1]);
+        if (deltax > 0) //consider only when player is walking/running
+        	mediadx := mediadx + deltax;
+        	sizemediadx := sizemediadx + 1;
+
+		//check single peeks        	
+        	if (deltax > SPEED_TRESHOLD*SLEEP_TIME)
+        		warningx := 1;
+        	endif
+        endif
+        
+        deltay := abs(ypos[n] - ypos[n+1]);
+        if (deltay > 0) //consider only when player is walking/running
+        	mediady := mediady + deltay;
+        	sizemediady := sizemediady + 1;
+
+		//check single peeks        	
+        	if (deltay > SPEED_TRESHOLD*SLEEP_TIME)
+        		warningy := 1;
+        	endif
+        endif
+        
+    	//SendSysMessage (staff, " " + n + ") DeltaX = " + deltax + ", DeltaY = " + deltay);
+    endfor
+    
+    if (sizemediadx > 0)
+    	mediadx := mediadx / sizemediadx;
+    endif
+    if (sizemediady > 0)
+    	mediady := mediady / sizemediady;
+    endif
+    
+    var xspeed := (mediadx/SLEEP_TIME)*60;   // tile/min
+    var yspeed := (mediady/SLEEP_TIME)*60;   // tile/min
+        
+    EraseObjProperty (who, PROPID_AUTOVELOX_ON);	
+    if (xspeed < MAX_SPEED && yspeed < MAX_SPEED)
+    	if (!warningx && !warningy)
+    		SendSysMessage (staff, "[Checkspeed results] [Ok] " + who.name + " is under the speed limits.", FONT_NORMAL, FONTCOLOR_GREEN);
+    		SendSysMessage (staff, "XSpeed: " + xspeed + " tile/min - YSpeed: " + yspeed + " tile/min", FONT_NORMAL, FONTCOLOR_GREEN);
+    	else
+    		SendSysMessage (staff, "[Checkspeed results] [Warning] " + who.name + " is probably using UOGear. Make another check.", FONT_NORMAL, FONTCOLOR_YELLOW);
+    		SendSysMessage (staff, "XSpeed: " + xspeed + " tile/min - YSpeed: " + yspeed + " tile/min", FONT_NORMAL, FONTCOLOR_YELLOW);    		
+    	endif
+    else
+ 	SendSysMessage (staff, "[Checkspeed results] [Danger!] UOGear use detected!!! " + who.name + " is over the speed limits!", FONT_NORMAL, FONTCOLOR_RED);
+    	SendSysMessage (staff, "XSpeed: " + xspeed + " tile/min - YSpeed: " + yspeed + " tile/min", FONT_NORMAL, FONTCOLOR_RED);    		   
+	Sleep (5);
+ 	SendSysMessage (staff, "[Checkspeed results] [Danger!] UOGear use detected!!! " + who.name + " is over the speed limits!", FONT_NORMAL, FONTCOLOR_RED);
+    	SendSysMessage (staff, "XSpeed: " + xspeed + " tile/min - YSpeed: " + yspeed + " tile/min", FONT_NORMAL, FONTCOLOR_RED);    		   
+    	
+    	Syslog ("[CheckSpeed] UOGear detected - Acct: " + who.acctname + " Pc: " + who.name + " [XSpeed: "+xspeed+" tile/min, YSpeed: "+yspeed+" tile/min]");
+    endif
+    
+    /*
+    print ("----------------------------");
+    print ("MediaDeltaX = " + mediadx + ", MediaDeltaY = " + mediady);
+    print ("X Speed: " + (mediadx/SLEEP_TIME)*60 + " tile/min");
+    print ("Y Speed: " + (mediady/SLEEP_TIME)*60 + " tile/min");
+    */    
+
+endprogram
+
+
+function MakeAndProcessGump( who ,Whom)
+
+	var layout	:= array( "page 0",
+				  "resizepic 50  0   2600 300 525",
+				  "resizepic 100 480 5100 200  25",
+				  "text 115 30 5 0");
+				
+	var data	:= array( "Choose a player to inspect");
+
+	var playername;
+	var LastIndex:=0;
+	var MaxLen:=len(Whom);
+	var players	:= EnumerateOnlineCharacters();
+
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 20;
+	var y 	:= 70;
+	var i;
+	var j;
+		
+	layout.append( "page 1" );
+	
+	for( i := start ; i <= len(players) ; i := i + 1 )
+		
+		playername:=Upper(players[i].name);
+
+
+		if ((playername[1,MaxLen]==Whom))
+			if( done == perpage )
+				done 	:= 0;
+				page 	:= page + 1;
+				y 	:= 70;
+			
+				layout.append( "button 250 481 5540 5541 0 " + (page ) ); // Next button for prev page
+				layout.append( "page " + page );
+				layout.append( "button 125 481 5537 5538 0 " + (page - 1) ); // Prev button for current page
+			endif
+		
+			if (players[i].cmdlevel > 0)
+			  layout.append( "text 85 " + y + " 51 " + len(data) );
+			else
+			  layout.append( "text 85 " + y + " 0 " + len(data) );
+			endif
+ 
+			layout.append( "button 300 " + (y+5) + " 2118 2117 1 0 " + i );
+			data.append( players[i].name );
+
+			y 	:= y + 20;
+			done 	:= done + 1;
+			count := count + 1;
+			LastIndex:=i;
+		endif
+	endfor
+
+	if (count>0)
+		var result;
+		/*if (count=1)
+			result:=LastIndex;	
+		else*/
+			result := SendDialogGump( who , layout , data );
+			if( !result[0] )
+				return;
+			endif
+			result := Cint( result[0] );
+		/*endif*/
+
+		return players[result];
+	else
+		SendSysMessage(who, "No player with name '"+ whom +"*' was found.");
+		return ;
+	endif 
+endfunction

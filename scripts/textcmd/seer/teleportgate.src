@@ -1,0 +1,55 @@
+use uo;
+use os;
+
+program gatedest(who)
+
+sendsysmessage(who,"Um teleporter foi criado",3,1176);
+
+var teleporter := CreateItemAtLocation(who.x, who.y, who.z, "wordofpowerteleporter", 1);
+teleporter.movable := 0;
+teleporter.color := 1302;
+teleporter.graphic := 6178;
+teleporter.name := "a teleporter";
+
+ var GateDestX := Cint(SendTextEntryGump( who, "What GateDestX?", TE_CANCEL_DISABLE,TE_STYLE_NORMAL, 4));
+	if (!GateDestX)
+		SendSysMessage(who, "Aborted.");
+		return;
+	endif
+ 
+ var GateDestY := Cint(SendTextEntryGump( who, "What GateDestY?", TE_CANCEL_DISABLE,TE_STYLE_NORMAL, 4));
+	if (!GateDestY)
+		SendSysMessage(who, "Aborted.");
+		return;
+	endif
+ 
+ var GateDestZ := Cint(SendTextEntryGump( who, "What GateDestZ?", TE_CANCEL_DISABLE,TE_STYLE_NORMAL, 4));
+	if (!GateDestZ)
+		GateDestZ := 0;
+	endif
+	if( GateDestZ < 0 )
+		GateDestZ := 0;
+	endif
+
+
+ var newwords := SendTextEntryGump( who, "What New Word of Power? (Word of Power must be between 0 and 50 characters long)", TE_CANCEL_DISABLE,TE_STYLE_NORMAL, 50);
+
+	if (!newwords)
+		SendSysMessage(who, "Aborted.");
+		return;
+	endif
+
+
+ 	SendSysMessage(who, "New Word of Power: " + newwords);
+  	SendSysMessage(who, "GateDestX: " + GateDestX);
+  	SendSysMessage(who, "GateDestY: " + GateDestY);
+     	SendSysMessage(who, "GateDestZ: " + GateDestZ);
+
+	SetObjProperty(teleporter, "WordOfPower", Cstr(newwords) );
+	SetObjProperty(teleporter, "GateDestX", GateDestX );
+	SetObjProperty(teleporter, "GateDestY", GateDestY );
+	SetObjProperty(teleporter, "GateDestZ", GateDestZ );
+ 
+teleporter.name :="Say: "+ Cstr(newwords);
+
+endprogram

@@ -1,0 +1,72 @@
+// 2/6/99 Day/Night transitions for one time zone only (britain) -Rac
+// jan 22, 2000 added 2 timezones by Zulu zuluhotel@hotmail.com
+use uo;
+use os;
+include "include/clock";
+
+set_critical( 1 );
+
+var length := (CInt(GetDayLength()) * 60);
+var dawn := ( length * (0.25) );
+var transtime := ( CInt(GetTransition()) * 60 );
+var nightlevel := 20;
+
+program lightofday()
+
+var time;
+
+   while(1)
+	time := CInt(GetTime());
+
+	if( (time >= 0) && (time < (dawn - transtime)) )
+//	   SetRegionLightLevel( "TimeZone1" , nightlevel );
+//	   SetRegionLightLevel( "TimeZone2" , 0 );
+	   sleep(dawn - transtime);
+
+        elseif( (time >= (dawn - transtime)) && (time < dawn) )
+	   DawnTransition();
+
+ 	elseif( (time >= (length - transtime)) && (time < length) )
+	   DuskTransition();
+
+	else
+//	   SetRegionLightLevel( "TimeZone1" , 0 );
+//	   SetRegionLightLevel( "TimeZone2" , nightlevel );
+	   sleep((length - transtime) - dawn);
+
+	endif
+
+    endwhile
+
+endprogram
+
+function DuskTransition()
+
+    var inter_level_time := (transtime / nightlevel);
+    var lightamt := 1;
+
+    while( lightamt <= nightlevel )
+
+    	SetRegionLightLevel( "TimeZone2", nightlevel - lightamt );
+    	SetRegionLightLevel( "TimeZone1", lightamt );
+	lightamt := lightamt + 1;
+ 
+        sleep(inter_level_time);
+
+    endwhile
+endfunction
+
+function DawnTransition()
+
+    var inter_level_time := (transtime / nightlevel);
+    var lightamt := nightlevel;
+
+    while( lightamt >= 0 )
+    	SetRegionLightLevel( "TimeZone2", nightlevel - lightamt );
+    	SetRegionLightLevel( "TimeZone1", lightamt );
+	lightamt := lightamt - 1;
+ 
+        sleep(inter_level_time);
+
+    endwhile
+endfunction

@@ -1,0 +1,128 @@
+use uo;
+use os;
+
+include "include/random";
+
+program makectf(who)
+
+var item;
+
+foreach chest in ListItemsNearLocation( 6033, 358, 44, 10 )
+  if (chest.graphic==0x0e41 || chest.graphic==0x0e40)
+    DestroyItem(chest);
+  endif
+endforeach
+
+foreach chest in ListItemsNearLocation( 6037, 273, 0, 10 )
+  if (chest.graphic==0x0e41 || chest.graphic==0x0e40)
+    DestroyItem(chest);
+  endif
+endforeach
+
+foreach chest in ListItemsNearLocation( 6116, 273, 22, 10 )
+  if (chest.graphic==0x0e41 || chest.graphic==0x0e40)
+    DestroyItem(chest);
+  endif
+endforeach
+
+foreach chest in ListItemsNearLocation( 6122, 353, -22, 10 )
+  if (chest.graphic==0x0e41 || chest.graphic==0x0e40)
+    DestroyItem(chest);
+  endif
+endforeach
+
+// chests
+item:=CreateItemAtLocation(6035,272,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6036,273,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6037,272,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6038,273,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6039,272,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6040,273,3,0x7119,1);
+fixchest(item);
+item.color:=33;
+
+item:=CreateItemAtLocation(6032,356,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6033,357,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6032,358,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6033,359,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6032,360,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+item:=CreateItemAtLocation(6033,361,47,0x7118,1);
+fixchest(item);
+item.color:=33;
+
+item:=CreateItemAtLocation(6119,273,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6118,272,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6117,273,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6116,272,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6115,273,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6114,272,25,0x7119,1);
+fixchest(item);
+item.color:=4;
+
+
+item:=CreateItemAtLocation(6120,352,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6121,353,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6122,352,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6123,353,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6124,352,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+item:=CreateItemAtLocation(6125,353,-19,0x7119,1);
+fixchest(item);
+item.color:=4;
+
+endprogram
+
+
+function fixchest(chest)
+
+chest.locked:=0;
+SetObjProperty(chest,"ctfchest",1);
+
+var i,totalitems:=random(4)+3,ctfitems:={0x2d52,0x2d22,0x2d23,0xf7a,0xf7b,0xf84,0xf85,0xf86,0xf88,0xf8c,0xf8d,0xdce6,0xdc10,0xdc14,0xdc15,0xdc0b,0xdc0c,0xdc0e,0xdc01,0xdc02};
+
+if (random(80)<50)
+  for(i:=1;i<totalitems;i:=i+1)
+   CreateItemInContainer(chest,ctfitems[random(20)+1],random(5)+4);
+  endfor
+endif
+
+endfunction

@@ -1,0 +1,58 @@
+// Magic trap and Magic untrap  version .4
+// by Zulu (zulu@zuluhotel.com)   May 5, 2000
+
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/skillpoints";
+include "include/classes";
+include "include/client";
+
+program cast_strength( parms )
+
+	var circle := 2;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetThing(caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+
+	if( !cast_on.usescript || (cast_on.usescript != ":traps:traps") )
+		SendSysMessage( caster, "That is not trapped!" );
+		return;
+	endif
+
+	var strength	:= GetObjProperty( cast_on, "trap_strength" );
+	var diff	:= strength * 30;
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		diff := CInt( diff / CLASSE_BONUS );
+	endif
+
+	if( CheckSkill( caster, SKILLID_MAGERY, diff, 0 ) )
+		PlaySoundEffect( caster, SFX_SPELL_MAGIC_UNTRAP1 );
+		EraseObjProperty( cast_on, "trap_type" );
+		EraseObjProperty( cast_on, "trap_strength" );
+		EraseObjProperty( cast_on, "trapped_by" );
+        	cast_on.usescript := "";
+        	PrintTextAbovePrivate( cast_on, "*Disarmed*", caster );
+        endif
+
+endprogram

@@ -1,0 +1,437 @@
+use uo;
+use os;
+use util;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/yesno";
+include "include/random";
+include "include/objtype";
+include "include/classes";
+include "include/itemutil";
+include "include/autoloop";
+include "../../pkg/opt/karmafame/karmafame";
+
+const STARTHAIR		:= 0x2006;
+const ENDHAIR		:= 0x2079;
+
+const DIVIDER		:= 4;
+const APPEAR_AT		:= -10;
+const POINTS_MULTIPLIER	:= 12;
+const FAME_BONUS	:= 200;
+
+
+program use_blade( user, blade )
+
+	SendSysMessage( user, "What would you like to use that on?" );
+	var use_on := TargetCoordinates( user );
+	if( !use_on )
+		return;
+	endif
+
+	if( (use_on.objtype == UOBJ_LOGS) || ((use_on.objtype >= UOBJ_LOGS_START) && (use_on.objtype <= UOBJ_LOGS_END) ) )
+		CarveLogs( user, use_on.item );
+
+	elseif( use_on.objtype == UOBJ_CORPSE )
+		Carve_Corpse(user, use_on.item);
+
+	elseif( IsFish(use_on.objtype ) )
+		CarveFish(user,use_on.item);
+
+	elseif( IsTree(use_on.objtype ) )
+		CarveTree(user,use_on);
+
+	else
+		SendSysMessage( user, "You don't know how to use those items together." );
+	endif
+
+endprogram
+
+
+function CarveTree( user, use_on )
+
+	var wood_amount := HarvestResource( "wood", use_on.x, use_on.y, 1, 1 );
+	if( wood_amount == 0 || !wood_amount )
+		SendSysMessage(user, "There's not enough kindling here.");
+		return;
+	endif
+
+	if( CheckSkill( user, SKILLID_CAMPING, -1, 0 ))
+		CreateItemInBackpack( user, UOBJ_KINDLING, 1 );
+		SendSysMessage( user, "You chip off some kindling and put it in your backpack.");
+	else
+		SendSysMessage( user, "You fail and get no wood at all");
+	endif
+
+endfunction
+
+
+function CarveFish( user, use_on )
+
+	if( !ReserveItem( use_on ) )
+		return;
+	endif
+
+	var num_steaks := use_on.amount * 2;
+
+	PlaySoundEffect( user, SFX_57 );
+	PerformAction( user, ANIM_SALUTE );
+	var created := CreateItemInBackpack( user, UOBJ_FISHSTEAK, num_steaks );
+	if (created)
+		DestroyItem( use_on );
+		sleep( 1 );
+		SendSysMessage( user, "You carve the fish and put the steaks in your backpack." );
+	else
+		SendSysMessage( user, "Your backpack is full! Cannot cut that!");
+	endif
+	
+endfunction
+
+
+function Carve_Corpse(character, cadaver )
+
+	if( Distance( character, cadaver ) > 2 )
+		SendSysMessage( character, "That's too far away." );
+		return;
+	endif
+
+	var key := GetObjProperty( cadaver, "npctemplate" );
+	if( !key )
+		key := "player";
+	endif
+
+	var cfg  := ReadConfigFile( "corpses" );
+	var elem := FindConfigElem( cfg, key );
+
+	if( !elem || GetObjProperty(cadaver, "nocut") || IsFromMagic( cadaver ) )
+		SendSysMessage( character, "You cannot cut up this corpse." );
+		return;
+	endif
+
+	if( GetObjProperty( cadaver, "cut" ) )
+
+		var can_chop := GetConfigInt(elem, "cut");
+		if( can_chop && !GetObjProperty( cadaver, "choppedalready" ) )
+			foreach thing in EnumerateItemsInContainer( cadaver )
+				if (thing.objtype >= STARTHAIR && thing.objtype <= ENDHAIR)
+					DestroyItem(thing);
+				endif
+			endforeach
+
+			var myhead := CreateItemInContainer(character.backpack, UOBJ_HEAD, 1);
+			SetObjProperty(myhead, "serial", Hex(CInt(GetObjProperty(cadaver,"serial"))));
+			SetObjProperty(myhead, "corpsetype", cadaver.corpseType );
+			var aname := cadaver.name;
+			aname["A corpse of"] := "";
+			myhead.name := "The head of" + aname;
+			SendSysMessage( character, "You carve the head and put it in your pack." );
+			SetObjProperty( cadaver, "ChoppedBy", character.name );
+			SetObjProperty( cadaver, "choppedalready", 1 );
+		else
+			SendSysMessage( character, "You cannot get any more from this corpse." );
+		endif
+
+	else
+		SetObjProperty( cadaver, "cut", 1 );
+
+		var items := GetConfigStringArray( elem, "item" );
+		if( len(items) )
+			var got_one;
+			foreach thing in items
+				var splited := SplitWords( thing );
+				var chance  := CInt( splited[3] );
+				if( !chance )
+					chance := 100;
+				endif
+
+				if( Random(100) < chance )
+					var objtype := CInt( splited[1] );
+					if( !objtype )
+						objtype := GetObjtypeByName(splited[1]);
+					endif
+
+					if( objtype )
+						var amount  := RandomDiceStr( splited[2] );
+						if( !amount )
+							amount := 1;
+						endif
+
+						if( CreateItemInContainer( character.backpack, objtype, amount ) )
+							got_one := 1;
+						endif
+					endif
+				endif
+			endforeach
+
+			if( got_one )
+				SendSysMessage( character, "You place the items in your pack." );
+			endif
+		else
+			SendSysMessage( character, "You cannot cut up this corpse." );
+			EraseObjProperty( cadaver, "cut" );
+		endif
+
+		var theblood:= CreateItemAtLocation(CInt(cadaver.x), CInt(cadaver.y), CInt(cadaver.z), UOBJ_BLOOD, 1);
+		theblood.saveonexit :=0;
+
+		Detach();
+		sleep(360);
+		DestroyItem( theblood );
+	endif
+
+endfunction
+
+
+function CarveLogs( character, logs )
+
+	if( !Accessible( character, logs ) )
+		SendSysMessage( character, "You can't reach that." );
+		return;
+	endif
+
+	if( !ReserveItem( logs ) )
+		return;
+	endif
+
+	if( !IsInContainer( character.backpack, logs ) )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	var logs_cfg		:= ReadConfigFile( ":carpentry:carpentry" );
+	var element		:= FindConfigElem( logs_cfg, logs.objtype );
+	if( !element )
+		SendSysMessage( character, "You can't make anything out of these logs" );
+		return;
+	endif
+
+	var logs_name	:= element.Name;
+	var logs_diff	:= element.Difficulty;
+	var logs_qual	:= element.quality;
+	var bowcraft	:= GetEffectiveSkill( character, SKILLID_BOWCRAFT );
+
+	if( bowcraft < logs_diff )
+		SendSysMessage( character, "You aren't skilled enough to craft anything from those logs yet." );
+		return;
+	endif
+
+	var bowcraft_cfg	:= ReadConfigFile( "bowcraft" );
+	var the_keys		:= GetConfigStringKeys( bowcraft_cfg );
+	var can_make		:= 0;
+	var menu 		:= CreateMenu( "What would you like to make?" );
+
+	foreach key in the_keys
+		if( CanMake( bowcraft, key, logs, logs_diff, bowcraft_cfg ) )
+			AddMenuItem( menu, CInt(key), bowcraft_cfg[key].Name );
+			can_make := 1;
+		endif
+	endforeach
+
+	if( !can_make )
+		SendSysMessage( character, "You can't make anything yet." );
+		return;
+	endif
+
+	var what := SelectMenuItem2( character, menu );
+	if( !what )
+		return;
+	endif
+
+	what := what.objtype;
+	element := FindConfigElem( bowcraft_cfg, what );
+
+	var itemname;
+	var material;
+	var points;
+	var skill;
+
+	if( element )
+		material := element.Material;
+	else
+		return;
+	endif
+
+	if( what == UOBJ_SHAFTS || what == UOBJ_KINDLING )
+		itemname := element.Name;
+		skill	 := element.Skill;
+		skill	 := skill + CInt( logs_diff / DIVIDER );
+		if( skill < 1 )
+			skill := 1;
+		elseif( skill > 140 )
+			skill := 140;
+		endif
+
+		points := CInt( (skill + material) * POINTS_MULTIPLIER );
+
+		PlaySoundEffect( character, SFX_57 );
+		sleep( 2 );
+
+		if( CheckSkill( character, SKILLID_BOWCRAFT, skill, points ) )
+			var shafts := CreateItemInBackpack( character, what, logs.amount );
+			if( shafts )
+				itemname := logs_name + " " + itemname;
+				shafts.color := logs.color;
+				shafts.hp := shafts.maxhp;
+				SetObjProperty( shafts, "BaseName", itemname );
+				SubtractAmount( logs, material );
+				SetName( shafts, itemname );
+				SendSysMessage( character, "You place the items in your pack." );
+			endif
+			DestroyItem( logs );
+		else
+			var destroy	:= 75 - CInt( bowcraft / 2 );
+			if( IsCrafter( character ) )
+				destroy := CInt( destroy / ClasseBonus( character, CLASSEID_CRAFTER ) );
+			endif
+
+			if( destroy > 50 )
+				destroy	:= 50;
+			endif
+
+			destroy	:= CInt( material * destroy / 100 );
+			if( destroy < 1 )
+				destroy	:= 1;
+			endif
+
+			SubtractAmount( logs, destroy );
+			SendSysMessage( character, "You destroyed " + destroy + " " + logs_name + " logs." );
+		endif
+		return;
+	endif
+
+
+	AutoLoop_init( character );
+	while( AutoLoop_more() && logs.amount >= material && not character.dead)
+
+		itemname := element.Name;
+		skill	 := element.Skill;
+		skill	 := skill + CInt( logs_diff / DIVIDER );
+		if( skill < 1 )
+			skill := 1;
+		elseif( skill > 140 )
+			skill := 140;
+		endif
+
+		points := CInt( (skill + material) * POINTS_MULTIPLIER );
+
+		PlaySoundEffect( character, SFX_57 );
+		sleep( 2 );
+		PlaySoundEffect(character, SFX_57);
+		sleep(2);
+		PlaySoundEffect(character, SFX_57);
+		sleep(2);
+
+		if( CheckSkill( character, SKILLID_BOWCRAFT, skill, points ) )
+
+			var theitem := CreateItemInBackpack( character, what );
+			if( theitem )
+
+				var excep_ch	:= 10;
+
+				theitem.quality := logs_qual;
+				itemname := logs_name + " " + itemname;
+
+				var crafter := GetObjProperty( character, CLASSEID_CRAFTER );
+				if( crafter )
+					excep_ch	:= CInt( excep_ch * CLASSE_BONUS );
+				else
+					skill		:= skill + 40;
+				endif
+
+				if( skill < 90 )
+					skill := 90;
+				endif
+
+				if ( (RandomInt(100) < excep_ch) && CheckSkill( character, SKILLID_BOWCRAFT, skill, 0 ) )
+
+					//Made something Exceptional
+					var armslore := GetEffectiveSkill( character, SKILLID_ARMSLORE );
+					var multiplier := 5 + CInt( armslore / 10 );
+
+					if( crafter )
+						multiplier := CInt( multiplier * ClasseBonus( character,CLASSEID_CRAFTER ) );
+					endif
+
+					multiplier	:= 100 + multiplier;
+					var newquality := CInt(theitem.quality * multiplier);
+					newquality := CDbl(newquality);
+					newquality := newquality / 100;
+					theitem.quality := newquality;
+					itemname := "Exceptional " + itemname + " [Crafted by " + character.name + "]";
+					SendSysMessage( character, "You make an exceptional item and put it in your pack" );
+					SetObjProperty( theitem, "IsExceptional", 1 );
+					if( skill >= 130 )
+						SendSysMessage( character, "This masterpiece will make you famous around the world." );
+						AwardFame( character, FAME_BONUS );
+					elseif( GetObjProperty( character, CLASSEID_CRAFTER ) && skill >= 110 )
+						SendSysMessage( character, "This masterpiece will make you famous around the world." );
+						AwardFame( character, FAME_BONUS );
+					endif
+				else
+
+					//Made a normal item
+					SendSysMessage( character, "You create the item and place it in your pack." );
+				endif
+
+				theitem.color := logs.color;
+				theitem.hp := theitem.maxhp;
+				SetObjProperty( theitem, "BaseName", itemname );
+				SetName( theitem, itemname );
+			endif
+			SubtractAmount( logs, material );
+
+		else
+			var destroy	:= 75 - CInt( bowcraft / 2 );
+			if( IsCrafter( character ) )
+				destroy := CInt( destroy / ClasseBonus( character, CLASSEID_CRAFTER ) );
+			endif
+
+			if( destroy > 50 )
+				destroy	:= 50;
+			endif
+
+			destroy	:= CInt( material * destroy / 100 );
+			if( destroy < 1 )
+				destroy	:= 1;
+			endif
+
+			SubtractAmount( logs, destroy );
+			SendSysMessage( character, "You destroyed " + destroy + " " + logs_name + " logs." );
+		endif
+	endwhile
+	AutoLoop_finish();
+
+endfunction
+
+
+function CanMake( bowcraft, key, logs, logs_diff, cfg )
+
+	var diff := cfg[key].Skill + CInt( logs_diff / DIVIDER );
+	if( diff < 1 )
+		diff := 1;
+	elseif( diff > 130 )
+		diff := 130;
+	endif
+
+	if( bowcraft >= ( diff + APPEAR_AT ) )
+		if( logs.amount >= cfg[key].Material )
+			return 1;
+		endif
+	endif
+
+	return 0;
+
+endfunction
+
+
+function IsFromMagic( corpse )
+
+	if( GetObjProperty( corpse, "summoned" ) ||
+	    GetObjProperty( corpse, "animated" ) )
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction

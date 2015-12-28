@@ -1,0 +1,75 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+
+program cast_summon( parms )
+
+	var circle := 8;
+	var caster;
+	var cast_loc;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_loc := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_loc := CanTargetArea(caster, circle);
+		if (!cast_loc)
+			return;
+		endif
+	endif
+
+	var thecreature := "vortex";
+	var thecritter := CreateNpcFromTemplate(thecreature, cast_loc.x, cast_loc.y,cast_loc.z);
+	PlaySoundEffect(thecritter, SFX_SPELL_ENERGY_VORTEX );
+
+	SetObjProperty(thecritter, "summoned",1);
+	SetObjProperty(thecritter, "master",caster.serial);
+	thecritter.setmaster( thecritter );
+
+	var max_mana := -1;
+	var the_lucky;
+
+	foreach critter in ListMobilesInLineOfSight( thecritter, 5 )
+		if( GetMana(critter) > max_mana )
+			max_mana := GetMana(critter);
+			the_lucky := critter;
+		endif
+	endforeach
+
+	if( the_lucky )
+		var ev array;
+		ev.+type := 0x0002;
+		ev.+source := 0;
+  		ev.source := the_lucky;
+		SendEvent(thecritter, ev);
+	endif
+
+	var duration := CInt(GetEffectiveSkill( caster, SKILLID_MAGERY ) / 3);
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		duration := CInt( duration * CLASSE_BONUS );
+	endif
+
+	Detach();
+
+	sleep( duration );
+
+	PlaySoundEffect( thecritter, SFX_SPELL_ENERGY_VORTEX );
+	PlayStationaryEffect( CInt(thecritter.x), CInt(thecritter.y), CInt(thecritter.z), FX_SPELL_ENERGY_VORTEX, SPEED_SPELL_ENERGY_VORTEX, LOOP_SPELL_ENERGY_VORTEX );
+	MoveCharacterToLocation( thecritter,0,0,0,MOVECHAR_FORCELOCATION);
+
+	ApplyRawDamage( thecritter, GetHp(thecritter) + 3 );
+
+endprogram

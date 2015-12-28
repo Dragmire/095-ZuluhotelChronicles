@@ -1,0 +1,421 @@
+///////////////////////////////////////////////////////////
+// SpawnPoint.src
+//
+// Main controller script for a spawn point.
+//
+// Creator: Mercy
+// Contact: mkow@sympatico.ca
+//
+// Created: 12-Sept-2000
+// Updated: 12-Sept-2000
+//
+///////////////////////////////////////////////////////////
+
+use os;
+use uo;
+use cfgfile;
+
+include "include/constants";
+include "include/mobileutil";
+include "include/managers";
+
+const MIN_CMD_LEVEL			:= 2;    //CMDLEVEL_GAME_MASTER;
+const REF_X				:= 0;
+const REF_Y				:= 0;
+const KEYRETURN_RESET			:= 1;
+const CHECKBOXINDEX_ENABLED		:= 2;
+const CHECKBOXINDEX_GROUP		:= 3;
+const CHECKBOXINDEX_DESPAWN		:= 4;
+const KEYRETURN_TYPECHANGE_NPC		:= 5;
+const KEYRETURN_TYPECHANGE_GROUP	:= 6;
+const KEYRETURN_TYPECHANGE_ITEM		:= 7;
+const KEYRETURN_TYPECHANGE_CONTAINER	:= 8;
+
+var data;
+var layout;
+var pt_data;
+	
+program SpawnPoint( who, point )
+
+	if( who.cmdlevel == CMDLEVEL_PLAYER )
+		point.invisible := 1;
+		return 0;
+	elseif( who.cmdlevel < MIN_CMD_LEVEL )
+		SendSysMessage( who, "Only Seers & up can use the spawn points." );
+		return 0;
+	elseif( !ReserveItem( point ) )
+		SendSysMessage( who, "Its already in use..." );
+		return 0;
+	endif
+	
+	layout := {	  "page 0",
+			  GUMPID_SETTING_NO_DISPOSE,
+			  "resizepic "	+ (REF_X+0)   + " " + (REF_Y+0)   + " " + GUMPID_BKGND_STONESLAB + " 330 345",
+			  "tilepic "	+ (REF_X+0)   + " " + (REF_Y+0)   + " 8440",
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+70)  + " " + GUMPID_TEXTAREA_MARBLE_MEDIUM,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+90)  + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+110) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+130) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+150) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+170) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+190) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+210) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+130) + " " + (REF_Y+230) + " " + GUMPID_TEXTAREA_MARBLE_SHORT_DARK,
+			  "gumppic "	+ (REF_X+55)  + " " + (REF_Y+250) + " " + GUMPID_TEXTAREA_GOLDTRIM_LONG,	  
+			  "text "	+ (REF_X+30)  + " " + (REF_Y+5)   + " " + Cint(COLOR_YELLOW)      + " 0",
+			  "text "	+ (REF_X+260) + " " + (REF_Y+8)   + " " + Cint(COLOR_YELLOW)      + " 1",
+			  "text "	+ (REF_X+30)  + " " + (REF_Y+25)  + " " + Cint(COLOR_BLUE_LIGHT)  + " 2",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+50)  + " " + Cint(COLOR_BLUE_LIGHT)  + " 3",
+			  "text "	+ (REF_X+150) + " " + (REF_Y+50)  + " " + Cint(COLOR_GREEN_LIGHT) + " 4",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+70)  + " " + Cint(COLOR_BLUE_LIGHT)  + " 5",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+90)  + " " + Cint(COLOR_BLUE_LIGHT)  + " 6",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+90)  + " " + Cint(COLOR_BLUE_LIGHT)  + " 7",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+110) + " " + Cint(COLOR_BLUE_LIGHT)  + " 8",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+110) + " " + Cint(COLOR_BLUE_LIGHT)  + " 9",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+130) + " " + Cint(COLOR_BLUE_LIGHT)  + " 10",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+130) + " " + Cint(COLOR_BLUE_LIGHT)  + " 11",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+150) + " " + Cint(COLOR_BLUE_LIGHT)  + " 12",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+150) + " " + Cint(COLOR_BLUE_LIGHT)  + " 13",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+170) + " " + Cint(COLOR_BLUE_LIGHT)  + " 14",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+170) + " " + Cint(COLOR_BLUE_LIGHT)  + " 15",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+190) + " " + Cint(COLOR_BLUE_LIGHT)  + " 16",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+190) + " " + Cint(COLOR_BLUE_LIGHT)  + " 17",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+210) + " " + Cint(COLOR_BLUE_LIGHT)  + " 18",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+210) + " " + Cint(COLOR_BLUE_LIGHT)  + " 19",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+230) + " " + Cint(COLOR_BLUE_LIGHT)  + " 20",
+			  "text "	+ (REF_X+195) + " " + (REF_Y+230) + " " + Cint(COLOR_BLUE_LIGHT)  + " 19",
+			  "text "	+ (REF_X+20)  + " " + (REF_Y+250) + " " + Cint(COLOR_BLUE_LIGHT)  + " 21",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+72)  + " 95  20 " + Cint(COLOR_GREEN) + " 100 29",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+92)  + " 45  20 " + Cint(COLOR_GREEN) + " 101 30",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+112) + " 45  20 " + Cint(COLOR_GREEN) + " 102 31",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+132) + " 45  20 " + Cint(COLOR_GREEN) + " 103 32",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+152) + " 45  20 " + Cint(COLOR_GREEN) + " 104 33",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+172) + " 45  20 " + Cint(COLOR_GREEN) + " 105 34",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+192) + " 45  20 " + Cint(COLOR_GREEN) + " 106 35",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+212) + " 45  20 " + Cint(COLOR_GREEN) + " 107 36",
+			  "textentry "	+ (REF_X+137) + " " + (REF_Y+232) + " 45  20 " + Cint(COLOR_GREEN) + " 108 37",
+			  "textentry "	+ (REF_X+62)  + " " + (REF_Y+252) + " 250 20 " + Cint(COLOR_GREEN) + " 109 38",
+			  "button "	+ (REF_X+130) + " " + (REF_Y+50)  + " " + GUMPID_BUTTON_CIRCLE_GRAY_0 + " " + GUMPID_BUTTON_CIRCLE_GRAY_1 + " 0 2",
+			  "button "	+ (REF_X+230) + " " + (REF_Y+5)   + " " + GUMPID_BUTTON_DIAMOND_RED_0 + " " + GUMPID_BUTTON_DIAMOND_RED_1 + " 1 0 " + KEYRETURN_RESET,
+			  "",		// Enabled text		layout[50]
+			  "",		// Enabled checkbox	layout[51]
+			  "",		// Group text		layout[52]
+			  "",		// Group checkbox	layout[53]
+			  "",		// Despawn text		layout[54]
+			  "",		// Despawn checkbox	layout[55]
+			  
+			  "page 2",
+			  "resizepic "	+ (REF_X+241) + " " + (REF_Y+0)   + " " + GUMPID_BKGND_STONESLAB + " 100 100",
+			  "text "	+ (REF_X+265) + " " + (REF_Y+10)  + " " + Cint(COLOR_GREEN) + " 22",
+			  "text "	+ (REF_X+265) + " " + (REF_Y+30)  + " " + Cint(COLOR_GREEN) + " 23",
+			  "text "	+ (REF_X+265) + " " + (REF_Y+50)  + " " + Cint(COLOR_GREEN) + " 24",
+			  "text "	+ (REF_X+265) + " " + (REF_Y+70)  + " " + Cint(COLOR_GREEN) + " 25",
+			  "button "	+ (REF_X+245) + " " + (REF_Y+10)  + " " + GUMPID_BUTTON_CIRCLE_GRAY_0 + " " + GUMPID_BUTTON_CIRCLE_GRAY_1 + " 1 0 " + KEYRETURN_TYPECHANGE_NPC,
+			  "button "	+ (REF_X+245) + " " + (REF_Y+30)  + " " + GUMPID_BUTTON_CIRCLE_GRAY_0 + " " + GUMPID_BUTTON_CIRCLE_GRAY_1 + " 1 0 " + KEYRETURN_TYPECHANGE_GROUP,
+			  "button "	+ (REF_X+245) + " " + (REF_Y+50)  + " " + GUMPID_BUTTON_CIRCLE_GRAY_0 + " " + GUMPID_BUTTON_CIRCLE_GRAY_1 + " 1 0 " + KEYRETURN_TYPECHANGE_ITEM,
+			  "button "	+ (REF_X+245) + " " + (REF_Y+70)  + " " + GUMPID_BUTTON_CIRCLE_GRAY_0 + " " + GUMPID_BUTTON_CIRCLE_GRAY_1 + " 1 0 " + KEYRETURN_TYPECHANGE_CONTAINER 
+		};
+		
+	data := {	"Spawn Point Config",
+			"Reset",
+			"State:",
+			"Type:",
+			"",			// The type, data[5]
+			"",			// Template:/Group:/Objtype:/Container: data[6]
+			"Max:",
+			"(#)",
+			"Appear Range:",
+			"(sqrs)",
+			"",			// Wander Range:/Appear Amt:/Loot Info: data[11]
+			"",			// (sqrs)/(dice roll)/(data) data[12]
+			"Frequency:",
+			"(mins)",
+			"Time Expire:",
+			"(mins left)",
+			"Num Expire:",
+			"(num left)",
+			"Start HR:",
+			"(0-23)",
+			"End HR:",
+			"Note:",
+			"NPC",
+			"Group",
+			"Item",
+			"Container",
+			"",			// The state. data[27]
+			"",			// Group spawning. data[28]
+			"",			// Despawn. data[29]
+			"",			// Text for textentry template		data[30]
+			"",			// Text for textentry max		data[31]
+			"",			// Text for textentry appear range	data[32]
+			"",			// Text for textentry wander range	data[33]
+			"",			// Text for textentry frequency		data[34]
+			"",			// Text for textentry expire time	data[35]
+			"",			// Text for textentry expire num	data[36]
+			"",			// Text for textentry start hour	data[37]
+			"",			// Text for textentry end hour		data[38]
+			""};			// Text for textentry note		data[39]  
+	
+	while( !ShowPointGump( who, point ) )
+		SleepMs(2);
+	endwhile
+	setobjproperty(point,"LFucker",who.serial + " - " + who.name);
+	SendSysMessage( who, "Spawnpoint data saved.", FONT_NORMAL, FONTCOLOR_GREEN );
+	
+endprogram
+
+
+
+function ShowPointGump( byref who, byref point )
+
+	var temp1 := "";
+	var temp2 := "";
+	pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+		pt_data	    := array;
+		pt_data[1]  := "NPC";	// Type
+		pt_data[2]  := "nil";	// Template
+		pt_data[3]  := 0;	// Max appear
+		pt_data[4]  := 0;	// Appear Range
+		pt_data[5]  := 0;	// Wander Range
+		pt_data[6]  := 0;	// Frequency
+		pt_data[7]  := 0;	// Disabled
+		pt_data[8]  := 0;	// Spawn in group.
+		pt_data[9]  := 0;	// Despawn on destroy
+		pt_data[10] := 0;	// Expire time
+		pt_data[11] := 0;	// Expire number
+		pt_data[12] := 0;	// Start spawning hours
+		pt_data[13] := 0;	// End spawning hours
+		pt_data[14] := "";	// Notes
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+	
+	data[5]  := pt_data[1];		// Type.
+	data[30] := pt_data[2];		// Textentry textid 1,  template
+	data[31] := pt_data[3];		// Textentry textid 2,  max
+	data[32] := pt_data[4];		// Textentry textid 3,  appear range
+	data[33] := pt_data[5];		// Textentry textid 4,  wander range
+	data[34] := pt_data[6];		// Textentry textid 5,  frequency
+	data[35] := pt_data[10];	// Textentry textid 6,  expire time
+	data[36] := pt_data[11];	// Textentry textid 7,  expire num
+	data[37] := pt_data[12];	// Textentry textid 8,  start hour
+	data[38] := pt_data[13];	// Textentry textid 9,  end hour
+	data[39] := pt_data[14];	// Textentry textid 10, note
+
+	case( pt_data[1] )
+		"NPC":		data[6]  := "Template:";
+				data[11] := "Wander Range:";
+				data[12] := "(sqrs)";
+				temp1	 := "npc";
+				temp2	 := "Kill";
+				break;
+				
+		"Group":	data[6]  := "Group:";
+				data[11] := "Wander Range:";
+				data[12] := "(sqrs)";
+				temp1	 := "npc";
+				temp2	 := "Kill";
+				break;
+				
+		"Item":		data[6]  := "Objtype:";
+				data[11] := "Appear Amt:";
+				data[12] := "(dice roll)";
+				temp1	 := "item";
+				temp2	 := "Destroy";
+				break;
+				
+		"Container":	data[6]  := "Container:";
+				data[11] := "Loot Info:";
+				data[12] := "(data)";
+				temp1	 := "container";
+				temp2	 := "Destroy";
+				break;
+	endcase
+		
+	var temp := "checkbox " + (REF_X+90) + " "  + (REF_Y+25) + " " + GUMPID_BUTTON_STONE_CHECK_0 + " " + GUMPID_BUTTON_STONE_X_0 + " ";
+	if( pt_data[7] )
+		layout[50] := "text "	  + (REF_X+120) + " " + (REF_Y+25) + " " + COLOR_RED + " 26";
+		layout[51] := temp + "1 " + CHECKBOXINDEX_ENABLED;
+		data[27]   := "Disabled";
+	else
+		layout[50] := "text "	  + (REF_X+120) + " " + (REF_Y+25) + " " + COLOR_GREEN + " 26";
+		layout[51] := temp + "0 " + CHECKBOXINDEX_ENABLED;
+		data[27]   := "Enabled";
+	endif
+	
+	temp := "checkbox " + (REF_X+15) + " "  + (REF_Y+275) + " " + GUMPID_BUTTON_STONE_CHECK_0 + " " + GUMPID_BUTTON_STONE_X_0 + " ";
+	if( pt_data[8] )
+		layout[52] := "text "	  + (REF_X+45) + " " + (REF_Y+275) + " " + COLOR_BLUE_LIGHT + " 27";
+		layout[53] := temp + "1 " + CHECKBOXINDEX_GROUP;
+		data[28]   := "Spawn in group";
+	else
+		layout[52] := "text "	  + (REF_X+45) + " " + (REF_Y+275) + " " + COLOR_RED + " 27";
+		layout[53] := temp + "0 " + CHECKBOXINDEX_GROUP;
+		data[28]   := "Spawn one " + temp1 + " at a time";
+	endif
+	
+	temp := "checkbox " + (REF_X+15) + " "  + (REF_Y+300) + " " + GUMPID_BUTTON_STONE_CHECK_0 + " " + GUMPID_BUTTON_STONE_X_0 + " ";
+	if( pt_data[9] )
+		layout[54] := "text "	  + (REF_X+45) + " " + (REF_Y+300) + " " + COLOR_RED + " 28";
+		layout[55] := temp + "1 " + CHECKBOXINDEX_DESPAWN;
+		data[29]   := temp2 + " spawned " + temp1 + "s on destroy";
+	else
+		layout[54] := "text "	  + (REF_X+45) + " " + (REF_Y+300) + " " + COLOR_BLUE_LIGHT + " 28";
+		layout[55] := temp + "0 " + CHECKBOXINDEX_DESPAWN;
+		data[29]   := "Leave spawned " + temp1 + "s on destroy";
+	endif
+	
+	var keyret := SendDialogGump( who, layout, data );
+	if( keyret[KEYRETURN_RESET] )
+		SendSpawnPointEvent( EVID_SPAWNPOINT_RESETED, point );
+		return 0;
+	endif
+	
+	
+	var disabledtxt;
+	if( keyret[CHECKBOXINDEX_ENABLED] )
+		disabledtxt := "Disabled";
+		pt_data[7] := 1;
+	else
+		disabledtxt := "";
+		pt_data[7] := 0;
+	endif
+
+	// Check for Group option.
+	if( keyret[CHECKBOXINDEX_GROUP] )
+		pt_data[8] := 1;
+	else
+		pt_data[8] := 0;
+	endif
+
+	// Check for despawn change.
+	if( keyret[CHECKBOXINDEX_DESPAWN] )
+		pt_data[9] := 1;
+	else
+		pt_data[9] := 0;
+	endif
+	
+	pt_data[3]		:= Cint(keyret[101] - "101: ");	// Max spawned
+	pt_data[4]		:= Cint(keyret[102] - "102: ");	// Apepar range
+	pt_data[6]		:= Cint(keyret[104] - "104: ");	// Frequency
+	pt_data[10]		:= Cint(keyret[105] - "105: ");	// Expire time
+	pt_data[11]		:= Cint(keyret[106] - "106: ");	// Expire number
+	pt_data[12]		:= Cint(keyret[107] - "107: ");	// Start spawning hours
+	pt_data[13]		:= Cint(keyret[108] - "108: ");	// End spawning hours
+	pt_data[2]		:= Lower(keyret[100]- "100: ");	// Template
+	pt_data[5]		:= keyret[103] - "103: ";	// Wander range/loot info, etc
+	pt_data[14]		:= keyret[109] - "109: ";	// Notes
+
+	// Check for page 2 button presses, redisplay if pressed.
+	if( keyret[KEYRETURN_TYPECHANGE_NPC] )
+		pt_data[1] := "NPC";
+		if( !IsValidTemplate( who, pt_data[1], pt_data[2] ) )
+			pt_data[2] := "nil";
+		endif
+		pt_data[5] := Cint(pt_data[5]);
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		return 0;
+		
+	elseif( keyret[KEYRETURN_TYPECHANGE_GROUP] )
+		pt_data[1] := "Group";
+		if( !IsValidTemplate( who, pt_data[1], pt_data[2] ) )
+			pt_data[2] := "nil";
+		endif
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		return 0;
+	
+	elseif( keyret[KEYRETURN_TYPECHANGE_ITEM] )
+		pt_data[1] := "Item";
+		if( !IsValidTemplate( who, pt_data[1], pt_data[2] ) )
+			pt_data[2] := "nil";
+		endif
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		return 0;
+		
+	elseif( keyret[KEYRETURN_TYPECHANGE_CONTAINER] )
+		pt_data[1] := "Container";
+		if( !IsValidTemplate( who, pt_data[1], pt_data[2] ) )
+			pt_data[2] := "nil";
+		endif
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		return 0;
+			
+	else
+		if( !IsValidTemplate( who, pt_data[1], pt_data[2] ) )
+			pt_data[2] := "nil";
+		endif
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+
+	var hrtxt := "";
+	if( pt_data[12] != pt_data[13] )
+		hrtxt := "HR: " + pt_data[12] + " - " + pt_data[13];
+	endif
+
+	point.name := "SpawnPoint [" + pt_data[3] + " " + pt_data[2] + "] " + disabledtxt + hrtxt;
+
+	SendSpawnPointEvent( EVID_SPAWNPOINT_CHECK_POINT, point );
+	return 1;
+
+endfunction
+
+
+function IsValidTemplate( who, type, template )
+
+	if( !type || template == "nil")
+		return 1;
+	endif
+	
+	var cfg;
+	var key;
+	case( type )
+		"NPC":		cfg := ReadConfigFile(CFGFILE_NPCS);
+				key := template;
+				break;
+
+		"Group":	cfg := ReadConfigFile( ":spawnpoint:groups" );
+				key := template;
+				break;
+					
+		"Item":		
+		"Container":	cfg := ReadConfigFile(CFGFILE_ITEMS_ALL);
+				key := Cint(template);
+				if( !key )
+					key := GetObjtypeByName( template );
+				endif
+				break;
+
+		default:	return 1;
+	endcase
+	
+	if( !key )
+		SendSysMessage( who, "Invalid template." );
+		return 0;
+	endif
+	
+	if( !cfg )
+		return 1;
+	endif
+	
+	if( !cfg[key] )
+		SendSysMessage( who, "Invalid template." );
+		return 0;
+	else
+		return 1;
+	endif
+	
+endfunction
+
+
+function GetCmdLevelName( byref level )
+
+	case( level )
+		CMDLEVEL_PLAYER:	return "players";
+		CMDLEVEL_COUNSELOR:	return "counselors";
+		CMDLEVEL_SEER:		return "seers";
+		CMDLEVEL_GAME_MASTER:	return "gms";
+		CMDLEVEL_ADMINISTRATOR:	return "admins";
+		CMDLEVEL_DEVELOPER:	return "developers";
+	endcase
+	
+endfunction

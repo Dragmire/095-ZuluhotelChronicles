@@ -1,0 +1,57 @@
+use uo;
+use os;
+
+
+program rise(corpse)
+
+	var x := corpse.x;
+	var y := corpse.y;
+	var z := corpse.z;
+	
+	var template := GetObjProperty( corpse , "rise" );
+	var waittime := Cint( GetObjProperty( corpse , "risedelay" ) );
+	
+	Sleep( waittime );
+	
+	if( corpse )
+		PrintTextAbove( corpse , "*the corpse begins to stir!*" );
+			Sleepms( 1500 ); 
+
+		var the_critter := CreateNpcFromTemplate( template , x , y , z );
+		if( the_critter )
+			SetObjProperty( the_critter , "noloot" , 1 );
+				
+			if ( !the_critter.backpack )
+				var newbackpack := CreateItemAtLocation(the_critter.x , the_critter.y , the_critter.z , 0xe75 , 1 );
+				EquipItem( the_critter , newbackpack );
+			endif
+
+			foreach item in EnumerateItemsInContainer( corpse )
+				MoveItemToContainer( item, the_critter.backpack );
+			endforeach
+			
+			DestroyItem( corpse );
+			if ( IsPhoenix ( the_critter ) )
+				ShowFlame( the_critter );
+			endif
+		endif
+	endif
+	
+endprogram
+
+function IsPhoenix( what )
+
+	case( what.graphic )
+		0x5:		return 1;
+		default:	return 0;
+	endcase
+
+endfunction
+
+function ShowFlame( who )
+		var coolflame;
+		coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3709, 1 );
+		PlaySoundEffect(who, 0x208);
+		Sleep(3);
+		DestroyItem(coolflame);
+endfunction

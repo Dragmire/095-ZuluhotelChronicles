@@ -1,0 +1,41 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//											//
+//	blindingonhit									//
+//											//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+use uo;
+
+include "include/spelldata";
+include "include/damages";
+include "include/random";
+program blindingonhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var chance := GetObjProperty( armor , "ChanceOfEffect" );
+	if(RandomDiceStr("1d100") <= chance)
+
+		var targ;
+		if( GetObjProperty( armor , "Cursed" ) )
+			targ := defender;
+		else
+			targ := attacker;
+		endif
+
+		if( !GetObjProperty( targ , "PermNightSight" ) )
+			PlaySoundEffect( targ , SFX_SPELL_NIGHT_SIGHT );
+        		PlayObjectCenteredEffect( targ , FX_SPELL_OWL_SIGHT , SPEED_SPELL_OWL_SIGHT , LOOP_SPELL_OWL_SIGHT );
+	        	targ.setlightlevel( 30 , 60 );
+	        endif
+	endif
+
+	ApplyTheDamage( defender , attacker , rawdamage );
+	
+endprogram

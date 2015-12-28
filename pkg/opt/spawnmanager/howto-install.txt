@@ -1,0 +1,31 @@
+How to install:
+- Copy this package anywhere it appeals more, in \pkg;
+- Add the following lines in your death.src:
+
+	local regionnum := Cint(GetObjProperty(corpse, "regionnum"));
+	if(regionnum)
+		local regionmanager := GetGlobalProperty("#regiondefs"+regionnum);
+		regionmanager := GetProcess(regionmanager);
+		local ev := {};
+		ev.+type;
+		ev.type := 0x0003; //EV_NPCDEATH
+		regionmanager.SendEvent(ev);
+	endif
+	
+- if you think it's necessary, add these lines into your taming script, after success:
+	
+	local regionnum := Cint(GetObjProperty(thecreature, "regionnum"));
+	if(regionnum)
+		local regionmanager := GetGlobalProperty("#regiondefs"+regionnum);
+		regionmanager := GetProcess(regionmanager);
+		local ev := {};
+		ev.+type;
+		ev.type := 0x0003; //EV_NPCDEATH
+		regionmanager.SendEvent(ev);
+		EraseObjProperty(thecreature, "regionnum");
+	endif
+	
+
+- Compile the scripts;
+- Use .spawnmanager;
+- Have fun.

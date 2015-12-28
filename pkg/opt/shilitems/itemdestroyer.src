@@ -1,0 +1,10 @@
+use uo;
+use os;
+
+
+program itemdestroyer( item )
+
+	sleep( 4 );
+	DestroyItem( item );
+
+endprogram

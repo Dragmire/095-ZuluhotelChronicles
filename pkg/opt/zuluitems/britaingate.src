@@ -1,0 +1,13 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+program britaingate (who)
+
+MoveCharacterToLocation( who, 1417, 1715, 20 );
+SendSysMessage( who, "Welcome to Britain!");
+
+endprogram

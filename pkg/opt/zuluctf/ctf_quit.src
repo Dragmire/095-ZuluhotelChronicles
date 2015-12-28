@@ -1,0 +1,18 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu feb 2, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/yesno";
+include "include/client";
+include "ctf1";
+
+program ctf_quit(who)
+
+if (YesNo(who,"Quit CTF?")) quitctf(who); endif
+
+endprogram

@@ -1,0 +1,206 @@
+use os;
+use uo;
+use util;
+use basic;
+
+include "include/client";
+include "include/random";
+include "include/myutil";
+include "include/itemutil";
+include "../karmafame/karmafame";
+include "include/objtype";
+
+program trashcanofwonders( who )
+
+	var mypack := who.backpack;
+	SendSysMessage( who, "Please target something to trash." );
+	set_critical(1);
+	var tgt := TargetCoordinates( who );
+
+   	if (tgt)
+        	if (tgt.item)
+			if( tgt.objtype == 0xEED);
+				SendSysMessage( who, "You cannot trash gold!");
+				set_critical(0);
+			elseif( IsStackable(tgt.item) )
+				SendSysMessage( who, "You cannot trash stackable items!");
+				set_critical(0);
+
+			elseif( GetObjProperty( tgt.item, "ownerserial" ) )
+				SendSysMessage( who, "You cannot trash that!");
+				set_critical(0);
+			elseif(!InMyPack(tgt.item, mypack))
+				SendSysMessage(who,"The item has to be in your backpack!");
+				return;
+			elseif(tgt.item.IsA(POLCLASS_CONTAINER))
+				SendSysMessage(who, "You cannot trash a container!");
+
+			else
+				Wondertrash(who, tgt.item);
+				
+			endif
+       		else
+           		SendSysMessage( who, "You can only trash items" );
+        	endif
+    	endif
+	
+
+endprogram
+
+
+function WonderTrash( who, item )
+
+	set_critical(1);
+	
+	if( IsStackable(item) )
+		DestroyItem(item);
+		PlaySoundEffect( who, SFX_226 );
+		return;
+	elseif( GetObjProperty( item, "ownerserial" ) )
+		DestroyItem(item);
+		PlaySoundEffect( who, SFX_226 );
+		return;
+	endif
+
+	DestroyItem(item);
+
+	set_critical(0);
+	var effect := RandomInt(15000);
+	var res    := 0;
+	if( effect <= 0 )
+		res := CreateWonderItem( who );
+	elseif( effect <= 1 )
+		res := CreateRandomItem( who, 6 );
+	elseif( effect <= 4 )
+		res := CreateRandomItem( who, 5 );
+	elseif( effect <= 18 )
+		res := CreateRandomItem( who, 4 );
+	elseif( effect <= 38 )
+		res := CreateRandomItem( who, 3 );
+	elseif( effect <= 138 )
+		res := CreateRandomItem( who, 2 );
+	elseif( effect <= 538 )
+		res := CreateRandomItem( who, 1 );
+	endif
+	if( res )
+		PlaySoundEffect( who, SFX_244 );
+	else
+		PlaySoundEffect( who, SFX_226 );
+	endif
+
+endfunction
+
+
+function CreateRandomItem( who, lvl )
+
+	var effect := RandomInt(10);
+	if( !effect )
+		return CreateMoney( who, lvl );
+	endif
+
+	var objtypes	:= { 0x1085, 0x1086, 0x1087, 0x1088, 0x1089,
+			     0x108a, 0x1515, 0x1516, 0x1517, 0x152e,
+			     0x1537, 0x1539, 0x153b, 0x153d, 0x153f,
+			     0x1541, 0x1543, 0x1545, 0x1547, 0x1549,
+			     0x154b };
+
+	var item	:= CreateItemInContainer( who.backpack, Cint(objtypes[RandomInt(objtypes.size())+1]) );
+	if( !item )
+		return 0;
+	endif
+
+	SetObjProperty( item, "skilladv", Cint(RandomInt(49)) );
+	SetObjProperty( item, "skilladvamount", lvl );
+
+	var currdesc := item.desc;
+   	if( currdesc[1] == "a" )
+      		var space := find( item.desc, " ", 1 );
+      		var newname := currdesc[space + 1 , len(item.desc)];
+      		SetName( item, "a magic " + newname );
+   	else
+      		SetName( item, "magic " + currdesc );
+   	endif
+
+	SetObjProperty( item, "UnIDedMagicalItem" , 1 );
+	SendSysMessage( who, "The trash can of wonder grant you a " + item.desc );
+	if( RandomInt(40)+1 < 11 )
+		AddRareDye( item );
+	endif
+
+	return 1;
+
+endfunction
+
+
+function CreateMoney( who, lvl )
+
+	var amount;
+	case( lvl )
+		1:	amount := RandomInt(100)+1;	break;
+		2:	amount := RandomInt(250)+251;	break;
+		3:	amount := RandomInt(500)+501;	break;
+		4:	amount := RandomInt(2500)+2501;	break;
+		5:	amount := RandomInt(5000)+5001;	break;
+		6:	amount := RandomInt(30000)+30001;	break;
+	endcase
+
+	if( !amount )
+		return 0;
+	endif
+
+	var gold := CreateItemInBackpack( who, 0xeed, amount );
+	if( gold )
+		SendSysMessage( who, "You got " + amount + " gold pieces from the trash can of wonders." );
+		return 1;
+	endif
+
+	return 0;
+
+endfunction
+
+
+function CreateWonderItem( who )
+
+	var objtypes := { 0x6046,	// CoifOfWonders
+			    0x6047,	// TunicOfWonders
+			    0x6048,	// SleevesOfWonders
+			    0x6049,	// LeggingsOfWonders
+			    0x604a,	// GlovesOfWonders
+			    0x604b,	// BootsOfWonders
+			    0x604c,	// ShieldOfWonders
+			    0x604d};	// SwordofWonders	
+			  // Add the wand once it is done
+
+
+	var item := CreateItemInBackpack( who, Cint(objtypes[RandomInt(objtypes.size())+1]) );
+	if( item )
+		SendSysMessage( who, "You got the legendary " + item.desc + " from the trash can of wonder." );
+		return 1;
+	endif
+
+	return 0;
+
+endfunction
+
+
+function AddRareDye( item )
+
+	SetObjProperty( item , "Undyeable" , 1 );
+	if( !GetObjProperty( item , "EnchantColor" ) )
+		var color := RandomInt(26)+1158;
+		SetObjProperty( item, "EnchantColor", color );
+	endif
+
+endfunction
+
+function InMyPack(it, mypack)
+
+	foreach item in enumerateitemsincontainerofobjtype(mypack, it.objtype)
+		if (item.serial == it.serial)
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction

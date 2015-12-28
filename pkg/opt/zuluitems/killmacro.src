@@ -1,0 +1,77 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+
+program code_equal_to_number( player );
+
+	var number  := RandomInt(10000)+1;
+	var text    := "Enter " + number + " below in order to pass the macrotest.";
+	var timer := ReadGameClock();
+	var entered := CInt(SendTextEntryGump( player, text, 40 ));
+	var time := 0;
+	Var account := Player.acct;
+	var offence := 0;
+
+	while( !entered && timer < (ReadGameClock()+240) )
+		Sleep(30);
+	endwhile
+
+	if( entered == number )
+		EraseObjProperty( player, "starttime" );
+		SendSysMessage( player, "You passed!" );
+		PlayLightningBoltEffect(player);
+		textcmd_bcast( player, "entered the code correct." );
+		return 0;
+	else
+		textcmd_bcast( player, "failed the code once." );		
+		SendSysMessage( player, "Wrong code. You have one last chance." );
+		timer := ReadGameclock();
+		entered := CInt(SendTextEntryGump( player, text, 40 ));
+
+		while( !entered && timer < (ReadGameClock()+240) )
+			Sleep(30);
+		endwhile
+
+		if( entered == number )
+			EraseObjProperty( player, "starttime" );
+			SendSysMessage( player, "You passed!" );
+			PlayLightningBoltEffect(player);
+			textcmd_bcast( player, "The code was correct after the second try." );
+			return 0;
+		else
+			SendSysMessage( player, "You entered the wrong number!" );
+			textcmd_bcast( player, "failed after second try to enter the code correct." );
+			
+			If( !GetObjProperty( player, "#MacroOffence" ) )
+				SetObjProperty ( player, "#MacroOffence", 1);
+				DisconnectClient( Player );
+
+			elseif( GetObjProperty( player, "#MacroOffence") )
+				offence := GetObjProperty( player, "#MacroOffence");
+				time := 86400 * offence;
+				offence := offence +1;
+				SetObjProperty( player, "#MacroOffence", offence);
+				account.setprop( "Release", ( ReadGameClock() + time ) );
+				MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+				SendSysMessage( Player, "You have been jailed");
+				DisconnectClient( Player );
+			endif
+		
+		endif
+
+	endif
+endprogram

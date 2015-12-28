@@ -1,0 +1,28 @@
+use uo;
+use os;
+
+include "include/dotempmods";
+include "include/damages";
+
+program poisononhit( parms )
+
+	var attacker 	:= parms[1];
+	var defender 	:= parms[2];
+	var weapon 	:= parms[3];
+	var armor 	:= parms[4];
+	var basedamage := parms[5];
+	var rawdamage	:= parms[6];
+	
+	var poison := GetObjProperty( armor , "Poisonlvl" );
+	var targ;
+	if( GetObjProperty( armor , "Cursed" ) )
+		targ := defender;
+	else
+		targ := attacker;
+	endif
+
+	SetPoison(targ , poison , "You have been poisoned by " + defender.name);
+
+	ApplyTheDamage( defender , attacker , rawdamage );
+ 
+endprogram

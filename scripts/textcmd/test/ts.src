@@ -1,0 +1,77 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+   "" + + "" + + ""
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+Include "include/classes";
+
+Program TextCMD_Test( Who )
+
+    Var Success := 0;
+    Var Failed := 0;
+    Var Skill_ID := SKILLID_HIDING;
+    Var Points := 100;
+
+    Var i;
+    For( i := 1; i <= 10000; i := i + 1 )
+    If( SkillAsPercentSkillCheck( Who, Skill_ID, Points ) )
+    Success := Success + 1;
+    Else
+    Failed := Failed + 1;
+    Endif
+    SleepMS( 1 );
+    Endfor
+
+    SendSysMessage( Who, "Success: " + Success, FONT_NORMAL, 2445 );
+    SendSysMessage( Who, "Failed: " + Failed, FONT_NORMAL, 2445 );
+
+Endprogram
+
+Function SkillAsPercentSkillCheck( Who, SkillID, Points )
+
+    Var Chance := GetEffectiveSkill( Who, SkillID ) * 10;
+
+    Var Classe_ID := IsSpecialisedIn( Who, SkillID );
+    If( Classe_ID )
+    Chance := Chance * ClasseSkillBonus( Who, Classe_ID );
+    Endif
+
+    If( Chance <= 100 )
+    Chance := 300;
+    Elseif( Chance > 1499 )
+    Chance := 1499;
+    Endif
+
+    Var RawChance := RandomInt( 1500 );
+
+    If( Chance > RawChance )
+      If( Points > 0 )
+      Points := CalcPercent( Chance, Points );
+      //AwardPoints( Who, SkillID, Points );
+      Endif
+    Return 1;
+    Else
+    Return 0;
+    Endif
+
+Endfunction
+
+Function CalcPercent( Difficulty, Points, Divider := 3, Multiplier := 0.01 )
+
+    Difficulty := Difficulty / 10;
+
+    Var Percent := ( ( Difficulty / Divider ) * Multiplier );
+    Var xPer := ( Points * Percent );
+    Var iVal := ( Points + xPer );
+
+    Return iVal;
+
+Endfunction

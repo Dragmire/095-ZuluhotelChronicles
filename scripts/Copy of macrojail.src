@@ -1,0 +1,119 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+
+program code_equal_to_number( player );
+
+	var number  := RandomInt(10000)+1;
+	var text    := "Enter " + number + " below in order to pass the macrotest.";
+	var timer := ReadGameClock();
+	SetObjProperty( player, "#macrotest", 1 );
+	SetObjProperty( player, "#testtime", ReadGameClock() );
+	var entered := CInt(SendTextEntryGump( player, text, 40 ));
+	var time := 0;
+	Var account := Player.acct;
+	var offence;
+
+	if( entered == number )
+		EraseObjProperty( player, "#macrotest" );
+		If(GetObjProperty( player, "#testtime") > ReadGameClock()+420 );
+			textcmd_bcast( player, "Answered too late!." );
+			If( !GetObjProperty( player, "#MacroOffence" ) )
+				SetObjProperty ( player, "#MacroOffence", 1);
+				EraseObjProperty(player, "#macrotest");
+				EraseObjProperty(player, "#testtime" );
+				DisconnectClient( Player );
+
+			elseif( GetObjProperty( player, "#MacroOffence") )
+				offence := GetObjProperty( player, "#MacroOffence");
+				time := 86400 * (offence-1);
+				offence := offence +1;
+				SetObjProperty( player, "#MacroOffence", offence);
+				account.setprop( "Release", ( ReadGameClock() + time ) );
+				MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+				SendSysMessage( Player, "You have been jailed");
+				EraseObjProperty(player, "#macrotest");
+				EraseObjProperty(player, "#testtime" );
+				DisconnectClient( Player );
+			endif	
+		endif
+		SendSysMessage( player, "You passed!" );
+		PlayLightningBoltEffect(player);
+		textcmd_bcast( player, "entered the code correct." );
+		return 0;
+	else
+		textcmd_bcast( player, "Failed the check once." );		
+		SendSysMessage( player, "Wrong code. You have one last chance." );
+		SetObjProperty( player, "#testtime", ReadGameClock() );
+		entered := CInt(SendTextEntryGump( player, text, 40 ));
+
+
+		if( entered == number )
+			EraseObjProperty( player, "#macrotest" );
+		If(GetObjProperty( player, "#testtime") > ReadGameClock()+420 );
+			textcmd_bcast( player, "Answered too late!." );
+			If( !GetObjProperty( player, "#MacroOffence" ) )
+				SetObjProperty ( player, "#MacroOffence", 1);
+				EraseObjProperty(player, "#macrotest");
+				EraseObjProperty(player, "#testtime" );
+				DisconnectClient( Player );
+
+			elseif( GetObjProperty( player, "#MacroOffence") )
+				offence := GetObjProperty( player, "#MacroOffence");
+				time := 86400 * (offence-1);
+				offence := offence +1;
+				SetObjProperty( player, "#MacroOffence", offence);
+				account.setprop( "Release", ( ReadGameClock() + time ) );
+				MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+				SendSysMessage( Player, "You have been jailed");
+				EraseObjProperty(player, "#macrotest");
+				EraseObjProperty(player, "#testtime" );
+				DisconnectClient( Player );
+			endif	
+		endif
+			SendSysMessage( player, "You passed!" );
+			PlayLightningBoltEffect(player);
+			textcmd_bcast( player, "The code was correct after the second try." );
+			return 0;
+		else	
+			SendSysMessage( player, "Wrong code." );
+
+			If( !GetObjProperty( player, "#MacroOffence" ) )
+				SetObjProperty ( player, "#MacroOffence", 1);
+				EraseObjProperty(player, "#macrotest");
+				DisconnectClient( Player );
+
+			elseif( GetObjProperty( player, "#MacroOffence") )
+				offence := GetObjProperty( player, "#MacroOffence");
+				time := 86400 * (offence-1);
+				offence := offence +1;
+				SetObjProperty( player, "#MacroOffence", offence);
+				account.setprop( "Release", ( ReadGameClock() + time ) );
+				MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+				SendSysMessage( Player, "You have been jailed");
+				EraseObjProperty(player, "#macrotest");
+				DisconnectClient( Player );
+			endif	
+
+			
+
+		endif
+	endif
+
+
+
+endprogram

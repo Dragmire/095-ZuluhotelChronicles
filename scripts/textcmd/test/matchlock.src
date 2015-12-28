@@ -1,0 +1,33 @@
+use uo;
+
+include "util/key";
+
+program rekey( who )
+
+    SendSysMessage( who, "Select the FROM key/door." );
+    var lockeditem := Target( who );
+
+    if(! lockeditem)
+       SendSysMessage( who, "Canceled." );
+       return;
+    endif
+
+   var lockid := GetObjProperty(lockeditem, "lockid");
+
+    if (!lockid)
+	SendSysMessage( who, "That is a blank key." );
+    endif
+
+
+    SendSysMessage( who, "Select the TO door/hatch." );
+    var door := Target( who );
+
+    if(! door)
+       SendSysMessage( who, "Canceled." );
+       return;
+    endif
+
+	SetObjProperty( door, "lockid", lockid );   
+    	SendSysMessage( who, "Lock matches the key." );
+
+endprogram

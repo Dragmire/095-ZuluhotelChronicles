@@ -1,0 +1,11 @@
+use uo;
+include "include/random";
+program dicetest( who )
+
+    PrintTextAbove( who, who.name + " rolls " + dice() + " and " + dice() );
+
+endprogram
+
+function dice()
+ return Random(6)+1;
+endfunction

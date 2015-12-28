@@ -1,0 +1,42 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//											//
+//	blindingonhit									//
+//											//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+use uo;
+
+include "include/dotempmods";
+include "include/spelldata";
+include "include/damages";
+include "include/random";
+program paralyzeonhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var chance := GetObjProperty( armor , "ChanceOfEffect" );
+	if(RandomDiceStr("1d100") <= chance)
+
+		var targ;
+		if( GetObjProperty( armor , "Cursed" ) )
+			targ := defender;
+		else
+			targ := attacker;
+		endif
+
+		if( CanMod( targ , "p" ) )
+			if( !GetObjProperty( targ , "FreeAction" ) )
+				DoTempMod( targ , "p" , 1 , 15 );
+			endif
+		endif
+	endif
+
+	ApplyTheDamage( defender , attacker , rawdamage );
+	
+endprogram

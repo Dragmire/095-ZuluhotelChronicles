@@ -1,0 +1,104 @@
+//////////////////////////////////
+//				//
+// Eval Int OSI - Rincewind :)  //
+// Email : rincewind@uo.co.za   //
+//				//
+//////////////////////////////////
+
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/skillpoints";
+include "include/classes";
+
+const POINT_VALUE := 100;
+
+program evalint( character )
+  
+	var thepoints := get_default_points(SKILLID_EVALINT);
+	var skill := GetAttribute( character, ATTRIBUTEID_EVALINT );
+
+	SendSysMessage( character, "Select a target." );
+	var subject := Target( character );
+
+	if( !subject )
+		return;
+	endif
+
+	if( !subject.isA(POLCLASS_MOBILE) )
+		SendSysMessage( character, "It looks smarter than a rock, but dumber than a piece of wood" );
+		return;
+	endif
+
+	if( !CheckSkill( character, SKILLID_EVALINT, -1, POINT_VALUE ) )
+		PrintTextAbovePrivate( subject, "You're not sure...", character );
+		return;
+	endif	
+
+	var intel := GetIntelligence(subject);
+	if( intel > 150 )
+		PrintTextAbovePrivate(	subject,
+					"Superhumanly intelligent in a manner you cannot comprehend.",
+					character );
+				
+	elseif( intel > 135 )
+		PrintTextAbovePrivate(	subject,
+					"Like a definite genius.",
+					character );
+				
+	elseif( intel > 120 )
+		PrintTextAbovePrivate(	subject,
+					"Like a formidable intellect, well beyond even the extraordinary.",
+					character );
+				
+	elseif( intel > 105 )
+		PrintTextAbovePrivate(	subject,
+					"Extraordinarily intelligent.",
+					character );
+				
+	elseif( intel > 90 )
+		PrintTextAbovePrivate(	subject,
+					"Extremely intelligent.",
+					character );
+
+	elseif( intel > 75 )
+		PrintTextAbovePrivate(	subject,
+					"Very intelligent.",
+					character );
+
+	elseif( intel > 60 )
+		PrintTextAbovePrivate(	subject,
+					"Moderately intelligent.",
+					character );
+
+	elseif( intel > 45 )
+		PrintTextAbovePrivate(	subject,
+					"About Average.",
+					character );
+
+	elseif( intel > 30 )
+		PrintTextAbovePrivate(	subject,
+					"Not the brightest.",
+					character );
+
+	elseif( intel > 15 )
+		PrintTextAbovePrivate(	subject,
+					"Fairly Stupid.",
+					character );
+
+	else
+		PrintTextAbovePrivate(	subject,
+					"Slightly less intelligent than a rock.",
+					character );
+	endif
+
+	if( skill > 90 )
+		var percent := CInt( CDbl(GetMana(subject)) * 100.0 / GetMaxMana(subject) );
+		PrintTextAbovePrivate(	subject,
+					"This being is at " + percent + "% mental strength.",
+					character );
+	endif
+
+endprogram

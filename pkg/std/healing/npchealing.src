@@ -1,0 +1,166 @@
+/////////////////////////////////////////////////////////
+//vet.src
+//
+//Just like healing, but works on tamed NPCs
+//
+// Author: Dream Weaver
+//
+//////////////////////////////////////////////////////////
+
+use uo;
+use cfgfile;
+use os;
+
+include "include/client";
+include "include/dotempmods";
+include "include/classes";
+include "include/random";
+include "include/res";
+
+const SOUND_EFFECT_RES 	  := 0x215;
+const BLOODY_BANDAGE 	  := 0x0e20;
+
+//To heal
+const BANDAGES_TO_HEAL	  := 1;
+const DELAY_TO_HEAL	  := 5;
+
+//To cure
+const BANDAGES_TO_CURE	  := 2;
+const DELAY_TO_CURE	  := 6;
+
+//To res
+const BANDAGES_TO_RES	  := 5;
+const DELAY_TO_RES	  := 10;
+const RES_DIFFICULTY	  := 105;
+
+var props array;
+
+
+//Delay multiplier when you heal yourself
+const DELAY_MULT_FOR_SELF := 3;
+
+//Multiply diff by this for the point value
+const POINTS_MULTIPLIER	  := 20;
+
+
+program use_bandages ( parms )
+	var character := parms[1];
+	var patient := parms[2];
+	var bandages := parms[3];
+ 	if( patient.poisoned )
+		TryToCure( character , patient , bandages );
+	elseif( patient.hp < patient.maxhp )
+		TryToHeal( character , patient , bandages );
+	endif
+endprogram
+
+
+function TryToCure( character , patient , bandages )
+
+	if( bandages.amount < BANDAGES_TO_CURE )
+		PrintTextAbove(character, "I don't have enough bandages!");
+		return;
+	endif
+	
+	var delay 	:= DELAY_TO_CURE;
+	
+	if( patient.serial = character.serial )
+		delay := Cint( delay * DELAY_MULT_FOR_SELF );
+		SendSysMessage( character , "You start to cure yourself" );
+	else
+		SendSysMessage( patient , character.name + " starts to cure you" );
+	endif
+	
+	if( GetObjProperty( character , CLASSEID_WARRIOR ) )
+		delay := Cint( delay / CLASSE_BONUS );
+	endif
+	
+	Sleep( delay );
+	
+	if( Distance( character , patient ) > 3 )
+		SendSysMessage( character , "The creature is too far." );
+		return;
+	endif
+	
+	if( character.dead )
+		return;
+	endif
+	
+	var plvl 	:= PoisonLevel( patient );
+	var diff 	:= cint(plvl * 20 + 15);
+	var points 	:= diff * POINTS_MULTIPLIER;
+	
+	if( CheckSkill( character , SKILLID_HEALING , diff , points ) )
+		CurePoison( patient , 0 , character.name + " has cured you!" );
+	endif
+	
+	SubtractAmount( bandages , BANDAGES_TO_CURE );
+	CreateItemInBackpack( character , BLOODY_BANDAGE , BANDAGES_TO_CURE );
+	
+endfunction
+
+
+function TryToHeal( character , patient , bandages )
+
+	if( bandages.amount < BANDAGES_TO_HEAL )
+		PrintTextAbove( character , "I don't have enough bandages!" );
+		return;
+	endif
+
+	var delay 	:= DELAY_TO_HEAL;
+	var healing	:= Cint( GetAttribute( character , SKILLID_HEALING ) / 10 );
+	var animal	:= Cint( GetAttribute( character , SKILLID_ANATOMY ) / 5 );
+	var healed	:= RandomDiceStr( healing + "d4+" + healing ) + RandomDiceStr( "1d8+2" ) + animal;
+	
+	if( patient.serial = character.serial )
+		delay := Cint( delay * DELAY_MULT_FOR_SELF );
+	else
+	 	SendSysMessage( patient , character.name + " starts to heal you" );
+	endif
+	
+	if( GetObjProperty( character , CLASSEID_WARRIOR ) )
+		delay := Cint( delay / CLASSE_BONUS );
+		healed := Cint( healed * CLASSE_BONUS );
+	endif
+	
+	var count	:= 10;
+	
+	while( delay )
+		Sleep( 1 );
+		delay := delay - 1;
+	endwhile
+
+	if( Distance( character , patient ) > 3 )
+		return;
+	endif
+	
+	if( character.dead )
+		return;
+	endif
+	
+	var diff 	:= cint(patient.maxhp - patient.hp);
+	var points 	:= diff * POINTS_MULTIPLIER;
+	
+	var bonus := GetObjProperty( patient , "HealingIncrease" );
+	if( bonus )
+		healed := healed + Cint( healed * bonus * 0.1 );
+	endif
+	
+	if( count < 1 )
+		count := 1;
+	endif
+	
+	healed := Cint( healed * count / (20 - (character.strength/10)) );
+	
+	if( CheckSkill( character , SKILLID_HEALING , diff , points ) )
+		HealDamage( patient , healed );
+		SendSysmessage( patient , character.name + " healed " + healed + " damage." );
+	else
+		PrintTextAbove( character , "i couldn't heal "+patient.name );
+	endif
+	
+	SubtractAmount( bandages , BANDAGES_TO_HEAL );
+	CreateItemInBackpack( character , BLOODY_BANDAGE , BANDAGES_TO_HEAL );
+	
+endfunction
+

@@ -1,0 +1,37 @@
+use os;
+use uo;
+
+include "include/classes";
+
+program ritualstone (who)
+
+
+var mage := GetObjProperty(who, "IsMage");
+	
+
+if (GetGlobalProperty("RitualInUse"))
+		SendSysMessage( who, "Cancelled, the chamber is in use." );
+		return;
+endif	
+
+
+if (who.dead)
+
+       Sendsysmessage(who, "You can't enter in the chamber while dead!");
+       return;
+endif
+
+if (!mage)
+
+     Sendsysmessage(who, "You must be qualified as a mage to make rituals.");
+     return;
+endif
+
+SetGlobalProperty("RitualInUse", 1 );
+Sendsysmessage(who, "Please wait...",3);
+sleep(2);
+sendsysmessage(who, "Enjoy the Ritual Chamber!",3);
+MoveCharacterToLocation( who, 5592, 1211, 0, 0);
+
+
+endprogram

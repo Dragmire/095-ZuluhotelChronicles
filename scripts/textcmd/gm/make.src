@@ -1,0 +1,29 @@
+use os;
+use uo;
+
+program cannon(who, text)
+
+if ((text=="") or (!text)) SendSysMessage( who, ".make <red> <blue> <gray>"); return; endif
+
+SendSysmessage( who , "Select a MOBILE." );
+var mobile :=  Target( who , TGTOPT_NOCHECK_LOS );
+
+if(!mobile or !mobile.strength) SendSysMessage( who, "canceled"); return; endif
+
+if (text=="red")
+mobile.setmurderer(1);
+mobile.setcriminal(0);
+
+elseif(text=="gray")
+mobile.setcriminal(1);
+mobile.setmurderer(0);
+
+elseif(text=="blue")
+mobile.setmurderer(0);
+mobile.setcriminal(0);
+
+else
+SendSysMessage( who, ".make <red> <blue> <gray>");
+endif
+
+endprogram

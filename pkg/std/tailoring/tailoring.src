@@ -1,0 +1,82 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//	tailoring.src - I think this just turns thread into cloth at a loom?
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+use cfgfile;
+
+include "include/client";
+include "include/objtype";
+include "include/myutil";
+
+
+program use_thread( character, thread )
+	  	
+	if( !Accessible( character, thread ) )
+		SendSysMessage( character, "You can't reach that." );
+		return;
+	endif
+
+	if( !ReserveItem(thread) )
+		return;
+	endif
+
+	if( !OwnItem( character.backpack, thread ) )
+		SendSysMessage( character, "The thread have to be in your backpack." );
+		return;
+	endif
+
+	SendSysMessage( character, "Select the loom to use that on" );
+
+	// Ask the player what they wish to use the thread on.
+	var use_on := Target( character );
+	if( !use_on )
+		return;
+	endif
+
+	if( !Accessible( character, use_on ) )
+		SendSysMessage( character, "You can't reach that." );
+		return;
+	endif
+
+	if( (use_on.objtype >= UOBJ_LOOM_START) && (use_on.objtype <= UOBJ_LOOM_END) )
+		MakeCloth( character, thread );
+	else
+		SendSysMessage( character, "You can only use thread on a loom" );
+	endif
+
+endprogram
+
+
+function OwnItem( bpack, item )
+
+   	var backpack := EnumerateItemsInContainer( bpack );
+   	foreach bpitem in backpack
+		if( bpitem.serial == item.serial )
+			return 1;
+		endif
+   	endforeach
+
+   	return 0;
+
+endfunction
+
+
+function MakeCloth( character, thread )
+
+	if( thread.amount >= 5 )
+		var cloth := CreateItemInBackpack( character, UOBJ_CLOTH, 1 );
+		if( cloth )
+			SubtractAmount( thread, 5 );
+			SendSysMessage( character, "You weave some thread and create a bolt of cloth." );
+		endif
+	else
+		SendSysMessage( character, "You don't have enough thread for the bolt of cloth." );
+	endif
+
+endfunction

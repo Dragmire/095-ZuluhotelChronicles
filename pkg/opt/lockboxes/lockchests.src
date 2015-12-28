@@ -1,0 +1,11 @@
+use uo;
+use os;
+
+include "include/chests";
+include "include/checkcity";
+
+program lockchests(chest)
+
+	lockbox(chest);
+ 
+endprogram

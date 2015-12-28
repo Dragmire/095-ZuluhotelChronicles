@@ -1,0 +1,31 @@
+use uo;
+
+include "../../karmafame";
+
+program textcmd_setkf( who, parm )
+
+	var tgt := TargetCoordinates( who );
+
+	if( tgt.mobile )
+		var mob := tgt.mobile;
+		var p:=SplitWords(parm);
+
+		var karma:=CInt(p[1]);
+		if(!karma)
+			SendSysMessage( who, "Usage: .setkf karmavalue");
+		endif
+
+		var fame:=CInt(p[2]);
+		if(!fame)
+			SendSysMessage( who, "Usage: .setkf karmavalue famevalue");
+		endif
+
+		SetKarma(mob, karma);
+		SetFame(mob, fame);
+
+		SetNewNotoName( mob );
+
+		SendSysMessage( who, "Setting " + mob.name + " right title: " + mob.title_prefix + " K:"+ GetKarma( mob ) );
+	endif
+
+endprogram

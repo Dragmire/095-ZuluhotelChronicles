@@ -1,0 +1,43 @@
+use os;
+use uo;
+use boat;
+Use cfgfile;
+
+include "include/client";
+include "include/damages";
+
+program textcmd_kill( who )
+
+    var tgt := TargetCoordinates( who );
+    if (tgt.mobile)
+        var mob := tgt.mobile;
+
+        if (!mob.dead)
+            RevokePrivilege( mob, "invul" );
+            ApplyRawDamage( mob, GetHp(mob) );
+            
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_killed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Kill Name",  mob.name });
+    elem.append({ "Kill Serial",  mob.serial });
+
+    AppendConfigFileElem("logging_killed", "Killed", "", elem);
+    UnloadConfigFile("logging_killed");
+    EndIf
+
+        else
+            SendSysMessage( who, "That Tickles!" );
+        endif
+    endif
+
+endprogram

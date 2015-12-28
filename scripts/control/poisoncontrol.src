@@ -1,0 +1,51 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+include "include/random";
+const DELAY_BETWEEN_HITS_MS	:= 1000;
+
+program poison_control( item )
+
+	var diff    := 40;
+	var points  := 25;
+	var power   := 2;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+	if( GetObjProperty( item, "ByTrueMage" ) )
+		power := CInt( power * CLASSE_BONUS );
+	endif
+
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	while( item )
+		var plvl := RandomDiceStr( "1d" + power );
+		PlaySoundEffect( item, SFX_SPELL_POISON_FIELD );
+		foreach mobile in ListMobilesNearLocation( CInt(item.x), CInt(item.y), CInt(item.z), 0 )
+			if( !creator )
+				creator := mobile;
+			endif
+		
+			var indiv_plvl := CInt(ResistedDefinedSkillGain( creator, mobile, plvl, diff, points ));
+			if( indiv_plvl )
+				SetPoison( mobile, indiv_plvl, "You've been poisoned!" );
+			endif
+		endforeach
+		sleepms( DELAY_BETWEEN_HITS_MS );
+	endwhile
+ 
+endprogram

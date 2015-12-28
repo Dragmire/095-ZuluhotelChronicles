@@ -1,0 +1,115 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use http;
+Use uo;
+Use os;
+Use cfgfile;
+
+Include "include/ranksystem";
+Include "include/sorting";
+
+Program players()
+
+    WriteHtml( "<html><head><title>Chaotic Realm Second Age</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+
+    Var Guilds := ComposeTop10();
+    Guilds.Reverse();
+    
+    WriteHtml(
+    "<table width=450 border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td width=200><div align=center><strong><font size=2>Guild</font></strong></div></td>"
+    +"<td width=200><div align=center><strong><font size=2>Guild Master</font></strong></div></td>"
+    +"<td width=50><div align=center><strong><font size=2>Members</font></strong></div></td>"
+    +"</tr>"
+    );
+    
+    Var TKills := 0;
+    
+    Foreach guild in Guilds
+    guild := FindGuild( guild[1] );
+    Var Mmbrs := guild.members;
+    Var GM := GetGuildMaster( guild );
+    
+    GM := SystemFindObjectBySerial( GM[2], SYSFIND_SEARCH_OFFLINE_MOBILES );
+
+    Var rnkimg := GetObjProperty( GM, RANKID_IMAGE );
+    If( !rnkimg )
+    rnkimg := "blank";
+    Endif
+
+    Var color;
+    If( GM.murderer )
+    color := "FF0000";
+    Elseif( GM.criminal )
+    color := "666666";
+    Else
+    color := "00CCFF";
+    Endif
+    
+    Var GM_Nme := GM.name;
+    If( !GM_Nme )
+    GM_Nme := "In Vote";
+    color := "FFFFFF";
+    Endif
+    
+    WriteHtml(
+    "<tr>"
+    +"<td width=200><center><font size=2><a href=http://www.montuz.com/viewguild.php?gid=" + guild.guildid + ">" + guild.GetProp( "guildname" ) + "</a></font></center></td>"
+    +"<td nowrap='nowrap'>&nbsp;<img style='vertical-align: middle;' src=http://www.montuz.com/images/" + rnkimg + ".gif width=18 height=18><strong><font color='" + color + "'>&nbsp;" + GM_Nme + "</font></strong></td>"
+    +"<td width=100><center><font size=2>" + Mmbrs.size() + "</font></center></td>"
+    +"</tr>");
+    
+    Endforeach
+
+    WriteHtml(
+    "</table>"
+    +"</body></html>"
+    );
+    
+EndProgram
+
+Function GetGuildMaster( Guild )
+
+    Var returninfo := { "In Vote", "0" };
+    Var gm := guild.GetProp( "gm" );
+    Foreach thing in ( guild.members )
+    If( thing.serial == gm )
+    returninfo[1] := thing.name;
+    returninfo[2] := thing.serial;
+    returninfo[3] := thing;
+    Break;
+    Endif
+    Endforeach
+    
+    Return returninfo;
+
+Endfunction
+
+Function ComposeTop10()
+
+    Var Guilds := ListGuilds( );
+    Var data := array;
+
+    Foreach Guild in Guilds
+    Var holder := array;
+    holder.append( Guild.guildid );
+    holder.append( guild.members.size( ) );
+    data.append( holder );
+    Endforeach
+
+    Return bubble_sort_array( data, 2 );
+
+Endfunction

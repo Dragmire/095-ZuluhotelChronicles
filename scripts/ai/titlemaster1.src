@@ -1,0 +1,242 @@
+// Scripted by Gm Gates
+// Updated by Zulu (zulu@zuluhotel.com)
+
+// Last updated July 17, 2000
+
+use uo;
+use os;
+use npc;
+
+include "include/eventid";
+include "include/randname";
+include "include/classes";
+include "include/client";
+include "include/skilltitles";
+include "ai/setup/modsetup";
+
+set_script_option( SCRIPTOPT_NO_RUNAWAY , 1 );
+var me:= self();
+
+const HALT_THRESHOLD := 5;
+
+if( me.name["<random>"] )
+   SetName ( me , RandomName( me ) );
+   EquipFromTemplate( me , "19" );
+endif
+
+
+EnableMainEvents();
+
+while (1)
+	var ev := wait_for_event( 30 );
+
+	if (ev)
+		case(ev.type)
+			SYSEVENT_ENGAGED:
+			SYSEVENT_DAMAGED: 	say("guards!!!");
+					Start_Script( ":areas:callguards" , me );
+			SYSEVENT_SPEECH: 
+				TurnToward( ev.source );
+				if (ev.text["title"])
+                    			titlegump(ev.source);
+                    		elseif(ev.text["help"] or ev.text["hello"])
+        				tellinfo(ev.source);
+				elseif(ev.text["remove"])
+					setremovetitle(ev.source);
+				endif
+			SYSEVENT_ITEM_GIVEN:
+				ProcessItem(ev.source, ev.item);
+			SYSEVENT_ENTEREDAREA:
+				if (randomint(5)>3) tellinfo(ev.source); endif
+		endcase
+	endif
+
+endwhile
+
+function tellinfo(who)
+say("You can now get a new title.");
+//sleep(2);
+//say("Type title and select your new skill title.");
+endfunction
+
+function ProcessItem(who, item)
+
+if(item.objtype = UOBJ_GOLD_COIN) //eh o viajante e eh money
+	say("Thanks!");
+	DestroyItem(item);
+else
+	say("Yucks! I do not have a use for this.");
+	MoveItemToContainer(item, who.backpack);
+endif
+
+endfunction
+
+
+function EnableMainEvents()
+
+	EnableEvents( SYSEVENT_ITEM_GIVEN );
+	EnableEvents( SYSEVENT_ENGAGED);
+	EnableEvents( SYSEVENT_DAMAGED );
+	EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+	EnableEvents( SYSEVENT_SPEECH, 2 );
+endfunction
+
+function setremovetitle(who)
+
+who.title_suffix := "";
+
+endfunction
+
+
+function titlegump(who);
+
+	var layout := {	"page 0",
+				"resizepic 150   0 2600 320 405",
+				"resizepic 210 360 5100 200  25",
+				"text 220 30 0 0",
+				
+				"page 1",
+				"button 220 65 2118 2117 1 1 2",
+				"text 240 60 600 1" };
+				
+	var data := {	"Please select your Title",
+			"Remove Title"};
+			
+	FillInArrays( who , layout , data );
+
+	var res := SendDialogGump( who, layout, data );
+
+	if (res[0]>=3)
+		who.title_suffix := ", " + data[res[0]];
+		say("Your title has been updated.");
+	elseif(res[0]=2)
+		setremovetitle(who);
+		say("Your title has been erased.");
+	endif
+
+endfunction
+
+
+function FillInArrays( who , byref layout , byref data )
+
+	var temp;
+	var skill;
+	var newtitle;
+	var skill_array := {};
+	var skilltitles := DefineSkillTitlesDictionary();
+	var leveltitles := DefineSkillLevelTitlesDictionary();
+	
+	var done	  := 1;
+	var pagecount	  := 1;
+	var rowcount	  := 80;
+
+	// Make an array with all the skill levels
+	for( skill := 0 ; skill <= SKILLID__HIGHEST ; skill := skill + 1 )
+		var skill_amount := GetEffectiveSkill( who , skill );
+		if( skill_amount >= 15 )
+			skill_array.append( { skill_amount , cint(skill) } );
+		endif
+	endfor
+	
+	// Sort the array using bubble sorting method
+	var i;
+	set_priority(10);
+	for( i := 1 ; i < Cint(len(skill_array)) ; i := i + 1 )
+		var j;
+		for( j := 2 ; j <= (len(skill_array)-i+1) ; j := j + 1 )
+			if( Cint(skill_array[j][1]) < Cint(skill_array[j-1][1]) )
+				temp := skill_array[j];
+				skill_array[j] := skill_array[j-1];
+				skill_array[j-1] := temp;
+			endif
+		endfor
+	endfor
+	set_priority(1);
+	
+	
+	var max_lvl   := Cint( skill_array[len(skill_array)][1] / 15 );
+	if( !max_lvl )
+		return;
+	endif
+	
+	if( max_lvl > 8 )
+		if( Cint( skill_array[len(skill_array)][1] ) >= 150 )
+			max_lvl := 9;
+		else
+			max_lvl := 8;
+		endif
+	endif
+	
+	var level	:= max_lvl;
+	var k		:= len(skill_array);
+	
+	while( level and level = max_lvl )
+		var prefix := leveltitles[ level ];
+		var suffix := skilltitles[ Cint(skill_array[k][2]) ];
+		var title;
+		if( prefix and suffix )
+			title := prefix + " " + suffix;
+		endif
+			
+		if( title )
+			FillInData( title , layout , data , done , pagecount , rowcount );
+		endif
+		
+		k := k - 1;
+		level := Cint( skill_array[k][1] / 15 );
+		if( level > 8 )
+			if( Cint( skill_array[len(skill_array)][1] ) >= 150 )
+				level := 9;
+			else
+				level := 8;
+			endif
+		endif	
+	endwhile
+	
+	var classe_title;
+	if( GetObjProperty( who , CLASSEID_BARD ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_BARD )+3 ] + " " + skilltitles[ 49 ];
+			
+	elseif(	GetObjProperty( who , CLASSEID_CRAFTER ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_CRAFTER )+3 ] + " " + skilltitles[ 50 ];
+				
+	elseif( GetObjProperty( who , CLASSEID_MAGE ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_MAGE )+3 ] + " " + skilltitles[ 51 ];
+				
+	elseif( GetObjProperty( who , CLASSEID_RANGER ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_RANGER )+3 ] + " " + skilltitles[ 52 ];
+				
+	elseif( GetObjProperty( who , CLASSEID_THIEF ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_THIEF )+3 ] + " " + skilltitles[ 53 ];
+				
+	elseif( GetObjProperty( who , CLASSEID_WARRIOR ) )
+		classe_title := leveltitles[ GetObjProperty( who , CLASSEID_WARRIOR )+3 ] + " " + skilltitles[ 54 ];
+	endif
+	
+	if( classe_title )
+		FillInData( classe_title , layout , data , done , pagecount , rowcount );
+	endif
+	
+endfunction
+
+
+function FillInData( titlename , byref layout , byref data , byref done , byref pagecount , byref rowcount );
+
+	var perpage := 14;
+	
+	done := done +1;
+	if( done > perpage )
+		done := 0;
+		rowcount  := 60;
+  		layout.append( "button 350 361 5540 5541 0 " + (pagecount+1) );
+  		pagecount := pagecount +1;
+      		layout.append( "page " + pagecount );
+      		layout.append( "button 260 361 5537 5538 0 " + (pagecount-1) );
+	endif
+
+	layout.append( "text 240 " + rowcount + " 300 " + len(data) );
+	data.append( titlename );
+	layout.append( "button 220 " + (rowcount+5) + " 2118 2117 1 1 " + len(data) );
+	rowcount := rowcount +20;
+      
+endfunction

@@ -1,0 +1,40 @@
+use os;
+use uo;
+include "include/attributes";
+
+program WeightLimit()
+  var player;
+  var item;
+  var items;
+  var total;
+  var limit;
+  var i;
+  print("Weight Limit");
+  while(1)
+    foreach player in EnumerateOnlineCharacters()
+      if (!player.cmdlevel)
+      set_critical(1);
+      limit:=(GetStrength(player)*3.5)+100000000000000000; //+100
+      total:=player.weight;
+
+      if (total>limit)
+	SendSysMessage(player,"You are carrying too much, some items had been placed on the ground!");
+	items:=EnumerateItemsInContainer(player.backpack);
+	for (I:=len(items);I>=1;I:=I-1)
+	  item:=items[i];
+	  if ((item.weight) && (!item.newbie) && (item.objtype!=0x0eed) && (item.container.objtype!=0x0efa) )
+	     total:=total-item.weight;
+             MoveItemToLocation(item,player.x,player.y,player.z, 1);
+             if (total<=limit)
+               break;
+             endif	   
+	  endif
+	endfor
+ 
+      endif
+      set_critical(0);
+      endif
+    endforeach
+    sleep(120);
+   endwhile
+endprogram

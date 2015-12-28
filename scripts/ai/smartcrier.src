@@ -1,0 +1,273 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// Simple Town crier AI. responds to a few keywords and barks out
+// some crappy news :)
+//
+// He also runs like heck if you try to attack him :)
+//
+// TODO: put all keyword / response text in a cfg file.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+
+include "include/eventid";
+include "include/randname";
+include "ai/setup/modsetup";
+
+var pagecount := 1;
+
+var layout := array( 
+
+"page 0",
+"gumppic 0 50 2620",
+"gumppic 20 50 2621",
+"gumppic 290 50 2622",
+"gumppic 0 68 2623",
+"gumppic 22 68 2624",
+"gumppic 288 68 2625",
+"gumppic 0 272 2623",
+"gumppic 22 272 2624",
+"gumppic 288 272 2625",
+"gumppic 0 476 2626",
+"gumppic 20 476 2627",
+"gumppic 290 476 2628",
+"gumppic 20 80 2621",    
+
+"text 20 59 40 0",
+"text 260 59 40 1"
+);
+
+var data := array(
+       "News ID",         //0
+       "Delete"
+);
+
+const HALT_THRESHOLD := 5; // how close before he barks?
+
+var me := Self();
+if( me.name["<random>"] )
+   SetName ( me , RandomName( me ) );
+endif
+
+   EquipFromTemplate( me , "Crier" );
+
+program crier()
+    EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED,HALT_THRESHOLD);
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_OPPONENT_MOVED );
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+    SetWarMode( 0 );
+    set_priority(10);
+
+    var ev;
+    while (1)
+        ev := os::wait_for_event( 120 );
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+                if (ev.text["hi"] or ev.text["hail"])
+                    say("Hail traveler! Hast thou heard the NEWS?");
+                elseif (ev.text["news"])
+                    BarkNews( ev.source );
+                elseif(ev.text["add"] and ev.source.cmdlevel)
+                        addnews(ev.source);
+                elseif(ev.text["delete"] and ev.source.cmdlevel)
+                        editnews(ev.source);      
+		endif
+
+            SYSEVENT_ENGAGED:
+		say("Aaahhh! Do not hurt the news-bearer!");
+                Run( ev.source );
+
+            SYSEVENT_DAMAGED:
+                say( "By the virtues! Why? WHY??" );
+
+                if (ev.source)
+                    Run( ev.source );
+                else
+                    say( "What sinister force is this!" );
+                endif
+
+            SYSEVENT_ENTEREDAREA:
+               BarkNews( ev.source );
+	    SYSEVENT_LEFTAREA:
+		break;
+        endcase
+        
+        // TODO: ReturnToPost();
+    endwhile
+endprogram
+
+
+function Run( opponent )
+    TurnAwayFrom( opponent );
+
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA );
+    //SetOpponent( opponent );
+
+    var waittime;
+  outer:
+    while (opponent and !opponent.dead)
+        waittime := OpenDistance( opponent ) * 15;
+
+        var ev := wait_for_event( waittime );
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+                if (ev.text["hold"])
+                    say( "Very well then." );
+                    break outer;
+                endif
+            
+            SYSEVENT_DISENGAGED:
+                if (ev.source.serial = opponent.serial)
+                    say( "Whew!" );
+                    break outer;
+                endif
+
+            SYSEVENT_ENGAGED:
+            SYSEVENT_DAMAGED:
+                if (ev.source)
+                    if (ev.source.serial != opponent.serial)
+                        say( "Ack! Leave me alone!" );
+                    else
+                        if (ev.type = "damage")
+			    say("Ouch! Heeelp!");
+                            //print( "I just took " + ev.damage + " points of damage." );
+                        endif
+                    endif
+                endif
+
+            SYSEVENT_OPPONENT_MOVED:
+                
+                
+            SYSEVENT_ENTEREDAREA:
+            SYSEVENT_LEFTAREA:
+                // ignore both of these
+        endcase
+    endwhile
+
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    SetWarMode( 0 );
+endfunction
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  OpenDistance - open the distance between self and an opponent.
+//  Returns: 1 if distance is 10 (no move necessary)
+//           0 if distance is < 10 (may still need to move)
+//
+/////////////////////////////////////////////////////////////////////////////
+function OpenDistance( opponent )
+    case Distance( me, opponent )
+        10:
+            return 1;
+        
+        default:
+            RunAwayFrom( opponent );
+            return 0;
+    endcase
+endfunction
+
+function BarkNews( who )
+
+    var save_facing := me.facing;
+
+    TurnToward( who );
+
+var news := getGlobalProperty("nws");
+var newsitem;
+foreach newsitem in news
+        say(newsitem);
+        sleep(2);
+endforeach
+
+    if (save_facing != me.facing)
+        Move( save_facing );
+    endif
+endfunction
+
+function addnews(thegm)
+var newnews := SendTextEntryGump( thegm, "What news item shall I tell people?");
+if (!newnews)
+        return;
+endif
+
+var tnews := getGlobalProperty("nws");
+tnews.append(newnews);
+setGlobalProperty("nws", tnews);
+say("I shall take your message to the people");
+endfunction
+
+function FillInArrays()
+
+    var news := getGlobalProperty("nws");
+    var datalen;
+    var layoutlen;
+    var prev_y := cint(80);
+    var datindx;
+    var buttonret := 1;
+    var playercount := 0;
+    layout[GetLayoutLength()+1] := "page " + pagecount;
+    if( news.size() > 19)
+        layout[GetLayoutLength()+1] := "button 285 465 2648 2647 0 " + (pagecount + 1);
+    endif
+    foreach player in news
+    
+        playercount := playercount + 1;
+
+        datalen := GetDataLength();
+        layoutlen := GetLayoutLength();
+
+        datindx := datalen+1;
+        data[datindx] := player;
+        if( playercount = 20 or playercount = 39 or playercount = 58 or playercount = 77 or playercount = 96)
+
+            pagecount := pagecount + 1;
+            layout[GetLayoutLength()+1] := "page " + pagecount;
+            prev_y := 80;
+            //add page turners
+
+            layout[GetLayoutLength()+1] := "button 285 85 2650 2651 0 " + (pagecount - 1);
+            if( len(EnumerateOnlineCharacters()) > playercount + 19)
+                layout[GetLayoutLength()+1] := "button 285 465 2648 2647 0 " + (pagecount + 1);
+            endif
+        endif
+
+        layout[GetLayoutLength()+1] := ("text 20 " + cstr(prev_y + 20) + " 40 " + datalen);
+        layout[GetLayoutLength()+1] := ("button 260 " + cstr(prev_y + 20) + " 2640 2641 1 0 " + buttonret);
+
+        prev_y := prev_y + 20;
+        buttonret := buttonret + 1;
+    
+    endforeach
+
+endfunction
+function GetLayoutLength();
+    return (len(layout));
+endfunction
+
+function GetDataLength();
+    return (len(data));
+endfunction
+
+function editnews(who)
+
+fillinarrays();
+    var result := SendDialogGump( who, layout, data );
+
+    var name := result[0];
+    var news := getGlobalProperty("nws");
+
+    news.erase(name);
+    setGlobalProperty("nws", news);
+    say("I shall no  longer broadcast that message!");
+endfunction

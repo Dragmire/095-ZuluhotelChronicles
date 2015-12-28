@@ -1,0 +1,11 @@
+Use uo;
+
+Program UnEquip( Who, Backpack )
+
+    If( !Who.cmdlevel )
+    Return 0;
+    Else
+    SendSysMessage( Who, "You take the backpack." );
+    Endif
+    
+Endprogram

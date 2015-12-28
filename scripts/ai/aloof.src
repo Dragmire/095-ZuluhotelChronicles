@@ -1,0 +1,177 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  meek.src: Run from nasty players
+//
+//  TODO: Some server support for only paying attention to 'enteredarea'
+//        and 'leftarea' events from PCs would be nice.
+//        we just use the graphic at the moment, so we'd fight
+//        NPCs too.  Oh well.
+//
+//  Author: Racalac, adapted from ENS' "killpcs.src"
+//
+//  Created: 4/98
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/anchors";
+include "ai/setup/modsetup";
+
+const HALT_THRESHOLD := 2; // how close before he barks?
+
+// TODO: move these to OBJTYPE.INC
+
+const UOBJ_HUMAN_MALE   := 0x190;
+const UOBJ_HUMAN_FEMALE := 0x191;
+
+var me := Self();
+if( me.name["<random>"] )
+   SetName ( me , RandomName( me ) );
+endif
+
+
+program Aloof()
+drop_anchor();
+    EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED,HALT_THRESHOLD);
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_OPPONENT_MOVED );
+ 
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+    SetWarMode( 0 );
+    set_priority(20);
+
+    var ev;
+    while (1)
+        ev := os::wait_for_event( 10 );
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+                // We ignore speech
+                break;
+
+            SYSEVENT_ENGAGED:
+                Fight( ev.source );
+            EVID_PEACEMADE:
+                        break;
+            SYSEVENT_DAMAGED:
+                if (ev.source)
+                    Fight( ev.source );
+                endif
+
+            SYSEVENT_ENTEREDAREA:
+                if (ev.source.graphic in array( UOBJ_HUMAN_MALE, UOBJ_HUMAN_FEMALE ))
+                    Fight( ev.source );
+                endif
+
+        endcase	
+
+	NPCwander();
+    endwhile
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  These types fight until you damage them enough or back away
+//
+/////////////////////////////////////////////////////////////////////////////
+
+function Fight( opponent )
+
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA );
+    SetOpponent( opponent );
+
+    var waittime;
+  outer:
+    while (opponent and !opponent.dead)
+        waittime := CloseDistance( opponent ) * 15;
+
+        var ev := wait_for_event( waittime );
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+                break;
+            
+            SYSEVENT_DISENGAGED:
+                    SetWarMode( 0 );
+                break outer;
+
+            SYSEVENT_ENGAGED:
+            SYSEVENT_DAMAGED:
+		if( me.hp <= ( 0.1 * me.maxhp ) )
+		    OpenDistance( opponent );
+		    SetWarMode( 0 );
+		endif
+                break outer;
+            EVID_PEACEMADE:
+                        opponent := 0;
+                        break;
+            SYSEVENT_OPPONENT_MOVED:
+                break; // just waking up is enough
+                
+            SYSEVENT_ENTEREDAREA:
+            SYSEVENT_LEFTAREA:
+                // ignore both of these
+        endcase
+    endwhile
+
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    SetWarMode( 0 );
+endfunction
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        
+        2:
+            WalkToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+
+        default:
+            RunToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+    endcase
+endfunction
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  OpenDistance - open the distance between self and an opponent.
+//  Returns: 1 if distance is 10 (no move necessary)
+//           0 if distance is < 10 (may still need to move)
+//
+/////////////////////////////////////////////////////////////////////////////
+function OpenDistance( opponent )
+    case Distance( me, opponent )
+        10:
+            return 1;
+        
+        default:
+            RunAwayFrom( opponent );
+            return 0;
+    endcase
+endfunction

@@ -1,0 +1,23 @@
+///////////////////////////////////////////////////////////
+// CreatePoint.src
+//
+// Script that runs on creation of a spawn point.
+//
+// Creator: Mercy
+// Contact: mkow@sympatico.ca
+//
+// Created: 12-Sept-2000
+// Updated: 12-Sept-2000
+//
+///////////////////////////////////////////////////////////
+
+
+include "include/managers";
+
+
+program CreateSpawnPoint(point)
+
+	SendSpawnPointEvent( EVID_SPAWNPOINT_CREATED, point );
+	return 1;
+	
+endprogram

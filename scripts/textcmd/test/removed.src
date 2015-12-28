@@ -1,0 +1,36 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program TextCMD_SetRank( Who, Text )
+
+    If ( ( Text == "" ) or ( !Text ) )
+    SendSysMessage( Who, ".donator <basic, elite, pro>" );
+    Return;
+    Endif
+
+    Var Donator := Target( Who );
+    Var DAcct   := Donator.acct;
+
+    If( text == "basic" )
+    DAcct.EraseProp( "BasicDonator", 1 );
+    Elseif( text == "elite" )
+    DAcct.EraseProp( "BasicDonator", 1 );
+    DAcct.EraseProp( "EliteDonator", 1 );
+    Elseif( text == "pro" )
+    DAcct.EraseProp( "BasicDonator", 1 );
+    DAcct.EraseProp( "EliteDonator", 1 );
+    DAcct.EraseProp( "ProDonator", 1 );
+    Else
+    SendSysMessage( Who, ".donator <basic, elite, pro>" );
+    Endif
+
+    SendSysMessage( Who, Donator.name + "'s donator membership has been set.");
+
+Endprogram

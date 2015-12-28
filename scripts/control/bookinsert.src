@@ -1,0 +1,15 @@
+// Bookcase Spawning system  version .1
+// created December 7, 2000
+// designed by Bishop Ebonhand and Zulu
+
+use uo;
+use os;
+
+program can_insert(who, backpack, item)
+  if(who.cmdlevel>=2 || GetObjProperty(backpack,"casecity")!=1)
+    return 1;
+  else
+    PrintTextAbovePrivate(backpack, "You cannot store things there.", who);
+    return 0;
+  endif
+endprogram

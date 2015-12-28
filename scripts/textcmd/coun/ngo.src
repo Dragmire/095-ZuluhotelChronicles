@@ -1,0 +1,83 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com)
+   Version: 1.7
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use cfgfile;
+
+Include "include/client";
+Include "include/gumps";
+
+Program ShowProtections( who )
+
+    
+    Var X := 75;
+    Var Y := 75;
+    Var Locations_Cfg := ReadConfigFile( "Locations" );
+    
+    GFInitGump();
+    GFPage( 0 );
+    GFResizePic( X, ( Y - 20 ), 2600, 250, 300 );
+    
+    
+    
+    GFTextLine( ( X + 60 ), Y, 2601, "Aldemorr" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 5 ), 2103,  2104, 1, 1 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 20 ), 2601, "Kordula" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 25 ), 2103,  2104, 1, 2 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 40 ), 2601, "Levenaude" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 45 ), 2103,  2104, 1, 3 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 60 ), 2601, "Jade" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 65 ), 2103,  2104, 1, 4 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 80 ), 2601, "Yorkshire" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 85 ), 2103,  2104, 1, 5 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 100 ), 2601, "Mandrake" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 105 ), 2103,  2104, 1, 6 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 120 ), 2601, "Fargo" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 125 ), 2103,  2104, 1, 7 );
+
+    GFTextLine( ( X + 60 ), ( Y + 140 ), 2601, "Gandlathar" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 145 ), 2103,  2104, 1, 8 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 160 ), 2601, "Village Mid Island" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 165 ), 2103,  2104, 1, 9 );
+    
+    GFTextLine( ( X + 60 ), ( Y + 180 ), 2601, "Village Mid Right Island" ) ;
+    GFButtonID( ( X + 20 ), ( Y + 185 ), 2103,  2104, 1, 10 );
+    
+    Var Result := GFSendGump( Who );
+    
+    Case( Result[0] )
+    1:
+    MoveCharacterToLocation( Who, 1912, 2163, 20, MOVECHAR_FORCELOCATION );
+    2:
+    MoveCharacterToLocation( Who, 2676, 3191, 0, MOVECHAR_FORCELOCATION );
+    3:
+    MoveCharacterToLocation( Who, 2335, 3160, 0, MOVECHAR_FORCELOCATION );
+    4:
+    MoveCharacterToLocation( Who, 845, 2026, 0, MOVECHAR_FORCELOCATION );
+    5:
+    MoveCharacterToLocation( Who, 2930, 1327, 0, MOVECHAR_FORCELOCATION );
+    6:
+    MoveCharacterToLocation( Who, 4223, 1458, 0, MOVECHAR_FORCELOCATION );
+    7:
+    MoveCharacterToLocation( Who, 3666, 390, 0, MOVECHAR_FORCELOCATION );
+    8:
+    MoveCharacterToLocation( Who, 879, 943, 5, MOVECHAR_FORCELOCATION );
+    9:
+    MoveCharacterToLocation( Who, 2833, 2236, 0, MOVECHAR_FORCELOCATION );
+    10:
+    MoveCharacterToLocation( Who, 4223, 2979, 0, MOVECHAR_FORCELOCATION );
+    Endcase
+
+EndProgram

@@ -1,0 +1,38 @@
+//Created by Jose Eduardo Lazaretti (Greven)
+
+use os;
+use uo;
+
+include "include/random";
+include "include/attributes";
+
+program DonatorEggs( who, item)
+
+ var acct := who.acct;
+
+ if(!acct.GetProp("BasicDonator"))
+     sendsysmessage(who,"You isn't able to use this item");
+     return;
+ endif
+
+ if(!ReserveItem(item))
+     return;
+ endif
+
+ SendSysMessage( who, "The egg begins to move and" );
+
+ var dragon, masteralone := Random(100);
+ var temp:=0;
+
+ var newpet := CreateNpcFromTemplate( getobjproperty(item,"tipo"), who.x, who.y, who.z );
+
+ SendSysMessage( who, "A baby " + newpet.name + " appears and accepts you as his master!");
+ SetObjProperty (newpet, "master", who.serial);
+ SetObjProperty (newpet, "prevtamed", 1);
+ newpet.script := "tamed";
+ RestartScript (newpet);
+
+ SubtractAmount( item, 1 );
+
+
+endprogram

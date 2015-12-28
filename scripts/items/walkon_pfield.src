@@ -1,0 +1,52 @@
+////////
+// paralyze.src
+//
+// Paralyzes the target for 15 seconds.
+//
+// Author: Racalac, 4/29/99
+//
+// Note: DW, you should REALLY write your own comment headers :P
+////////
+
+
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/objtype";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program walkon_pfield( who, item )
+
+	var diff    := 40;
+	var points  := 25;
+	var power   := 2;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+	if( GetObjProperty( item, "ByTrueMage" ) )
+		power := CInt( power * CLASSE_BONUS );
+	endif
+	
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	var plvl := CInt(ResistedDefinedSkillGain( creator,who,RandomDiceStr( "1d" + power ),diff,points ));
+	if( plvl )
+		PlaySoundEffect( item, SFX_SPELL_POISON_FIELD );
+		SetPoison( who, plvl, "You've been poisoned!" );
+	endif
+
+endprogram

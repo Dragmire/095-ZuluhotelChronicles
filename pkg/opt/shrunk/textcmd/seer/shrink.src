@@ -1,0 +1,163 @@
+//look way down at the bottom and change:
+//	dolly.usescript := ":dundee:shrunknpcs";
+//to whatever package you place shrunknpcs in.
+//
+
+use uo;
+use cfgfile;
+
+include "include/npcbackpacks";
+include "include/attributes";
+include "include/myutil";
+include "include/itemutil";
+
+program textcmd_shrink( who )
+
+	SendSysMessage( who, "Shrink what?" );
+	var mobile := Target( who );
+	if (!mobile)
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	var dolly := CreateItemInContainer(who.backpack,0xba32,1);
+	if (!dolly)	SendSysMessage(who,"No dolly!"); return; endif
+	var mykeywords := {};
+	if ( GetObjProperty(mobile,"mykeywords") )
+		mykeywords := GetObjProperty(mobile,"mykeywords");
+		SetObjProperty(dolly,"mykeywords",mykeywords);
+		foreach word in mykeywords
+			var keywordreply := GetObjProperty(mobile,word);
+			SetObjProperty(dolly,word,keywordreply);
+		endforeach
+	endif
+
+	if (mobile.isA(POLCLASS_NPC))
+		SetObjProperty(dolly,"npctemplate",mobile.npctemplate);
+		SetObjProperty(dolly,"script",mobile.script);
+	else
+		SetObjProperty(dolly,"npctemplate","townperson");
+		SetObjProperty(dolly,"script","helppcs");
+	endif
+
+	SetObjProperty(dolly,"graphic",mobile.graphic);
+	dolly.color := mobile.color;
+	dolly.name  := mobile.name;
+
+	var trackingcfg := ReadConfigFile(":tracking:tracking");
+	var elem := FindConfigElem(trackingcfg, mobile.graphic);
+	if (elem)
+		dolly.graphic := elem.tile;
+	else
+		dolly.graphic := 0x20f8;
+	endif
+
+	var equippack := CreateItemInContainer(dolly,0xe75,1);
+	SetObjProperty(dolly,"equippack",equippack.serial);
+	foreach item in ListEquippedItems(mobile)
+		if ( item != mobile.backpack )
+			var newitem := CreateItemInContainer(equippack, item.objtype, 1 );
+			DupeItem( item, newitem );
+			if( item.usescript )
+				newitem.usescript := item.usescript;
+			endif
+		endif
+	endforeach
+
+	var lootbag := CreateItemInContainer(dolly,0xe75,1);
+	SetObjProperty(dolly,"lootbag",lootbag.serial);
+	var mypack := FindMyPack(mobile);
+
+	foreach item in ListRootItemsInContainer(mypack)
+		var newitem := CreateItemInContainer(lootbag, item.objtype, item.amount);
+		DupeItem( item, newitem );
+		if( item.usescript )
+			newitem.usescript := item.usescript;
+		endif
+	endforeach
+
+	if (mobile.backpack)
+		foreach item in ListRootItemsInContainer(mobile.backpack)
+			var newitem := CreateItemInContainer(lootbag, item.objtype, item.amount);
+			if (item.name) newitem.name := item.name; endif
+			newitem.color := item.color;
+			newitem.graphic := item.graphic;
+			newitem.newbie := item.newbie;
+			if (GetObjProperty(item,"bookcontent") )
+				SetObjProperty(newitem,"bookcontent", GetObjProperty(item,"bookcontent") );
+			endif
+		endforeach
+	endif
+
+	SetObjProperty(dolly,"str",(GetStrength(mobile) - GetStrengthMod(mobile)));
+	SetObjProperty(dolly,"int",(GetIntelligence(mobile) - GetIntelligenceMod(mobile)));
+	SetObjProperty(dolly,"dex",(GetDexterity(mobile) - GetDexterityMod(mobile)));
+	SetObjProperty(dolly,"strmod",GetStrengthMod(mobile));
+	SetObjProperty(dolly,"intmod",GetIntelligenceMod(mobile));
+	SetObjProperty(dolly,"dexmod",GetDexterityMod(mobile));
+
+	var skills := {};
+	for i := 0 to 48
+		skills[i + 1] := GetEffectiveSkill( mobile, i );
+	endfor
+
+	SetObjProperty(dolly,"skills",skills);
+	SetObjProperty(dolly,"gender",mobile.gender);
+	SetObjProperty(dolly,"graphic",mobile.graphic);
+
+	if (GetObjProperty(mobile, "untamable"))
+		SetObjProperty(dolly, "untamable", 1);
+	endif
+
+	if(GetObjProperty(mobile, "tamableAt"))
+		SetObjProperty(dolly, "tamableAt", GetObjProperty(mobile, "tamableAt"));
+	endif
+
+	if(GetObjProperty(mobile, "summoned"))
+		SetObjProperty(dolly, "summoned", GetObjProperty(mobile, "summoned"));
+	endif
+
+	if(GetObjProperty(mobile, "Animated"))
+		SetObjProperty(dolly, "Animated", GetObjProperty(mobile, "Animated"));
+	endif
+
+	if(GetObjProperty(mobile, "Karma"))
+		SetObjProperty(dolly, "Karma", GetObjProperty(mobile, "Karma"));
+	endif
+
+	if(GetObjProperty(mobile, "Fame"))
+		SetObjProperty(dolly, "Fame", GetObjProperty(mobile, "Fame"));
+	endif
+
+	if(GetObjProperty(mobile, "noloot"))
+		SetObjProperty(dolly, "noloot", GetObjProperty(mobile, "noloot"));
+	endif
+
+	if(GetObjProperty(mobile, "Type"))
+		SetObjProperty(dolly, "Type", GetObjProperty(mobile, "Type"));
+	endif
+
+	var possible_prots := { "PermPoisonImmunity",
+			 	  "PermMagicImmunity",
+			 	  "Permmr",
+			 	  "FireProtection",
+			 	  "WaterProtection",
+			 	  "AirProtection",
+			 	  "EarthProtection",
+			 	  "FreeAction",
+			 	  "NecroProtection",
+			 	  "HolyProtection",
+			 	  "PhysicalProtection",
+			 	  "HealingIncrease" };
+			 	 
+	foreach prot in possible_prots
+		if( GetObjProperty( mobile, prot ) )
+			SetObjProperty( dolly, prot, GetObjProperty( mobile, prot ) );
+		endif
+	endforeach
+
+	SetObjProperty( dolly, "TrueColor", mobile.truecolor );
+	dolly.usescript := ":shrunk:shrunknpcs";
+	SendSysMessage(who,"Done!");
+
+endprogram

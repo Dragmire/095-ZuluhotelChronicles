@@ -1,0 +1,140 @@
+use uo;
+use os;
+
+const X := 210;
+const Y := 175;
+const PROPID_MOBILE_PAGING				:= "#Paging";
+const CMDLEVEL_COUNSELOR	:= 1;
+const CMDLEVEL_GAME_MASTER	:= 3;
+const PROPID_GLOBAL_STAFF_PAGES				:= "gmpages";
+const GUMPID_BKGND_FANCY			:= 2600;	// Fancy corner gray background
+const GUMPID_CHECKBOX_GRAY_0			:= 210;
+const GUMPID_CHECKBOX_GRAY_1			:= 211;
+const SCRIPT_GLOBAL_OBJECT := ":shillhooks:skillsdef:attributecore";
+
+program help( who2 )
+	var who := who2[1];
+
+	if( GetObjProperty( who, PROPID_MOBILE_PAGING) )
+		SendSysMessage( who, "You're already paging." );
+		return 0;
+	else
+		SetObjProperty( who, PROPID_MOBILE_PAGING, 1 );
+	endif
+
+	var layout := array(
+		"page 0",
+		"nodispose",
+		"resizepic " + (X+0) + " " + (Y+0) + " " + GUMPID_BKGND_FANCY + " 350 215",
+		"text " + (X+115) + " " + (Y+20)  + " 683 0",
+		"text " + (X+55)  + " " + (Y+55)  + " 995 1",
+		"text " + (X+55)  + " " + (Y+80)  + " 995 2",
+		"text " + (X+55)  + " " + (Y+105) + " 995 3",
+		"text " + (X+55)  + " " + (Y+130) + " 995 4",
+		"text " + (X+50)  + " " + (Y+160) + " 683 5",
+		"text " + (X+75)  + " " + (Y+175) + " 683 6",
+		"button " + (X+30) + " " + (Y+57)  + " "  + GUMPID_CHECKBOX_GRAY_0 + " " + GUMPID_CHECKBOX_GRAY_1 + " 1 0 1",
+		"button " + (X+30) + " " + (Y+82)  + " "  + GUMPID_CHECKBOX_GRAY_0 + " " + GUMPID_CHECKBOX_GRAY_1 + " 1 0 2",
+		"button " + (X+30) + " " + (Y+107) + " "  + GUMPID_CHECKBOX_GRAY_0 + " " + GUMPID_CHECKBOX_GRAY_1 + " 1 0 3",
+		"button " + (X+30) + " " + (Y+132) + " "  + GUMPID_CHECKBOX_GRAY_0 + " " + GUMPID_CHECKBOX_GRAY_1 + " 1 0 0",
+		);
+	
+	var data := array(
+		"HELP MENU",
+		"General questions about Zuluhotel Chronicles.",
+		"My character is physically stuck.",
+		"I wish to page a Game Master.",
+		"Return to the game.",
+		"For more info, visit our webpage at",
+		"http://www.zhchronicles.com/"
+		);
+
+	var res := SendDialogGump( who, layout, data );
+	if( !res[0] )
+		EraseObjProperty( who, PROPID_MOBILE_PAGING );
+		return 0;
+	else
+		res := res[0];
+	endif
+
+	var min_level;
+	var staffs	:= array;
+	case( res )
+		1:
+		2:	min_level := CMDLEVEL_COUNSELOR;
+		3:	min_level := CMDLEVEL_GAME_MASTER;
+	endcase
+
+	foreach player in EnumerateOnlineCharacters()
+		if( player.cmdlevel >= min_level )
+			staffs.append( player );
+		endif
+	endforeach
+
+	if( !staffs.size() )
+		case( res )
+			1:
+			2:	SendSysMessage( who, "There's no staff online at the moment, please try again later.");
+			3:	SendSysMessage( who, "There's no game master online at the moment, please try again later.");
+		endcase
+		EraseObjProperty( who, PROPID_MOBILE_PAGING );
+		return 0;
+	endif
+
+	SendSysMessage(who, "Pay attention, please.",3,33);//Red	
+
+	var page_msg;
+	case( res )
+		1:	page_msg := RequestInput( who, who.backpack, "Type in your question:" );
+		2:	page_msg := "I'm stuck and cannot move, please help.";
+		3:	page_msg := RequestInput( who, who.backpack, "Type in your problem:" );
+	endcase
+
+	if( !page_msg )
+	foreach staff in staffs
+		SendSysMessage( staff, "Page Canceled by " + who.name + ".", 3, 33 );
+	endforeach
+		SendSysMessage( who, "Canceled." );
+		EraseObjProperty( who, PROPID_MOBILE_PAGING );
+		return 0;
+	endif
+
+	set_critical(1);
+	var pages := GetGlobalProperty( PROPID_GLOBAL_STAFF_PAGES );
+	if( !pages )
+		pages := {};
+	endif
+
+	var i;
+	var num_pages := pages.size();
+
+	for( i := 1; i <= num_pages; i := i + 2 )
+		if( pages[i] == who.serial )
+			pages[i+1] := page_msg;
+			break;
+		endif
+	endfor
+
+
+	if( i > num_pages )
+		SendSysMessage(who, "Available staff members have been notified of your request.",3,10);
+		SendSysMessage(who, "There is " + CInt(num_pages/2) + " pages queued ahead of you." );
+		pages[num_pages+1] := who.serial;
+		pages[num_pages+2] := page_msg;
+
+	else
+		SendSysMessage( who, "You had an existing page. It has been updated.",3,33 );
+	endif
+
+	SetGlobalProperty( PROPID_GLOBAL_STAFF_PAGES, pages );
+	set_critical(0);
+
+	foreach staff in staffs
+		SendSysMessage( staff, "Page from " + who.name + ":" );
+		SendSysMessage( staff, page_msg );
+	endforeach
+
+	EraseObjProperty( who, PROPID_MOBILE_PAGING );
+
+
+endprogram

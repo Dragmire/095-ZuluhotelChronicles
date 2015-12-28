@@ -1,0 +1,52 @@
+// Slaines 2007 Comments :
+// Note : This Script has been known to cause 100 sysload
+// If you have sysload issues, try disabling this script
+
+use uo;
+use npc;
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/bard";
+include "include/eventid";
+
+var npc := Self();
+
+set_critical(1);
+program herdedai()
+  var loops := 0;
+  var fs := ReadGameClock()+20;
+  var master := SystemFindObjectBySerial(GetObjProperty(npc,"master"));
+  if (!master)
+	KillPet(npc);
+	return;
+  endif
+  var it := 0;
+  while (!GetObjProperty(npc,"#sold") and ReadGameClock() <fs )
+	if (Distance(npc,master) > 1)
+  		RunToward(master);
+
+	endif
+	loops := loops + 1;
+	if (loops > 10 and Distance(npc,master) > 2)
+		MoveCharacterToLocation(npc,master.x,master.y,master.z, MOVECHAR_FORCELOCATION);
+		loops := 0;
+	endif
+	if (Distance(npc,master) < 2)
+		sleepms(200);
+	endif
+	sleepms(1);
+  endwhile
+  KillPet(npc);
+endprogram
+
+function KillPet(victim)
+	victim.frozen := 1;
+  	var originalscript := GetObjProperty(victim, "originalscript");
+	victim.script := originalscript;
+  	RestartScript(victim);
+	MoveCharacterToLocation(victim, 5445,1153,0, MOVECHAR_FORCELOCATION);
+	RevokePrivilege( victim, "invul" );
+	setobjproperty(victim,"guardkill",1);
+	applyrawdamage(victim,victim.maxhp+3);
+endfunction

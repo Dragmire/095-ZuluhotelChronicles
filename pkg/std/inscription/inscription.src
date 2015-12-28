@@ -1,0 +1,1734 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  inscription.src - Inscription skill
+//
+//  Modifications:
+//	  19990415 ENS Reformatted
+//	  20010321 Jaleem Added autolooping for scroll creation 
+//	  20010411 Jaleem Fixed autoloop bug 
+//	  20010505 Jaleem Commented out old set_priority()
+/////////////////////////////////////////////////////////////////////////////
+use uo;
+use basic;
+use cfgfile;
+use os;
+
+include "include/yesno";
+include "include/attributes";
+include "include/bitwise";
+include "include/objtype";
+include "include/skillpoints";
+include "include/itemutil";
+include "include/classes";
+include "include/string";
+include "include/random";
+include "include/autoloop";
+
+const SOUND_EFFECT_INSCRIPTION 	:= 0x50;
+const SOUND_EFFECT_SPARKLE 	:= 0x1e8;
+const EFFECT_SPARKLE 		:= 0x373a;
+const POINT_MULTIPLIER		:= 15;
+
+var config_file;
+
+
+program DoInscription( character )
+
+	var item;
+	var spellbooks := {
+	          UOBJ_SPELLBOOK,
+			      UOBJ_CODEX_DAMNORUM,
+			      UOBJ_EARTH_BOOK,
+			      UOBJ_TOME_OF_ENCHANTMENT,
+			      };
+ 
+	SendSysMessage( character, "What would you like to inscribe?" );
+ 
+	item := Target( character, TGTOPT_CHECK_LOS );
+  
+	if( !item )
+		return;
+	endif
+
+	if( !Accessible( character, item ) )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+ 
+	if( !IsInContainer( character.backpack, item ) )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( item.container != character.backpack )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( !ReserveItem( item ) )
+		return;
+	endif
+ 
+	config_file := ReadConfigFile( "inscription" );
+
+	if( item.objtype == UOBJ_BLANK_SCROLL )
+		set_script_option( SCRIPTOPT_NO_RUNAWAY, 1 );
+		WantToCreateScroll( character, item );
+	elseif( IsExceptionalItem( item ) )
+		var enchantment := GetObjProperty( item, "EnchantedWith" );
+		if( enchantment )
+			RechargeEngravedItem( character, item, enchantment );
+		else
+			EnchantItem( character, item );
+		endif
+	elseif( (item.objtype >= 0xa101) && (item.objtype <= 0xa110) )
+		InscribeNecroSpell( character, item );	
+	elseif( (item.objtype >= 0xb101) && (item.objtype <= 0xb110) )
+		InscribeEarthSpell( character, item );  
+	//elseif( (item.objtype >= 0x6167) and (item.objtype <= 0x6176) )
+	//	InscribeHolySpell( character , item );
+	elseif( (item.objtype >= 0xc101) && (item.objtype <= 0xc120) )
+		InscribeRitualSpell( character, item );	
+	elseif( item.objtype == UOBJ_RUNE )
+		CreateRunebook( character, item );	
+	elseif( item.objtype in spellbooks )
+		CopyBook( character, item );	
+	elseif( GetObjProperty( item, "Rechargeable" ) )
+		RechargeItem( character, item );	
+	else
+		SendSysMessage(character, "You can't inscribe that!");
+	endif
+
+endprogram
+
+
+function ChangeName( item, suffix )
+
+	var currdesc := CStr(item.desc);
+	var space := find( item.desc, "[", 1 );
+	if( space )
+		var first_part  := currdesc[1, (space-1)];
+		var second_part := currdesc[space, (len(currdesc) - space - 1)];
+		SetName( item, first_part + suffix + " " + second_part );
+		SetObjProperty( item, "BaseName", first_part + suffix + " " + second_part );
+	else
+		SetName( item, currdesc + " " + suffix );
+		SetObjProperty( item, "BaseName", currdesc + " " + suffix );
+	endif
+
+endfunction
+
+
+function ChooseEarthSpell( character, earthbook )
+
+	var layout := {
+			"page 0",
+			"gumppic 0 0 2203",
+			"text 40 10 28 0",
+			"text 200 10 28 1"
+			};
+
+	var lspellarray := { 0xb101, 0xb102, 0xb103, 0xb104, 0xb105, 0xb106, 0xb107, 0xb108 };
+	var gspellarray := { 0xb109, 0xb10a, 0xb10b, 0xb10c, 0xb10d, 0xb10e, 0xb10f, 0xb110 };
+	var bookarray := {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	var lesserbuttonlayout := {
+				"button 30 40 2104 2103 1 0 101",
+				"button 30 60 2104 2103 1 0 102",
+				"button 30 80 2104 2103 1 0 103",
+				"button 30 100 2104 2103 1 0 104",
+				"button 30 120 2104 2103 1 0 105",
+				"button 30 140 2104 2103 1 0 106",
+				"button 30 160 2104 2103 1 0 107",
+				"button 30 180 2104 2103 1 0 108"
+				};
+
+
+	var greaterbuttonlayout := {
+				"button 190 40 2104 2103 1 0 109",
+				"button 190 60 2104 2103 1 0 110",
+				"button 190 80 2104 2103 1 0 111",
+				"button 190 100 2104 2103 1 0 112",
+				"button 190 120 2104 2103 1 0 113",
+				"button 190 140 2104 2103 1 0 114",
+				"button 190 160 2104 2103 1 0 115",
+				"button 190 180 2104 2103 1 0 116"
+				};
+
+
+	var lessertextlayout := {
+				"text 50 35 0 ",
+				"text 50 55 0 ",
+				"text 50 75 0 ",
+				"text 50 95 0 ",
+				"text 50 115 0 ",
+				"text 50 135 0 ",
+				"text 50 155 0 ",
+				"text 50 175 0 "
+				};
+
+
+	var greatertextlayout := {
+				"text 210 35 0 ",
+				"text 210 55 0 ",
+				"text 210 75 0 ",
+				"text 210 95 0 ",
+				"text 210 115 0 ",
+				"text 210 135 0 ",
+				"text 210 155 0 ",
+				"text 210 175 0 "
+				};
+
+
+	var data 		:= {
+				"Circle 1 Scrolls",
+				"Circle 2 Scrolls"
+				};
+
+
+	var lesserspelldata := {
+				"Antidote",
+				"Owl Sight",
+				"Shifting Earth",
+				"Summon Mammals",
+				"Call Lightning",
+				"Earth Blessing",
+				"Earth Portal",
+				"Nature's Touch"
+				};
+	
+	
+	var greaterspelldata := {
+				"Gust of Air",
+				"Rising Fire",
+				"Shapeshift",
+				"Ice Strike",
+				"Earth Spirit",
+				"Flame Spirit",
+				"Storm Spirit",
+				"Water Spirit"
+				};
+
+
+	var i := 1;
+	var q := 8;
+	var ltotal := 0;
+	var gtotal := 0;
+
+	var layoutlen := len(layout);
+	var datalen := len(data);
+
+	var greaterflag := CInt(GetObjProperty( earthbook, "Greater" ));
+	var lesserflag := CInt(GetObjProperty( earthbook, "Lesser" ));
+
+	while (i < 9)
+		if (FlagCheck(lesserflag, i)==1)
+			ltotal := ltotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lesserbuttonlayout[ltotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lessertextlayout[ltotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := lesserspelldata[i];
+			bookarray[ltotal] := lspellarray[i];
+		endif
+		if (FlagCheck(greaterflag, i)==1)
+			gtotal := gtotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greaterbuttonlayout[gtotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greatertextlayout[gtotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := greaterspelldata[i];
+			q := 8 + gtotal;
+			bookarray[q] := gspellarray[i];
+		endif
+		i := i + 1;
+	 endwhile
+
+	SendSysMessage( character, "Select the spell you want to scribe." );
+  
+	var res := SendDialogGump( character, layout, data );						
+
+	if (res[0] < 100)
+		return 0;
+	endif
+
+	var selected := res[0] - 100;
+	selected := bookarray[selected];
+
+	return selected;
+
+endfunction
+
+
+function ChooseNecroSpell( character, codex )
+
+	var layout := {
+			"page 0",
+			"gumppic 30 30 2200",
+			"text 70 40 28 0",
+			"text 230 40 28 1"
+			};
+
+	var lspellarray 	:= { 0xa101, 0xa102, 0xa103, 0xa104, 0xa105, 0xa106, 0xa107, 0xa108 };
+	var gspellarray 	:= { 0xa109, 0xa10a, 0xa10b, 0xa10c, 0xa10d, 0xa10e, 0xa10f, 0xa110 };
+	var bookarray 	:= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	var lesserbuttonlayout := {
+					"button 60 70 2104 2103 1 0 101",
+					"button 60 90 2104 2103 1 0 102",
+					"button 60 110 2104 2103 1 0 103",
+					"button 60 130 2104 2103 1 0 104",
+					"button 60 150 2104 2103 1 0 105",
+					"button 60 170 2104 2103 1 0 106",
+					"button 60 190 2104 2103 1 0 107",
+					"button 60 210 2104 2103 1 0 108"
+					};
+
+
+	var greaterbuttonlayout := {
+					"button 220 70 2104 2103 1 0 109",
+					"button 220 90 2104 2103 1 0 110",
+					"button 220 110 2104 2103 1 0 111",
+					"button 220 130 2104 2103 1 0 112",
+					"button 220 150 2104 2103 1 0 113",
+					"button 220 170 2104 2103 1 0 114",
+					"button 220 190 2104 2103 1 0 115",
+					"button 220 210 2104 2103 1 0 116"
+					};
+
+
+	var lessertextlayout := {
+					"text 80 65 0 ",
+					"text 80 85 0 ",
+					"text 80 105 0 ",
+					"text 80 125 0 ",
+					"text 80 145 0 ",
+					"text 80 165 0 ",
+					"text 80 185 0 ",
+					"text 80 205 0 "
+					};
+
+
+	var greatertextlayout := {
+					"text 240 65 0 ",
+					"text 240 85 0 ",
+					"text 240 105 0 ",
+					"text 240 125 0 ",
+					"text 240 145 0 ",
+					"text 240 165 0 ",
+					"text 240 185 0 ",
+					"text 240 205 0 "
+					};
+
+
+	var data 		:= {
+					"Lesser Scrolls",
+					"Greater Scrolls"
+					};
+
+
+	var lesserspelldata := {
+					"Control Undead",
+					"Darkness",
+					"Decaying Ray",
+					"Spectre's Touch",
+					"Abyssal Flame",
+					"Animate Dead",
+					"Sacrifice",
+					"Wraith's Breath"
+					};
+
+
+	var greaterspelldata := {
+					"Sorcerer's Bane",
+					"Summon Spirit",
+					"Wraithform",
+					"Wyvern Strike",
+					"Kill",
+					"Liche",
+					"Plague",
+					"Spellbind"
+					};
+
+	var i := 1;
+	var q := 8;
+	var ltotal := 0;
+	var gtotal := 0;
+
+	var layoutlen := len( layout );
+	var datalen := len( data );
+
+	var greaterflag := GetObjProperty( codex, "Greater" );
+	var lesserflag := GetObjProperty( codex, "Lesser" );
+
+	greaterflag := CInt( greaterflag );
+	lesserflag := CInt( lesserflag );
+
+	while (i < 9)
+		if( FlagCheck( lesserflag, i ) == 1 )
+			ltotal := ltotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lesserbuttonlayout[ltotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := lessertextlayout[ltotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := lesserspelldata[i];
+			bookarray[ltotal] := lspellarray[i];
+		endif
+	
+		if( FlagCheck( greaterflag, i ) == 1 )
+			gtotal := gtotal + 1;
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greaterbuttonlayout[gtotal];
+			layoutlen := layoutlen + 1;
+			layout[layoutlen] := greatertextlayout[gtotal] + CStr(1 + ltotal + gtotal);
+			datalen := datalen + 1;
+			data[datalen] := greaterspelldata[i];
+			q := 8 + gtotal;
+			bookarray[q] := gspellarray[i];
+		endif
+	
+		i := i + 1;
+	endwhile
+
+	SendSysMessage( character, "Select the spell you want to scribe." );
+		
+	var res := SendDialogGump( character, layout, data );						
+
+	if( res[0] < 100 )
+		return 0;
+	endif
+
+	var selected := res[0] - 100;
+	selected := bookarray[selected];
+
+	return selected;
+
+endfunction
+
+/*function ChooseHolySpell( character , holybook )
+
+	var layout := {
+			"page 0",
+			"gumppic 0 0 2203",
+			"text 40 10 28 0",
+			"text 200 10 28 1"
+			};
+
+	var LSpellArray := { 0x6167 , 0x6168 , 0x6169 , 0x616a , 0x616b , 0x616c , 0x616d , 0x616e };
+	var GSpellArray := { 0x616f , 0x6170 , 0x6171 , 0x6172 , 0x6173 , 0x6174 , 0x6175 , 0x6176 };
+	var BookArray := {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	var LesserButtonLayout := {
+				"button 30 40 2104 2103 1 0 101",
+				"button 30 60 2104 2103 1 0 102",
+				"button 30 80 2104 2103 1 0 103",
+				"button 30 100 2104 2103 1 0 104",
+				"button 30 120 2104 2103 1 0 105",
+				"button 30 140 2104 2103 1 0 106",
+				"button 30 160 2104 2103 1 0 107",
+				"button 30 180 2104 2103 1 0 108"
+				};
+
+
+	var GreaterButtonLayout := {
+				"button 190 40 2104 2103 1 0 109",
+				"button 190 60 2104 2103 1 0 110",
+				"button 190 80 2104 2103 1 0 111",
+				"button 190 100 2104 2103 1 0 112",
+				"button 190 120 2104 2103 1 0 113",
+				"button 190 140 2104 2103 1 0 114",
+				"button 190 160 2104 2103 1 0 115",
+				"button 190 180 2104 2103 1 0 116"
+				};
+
+
+	var LesserTextLayout := {
+				"text 50 35 0 ",
+				"text 50 55 0 ",
+				"text 50 75 0 ",
+				"text 50 95 0 ",
+				"text 50 115 0 ",
+				"text 50 135 0 ",
+				"text 50 155 0 ",
+				"text 50 175 0 "
+				};
+
+
+	var GreaterTextLayout := {
+				"text 210 35 0 ",
+				"text 210 55 0 ",
+				"text 210 75 0 ",
+				"text 210 95 0 ",
+				"text 210 115 0 ",
+				"text 210 135 0 ",
+				"text 210 155 0 ",
+				"text 210 175 0 "
+				};
+
+
+	var data 		:= {
+				"Circle 1 Scrolls",
+				"Circle 2 Scrolls"
+				};
+
+
+	var LesserSpellData := {
+				"Grand Feast",
+				"Turn Undead",
+				"Light of Day",
+				"Angelic Aura",
+				"Holy Bolt",
+				"Seraphim's Will",
+				"Angelic Gate",
+				"Remove Curse"
+				};
+
+
+	var GreaterSpellData := {
+				"Wrath of God",
+				"Divine Fury",
+				"Astral Storm",
+				"Enlightenment",
+				"Revive",
+				"Sanctuary",
+				"Summon Guardian",
+				"Apocolypse"
+				};
+
+
+	var i := 1;
+	var q := 8;
+	var LTotal := 0;
+	var GTotal := 0;
+
+	var LayoutLen := len(layout);
+	var DataLen := len(data);
+
+	var GreaterFlag := Cint(GetObjProperty( holybook , "Greater" ));
+	var LesserFlag := Cint(GetObjProperty( holybook , "Lesser" ));
+
+	while (i < 9)
+		if (FlagCheck(LesserFlag, i)==1)
+			LTotal := LTotal + 1;
+			LayoutLen := LayoutLen + 1;
+			layout[LayoutLen] := LesserButtonLayout[LTotal];
+			LayoutLen := LayoutLen + 1;
+			layout[LayoutLen] := LesserTextLayout[LTotal] + Cstr(1 + LTotal + GTotal);
+			DataLen := DataLen + 1;
+			data[DataLen] := LesserSpellData[i];
+			BookArray[LTotal] := LSpellArray[i];
+		endif
+		if (FlagCheck(GreaterFlag, i)==1)
+			GTotal := GTotal + 1;
+			LayoutLen := LayoutLen + 1;
+			layout[LayoutLen] := GreaterButtonLayout[GTotal];
+			LayoutLen := LayoutLen + 1;
+			layout[LayoutLen] := GreaterTextLayout[GTotal] + Cstr(1 + LTotal + GTotal);
+			DataLen := DataLen + 1;
+			data[DataLen] := GreaterSpellData[i];
+			q := 8 + GTotal;
+			BookArray[q] := GSpellArray[i];
+		endif
+		i := i + 1;
+	 endwhile
+
+	SendSysMessage( character , "Select the spell you want to scribe." );
+
+	var res := SendDialogGump( character , layout , data );
+
+	if (res[0] < 100)
+		return 0;
+	endif
+
+	var selected := res[0] - 100;
+	selected := BookArray[selected];
+
+	return selected;
+
+endfunction*/
+
+function ChooseRitualSpell( character, tome )
+
+	var layout	:= array( "page 0", "gumppic 0 0 2201" );
+	var data	:= array();
+
+	var leftbuttonlayout := {
+		"button 30 40  2104 2103 1 0 ",
+		"button 30 60  2104 2103 1 0 ",
+		"button 30 80  2104 2103 1 0 ",
+		"button 30 100 2104 2103 1 0 ",
+		"button 30 120 2104 2103 1 0 ",
+		"button 30 140 2104 2103 1 0 ",
+		"button 30 160 2104 2103 1 0 ",
+		"button 30 180 2104 2103 1 0 "};
+
+	var rightbuttonlayout := {
+		"button 190 40  2104 2103 1 0 ",
+		"button 190 60  2104 2103 1 0 ",
+		"button 190 80  2104 2103 1 0 ",
+		"button 190 100 2104 2103 1 0 ",
+		"button 190 120 2104 2103 1 0 ",
+		"button 190 140 2104 2103 1 0 ",
+		"button 190 160 2104 2103 1 0 ",
+		"button 190 180 2104 2103 1 0 "};
+
+	var lefttextlayout := {
+		"text 50 35  0 ",
+		"text 50 55  0 ",
+		"text 50 75  0 ",
+		"text 50 95  0 ",
+		"text 50 115 0 ",
+		"text 50 135 0 ",
+		"text 50 155 0 ",
+		"text 50 175 0 "};
+
+	var righttextlayout := {
+		"text 210 35  0 ",
+		"text 210 55  0 ",
+		"text 210 75  0 ",
+		"text 210 95  0 ",
+		"text 210 115 0 ",
+		"text 210 135 0 ",
+		"text 210 155 0 ",
+		"text 210 175 0 "};
+
+	var c1spellarray := { 0xc101, 0xc102, 0xc103, 0xc104, 0xc105, 0xc106, 0xc107, 0xc108 };
+	var c2spellarray := { 0xc109, 0xc10a, 0xc10b, 0xc10c, 0xc10d, 0xc10e, 0xc10f, 0xc110 };
+	var c3spellarray := { 0xc111, 0xc112, 0xc113, 0xc114, 0xc115, 0xc116, 0xc117, 0xc118 };
+	var c4spellarray := { 0xc119, 0xc11a, 0xc11b, 0xc11c, 0xc11d, 0xc11e, 0xc11f, 0xc120 };
+	var bookarray    := { };
+
+	var c1spelldata := {
+		"Channel Mana",
+		"Consecration",
+		"Free Movement",
+		"Quick Healing",
+		"Regeneration",
+		"Resilience",
+		"Restoration",
+		"Venom Bane"	};
+
+	var c2spelldata := {
+		"Cursing",
+		"Disenchantment",
+		"Elemental Ward",
+		"Mana Flux",
+		"Planar Ward",
+		"Sanctifying",
+		"Skill Infusion",
+		"Venom Mastery" };
+
+	var c3spelldata := {
+		"Bloodseeking",
+		"Hardening",
+		"Mana Dimissal",
+		"Physical Ward",
+		"Protective Aura",
+		"Spell Bouncing",
+		"Spell Warding",
+		"Vital Infusion"};
+
+	var c4spelldata := {
+		"Advanced Theurgy",
+		"Attunement",
+		"Basic Theurgy",
+		"Enhancement",
+		"Immutability",
+		"Perilous Theurgy",
+		"Purification",
+		"Racial Theurgy"};
+  
+
+	var pagecount	:= 0;
+	var percircle := 8;
+
+	var	c1flag := GetObjProperty( tome, "Circle1" ),
+		c2flag := GetObjProperty( tome, "Circle2" ),
+		c3flag := GetObjProperty( tome, "Circle3" ),
+		c4flag := GetObjProperty( tome, "Circle4" );
+	
+	
+	var 	circles := {	{ c1flag, c1spellarray, c1spelldata,
+				  c2flag, c2spellarray, c2spelldata },
+				
+				{ c3flag, c3spellarray, c3spelldata,
+				  c4flag, c4spellarray, c4spelldata }	};
+			
+
+	foreach circle in circles
+
+		var i		:= 1;
+	
+		var lefttotal	:= 0;
+		var righttotal := 0;
+	
+		var leftflag	:= circle[1];
+		var leftarray	:= circle[2];
+		var leftdata	:= circle[3];
+	
+		var rightflag	:= circle[4];
+		var rightarray := circle[5];
+		var rightdata	:= circle[6];
+		
+		pagecount := pagecount + 1;
+		layout.append( "page " + pagecount );
+		if( pagecount != 1 )
+			layout.append( "button 24 4 2235 2235 0 " + ( pagecount-1 ) );
+		endif
+	
+		if( pagecount != len(circles) )
+			layout.append( "button 294 4 2236 2236 0 " + ( pagecount + 1 ) );
+		endif
+	
+		case( pagecount )
+			1:	layout.append( "text 45  10 5 " + len(data) );
+				data.append( "Lesser Ritual" );
+				layout.append( "text 205 10 5 " + len(data) );
+				data.append( "Adept Ritual" );
+				break;
+		
+			2:	layout.append( "text 45  10 5 " + len(data) );
+				data.append( "Greater Ritual" );
+				layout.append( "text 205 10 5 " + len(data) );
+				data.append( "Master Ritual" );
+				break;	
+		endcase
+
+		while( i <= percircle )
+			if( FlagCheck( leftflag, i ) == 1 )
+				lefttotal := lefttotal + 1;
+				bookarray.append( leftarray[i] );
+				layout.append( leftbuttonlayout[lefttotal] + len(bookarray) );
+				layout.append( lefttextlayout[lefttotal] + len(data) );
+				data.append( leftdata[i] );
+			endif
+		
+			if( FlagCheck( rightflag, i ) == 1 )
+				righttotal := righttotal + 1;
+				bookarray.append( rightarray[i] );
+				layout.append( rightbuttonlayout[righttotal] + len(bookarray) );
+				layout.append( righttextlayout[righttotal] + len(data) );
+				data.append( rightdata[i] );
+			endif
+		
+			i := i + 1;
+		endwhile
+
+	endforeach
+
+	SendSysMessage( character, "Select the spell you want to scribe.");
+	var res := SendDialogGump( character, layout, data );			
+	if( !res[0] )
+		return 0;
+	endif
+
+	return bookarray[ res[0] ];
+
+endfunction
+
+
+function CopyBook( character, item )
+
+	SendSysMessage( character, "Select an empty " + TruncateArticle(item.desc) + "." );
+	var book := Target( character );
+	if( !book )
+		return;
+	endif
+
+	if( !Accessible( character, book ) )
+		SendSysMessage( character, "You can't reach that" );
+		return;
+	endif
+
+	if( !ReserveItem( book ) )
+		return;
+	endif
+
+	if( item.objtype != book.objtype )
+		SendSysMessage( character, "You must target a " + TruncateArticle(item.desc) + "." );
+		return;
+	endif
+
+	if( item.objtype == UOBJ_SPELLBOOK )
+		CopyNormalSpellbook( character, item, book );	
+	elseif( item.objtype == UOBJ_TOME_OF_ENCHANTMENT )
+		CopyEnchantmentSpellbook( character, item, book );	
+	else
+		CopyPaganSpellbook( character, item, book );
+	endif
+
+endfunction
+
+
+function CopyEnchantmentSpellbook( character, item, book )
+
+	if( GetObjProperty( book, "Circle1" ) ||
+	    GetObjProperty( book, "Circle2" ) ||
+	    GetObjProperty( book, "Circle3" ) ||
+	    GetObjProperty( book, "Circle4" ) )
+	    SendSysMessage( character, "You must target an empty tome of enchantment." );
+		return;
+	endif
+
+	var mage	:= GetObjProperty( character, CLASSEID_MAGE );
+	var skill	:= 140;
+	var points	:= (skill * POINT_MULTIPLIER) * 2;
+	var manacost	:= 500;
+
+	if( mage )
+		manacost := CInt( manacost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	if( GetMana(character) < manacost )
+		SendSysMessage( character, "You don't have enough mana." );
+		SetMana(character, 0);
+		return;
+	else
+		SetMana(character, GetMana(character) - manacost);
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail and destroy the tome." );
+		DestroyItem( book );
+		return;
+	endif
+
+	PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+	DupeItem( item, book );
+	SendSysMessage( character, "You successfully copied the Tome of Enchantments." );
+
+endfunction
+
+
+function CopyNormalSpellbook( character, item, book )
+
+	if( len( EnumerateItemsInContainer( book ) ) )
+		SendSysMessage( character, "You must target an empty book." );
+		return;
+	endif
+
+	var mage	:= GetObjProperty( character, CLASSEID_MAGE );
+	var skill	:= 110;
+	var points	:= (skill * POINT_MULTIPLIER) * 2;
+	var manacost	:= 110;
+
+	if( mage )
+		manacost := CInt( manacost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	if( GetMana(character) < manacost )
+		SendSysMessage( character, "You don't have enough mana." );
+		SetMana(character, 0);
+		return;
+	else
+		SetMana(character, GetMana(character) - manacost);
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail and destroy the book." );
+		DestroyItem( book );
+		return;
+	endif
+
+	PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+	SendSysMessage( character, "You successfully copied the spellbook." );
+	foreach scroll in EnumerateItemsInContainer( item )
+		CreateItemInContainer( book, scroll.objtype, 1 );
+	endforeach
+
+endfunction
+
+
+function CopyPaganSpellbook( character, item, book )
+
+	if( GetObjProperty( book, "Lesser" ) ||
+	    GetObjProperty( book, "Greater" ) )
+	   case(book)
+	    UOBJ_CODEX_DAMNORUM: SendSysMessage( character, "You must target an empty Codex Damnorum.");
+	    UOBJ_EARTH_BOOK: SendSysMessage( character, "You must target an empty Book of the Earth.");
+	    //UOBJ_HOLY_BOOK: SendSysMessage( character, "You must target an empty Holy Book.");
+	   endcase
+		return;
+	endif
+
+	var mage := GetObjProperty( character, CLASSEID_MAGE );
+	var skill;
+	var manacost;
+  case (item.objtype)
+   UOBJ_CODEX_DAMNORUM: skill := 130; manacost := 300;
+   UOBJ_EARTH_BOOK: skill := 120; manacost := 250;
+   //UOBJ_HOLY_BOOK: skill := 120; manacost := 250;
+  endcase
+
+	var points := (skill * POINT_MULTIPLIER) * 2;
+
+	if( mage )
+		manacost := CInt( manacost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	if( GetMana(character) < manacost )
+		SendSysMessage( character, "You don't have enough mana." );
+		SetMana(character, 0);
+		return;
+	else
+		SetMana(character, GetMana(character) - manacost);
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail and destroy the " + TruncateArticle(item.desc) + "." );
+		DestroyItem( book );
+		return;
+	endif
+
+	PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+	DupeItem( item, book );
+	SendSysMessage( character, "You copied the " + TruncateArticle(item.desc) + " successfully." );
+
+endfunction
+
+
+function CreateEarthSpellScroll( character, blankscroll, earthbook )
+
+	var selected := ChooseEarthSpell( character, earthbook );
+	if( !selected )
+		return;
+	endif
+
+	var elem 	:= FindConfigElem( config_file, selected );
+	var skill 	:= CInt( elem.FromBookDiff );
+	var circle	:= CInt( elem.Circle );
+	var points 	:= skill * POINT_MULTIPLIER;
+
+	CreateScroll( character, skill, points, blankscroll, selected, circle );
+
+endfunction
+
+
+function CreateNecroSpellScroll( character, blankscroll, codex )
+
+	var selected := ChooseNecroSpell( character, codex );
+	if( !selected )
+		return;
+	endif
+
+	var elem 	:= FindConfigElem( config_file, selected );
+	var skill 	:= CInt( elem.FromBookDiff );
+	var circle	:= CInt( elem.Circle );
+	var points 	:= skill * POINT_MULTIPLIER;
+
+	CreateScroll( character, skill, points, blankscroll, selected, circle );
+
+endfunction
+
+
+function CreateNormalSpellScroll( character, blankscroll, spellbook )
+
+	var selected := MakeAndProcessMenu( character, spellbook );
+	if( !selected )
+		return;
+	endif
+
+	var elem 	:= FindConfigElem( config_file, selected );
+	var skill 	:= CInt( elem.FromBookDiff );
+	var circle	:= CInt( elem.Circle );
+	var points 	:= skill * POINT_MULTIPLIER;
+	var product	:= CInt( elem.Scroll );
+
+	CreateScroll( character, skill, points, blankscroll, product, circle );
+
+endfunction
+
+/*function CreateHolySpellScroll( character , blankscroll , holybook )
+
+	var selected := ChooseHolySpell( character , holybook );
+	if( !selected )
+		return;
+	endif
+
+	var elem 	:= FindConfigElem( config_file , selected );
+	var skill 	:= CInt( elem.FromBookDiff );
+	var circle	:= CInt( elem.Circle );
+	var points 	:= skill * POINT_MULTIPLIER;
+
+	CreateScroll( character , skill , points , blankscroll , selected , circle );
+
+endfunction*/
+
+function CreateRitualSpellScroll( character, blankscroll, tome )
+
+	var selected := ChooseRitualSpell( character, tome );
+	if( !selected )
+		return;
+	endif
+
+	var elem 	:= FindConfigElem( config_file, selected );
+	var skill 	:= CInt( elem.FromBookDiff );
+	var circle	:= CInt( elem.Circle );
+	var points 	:= skill * POINT_MULTIPLIER;
+
+	CreateScroll( character, skill, points, blankscroll, selected, circle );
+
+endfunction
+
+
+function CreateRunebook( character, item )
+
+	var runex := CInt(GetObjProperty( item, "x" ));
+	var runey := CInt(GetObjProperty( item, "y" ));
+	var runez := CInt(GetObjProperty( item, "z" ));
+
+	if( runex || runey || runez )
+		SendSysMessage( character, "You must target a blank rune." );
+		return;
+	endif
+
+	var needed	    := { UOBJ_GATE_SCROLL, UOBJ_RECALL_SCROLL, UOBJ_BLANK_SCROLL };
+	var elem	    := FindConfigElem( config_file, UOBJ_RUNEBOOK );
+	var needed_blank  := CInt( elem.BlankScrolls );
+	var idifficulty   := CInt( elem.Inscription );
+	var mdifficulty   := CInt( elem.Magery );
+	var manacost	    := CInt( elem.Manacost );
+	var points	    := idifficulty * POINT_MULTIPLIER;
+	var mage	    := GetObjProperty( character, CLASSEID_MAGE );
+	var the_component := { item };
+
+	if( mage )
+		manacost     := CInt( manacost / ClasseBonus( character, CLASSEID_MAGE ) );
+		needed_blank := CInt( needed_blank / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	foreach thing in needed
+		var found := FindRootItemInContainer( character.backpack, thing );
+		if( !found )
+			SendSysMessage( character, "You don't have all needed components." );
+			return;
+		elseif( thing == UOBJ_BLANK_SCROLL && found.amount < needed_blank )
+			SendSysMessage( character, "You don't have enough blank scrolls." );
+			return;
+		elseif( !ReserveItem( found ) )
+			return;
+		endif
+		the_component.append( found );
+	endforeach
+
+	foreach object in the_component
+		var amount := 1;
+		if( object.objtype == UOBJ_BLANK_SCROLL )
+			amount := needed_blank;
+		endif
+		SubtractAmount( object, amount );
+	endforeach
+
+	if( GetMana(character) < manacost )
+		SendSysMessage( character, "You don't have enough mana." );
+		SetMana(character, 0);
+		return;
+	else
+		SetMana(character, GetMana(character) - manacost);
+	endif
+
+	if( !CheckSkill( character, 23, idifficulty, points ) )
+		SendSysMessage( character, "You fail to create the runebook." );
+		return;
+	endif
+
+	var magery_points := CInt( mdifficulty * POINT_MULTIPLIER );
+	if( !CheckSkill( character, 25, mdifficulty, magery_points ) )
+		SendSysMessage( character, "You fail to create the runebook." );
+		return;
+	endif
+	
+	PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+	var runebook   := CreateItemInBackpack( character, UOBJ_RUNEBOOK );
+	if( !runebook )
+		SendSysMessage( character, "Your backpack is full!" );
+		return;
+	endif
+
+	var maxcharges := 5 + Random(4);
+	var excep_ch	 := 10;
+	var excep_diff := idifficulty;
+	if( mage )
+		excep_ch := CInt( excep_ch * ClasseBonus( character, CLASSEID_MAGE ) );
+	else
+		excep_diff := excep_diff + 20;
+	endif
+			
+	if( excep_diff < 90 )
+		excep_diff := 90;
+	endif
+
+	if( (Random(100) < excep_ch) && CheckSkill( character, 23, excep_diff, 0 ) )
+		if( YesNo( character, "Add Builder Mark?" ) )
+			SetName( runebook, "Exceptional Runebook [Made by " + character.name + "]" );
+		else
+			SetName( runebook, "Exceptional Runebook" );
+		endif
+
+		SendSysMessage( character, "You create an exceptional runebook and put it in your backpack." );
+		maxcharges	  := maxcharges + 2;
+		runebook.buyprice := 25000;
+	else
+		SendSysMessage( character, "You create the runebook and put it in your backpack." );
+	endif
+
+	if( mage )
+		maxcharges := CInt( maxcharges * ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	SetObjProperty( runebook, "maxcharges", maxcharges );
+
+endfunction
+
+
+function CreateScroll( character, skill, points, blankscroll, scrollobjtype, circle )
+
+	var conf 	 := ReadConfigFile(":*:circles");
+	var manacost	 := conf[circle].mana;
+	var difficulty := conf[circle].Difficulty;
+	var magery	 := GetAttribute( character, ATTRIBUTEID_MAGERY );
+	if( difficulty > 160 )
+		difficulty := 160;
+	endif
+
+	if( manacost > 500 )
+		manacost := 500;
+	endif
+
+	if( GetObjProperty( character, CLASSEID_MAGE ) )
+		manacost   := CInt( manacost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	if( magery < difficulty - 20 )
+		SendSysMessage( character, "You aren't skilled enough in the way of magic to make this scroll." );
+		SubtractAmount( blankscroll, 1 );
+		if( GetMana(character) < manacost )
+			SetMana(character, 0);
+		else
+			SetMana(character, GetMana(character) - manacost);
+		endif
+		return;
+	endif
+ 
+      /*** Autolooping now starts ***/
+      Autoloop_init(character);
+
+      while (Autoloop_more()) 	
+
+	/*** First check if there are at least one scroll. Maybe previous iterations had burned out all the scrolls ***/
+	if( GetAmount( blankscroll ) == 0 )
+		SendSysMessage( character, "You don't have any more blank scrolls." );
+		Autoloop_finish();
+		return;
+	endif
+
+	/*** Second check if there's enough mana left ***/
+	if( GetMana(character) < manacost )
+		SendSysMessage( character, "You don't have enough mana." );
+		Autoloop_finish();
+		return;
+	else
+		SetMana(character, GetMana(character) - manacost);
+	endif
+  sleep(4);
+	/*** If inscription failed, autolooping can continue ***/
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail and destroy the scroll" );
+		SubtractAmount( blankscroll, 1 );	
+	else
+	/*** That's ok ***/	
+		CreateItemInBackpack( character, scrollobjtype );
+		PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+		SendSysMessage( character, "You create the scroll and put it in your backpack" );
+		SubtractAmount( blankscroll, 1 );
+	endif
+
+     endwhile
+
+   Autoloop_finish();
+
+endfunction
+
+
+function EnchantItem( character, item )
+
+	SendSysMessage( character, "Select a focus" );
+	var focus := Target( character, TGTOPT_CHECK_LOS );
+	if( !focus )
+		return;
+	endif
+
+	var elem 	:= config_file[focus.objtype];
+	var script	:= elem.script;
+	if( !script )
+		SendSysMessage(character, "You must target an alchemical symbol.");
+		return;
+	endif
+
+	if( !Accessible( character, focus ) )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+
+	if( !ReserveItem( focus ) )
+		return;
+	endif
+
+	var skill 	:= elem.Skill;
+	var points 	:= skill * POINT_MULTIPLIER;
+	var t_name 	:= elem.Name;
+	var cost	:= elem.ChargeCost;
+	var gemtype	:= elem.ChargeWith;
+	var gemname	:= elem.GemName;
+
+	if( GetObjProperty( character, CLASSEID_MAGE ) )
+		cost := CInt( cost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	SendSysMessage( character, "Select " + cost + " " + gemname + " for each charge you wish to place on the item." );
+	SendSysMessage( character, "Beware, the higher the number of charges, the higher is the risk of failure!" );
+	SendSysMessage( character, "You must put at least one charge during the initial enchantment." );
+	
+	var gem 	:= Target( character, TGTOPT_CHECK_LOS );
+	var diff 	:= cost;
+	var charges 	:= 0;
+	
+	while( gem )
+	
+		if ( !Accessible( character, gem ) )
+			SendSysMessage( character, "You can't reach that!" );
+			gem := Target( character, TGTOPT_CHECK_LOS );
+			continue;
+		endif
+		
+		if( gem.objtype == gemtype )
+			var amount := CInt( gem.amount / cost );
+			if( amount )
+				SubtractAmount( gem, cost );
+				if( CheckSkill( character, 25, diff, 0 ) )
+					charges := charges + 1;
+					SendSysMessage( character, "There's now " + charges + " charges stored." );
+					diff := diff + (charges * cost);
+				else
+					SendSysMessage( character, "The magical energy go out of control!" );
+					DestroyItem( item );
+					DestroyItem( focus );
+					ApplyRawDamage( character, CInt(charges * cost * 1.5) );
+					return;
+				endif
+			else
+				SendSysMessage( character, "There isn't enough gems in that stack, you need " + cost + " gems per charges you want to put in." );
+			endif
+		else
+			SendSysMessage( character, "That's not a gem, or not a " + gemname + "." );
+		endif
+		
+		SendSysMessage( character, "Hit Esc if you have enough charges." );
+		gem := Target( character, TGTOPT_CHECK_LOS );
+		
+	endwhile
+	
+	
+	if( !charges )
+		SendSysMessage( character, "You didn't set any charges!" );
+	
+	elseif( !CheckSkill( character, 23, skill, points + (charges * cost * POINT_MULTIPLIER) ) )
+		//failure
+		SendSysMessage( character, "You fail, and destroy the item." );
+		DestroyItem( item );
+	
+	elseif( !CheckSkill( character, 25, skill, (charges * cost * POINT_MULTIPLIER) ) )
+		//failure
+		SendSysMessage( character, "You fail, and destroy the item." );
+		DestroyItem( item );
+
+	else
+
+	    	item.usescript := script;
+	    	var cprops := GetConfigStringArray( elem, "CProp" );
+	    	foreach cprop in cprops
+	    		var prop_data := SplitWords( cprop );
+	    		SetObjProperty( item, prop_data[1], prop_data[2] );
+	    	endforeach
+	    
+		SetObjProperty( item, "charges", charges );
+		PlayObjectCenteredEffect( character, EFFECT_SPARKLE, 7, 0x10 );
+		PlaySoundEffect( character, SOUND_EFFECT_SPARKLE );
+		ChangeName( item, t_name );
+		SetObjProperty( item, "EnchantedWith", focus.objtype );
+	endif
+
+	DestroyItem( focus );
+
+endfunction
+
+
+function InscribeEarthSpell(character, item)
+
+	SendSysMessage( character, "Select your Earth Book in which to inscribe." );
+
+	var book := Target( character, TGTOPT_CHECK_LOS );
+	if (!book)
+		return;
+	endif
+
+	if ( !Accessible(character, book) )
+		SendSysMessage(character, "You can't reach that!");
+		return;
+	endif
+
+	if( book.objtype != 0xb100 )
+		SendSysMessage(character, "You must select a Book of the Earth!");
+		return;
+	endif
+
+	var elem	:= FindConfigElem( config_file, item.objtype );
+	var skill	:= CInt( elem.ToBookDiff );
+	var points	:= skill * (POINT_MULTIPLIER + 5);
+	var flagregister := elem.flagset;
+	var flag	:= elem.flag;
+	var circle	:= "";
+
+	if( flagregister == 1 )
+		circle := "Lesser";
+	else
+		circle := "Greater";
+	endif
+
+	flagregister := GetObjProperty( book, circle );
+	flagregister := CInt(flagregister);
+
+	if( FlagCheck( flagregister, flag ) == 1 )
+		SendSysMessage(character, "That spell is already inscribed.");
+		return;
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail, and destroy the scroll" );
+		SubtractAmount( item, 1 );
+		return;	 
+	endif
+
+	PlaySoundEffect( character, SOUND_EFFECT_INSCRIPTION );
+	PlayObjectCenteredEffect( book, EFFECT_SPARKLE, 10,10 );
+	SubtractAmount( item, 1 );
+	SendSysMessage(character, "You inscribe the spell into your Earth Book.");
+	flagregister := FlagSet( flagregister, flag );
+	flagregister := CStr( flagregister );
+	SetObjProperty( book, circle, flagregister );
+
+endfunction
+
+
+function InscribeNecroSpell(character, item)
+
+	SendSysMessage( character, "Select the infernal tome in which to inscribe." );
+
+	var book := Target( character, TGTOPT_CHECK_LOS );
+	if( !book )
+		return;
+	endif
+
+	if( !Accessible(character, book) )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+
+	if( book.objtype != 0xa100 )
+		SendSysMessage(character, "You must select a necromatic spellbook.");
+		return;
+	endif
+
+	var elem	:= FindConfigElem(config_file, item.objtype);
+	var skill	:= CInt( elem.ToBookDiff );
+	var points	:= skill * (POINT_MULTIPLIER + 5);
+	var flagregister := elem.flagset;
+	var flag	:= elem.flag;
+	var circle	:= "";
+
+	if( flagregister == 1 )
+		circle := "Lesser";
+	else
+		circle := "Greater";
+	endif
+
+	flagregister := GetObjProperty( book, circle );
+	flagregister := CInt( flagregister );
+
+	if( FlagCheck(flagregister, flag) == 1 )
+		SendSysMessage( character, "That spell is already inscribed." );
+		return;
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail, and destroy the scroll" );
+		SubtractAmount( item, 1 );
+		return;
+	endif
+
+	PlaySoundEffect(character, SOUND_EFFECT_INSCRIPTION);
+	PlayObjectCenteredEffect( book, EFFECT_SPARKLE, 10,10);
+	SubtractAmount(item,1);
+	SendSysMessage(character, "You inscribe the spell into your Codex.");
+	flagregister := FlagSet( flagregister, flag );
+	flagregister := CStr( flagregister );
+	SetObjProperty( book, circle, flagregister );
+
+endfunction
+
+/*function InscribeHolySpell(character, item)
+
+	SendSysmessage( character, "Select the Holy Book in which to inscribe." );
+
+	var book := Target( character , TGTOPT_CHECK_LOS );
+	if (!book)
+		return;
+	endif
+
+	if ( !Accessible(character, book) )
+		SendSysmessage (character, "You can't reach that!");
+		return;
+	endif
+
+	if( book.objtype != 0x6166 )
+		SendSysmessage (character, "You must select a Holy Book!");
+		return;
+	endif
+
+	var elem	:= FindConfigElem( config_file , item.objtype );
+	var skill	:= Cint( elem.ToBookDiff );
+	var points	:= skill * (POINT_MULTIPLIER + 5);
+	var flagRegister := elem.flagset;
+	var flag	:= elem.flag;
+	var circle	:= "";
+
+	if( FlagRegister == 1 )
+		circle := "Lesser";
+	else
+		circle := "Greater";
+	endif
+
+	flagRegister := GetObjProperty( book , circle );
+	flagRegister := Cint(flagRegister);
+
+	if( FlagCheck( flagRegister , flag ) == 1 )
+		SendSysMessage(character, "That spell is already inscribed.");
+		return;
+	endif
+
+	if( !CheckSkill( character , 23 , skill , points ) )
+		SendSysmessage( character , "You fail, and destroy the scroll" );
+		SubtractAmount( item , 1 );
+		return;
+	endif
+
+	PlaySoundEffect( character , SOUND_EFFECT_INSCRIPTION );
+	PlayObjectCenteredEffect( book , EFFECT_SPARKLE , 10 ,10 );
+	SubtractAmount( item , 1 );
+	SendSysmessage (character, "You inscribe the spell into your Holy Book.");
+	flagRegister := FlagSet( flagRegister , flag );
+	flagRegister := CStr( flagRegister );
+	SetObjProperty( book , circle , flagRegister );
+
+endfunction*/
+
+function InscribeRitualSpell( character, scroll )
+
+	SendSysMessage( character, "Select the tome of enchantment in which to inscribe." );
+
+	var book := Target( character, TGTOPT_CHECK_LOS );
+	if( !book )
+		return;
+	endif
+
+	if( !Accessible( character, book ) )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+
+	if( book.objtype != 0xc100 )
+		SendSysMessage(character, "You must select a tome of enchantment.");
+		return;
+	endif
+
+	var elem	:= FindConfigElem( config_file, scroll.objtype );
+	var skill	:= CInt( elem.ToBookDiff );
+	var points	:= skill * (POINT_MULTIPLIER + 5);
+	var flagregister := elem.flagset;
+	var flag	:= elem.flag;
+	var circle	:= "Circle" + flagregister;
+
+
+	flagregister := GetObjProperty( book, circle );
+	flagregister := CInt( flagregister );
+
+	if( FlagCheck( flagregister, flag ) == 1 )
+		SendSysMessage( character, "That spell is already inscribed." );
+		return;
+	endif
+
+	if( !CheckSkill( character, 23, skill, points ) )
+		SendSysMessage( character, "You fail, and destroy the scroll" );
+		SubtractAmount( scroll, 1 );
+		return;
+	endif
+
+	PlaySoundEffect(character, SOUND_EFFECT_INSCRIPTION);
+	PlayObjectCenteredEffect( book, EFFECT_SPARKLE, 10,10);
+	SubtractAmount( scroll, 1 );
+	SendSysMessage(character, "You inscribe the spell into your tome of enchantment.");
+	flagregister := FlagSet( flagregister, flag );
+	flagregister := CStr( flagregister );
+	SetObjProperty( book, circle, flagregister );
+
+endfunction
+
+
+function IsExceptionalItem( item )
+
+	if( !GetObjProperty( item, "IsExceptional" ) )
+		return 0;
+	elseif( item.isa( POLCLASS_CONTAINER ) )
+		return 0;
+	else
+		return 1;
+	endif
+
+endfunction
+
+
+function MakeAndProcessMenu( character, spellbook )
+
+	////set_priority(1);   
+	var circles := { };
+
+	foreach spell in EnumerateItemsInContainer(spellbook)
+		var elem := FindConfigElem(config_file, spell.objtype);
+		var thecircle := GetConfigInt(elem, "circle");
+		circles[thecircle] := 1;
+	endforeach
+
+	var i;
+	var tmenu := CreateMenu("Select a circle to inscribe");
+
+	for (i := 1; i <= 8; i := i + 1)
+		if (circles[i] == 1)
+			AddMenuItem(tmenu, 0x20bf + i, "Circle " + CStr(i) + " spells");
+		endif
+	endfor
+
+
+	var firstchoice:= SelectMenuItem2(character, tmenu);
+
+	if (!firstchoice.index)
+		return 0;
+	endif
+
+	var tmenu2 := CreateMenu("Select a spell to inscribe");
+	var scrolls_objtype := {};
+	foreach spell in EnumerateItemsInContainer(spellbook)
+		var elem := FindConfigElem(config_file, spell.objtype);
+		var thecircle := GetConfigInt(elem, "circle");
+		if (thecircle == firstchoice.objtype - 0x20bf)
+			var spellname := GetConfigString(elem, "name");
+			var thetype := GetConfigInt(elem, "graphic");
+			scrolls_objtype.append( spell.objtype );
+			AddMenuItem(tmenu2, thetype, spellname);
+		endif
+	endforeach
+
+
+	var hischoice := SelectMenuItem2(character, tmenu2);
+  
+	////set_priority(50);
+	if( !hischoice.index )
+		return 0;
+	else
+		return scrolls_objtype[hischoice.index];
+	endif
+
+endfunction
+
+
+function RechargeItem( character, item )
+
+	var gemtype	:= Hex( GetObjProperty( item, "Rechargeable" ) );
+	var elem 	:= config_file[gemtype];
+	var gemname	:= elem.GemName;
+	var charges	:= CInt( GetObjProperty( item, "charges" ) );
+	var max	:= CInt( GetObjProperty( item, "maxcharges" ) );
+	var cost	:= GetObjProperty( item, "CostPerCharge" );
+	if( !cost )
+		cost := 1;
+	endif
+
+	if( !elem )
+		SendSysMessage( character, "Invalid gem type..." );
+		return;
+	endif
+
+	SendSysMessage( character, "Select " + cost + " " + gemname + " for each charge you wish to recharge on the item." );
+
+	var gem 	:= Target( character, TGTOPT_CHECK_LOS );
+	var initial_charges := charges;
+
+	while( gem )
+	
+		if( !Accessible( character, gem ) )
+			SendSysMessage( character, "You can't reach that!" );
+			gem := Target( character, TGTOPT_CHECK_LOS );
+			continue;
+		endif
+		
+		if( gem.objtype == gemtype )
+			var amount := CInt( gem.amount / cost );
+			if( amount )
+				SubtractAmount( gem, cost );
+				if( CheckSkill( character, 25, 100, 500 ) )
+					charges := charges + 1;
+					if( charges < max )
+						SendSysMessage( character, "There's now " + charges + " charges stored." );
+					else
+						SendSysMessage( character, "This item is at his max amount of charges." );
+						if( charges > max )
+							charges := max;
+						endif
+						break;
+					endif
+
+				else
+					SendSysMessage( character, "The magical energy go out of your control!" );
+					DestroyItem( item );
+					ApplyRawDamage( character, charges * cost );
+					return;
+				endif
+			else
+				SendSysMessage( character, "There isn't enough gems in that stack, you need " + cost + " gems per charges you want to put in." );
+			endif
+		else
+			SendSysMessage( character, "That's not a gem, or not a " + gemname + "." );
+		endif
+		
+		SendSysMessage( character, "Hit Esc if you have enough charges." );
+		gem := Target( character, TGTOPT_CHECK_LOS );
+	endwhile
+
+	if( charges != initial_charges )
+		SetObjProperty( item, "charges", charges );
+		SendSysMessage( character, "The item was successfully recharged to " + charges + " charges." );
+	endif
+
+endfunction
+
+
+function RechargeEngravedItem( character, item, focus_type )
+
+	var elem 	:= config_file[focus_type];
+	if ( !elem )
+		return;
+	endif
+
+	var skill 	:= elem.Skill;
+	var points 	:= CInt( skill * POINT_MULTIPLIER / 3 );
+	var cost	:= elem.ChargeCost;
+	var gemtype	:= elem.ChargeWith;
+	var gemname	:= elem.GemName;
+
+	if( GetObjProperty( character, CLASSEID_MAGE ) )
+		cost := CInt( cost / ClasseBonus( character, CLASSEID_MAGE ) );
+	endif
+
+	SendSysMessage( character, "Select " + cost + " " + gemname + " for each charge you wish to recharge on the item." );
+
+	var gem 	:= Target( character, TGTOPT_CHECK_LOS );
+	var charges	:= GetObjProperty( item, "charges" );
+	var initial_charges := charges;
+	if( !charges )
+		charges := 0;
+	endif
+	
+	while( gem )
+	
+		if( !Accessible( character, gem ) )
+			SendSysMessage( character, "You can't reach that!" );
+			gem := Target( character, TGTOPT_CHECK_LOS );
+			continue;
+		endif
+		
+		if( gem.objtype == gemtype )
+			var amount := CInt( gem.amount / cost );
+			if( amount )
+				SubtractAmount( gem, cost );
+				if( CheckSkill( character, 25, skill, points ) )
+					charges := charges + 1;
+					SendSysMessage( character, "There's now " + charges + " charges stored." );
+
+				else
+					SendSysMessage( character, "The magical energy go out of your control!" );
+					DestroyItem( item );
+					ApplyRawDamage( character, charges * cost );
+					return;
+				endif
+			else
+				SendSysMessage( character, "There isn't enough gems in that stack, you need " + cost + " gems per charges you want to put in." );
+			endif
+		else
+			SendSysMessage( character, "That's not a gem, or not a " + gemname + "." );
+		endif
+		
+		SendSysMessage( character, "Hit Esc if you have enough charges." );
+		gem := Target( character, TGTOPT_CHECK_LOS );
+	endwhile
+
+	if( charges != initial_charges )
+		SetObjProperty( item, "charges", charges );
+		SendSysMessage( character, "The item was successfully recharged to " + charges + " charges." );
+	endif
+
+endfunction
+
+
+
+function WantToCreateScroll( character, blankscroll )
+
+	SendSysMessage( character, "Select a spellbook from which to inscribe." );
+
+	var book := Target( character, TGTOPT_CHECK_LOS );
+	if ( !book )
+		return;
+	endif
+
+	if ( !Accessible( character, book ) )
+		SendSysMessage(character, "You can't reach that!");
+		return;
+	endif
+
+	if ( !ReserveItem(book) )
+		return;
+	endif
+
+	if( book.objtype != UOBJ_SPELLBOOK && book.objtype != 0xa100 && book.objtype != 0xb100 && book.objtype != 0xc100 && book.objtype != 0x6166 )
+		SendSysMessage(character, "You must select a spellbook!");
+		return;
+	endif
+
+	if( book.objtype == UOBJ_SPELLBOOK )
+		CreateNormalSpellScroll( character, blankscroll, book );
+	
+	elseif( book.objtype == 0xa100 )
+		CreateNecroSpellScroll( character, blankscroll, book );
+
+	elseif( book.objtype == 0xb100 )
+		CreateEarthSpellScroll( character, blankscroll, book );
+
+	//elseif( book.objtype == 0x6166 )
+	//	CreateHolySpellScroll( character , blankscroll , book );
+
+	elseif( book.objtype == 0xc100 )
+		CreateRitualSpellScroll( character, blankscroll, book );
+	endif
+
+endfunction

@@ -1,0 +1,49 @@
+use uo;
+use os;
+include "include/classes";
+
+program logon( who )
+
+		
+	var acc:=who.acct;
+	if(acc.getprop("acctjail"))
+		MoveCharacterToLocation( who, 5304, 1184, 0, 0);
+	endif
+
+	if(!acc.getprop("Release"))
+		acc.eraseprop("acctjail");
+	endif
+
+    Var MostOnline := GetGlobalProperty( "MostOnline" );
+    Var players := EnumerateOnlineCharacters();
+    Var totalplayers := players.Size();
+
+    If( totalplayers >= MostOnline )
+    SetGlobalProperty( "MostOnline", totalplayers );
+    Endif
+
+    If(who.cmdlevel)
+    Who.setlightlevel(0 , 60000);
+    Endif
+ 
+
+	
+	Print( "logon: " + who.name );
+	Start_Script( "::playermanager", who );
+	showclasse(who);
+	
+endprogram
+
+function showclasse(who)
+	var level;
+	SendSysMessage( who, "Welcome to Zulu Hotel Chronicles.");	
+	foreach classe in GetClasseIds()
+		EraseObjProperty( who , classe );
+		level := IsFromThatClasse( who , GetClasseSkills(classe) );
+		if( level )
+			SetObjProperty( who, classe, level );
+			SendSysMessage( who, "You are a qualified level " + level + " " + lower(GetClasseName(classe)));
+			return;
+		endif
+	endforeach
+endfunction

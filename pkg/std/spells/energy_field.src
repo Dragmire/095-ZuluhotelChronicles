@@ -1,0 +1,68 @@
+use os;
+use uo;
+
+include "include/fields";
+include "include/attributes";
+include "include/spelldata";
+include "include/client";
+include "include/objtype";
+include "include/random";
+program efield( parms )
+
+	var circle := 7;
+	var caster;
+	var thetarget;
+	var fromhit;
+
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		thetarget := parms[3];
+
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		thetarget := CanTargetArea(caster, circle);
+		if (!thetarget)
+			return;
+		endif
+	endif
+
+	var fields := {};
+
+	var listeners := {};
+	var sufferers := {};
+
+	var x := thetarget.x;
+	var y := thetarget.y;
+	var z := thetarget.z;
+
+	case (get_direction(caster, x, y, z))
+		"north" : fields:= CreateNorthSouthField(caster, UOBJ_EFIELD_NS, x, y, z, 5);
+		"south" : fields:= CreateNorthSouthField(caster, UOBJ_EFIELD_NS, x, y, z, 5);
+		"east"  : fields:= CreateEastWestField(caster, UOBJ_EFIELD_EW, x, y, z, 5);
+		"west"  : fields:= CreateEastWestField(caster, UOBJ_EFIELD_EW, x, y, z, 5);
+		default: 
+			case (Random(2))
+				0: fields:= CreateNorthSouthField(caster, UOBJ_EFIELD_NS, x, y, z, 5);
+        	  		1: fields:= CreateEastWestField(caster, UOBJ_EFIELD_EW, x, y, z, 5);
+			endcase
+	endcase
+
+	Detach();
+	var duration := ModifyWithMagicEfficiency( caster, 20 + ( CInt(GetEffectiveSkill( caster, SKILLID_MAGERY ) ) / 5 ) );
+
+	sleep(duration);
+
+	foreach fieldpart in fields
+        	DestroyItem(fieldpart);
+	endforeach
+
+endprogram

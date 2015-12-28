@@ -1,0 +1,40 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/constants";
+include "include/managers";
+
+program maindestroy( item )
+
+	if( item.IsA(POLCLASS_MULTI) )
+		return 1;
+	elseif( GetObjProperty( item, PROPID_ITEM_DESTROY_IT ) )
+		WarnSpawnPoint(item);
+		return 1;
+	elseif( GetObjProperty( item, PROPID_ITEM_OWNER ) )
+		start_script( SCRIPTID_ITEM_RETURNER, item );
+		item.decayAt	:= 0;
+		item.buyprice	:= -1;
+		return 0;
+	elseif( GetObjProperty(item,PROPID_ITEM_INDESTRUCTIBLE) )
+		return 0;
+	else
+		WarnSpawnPoint(item);
+		return 1;
+	endif
+
+endprogram
+
+
+function WarnSpawnPoint(item)
+
+	var pointserial := GetObjProperty( item, PROPID_MOBILE_SPAWNPOINT_SERIAL );
+	if( !pointserial )
+		return 1;
+	endif
+
+	SendSpawnPointEvent( EVID_SPAWNPOINT_DEATH, pointserial, item.serial );
+	return 1;
+
+endfunction

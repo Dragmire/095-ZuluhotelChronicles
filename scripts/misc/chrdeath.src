@@ -1,0 +1,447 @@
+use uo;
+use os;
+use math;
+
+include "include/dotempmods";
+include "include/objtype";
+include "include/client";
+include "include/possess";
+include "include/reportmurder";
+include "include/yesno";
+include "../../pkg/opt/karmafame/karmafame";
+include "include/dismount";
+include "include/myutil";
+include "include/res";
+include "include/playmusic";
+include "include/camouflage";
+include "include/constants/propids";
+
+program chrdeath(corpse,ghost)
+
+//	set_critical(1);
+	var plyr;
+	var killer:=getobjproperty(ghost,"KilledBy");
+	foreach character in EnumerateOnlineCharacters()
+		if (character.name == killer)
+			plyr := character;
+		endif
+	endforeach
+	var acc := plyr.acct;
+	var accname := acc.name;	
+	SetObjProperty( ghost,"KillerSerial",plyr.serial);
+	SetObjProperty( corpse,"KillerSerial",plyr.serial);
+	SetObjProperty( ghost,"KillerAcct",accname);
+	SetObjProperty ( corpse, "KillerAcct", accname );	
+	var wasguarded:=getobjproperty(ghost,PROPID_MOBILE_GUARD_KILLED);
+	SetObjProperty( ghost, "Killer", killer);
+	SetObjProperty( corpse,"Killer",killer);
+	SetObjProperty( ghost, "WasGuarded", wasguarded);
+	var dx := ghost.x;
+	var dy := ghost.y;
+	var dz := ghost.z;
+	SetObjProperty( ghost, "deathx", dx);
+	SetObjProperty( ghost, "deathy", dy);
+	SetObjProperty( ghost, "deathz", dz);
+	var staffmsg;
+	if( !ghost.criminal and !ghost.murderer and !GetObjProperty( ghost, PROPID_MOBILE_GUARD_KILLED ))
+		SetObjProperty( ghost, "WasBlue", "Blue" );
+		SetObjProperty( corpse, "WasBlue", "Blue" );
+		if (GetGlobalProperty("ReportTK") == "ON" and IsInAProtectedCity(ghost) and accname and killer and (killer 		!= ghost.name))
+			staffmsg := ghost.name+" was Town Killed by : "+killer+"/"+accname+" at "+dx+", "+dy+", "+dz;
+			foreach character in EnumerateOnlineCharacters()
+				if( character.cmdlevel > 0 )
+					SendSysmessage( character,staffmsg, 3 ,130  );
+				endif
+			endforeach
+		endif
+	else
+		SetObjProperty( ghost, "WasBlue", "Grey" );
+		SetObjProperty( corpse, "WasBlue", "Grey" );
+	endif
+	if( GetObjProperty( ghost, PROPID_MOBILE_GUARD_KILLED ) )
+		SetObjProperty( ghost, "Killer", "Guards");
+	endif
+	EraseObjProperty( ghost, "KilledBy" );
+	EraseObjProperty( ghost, PROPID_MOBILE_KILLED_BY );
+	EraseObjProperty( ghost, PROPID_MOBILE_GUARD_KILLED );
+	EraseObjProperty( ghost, PROPID_MOBILE_MAGIC_REFLECTION );
+
+	// ctf stuff here
+	var team:=getobjproperty(ghost,"team");
+	if( team=="BLUE")
+		teamctf(ghost,corpse);
+		destroyitem(corpse);
+		MoveCharacterToLocation(ghost,6047,223,44);
+		return;
+	endif
+
+	If( team=="RED")
+		teamctf(ghost,corpse);
+		destroyitem(corpse);
+		MoveCharacterToLocation(ghost,6039,407,0);
+		return;
+	endif
+
+	SetObjProperty( corpse, PROPID_CORPSE_CORPSE_OF, ghost.serial );
+	SetObjProperty( ghost,"KillerSerial",plyr.serial);
+	var running_quest := GetGlobalProperty(PROPID_GLOBAL_RUNNING_QUEST);
+	if( running_quest )
+		var participating := GetObjProperty( ghost, PROPID_MOBILE_PARTICIPATING_QUEST );
+		if( participating )
+			if( participating == running_quest )
+				SetObjProperty( corpse, PROPID_MOBILE_CANT_BE_LOOTED, 1 );
+			else
+				EraseObjProperty( ghost, PROPID_MOBILE_PARTICIPATING_QUEST );
+			endif
+		endif
+	endif
+	
+	// anti looting stuff
+	if( !ghost.criminal )
+		if( !ghost.murderer )
+			if( !GetObjProperty( corpse, PROPID_MOBILE_GUARD_KILLED ) )
+				SetObjProperty( corpse, PROPID_CORPSE_IS_BLUE, 1 );
+				corpse.color := 90;
+			endif
+		endif
+	endif
+
+	// Anti looting bug fix for bags.
+	foreach item in EnumerateItemsInContainer(corpse)
+	   if( item.IsA(POLCLASS_CONTAINER) )
+	   	if( item.container == corpse )
+			if( item.usescript )
+				SetObjProperty( item, "old_us", item.usescript );
+			endif
+			item.usescript := ":loot:noview";
+		endif
+	   endif
+	endforeach
+
+	ReequipCursed(ghost,corpse);
+	CurePoison(ghost);
+	var oktodestroy := 1;
+	var free_death := GetObjProperty( ghost, PROPID_MOBILE_FREE_DEATH );
+	if(  free_death && !ghost.multi and !GetObjProperty(ghost,"cwarring") and !GetObjProperty(ghost,"pvping") )
+		free_death := Cint(free_death);
+		free_death := free_death - 1;
+		if( free_death )
+			SetObjProperty( ghost, PROPID_MOBILE_FREE_DEATH, free_death );
+		else
+			EraseObjProperty( ghost, PROPID_MOBILE_FREE_DEATH );
+		endif
+		Resurrect(ghost);
+		SetHP( ghost, GetMaxHP(ghost));
+		ghost.mana:=ghost.maxmana;
+		ghost.stamina:=ghost.maxstamina;
+		ghost.warmode:= 0;
+		ghost.hidden := 1;
+		var mount2;
+		foreach item in ListRootItemsInContainerOfObjtype(corpse,0xF021)
+			mount2:=item;
+		endforeach
+		if(mount2) 
+			EquipItem(ghost,mount2);
+		endif
+		foreach item in EnumerateItemsInContainer( corpse )
+			if (item.container.serial == corpse.serial)
+				sleepms(50);
+				item.movable := 1;
+				MoveItemToContainer( item, ghost.backpack );
+				endif
+		endforeach
+		sleepms(50);
+		// 2nd sweep of corpse
+		foreach item in EnumerateItemsInContainer( corpse )
+			sleepms(50);
+			item.movable := 1;
+			MoveItemToContainer( item, ghost.backpack );
+		endforeach
+		// Final Check b4 Destroying Corpse
+		foreach item in EnumerateItemsInContainer( corpse )
+			if (item)
+				oktodestroy := 0;
+			endif
+		endforeach
+		if (oktodestroy)
+			DestroyItem(corpse);
+		else
+			SendSysMessage(ghost,"There are still items left on your corpse.");
+		endif
+		return;
+	endif
+	oktodestroy := 1;
+	var pvpdeath := GetObjProperty( ghost, "pvping" );
+	if(  pvpdeath  )
+		EraseObjProperty( ghost, "pvping" );
+		sleep (2);
+		Resurrect(ghost);
+		ghost.warmode:= 0;
+		var mount2;
+		foreach item in ListRootItemsInContainerOfObjtype(corpse,0xF021)
+			mount2:=item;
+		endforeach
+		if(mount2) 
+			EquipItem(ghost,mount2);
+		endif
+		foreach item in EnumerateItemsInContainer( corpse )
+			if (item.container.serial == corpse.serial)
+				sleepms(100);
+				item.movable := 1;
+				MoveItemToContainer( item, ghost.backpack );
+				endif
+		endforeach
+		sleepms(100);
+		// 2nd sweep of corpse
+		foreach item in EnumerateItemsInContainer( corpse )
+			sleepms(100);
+			item.movable := 1;
+			MoveItemToContainer( item, ghost.backpack );
+		endforeach
+		// Final Check b4 Destroying Corpse
+		foreach item in EnumerateItemsInContainer( corpse )
+			if (item)
+				oktodestroy := 0;
+			endif
+		endforeach
+		if (oktodestroy)
+			DestroyItem(corpse);
+		else
+			SendSysMessage(ghost,"There are still items left on your corpse - please page staff.");
+		endif
+		return;
+	endif
+
+	AwardFame( ghost, FAME_LOST_ON_DEATH );
+	if( !GetObjProperty( corpse, PROPID_MOBILE_GUARD_KILLED ) )
+		AdviseAttackers(ghost);
+	endif
+
+	if( !ghost.cmdlevel )
+		RevokePrivilege(ghost,"hearghosts");
+		RevokePrivilege(ghost,"seeghosts");
+	endif
+
+	var temp:=GetObjProperty(ghost,"realname");
+
+	if (temp)
+		SetName(ghost,temp);
+		EraseObjProperty(ghost,"realname");
+	endif
+
+	if (GetObjProperty(ghost,"origform"))
+		EraseObjProperty(ghost,"origform");
+		ghost.frozen:=0;
+	endif
+
+	// druid spell shapechange
+	temp:=getobjproperty(ghost,"tn");
+	if (temp)
+		SetName (ghost,temp);
+		EraseObjProperty(ghost,"tn");
+		EraseObjProperty(ghost,"tc");
+		EraseObjProperty(ghost,"tg");
+	endif
+
+	// CAmouflage Check
+	temp := getobjproperty(ghost, "cmfc");
+	if (temp)
+		RemoveCamouflage( ghost );
+	endif
+
+	if( ghost.dead and (ghost.graphic != 0x192) and (ghost.graphic != 0x193) )
+	  	ghost.graphic := 402 + Cint(ghost.gender);
+	endif
+
+//	set_critical(0);
+
+	if(len(ghost.reportables)>0)
+		SendReportGump(ghost);
+	endif
+
+//	set_critical(1);
+	EraseObjProperty(ghost,"mr");
+
+	var corpsename:=ghost.name;
+	var mount;
+	foreach item in ListRootItemsInContainerOfObjtype(corpse,0xF021)
+		mount:=item;
+	endforeach
+
+	if(mount) Dismount(ghost,mount); endif
+
+//	set_critical(0);
+
+	if(ghost.cmdlevel)
+		if (getobjproperty(ghost,"possess"))
+			unpossesscorpse(ghost,corpse);
+		endif
+		return;
+	endif
+
+	if(GetObjProperty(ghost,"freedeath"))
+		EraseObjProperty(ghost,"freedeath");
+		Resurrect(ghost);
+		ghost.hp:=ghost.maxhp;
+		ghost.mana:=ghost.maxmana;
+		ghost.stamina:=ghost.maxstamina;
+		ghost.warmode:= 0;
+		ghost.hidden:=1;
+		return;
+	endif
+
+	SetObjProperty(ghost,"death",ReadGameClock()+3600);
+
+	// Play the "death" music midi
+	PlayMusic( ghost, "2A" );
+
+endprogram
+
+
+function teamctf(ghost,corpse)
+
+resurrect(ghost);
+destroyitem(getequipmentbylayer(ghost,LAYER_ROBE));
+
+var flaginhand:=0;
+
+// destroy flag
+foreach item in enumerateitemsincontainer(corpse)
+if (item.objtype==0x7111 || item.objtype==0x7112) destroyitem(item); flaginhand:=1; endif
+if (GetObjProperty(item,"StayEquipped"))
+item.movable:=1;
+EquipItem(ghost,item);
+item.movable:=0;
+endif
+endforeach
+
+curepoison(ghost);
+
+setobjproperty(ghost,"ctfdeaths",cint(getobjproperty(ghost,"ctfdeaths")+1));
+setobjproperty(ghost,"totalctfdeaths",cint(getobjproperty(ghost,"totalctfdeaths")+1));
+setobjproperty(ghost,"ctfloc",3);
+
+var par:=array,chr,i,ctfplyr:=getGlobalProperty("#ctfplyr"),csize:=ctfplyr.size(),killer:=getobjproperty(ghost,"KilledBy");
+
+if (killer<>ghost.name)
+
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(ctfplyr[i]);
+
+if (chr.name==killer)
+    if (flaginhand==1) setobjproperty(chr,"ctfscore",getobjproperty(chr,"ctfscore")+3); setobjproperty(chr,"ctfddd",getobjproperty(chr,"ctfddd")+1); scorecheck(chr,getobjproperty(chr,"ctfscore")); endif
+    if (getobjproperty(chr,"ctfddd")>=10)
+      setobjproperty(chr,"ctfddd",0);
+      setobjproperty(chr,"ctfdefense",getobjproperty(chr,"ctfdefense")+1);
+      par[1]:=chr;
+      par[2]:="ddd";
+      start_script(":zuluctf:badge",par);
+    endif
+    setobjproperty(chr,"ctfkills",getobjproperty(chr,"ctfkills")+1);
+    setobjproperty(chr,"totalctfkills",getobjproperty(chr,"totalctfkills")+1);
+    start_script(":zuluctf:hud",chr);
+endif
+
+endfor
+
+if (flaginhand==1)
+
+i:=getobjproperty(chr,"team");
+
+var fx,fy,fz;
+
+if (i=="BLUE")
+fx:=6119; fy:=358; fz:=-22;
+else
+fx:=6038; fy:=358; fz:=44;
+endif
+
+foreach mobile in ListMobilesNearLocation( fx,fy, fz, 10 );
+  if (getobjproperty(mobile,"team")==i)
+    setobjproperty(mobile,"ctfscore",getobjproperty(mobile,"ctfscore")+1);
+    scorecheck(mobile,getobjproperty(mobile,"ctfscore"));
+    setobjproperty(mobile,"ctfooo",getobjproperty(mobile,"ctfooo")+1);
+    if (getobjproperty(mobile,"ctfooo")>=14)
+      setobjproperty(mobile,"ctfooo",0);
+      setobjproperty(mobile,"ctfoffense",getobjproperty(mobile,"ctfoffense")+1);
+      par[1]:=mobile;
+      par[2]:="ooo";
+      start_script(":zuluctf:badge",par);
+      endif
+    start_script(":zuluctf:hud",mobile);
+  endif
+endforeach
+endif
+
+endif
+
+eraseobjproperty(ghost,"KilledBy");
+
+if(len(ghost.reportables)>0)
+foreach reportable in reportables
+    ghost.removereportable(reportable.serial,reportable.gameclock);
+endforeach
+endif
+
+ghost.hp:=ghost.strength;
+ghost.stamina:=ghost.dexterity;
+ghost.mana:=ghost.intelligence;
+
+start_script(":zuluctf:hud",ghost);
+start_script(":zuluctf:ctf_death",ghost);
+
+endfunction
+
+
+function scorecheck(who,score)
+
+if (score>getobjproperty(who,"ctftopscore")) setobjproperty(who,"ctftopscore",score); endif
+
+if(Getobjproperty(who,"team")=="BLUE")
+if (score>getGlobalProperty("ctfbluescore")) setGlobalProperty("ctfbluescore",score); endif
+else
+if (score>getGlobalProperty("ctfredscore")) setGlobalProperty("ctfredscore",score); endif
+endif
+
+endfunction
+
+
+
+function FindMyPack(myserial)
+    var mybank:=OpenTamedStorageAreas();
+    var bank_obj_name:="Bankbox  "+hex(myserial);
+    var bankbox:=FindRootItemInStorageArea(mybank,bank_obj_name);
+
+    if (!bankbox) bankbox:=CreateRootItemInStorageArea(mybank,bank_obj_name,UOBJ_BANKBOX); endif
+
+    return bankbox;
+
+endfunction
+
+
+function OpenTamedStorageAreas()
+    var bank:=FindStorageArea("Tamed Storage");
+
+    if (!bank) bank:=CreateStorageArea("Tamed Storage"); endif
+
+    return bank;
+endfunction
+
+
+function ReequipCursed(ghost,corpse)
+
+//	set_critical(1);
+	foreach item in EnumerateItemsInContainer(corpse)
+		if(GetObjProperty(item,"StayEquipped"))
+			EquipItem(ghost,item);
+		endif
+	endforeach
+
+	foreach item in EnumerateItemsInContainer(ghost.backpack)
+		if(GetObjProperty(item,"StayEquipped"))
+			EquipItem(ghost,item);
+		endif
+	endforeach
+//	set_critical(0);
+
+endfunction

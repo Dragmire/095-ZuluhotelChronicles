@@ -1,0 +1,96 @@
+use uo;
+use os;
+use cfgfile;
+include "include/hitscriptinc";
+include "include/areas";
+
+var speech;
+
+program WrestlingHitScript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	If ( IsInArea(defender, AREAID_MINOC_MINES) && !GetObjProperty( attacker, "PeaceKeeper"))
+		return 0;
+	endif
+	if( attacker == defender )
+
+		var times := CInt( GetObjProperty( attacker , "#AttackedSelf" ) );
+
+		if( times > 3 )
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+			ApplyRawDamage( attacker , GetHp(attacker) );
+			return 0;
+		elseif( times )
+			times := times+1;
+			SetObjProperty( attacker , "#AttackedSelf" , times);
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+		else
+			SetObjProperty( attacker , "#AttackedSelf" , 1 );
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+		endif
+
+	endif
+  if(defender.npctemplate)
+    basedamage := basedamage * 2;
+    rawdamage := rawdamage * 2;
+  endif
+  var WeaponHit := GetObjProperty(attacker, "OnHit");
+  var ArmorHit;
+  if (armor = 0)
+    ArmorHit := GetObjProperty(defender, "OnHit");
+  else
+    ArmorHit := GetObjProperty(armor, "OnHit");
+  endif
+  var x;
+  if (!WeaponHit)
+    if (!ArmorHit)
+      Start_Script("reactivearmorhit", { attacker, defender, weapon, armor, basedamage, rawdamage } );
+      rawdamage := GetObjProperty(defender, "TempDamage");
+      if(rawdamage < 1)
+        rawdamage := 1;
+      endif
+      DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+      SetObjProperty(defender, "LastHit", {attacker.name, attacker.serial, weapon });
+      return;
+    else
+      SetObjProperty(defender, "TempDamage", rawdamage);
+      foreach x in ArmorHit
+        detach();
+        set_critical(0);
+        Start_Script(x, { attacker, defender, weapon, armor, basedamage, rawdamage } );
+        rawdamage := CInt(GetObjProperty(defender, "TempDamage") );
+      endforeach
+      EraseObjProperty(defender, "TempDamage");
+      Start_Script("reactivearmorhit", { attacker, defender, weapon, armor, basedamage, rawdamage } );
+      rawdamage := GetObjProperty(defender, "TempDamage");
+      if(rawdamage < 1)
+        rawdamage := 1;
+      endif
+      DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+      SetObjProperty(defender, "LastHit", {attacker.name, attacker.serial, weapon });
+      return;
+    endif
+  else
+    SetObjProperty(defender, "TempDamage", rawdamage);
+    foreach x in WeaponHit
+      detach();
+      set_critical(0);
+      Start_Script(CStr(x), { attacker, defender, weapon, armor, basedamage, rawdamage } );
+      rawdamage := GetObjProperty(defender, "TempDamage");
+    endforeach
+    EraseObjProperty(defender, "TempDamage");
+    if (rawdamage < 1)
+      rawdamage := 1;
+    endif
+    Start_Script("reactivearmorhit", { attacker, defender, weapon, armor, basedamage, rawdamage } );
+    rawdamage := GetObjProperty(defender, "TempDamage");
+    if(rawdamage < 1)
+      rawdamage := 1;
+    endif
+    DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+    SetObjProperty(defender, "LastHit", {attacker.name, attacker.serial, weapon});
+    return;
+  endif
+endprogram

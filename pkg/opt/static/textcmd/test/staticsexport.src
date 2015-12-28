@@ -1,0 +1,181 @@
+use uo;
+use os;
+use cfgfile;
+
+var itemdesc := ReadConfigFile (":*:itemdesc");
+
+program export_statics (character, parms)
+
+	Set_Script_Option (SCRIPTOPT_NO_RUNAWAY, 1);
+
+	parms := SplitWords (parms);
+	if (!parms or len (parms) != 4 or !len (parms))
+		SendSysMessage (character, "The usage of this dot command is:");
+		SendSysMessage (character, ".staticsexport x1 y1 x1 y2");
+		return;
+	endif
+	
+	var x1 := CINT (parms[1]);
+	var y1 := CINT (parms[2]);
+	var x2 := CINT (parms[3]);
+	var y2 := CINT (parms[4]);
+
+	if (!x1)
+		if (parms[1] != "0")
+			SendSysMessage (character, "The usage of this dot command is:");
+			SendSysMessage (character, ".staticsexport x1 y1 x1 y2");
+			return;
+		endif
+	elseif (x1 > 6144)
+		SendSysMessage (character, "Map X ends at 6144: reducing X1 to 6143");
+	elseif (!y1)
+		if (parms[2] != "0")
+			SendSysMessage (character, "The usage of this dot command is:");
+			SendSysMessage (character, ".staticsexport x1 y1 x1 y2");
+			return;
+		endif
+	elseif (y1 > 4096)
+		SendSysMessage (character, "Map Y ends at 4096: reducing Y1 to 4093");
+	elseif (x1 > 6144)
+		SendSysMessage (character, "The usage of this dot command is:");
+		SendSysMessage (character, ".staticsexport x1 y1 x1 y2");
+		return;
+	elseif (!x2 or !y2)
+		SendSysMessage (character, "The usage of this dot command is:");
+		SendSysMessage (character, ".staticsexport x1 y1 x1 y2");
+		return;
+	elseif (x2 > 6144)
+		SendSysMessage (character, "Map X ends at 6144: reducing X2 to 6144");
+	elseif (y2 > 4096)
+		SendSysMessage (character, "Map Y ends at 4096: reducing Y2 to 4094");
+	endif
+
+	if (x1 > x2)
+		SendSysMessage (character, "X1 cannot be larger than X2");
+		return;
+	elseif (y1 > y2)
+		SendSysMessage (character, "Y1 cannot be larger than Y2");
+		return;
+	endif
+
+	var staticscfg := ReadConfigFile (":static:statics");
+	var keys := GetConfigStringKeys (staticscfg);
+	var counter_index := 1;
+	
+	if (!len (keys))
+		counter_index := 1;
+	else
+		SendSysMessage (character, "WARNING:  statics.cfg contains previous data");
+		SendSysMessage (character, "Do you wish to continue?");
+		if (!YesNo (character, "Continue?"))
+			SendSysMessage (character, "Delete data in statics.cfg file, then continue.");
+			return;
+		endif
+		counter_index := 0;
+		foreach key in keys
+			key := key - "WORLDITEM ";
+			if (CINT (key) > counter_index)
+				counter_index := CINT (key);
+			endif
+		endforeach
+		counter_index := counter_index + 1;
+		
+		if (counter_index > 30000)
+			SendSysMessage (character, "statics.cfg has reached maximum length of 30,000");
+			SendSysMessage (character, "This is the most items you can forge at a time.");
+			return;
+		endif
+	endif
+
+	SendSysMessage (character, "Please wait.  This may take a while...");
+
+	var elem;
+	foreach item in ListObjectsInBox (x1, y1, -127, x2, y2, 127)
+		if (ShouldMakeStatic (character, item))
+			elem := {};
+			elem.append({"NAME",  "#"});
+			elem.append({"ID",    item.graphic});
+			elem.append({"X",     item.x});
+			elem.append({"Y",     item.y});
+			elem.append({"Z",     item.z});
+			elem.append({"COLOR", item.color});
+			elem.append({"CONT",  -1});
+			elem.append({"TYPE",  255});		
+
+			AppendConfigFileElem (":static:statics", "SECTION", "WORLDITEM "+counter_index, elem);
+			counter_index := counter_index + 1;
+			if( !(item.objtype == 0x6203) )
+				DestroyItem (item);
+			endif
+		endif
+		
+		if (counter_index >= 30000)
+			SendSysMessage (character, "Maximum number of items reached (30,000).  Time to Worldforge!");
+			return;
+		endif
+	endforeach
+
+	UnloadConfigFile (":static:statics");
+	SendSysMessage (character, "Finished! " + counter_index + " items exported");
+endprogram
+
+
+
+
+function ShouldMakeStatic (character, item)
+	if (!item.isa (POLCLASS_ITEM))
+		if (item.name)
+			SendSysMessage (character, "Skipping " + item.name + " at " + item.x + ", " + item.y + " because it is not an item");
+		else
+			SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is not an item");
+		endif
+		return 0;
+	endif
+	
+	if (item.isa (POLCLASS_DOOR))
+		SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is a door");
+		return 0;
+	endif
+	
+	if (item.isa (POLCLASS_CONTAINER))
+		if (len (EnumerateItemsInContainer (item)))
+			SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is a container with items");
+			return 0;
+		endif
+		if (item.objtype == 0x2006)
+			SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is a corpse");
+		endif
+		SendSysMessage (character, "Including " + item.desc + " at " + item.x + ", " + item.y + " (empty container)");
+	endif
+	if( ( item.objtype == 0x6203 ) || ( item.objtype == 0x7010 ) || ( item.objtype == 0xa300 ) )
+		SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is a teleporter");
+		return 0;
+	endif
+	if( ( item.objtype == 0xCA66 ) )
+		SendSysMessage (character, "Skipping " + item.desc + " at " + item.x + ", " + item.y + " because it is a npctile");
+		return 0;
+	endif
+	return 1;
+endfunction
+
+
+//6008 1526
+
+function YesNo (me, prompt)
+	var layout := array (
+		"page 0",
+		"gumppic 0 0 2070",
+		"button 30 75 2130 2129 1 0 1",
+		"button 90 75 2119 2120 1 0 0",
+		"text 40 30 1355 0"
+	);
+
+	var data := array (prompt);
+	var res := SendDialogGump (me, layout, data);
+	if (res)
+		return 1;
+	else
+		return 0;
+	endif
+	
+endfunction

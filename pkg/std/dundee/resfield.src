@@ -1,0 +1,27 @@
+use os;
+use uo;
+
+const EFFECT_SPARKLE := 0x373a;
+const SOUND_EFFECT_RES := 0x215;
+
+include "include/dotempmods";
+include "include/res";
+
+program resfield( parms )
+
+	var mobile := parms[1];
+	if (mobile.isA(POLCLASS_NPC)) return; endif
+
+	set_critical( 1 );
+
+	if (mobile.poisoned) CurePoison(mobile,0,"Cured!"); endif
+
+	if( mobile.dead )
+		PlaySoundEffect( mobile, SOUND_EFFECT_RES );
+		ResurrectMobile( mobile );
+		PlayObjectCenteredEffect( mobile, EFFECT_SPARKLE, 10,10);
+	else
+		SendSysMessage(mobile,"You are at peace...");
+	endif
+
+endprogram

@@ -1,0 +1,24 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+
+program code_equal_to_number( who, client );
+
+	var player := Target( who,TGTOPT_NOCHECK_LOS );
+
+	
+
+        	if (player.cmdlevel == 0)
+			if( (ReadGameClock() > Cint(GetObjProperty( player ,"#macrostart" ) +36000 )) && !GetObjProperty( player, "#allowmacro"))
+				start_script( "::macrojail", player );
+			endif
+		endif
+
+
+
+endprogram

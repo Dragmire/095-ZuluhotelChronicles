@@ -1,0 +1,102 @@
+/*
+    Author: Unreal (MontuZ@Gmail.com) April 28, 2006.
+    Version: 1.0
+    Core: 096
+    Description: Auto Account Creator. Just like many of you know this is a RunUO/SphereServer
+    feature and now a POL feature. What it does exactly is when a person trys to login with
+    an unknown(non-existant) account. This script creates the account and logs them in.
+    Bugs: There shouldn't be any, but you never really know. So if a bug does come up
+    please send me an email or post on the forum where you got this(polserver.com)
+*/
+
+Use uo;
+Use os;
+Use polsys;
+
+Const OFFSET_ACCOUNT_NAME := 0x01;
+Const OFFSET_ACCOUNT_PASS := 0x1F;
+Const INFO_LEN := 30;
+
+Program Install()
+
+	Print( "Hooking Login Packets..." );
+	Return 1;
+
+Endprogram
+
+exported Function OnLogin( Who, byref Packet )
+
+    Who := Who;
+
+    Var xAccount := Packet.GetString( OFFSET_ACCOUNT_NAME, INFO_LEN );
+    Var xPassword := Packet.GetString( OFFSET_ACCOUNT_PASS, INFO_LEN );
+    
+    If( xAccount == Error )
+     SysLog( "Account/GetString Error: " + xAccount.errortext );
+     Return 0;
+    Elseif( xPassword == Error  )
+     SysLog( "Password/GetString Error: " + xPassword.errortext );
+     Return 0;
+    Endif
+    
+    // Remove this if you're going to use the password protection.
+    If( FindAccount( xAccount ) )
+    Return 0;
+    Endif
+    
+    // This is just a little password protection, so someone doesn't go around
+    // trying to steal peoples accounts trying 100's of passwords. It doesn't
+    // really stop someone, but it slows them down a lot and may lead them off
+    // from trying to steal the account.
+    // This is currently UNTESTED, in theory it should work. Any problems, again
+    // please send me an email to MontuZ@Gmail.com or post on the polserver.com's
+    // forum.
+    
+/*  [Password Protection]
+    Var Accnt := FindAccount( xAccount );
+
+    If( Accnt )
+      If( !Accnt.CheckPassword( xPassword ) )
+      Var FailedLogin := Accnt.GetProp( "FailedLogin" );
+        // First attempt at failing the password check.
+        If( !FailedLogin )
+         Accnt.SetProp( "FailedLogin", { 1, ReadGameClock() } );
+         Return 0; // Let pol tell him it's an incorrect password.
+        Else
+          // Incorrect password for the 5th time.
+          // Let's leave them hanging at login for the next 10 minutes.
+          If( FailedLogin[1] >= 5 && ( FailedLogin[2] >> ReadGameClock() ) )
+           Accnt.SetProp( "FailedLogin", { FailedLogin[1] + 1, ReadGameClock() + 10 } );
+           Return 1; // Leave him hanging.
+          // He attempted to login with the wrong password after 10 minutes.
+          // Let's reset his wait time.
+          Elseif( FailedLogin[1] >= 5 && ( FailedLogin[2] << ReadGameClock() ) )
+           Accnt.EraseProp( "FailedLogin" );
+           Return 0; // Let pol tell him it's an incorrect password.
+          Elseif( FailedLogin[1] << 5 )
+           Accnt.SetProp( "FailedLogin", { FailedLogin[1] + 1, ReadGameClock() } );
+           Return 0; // Let pol tell him it's an incorrect password.
+          Endif
+        Endif
+      Else
+       Return 0; // Passed password check, let them login.
+      Endif
+    Endif
+*/
+    
+    Var NewAccount := CreateAccount( xAccount, xPassword, 1 );
+    // In theory this should only return an error saying "Invalid parameter type".
+    // Should never return "Account already exists" because we already looked for the
+    // account and let pol handle it. And when it does return "Invalid parameter type"
+    // we don't have to worry, pol will do the right job for us and just say that account
+    // does not exist.
+    If( NewAccount == Error )
+     SysLog( "CreateAccount() Error: " + NewAccount.errortext );
+     Return 0;
+    Endif
+    
+    SysLog( "AutoAccount Created: " + xAccount );
+
+    Return 0;
+    
+Endfunction

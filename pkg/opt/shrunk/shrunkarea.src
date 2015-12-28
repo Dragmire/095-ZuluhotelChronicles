@@ -1,0 +1,36 @@
+use uo;
+
+include "include/itemutil";
+
+program unshrink_area( who, dolly )
+
+	SendSysMessage( who, "Un-shrink where?" );
+	var where := TargetCoordinates( who );
+	if (!where)
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	foreach item in EnumerateItemsInContainer( dolly )
+
+		var x_mod := GetObjProperty( item, "x_mod" );
+		var y_mod := GetObjProperty( item, "y_mod" );
+		var z_mod := GetObjProperty( item, "z_mod" );
+		var newitem := CreateItemAtLocation( where.x + x_mod, where.y + y_mod, where.z + z_mod, item.objtype, item.amount );
+
+		if (!newitem)
+			SendSysMessage( who, "Item not found " );
+			continue;
+		endif
+
+		DupeItem( item, newitem );
+		if( item.usescript )
+			newitem.usescript := item.usescript;
+		endif
+
+	endforeach
+
+	SendSysMessage( who, "Done!" );
+
+endprogram
+

@@ -1,0 +1,440 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  spellpcs.src: spell caster AI
+//
+//
+//  Author: DCT, stealing most from ENS's killpc.src
+//
+//  Created: 6/98
+
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+var runaway := 0;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+       
+	main_AI_loop();
+
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  These types fight singlemindedly, until the quarry is dead.
+//  There is no way out but death.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+var Near;
+Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+var kwall := 0;
+var runaround := 0;
+foreach item in Near
+if (item.objtype == 0x5f or item.objtype == 0x57 or item.objtype == 0x3946 or item.objtype == 0x3955)
+if (kwall == 0)
+	if (!CheckLineOfSight( me, opponent))
+		if (Random(2) == 1 )
+			SetMana( me,  GetMana(me) + 50 );
+			CastSpell(me,me,"dispel_field");
+			kwall := 1;
+		else	
+			while (runaround < 15)
+				runaround := runaround + 1;
+				RunToward(opponent);
+			endwhile
+			runaround := 0;
+		endif
+	endif
+endif
+endif
+endforeach
+//MEDITATION
+var safe := 1;
+var medhp;
+if (GetMana(me) < GetMaxMana(me) )
+if (GetObjProperty(me,"oldmana"))
+	SetMana( me, GetObjProperty(me,"oldmana") );	
+endif
+if (GetMana(me) < (GetMaxMana(me) / 1.3))	
+	foreach critter in ListMobilesInLineOfSight( me, 4 )
+		if (critter.name != me.name)
+			safe := 0;
+		endif
+	endforeach
+	if (safe == 1)
+		medhp := GetHP(me);
+		sleep(1);
+		PrintTextAbove( me, "*Meditating*" );
+		PlaySoundEffect( me , 0xfa );
+		while (safe == 1 and (GetHP(me) >= medhp) and (GetMana(me) < GetMaxMana(me)))
+			medhp := GetHP(me);
+			SetMana( me,  GetMana(me) + 30 );
+			if (GetMana(me) > GetMaxMana(me))
+				SetMana( me , GetMaxMana(me) );
+				safe := 0;
+			endif
+			foreach critter in ListMobilesInLineOfSight( me, 4 )
+				safe := 0;
+			endforeach
+			sleep (1);
+		endwhile
+	endif
+endif
+endif
+//
+if (GetHP(me) < (GetMaxHP(me) / 1.5))
+	SetMana( me,  GetMana(me) + 50);
+	CastSpell(me,me,"naturestouch");
+	SetHP( me , GetHP(me) + 50 );
+endif
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+	var d:=distance(me,opponent);
+	if ( d > 10 )
+		RunToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+    case d
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if (GetMana( me) > (GetMaxMana(me)/3))
+				RunAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+			if (runaway == 15)
+				turntoward( opponent );
+			endif
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (GetMana( me) < (GetMaxMana(me)/3))
+			RunToward( opponent );
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			if (GetObjProperty(me,"lastnolos") != opponent.name)
+				if (runrandom(opponent))
+					Sleepms(sleepdelay);
+				endif
+			endif
+			SetObjProperty(me,"lastnolos",opponent.name);
+			foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 9 )
+				if (CheckLineOfSight( me, mobile ) and !mobile.npctemplate )
+					opponent := mobile;
+		
+				endif
+			endforeach
+			var choice := Random (4) + 1;
+			if (choice == 1)
+				EraseObjProperty(me,"lastnolos");
+				RestartScript(me);
+			elseif (choice == 2)
+				runaround := 0;
+				while (runaround < 15)
+					RunToward(opponent);
+					runaround := runaround + 1;
+				endwhile
+			elseif (choice == 3)
+				EraseObjProperty(me,"lastnolos");
+				spellattack(opponent);
+			elseif (choice == 4)
+				runaround := 0;
+				while (runaround < 10)
+					runrandom(opponent);
+					runaround := runaround + 1;
+				endwhile
+			endif
+			return 2;
+		else
+			Spank(opponent);
+		endif
+		return 1;
+    endcase
+    AntiMelee();
+endfunction
+
+function Spank (player)
+	if (GetObjProperty(me,"Spanking"))
+		return;
+	endif
+	sleep(1);
+	SetObjProperty(me,"Spanking",1);	
+	var cl;
+	var result;
+	if (GetObjProperty(player,"IsMage"))
+		cl := "mage";
+	elseif (GetObjProperty(player,"IsWarrior"))
+		cl := "warrior";
+	elseif (GetObjProperty(player,"IsRanger"))
+		cl := "ranger";
+	else
+		cl := "pp";
+	endif
+	if (cl == "mage")
+		result := Nuke(player,"para");
+		Nuke(player,"dispel");
+		if (result and !player.dead)	
+			result := Nuke(player,"drain");
+			if (result and !player.dead)
+				result := Nuke(player,"curse");
+				if (result and !player.dead)
+					result := Nuke(player,"melee");
+					if (result and !player.dead)
+						result := Nuke(player,"melee");
+						if (result and !player.dead)			
+							result := Nuke(player,"melee");
+							if (result and !player.dead)
+								Nuke(player,"poison");
+							endif
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+	if (cl == "warrior")
+		result := Nuke(player,"para");
+		Nuke(player,"dispel");
+		if (result and !player.dead)	
+			result := Nuke(player,"curse");
+			if (result and !player.dead)
+				result := Nuke(player,"poison");
+				if (result and !player.dead)
+					result := Nuke(player,"blast");
+					if (result and !player.dead)
+						result := Nuke(player,"blast");
+						if (result and !player.dead)
+							Nuke(player,"blast");
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+	if (cl == "ranger")
+		result := Nuke(player,"poison");
+		Nuke(player,"dispel");
+		if (result and !player.dead)	
+			result := Nuke(player,"dex");
+			if (result and !player.dead)
+				result := Nuke(player,"curse");
+				if (result and !player.dead)
+					result := Nuke(player,"para");
+					if (result and !player.dead)
+						result := Nuke(player,"blast");
+						if (result and !player.dead)
+							Nuke(player,"blast");
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+	if (cl == "pp")
+		result := Nuke(player,"para");
+		Nuke(player,"dispel");
+		if (result and !player.dead)	
+			result := Nuke(player,"poison");
+			if (result and !player.dead)
+				result := Nuke(player,"curse");
+				if (result and !player.dead)
+					result := Nuke(player,"drain");
+					if (result and !player.dead)
+						result := Nuke(player,"blast");
+						if (result and !player.dead)
+							result := Nuke(player,"blast");
+							if (result and !player.dead)
+								Nuke(player,"blast");
+							endif
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif
+	EraseObjProperty(me,"Spanking");
+	return;
+endfunction
+
+function Nuke (player, type)
+	AntiMelee();
+	if (type == "para" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50 );
+		if (GetMana(me) > GetMaxMana(me))
+			SetMana(me,  GetMaxMana(me) );
+		endif
+		case(Random(3)+1)
+			1: CastSpell(me, player, "paralyze");
+			2: CastSpell(me, player, "wraithbreath");
+			3: CastSpell(me, player, "astralstorm");
+		endcase
+		sleep(1);
+		return 1;
+	endif
+	if (type == "melee" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50);
+		if (GetMana(me) > GetMaxMana(me))
+			SetMana( me, GetMaxMana(me) );
+		endif
+		case(Random(3)+1)
+			1: CastSpell(me, player, "vortex");
+			2: CastSpell(me, player, "blade_spirit");
+			3: CastSpell(me, player, "earthspirit");
+		endcase
+		sleep(1);
+		return 1;
+	endif
+	if (type == "poison" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50);
+		if (GetMana(me) > GetMaxMana(me))
+			SetMana( me, GetMaxMana(me));
+		endif
+		case(Random(3)+1)
+			1: CastSpell(me, player, "poison");
+			2: CastSpell(me, player, "plague");
+			3: CastSpell(me, player, "wyvernstrike");
+		endcase
+		sleep(1);
+		return 1;
+	endif
+	if (type == "curse" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50 );
+		if ( GetMana(me) > GetMaxMana(me))
+			SetMana( me, GetMaxMana(me));
+		endif
+		case(Random(3)+1)
+			1: CastSpell(me, player, "curse");
+			2: CastSpell(me, player, "darkness");
+			3: CastSpell(me, player, "masscurse");
+		endcase
+		sleep(1);
+		return 1;
+	endif
+	if (type == "dispel" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50);
+		if ( GetMana(me) > GetMaxMana(me))
+			SetMana( me,  GetMaxMana(me) );
+		endif
+		case(Random(2)+1)
+			1: CastSpell(me, player, "dispel");
+			2: CastSpell(me, player, "massdispel");
+		endcase
+		sleep(1);
+		return 1;
+	endif
+	if (type == "drain" and GetHP(me)> (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50);
+		if (GetMana(me) > GetMaxMana(me))
+			SetMana( me,  GetMaxMana(me) );
+		endif
+		case(Random(2)+1)
+			1: CastSpell(me, player, "manavamp");
+			2: CastSpell(me, player, "manadrain");
+		endcase	
+		sleep(1);
+		return 1;
+	endif
+	if (type == "blast" and GetHP(me)> (GetMaxHP(me)/1.5))
+		SetMana( me,  GetMana(me)  + 50 );
+		if (GetMana( me)  > GetMaxMana(me))
+			SetMana( me,  GetMaxMana(me) );
+		endif
+		case(Random(5)+1)
+			1: CastSpell(me, player, "mindblast");
+			2: CastSpell(me, player, "icestrike");
+			3: CastSpell(me, player, "apocolypse");
+			4: CastSpell(me, player, "kill");
+			5: CastSpell(me, player, "risingfire");
+		endcase	
+		sleep(1);
+		return 1;
+	endif
+	if (type == "dex" and GetHP(me) > (GetMaxHP(me)/1.5))
+		SetMana( me, GetMana(me) + 50 );
+		if (GetMana(me) > GetMaxMana(me))
+			SetMana( me, GetMaxMana(me) );
+		endif
+		CastSpell(me, player, "clumsy");
+		sleep(1);
+		return 1;
+	endif
+	return;
+endfunction
+
+function AntiMelee()
+var omfg;
+var opponent;
+	foreach critter in ListMobilesInLineOfSight( me, 2 )
+		if (critter.name != me.name )
+			omfg := 0;
+			opponent := critter;
+		else
+			omfg := 31;
+		endif
+	endforeach
+	if (opponent)
+		while (distance(me, opponent) <= 10 and omfg < 30)
+			RunAwayFrom(opponent);
+			omfg := omfg + 1;
+		endwhile
+		if (omfg > 29)
+			turntoward( opponent );
+			SetMana( me,  GetMana(me) + 30);
+			CastSpell(me,opponent,"teleport");
+		endif
+		me.warmode := 0;
+		setopponent(opponent);
+		me.warmode := 1;
+	endif
+endfunction

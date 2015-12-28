@@ -1,0 +1,45 @@
+//look way down at the bottom and change:
+//	dolly.usescript := ":dundee:shrunknpcs";
+//to whatever package you place shrunknpcs in.
+//
+
+use uo;
+
+program textcmd_colorarea( who , text )
+
+	var color := Cint( text );
+	
+	SendSysMessage( who, "Select the starting point" );
+	var start := TargetCoordinates( who );
+	if( !start )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+	
+	SendSysMessage( who , "Select the finishing point" );
+	var ending := TargetCoordinates( who );
+	if( !ending )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+		
+	SendSysmessage( who, "What is the z amplitude? Integer only." );
+        var amplitude := Cint(RequestInput( who, who.backpack, "Enter the amplitude value."));
+	
+	var x1 := start.x;
+	var y1 := start.y;
+	var z1 := start.z - amplitude;
+	
+	var x2 := ending.x;
+	var y2 := ending.y;
+	var z2 := ending.z + amplitude;
+
+	foreach item in ListObjectsInBox( x1 , y1 , z1 , x2 , y2 , z2 )
+		
+		item.color := color;
+			
+	endforeach
+
+	SendSysMessage(who,"Done!");
+
+endprogram

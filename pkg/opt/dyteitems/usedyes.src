@@ -1,0 +1,73 @@
+use uo;
+use basic;
+use cfgfile;
+use os;
+
+include "include/skillpoints";
+include "util/bank";
+include "include/attributes";
+
+program use_dyes( who, dyes )
+
+	if( !ReserveItem(dyes) )
+		SendSysMessage( who, "Those dyes are already in use." );
+		return 0;
+	endif
+
+	SendSysMessage( who, "Select a dye tub to use the dyes on." );
+	var dyetub := Target( who, TGTOPT_CHECK_LOS );
+	if( !dyetub )
+		return 0;
+	elseif( !Accessible( who, dyetub ) )
+		SendSysMessage( who, "You can't reach that." );
+		return 0;
+	elseif( !ReserveItem(dyetub) )
+		SendSysMessage( who, "This is already in use." );
+		return 0;
+	elseif( dyetub.objtype != 0x0fab )
+		SendSysMessage( who, "That is not a dye tub!" );
+    		return 0;
+	elseif( !IsInContainer( who.backpack, dyetub ) )
+		SendSysMessage( who, "That item has to be in your backpack." );
+    		return 0;
+	endif
+
+	var color := SelectColor( who, dyetub );
+	if( color > 1001 )
+		var account := who.acct;
+		dyetub.color := 0;
+		SendSysMessage( who, "Bug abusers aren't tolerated here." );
+		SetBaseSkill( who, 34, 0 );
+		SetBaseStrength(who,1);
+		SetBaseIntelligence(who,1);
+		SetBaseDexterity(who,1);
+		PlayLightningBoltEffect(who);
+		EraseObjProperty( who, "StatsState" );
+		var bankbox := FindBankBox(who);
+		if( bankbox )
+			foreach item in EnumerateItemsInContainer(bankbox)
+				DestroyItem(item);
+			endforeach
+		endif
+	
+		Detach();
+		ReleaseItem(dyes);
+		ReleaseItem(dyetub);
+	
+		sleep(60);
+		var countdown;
+		for( countdown := 60; countdown > 0; countdown := countdown - 1 )
+			SendSysMessage( who, "Say goodbye to your account in " + countdown + " seconds .", 0x0, 33 );
+			sleep(1);
+		endfor
+		
+		SendSysMessage( who, "Hoping to not see you again...", 0x0, 33 );
+		sleep(2);
+		account.ban();
+	elseif( color == 1 )
+		dyetub.color := 0;
+	else
+		dyetub.color := color;
+	endif
+
+endprogram

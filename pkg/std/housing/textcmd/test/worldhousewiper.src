@@ -1,0 +1,187 @@
+use uo;
+use os;
+
+var housesdemolished:=1;
+var first_time:=0;
+
+program testprog(who)
+
+Dev( "World House Wiper - running." );
+
+var signs := GetGlobalProperty("signs");
+var csize:=signs.size(),sign;
+
+var i:=0;
+var house, ownerserial, owneracct, acctsearch;
+
+for(i:=1;i<=csize;i:=i+1)
+	sign:=SystemFindObjectBySerial(CInt(signs[i]));
+	house := SystemFindObjectBySerial(CInt(GetObjProperty(sign, "house_serial")));
+	owneracct:=GetObjProperty(house, "owneracct");
+
+	acctsearch := FindAccount(owneracct);
+
+	if(!acctsearch || acctsearch == error)//no account
+
+        	if(!CheckforCowns(house))
+	        	Dev( "Deleting house #"+housesdemolished);
+			sleep(2);
+	        	first_time:=0;	// change to 1 to have it NOT delete houses.
+	        			// 0 to ACTUALLY delete houses.
+			Demolish(house);
+        	endif
+	endif
+
+ if (first_time) break; endif
+
+endfor
+
+var msgarray:=array;
+msgarray[1]:= i;
+msgarray[2]:= 7989;
+Dev(msgarray);
+
+
+var passingarray2 := array;
+passingarray2[1]:=housesdemolished;
+passingarray2[2]:=7777;
+Dev(passingarray2);
+endprogram
+
+
+
+function Demolish(byref house)
+
+	// check for guildstone
+	 foreach item in (house.items)
+	  if (item.objtpe==0xa390)
+	  Dev("By passing house because of guildstone.");
+	  return;
+	  endif
+	 endforeach
+
+	var passingarray := array;
+
+	passingarray[1]:=house.x;
+	passingarray[2]:=house.y;
+	passingarray[3]:=house.z;
+	passingarray[4]:=9949;
+
+	Dev(passingarray);
+
+	housesdemolished:=housesdemolished+1;
+
+	if (first_time)
+	first_time:=0;	// change to 1 to have it exit house search on first abandon house.
+	return;		// 0 to have it continue searching houses.
+	endif
+
+	var addonitem,founditem;
+
+	 foreach item in (house.components)
+	  DestroyItem(item);
+	 endforeach
+
+	 foreach item in (house.items)
+	  DestroyItem(item);
+	 endforeach
+
+	 addonitem := CInt(GetObjProperty( house, "component1" ));
+	 if (addonitem) DestroyItem(CInt(SystemFindObjectBySerial(addonitem))); endif
+
+	 addonitem := CInt(GetObjProperty( house, "component2" ));
+	 if (addonitem) DestroyItem(CInt(SystemFindObjectBySerial(addonitem))); endif
+
+	 addonitem := CInt(GetObjProperty( house, "component3" ));
+	 if (addonitem) DestroyItem(CInt(SystemFindObjectBySerial(addonitem))); endif
+
+	 addonitem := CInt(GetObjProperty( house, "builtdeed" ));
+	 if (addonitem)
+	  founditem := DestroyItem(CInt(SystemFindObjectBySerial(addonitem)));
+	  if (founditem!=1)
+	founditem:=DestroyItem(CInt(SystemFindObjectBySerial(addonitem,1))); endif
+	  if (founditem!=1) DestroyItem(CInt(SystemFindObjectBySerial(addonitem,2)));
+	endif
+	 endif
+
+	 if (house.objtype==0x608d)
+	  foreach items in ListItemsNearLocation( house.x, house.y, 0, 8 )
+	   if((items.objtype==0x177d) || (items.objtype==0xb41) || (items.objtype==0xb42))
+	    DestroyItem(items);
+	   endif
+	  endforeach
+	 endif
+	 DestroyMulti( house );
+
+endfunction
+
+
+function CheckforCowns(byref multi)
+
+
+
+	var acct:=0,who:=0,whichcown:=0;
+	var i;
+	for(i:=1;i<=len(GetObjProperty(multi, "Co-owner"));i:=i+1);
+		//who:=cint(SystemFindObjectBySerial(GetObjProperty(multi, "Co-owner" + i)));
+		who := SystemFindObjectBySerial( CInt(GetObjProperty( multi, "Co-owner" + i )) );
+
+		if(!who)
+
+			who:=SystemFindObjectBySerial(CInt(GetObjProperty(multi, "Co-owner" + i)),SYSFIND_SEARCH_OFFLINE_MOBILES);
+
+		endif
+
+			acct:=FindAccount(who.acctname);
+
+			if(!acct || acct == error)
+
+			//account is gone on THIS co-owner, check next,
+
+			else
+				whichcown:=i;
+				break;
+			endif
+
+
+	endfor
+
+	if(whichcown)
+
+		SetObjProperty(multi, "ownerserial", GetObjProperty(multi, "Co-owner" + whichcown));
+		SetObjProperty(multi, "owneracct", who.acctname);
+
+	else
+
+		return 0;
+
+	endif
+
+	EraseObjProperty(multi, "Co-owner"+whichcown);
+
+	return 1;
+
+endfunction
+
+function Dev(text)
+
+foreach chr in EnumerateOnlineCharacters()
+
+	if (chr.cmdlevel>4 && chr)
+
+		if(text[4]==9949)
+			SendSysMessage(chr,"ZHWM: X:"+text[1]+" Y:"+text[2]+" Z:"+text[3]+ "",3,37);
+		elseif(text[2]==7989)
+			SendSysMessage(chr,"ZHWM: total houses investigated "+text[1]+"",3,37);
+		elseif(text[2]==7777)
+			SendSysMessage(chr,"ZHWM: total houses demolished "+text[1]+"",3,37);
+		else
+			SendSysMessage(chr,"ZHWM:"+text,3,37);
+
+		endif
+
+	endif
+
+endforeach
+
+endfunction

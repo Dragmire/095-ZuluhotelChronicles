@@ -1,0 +1,117 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/classes";
+include "include/damages";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING	:= MOVING_SPELL_DISPEL;
+const SPELL_EFFECT_ID		:= FX_SPELL_DISPEL;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_DISPEL;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_DISPEL;
+
+program dispel ( parms )
+
+	var circle := 6;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+		send_attack( cast_on, caster, SPELLID_DISPEL );
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	var magery := ModifyWithMagicEfficiency( caster, GetEffectiveSkill(caster, SKILLID_MAGERY) );
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+
+	var summoned := GetObjProperty( cast_on, "summoned" );
+	var animated := GetObjProperty( cast_on, "animated" );
+
+	if( summoned )
+		var immunity := IsProtected( caster, cast_on, circle );
+		if( immunity == IMMUNED )
+			return;
+		endif
+	
+		if( immunity == CURSED )
+			magery := magery * 2;
+		endif
+	
+		if( GetObjProperty( caster, CLASSEID_MAGE ) )
+			magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+		endif
+	
+		if( !CheckSkill( cast_on, SKILLID_MAGICRESISTANCE, magery, 50 ))
+			PlaySoundEffect( cast_on, SFX_SPELL_DISPEL );
+			MoveCharacterToLocation(cast_on,0,0,0,MOVECHAR_FORCELOCATION);
+			ApplyTheDamage( cast_on, caster, GetMaxHp(cast_on) + 3, DMGID_MAGIC );
+		else
+			SendSysMessage( caster, "You could not dispel the creature." );
+		endif
+
+	elseif( animated )
+		var immunity := IsProtected( caster, cast_on, circle );
+		if( immunity == IMMUNED )
+			return;
+		endif
+	
+		if( immunity == CURSED )
+			magery := magery * 2;
+		endif
+	
+		if( GetObjProperty( caster, CLASSEID_MAGE ) )
+			magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+		endif
+	
+		if( !CheckSkill( cast_on, SKILLID_MAGICRESISTANCE, magery, 50 ))
+			PlaySoundEffect( cast_on, SFX_SPELL_DISPEL );
+			ApplyTheDamage( cast_on, caster, GetMaxHp(cast_on) + 3, DMGID_MAGIC );
+		else
+			SendSysMessage( caster, "You could not dispel the creature." );
+		endif
+
+	elseif(cast_on.objtype==UOBJ_STONEWALL_NS || cast_on.objtype==UOBJ_STONEWALL_EW)
+		if (GetObjProperty(cast_on, "f") == 1)
+		if( !CheckSkill( caster, SKILLID_MAGICRESISTANCE, magery, 25 ))
+		        PlaySoundEffect( cast_on, SFX_SPELL_DISPEL );
+			DestroyItem(cast_on);
+		else
+			SendSysMessage( caster, "You could not dispel the wall." );
+		endif
+		endif
+	else
+		WipeMods( cast_on );
+		if( cast_on.graphic != cast_on.trueobjtype && !cast_on.dead )
+			cast_on.graphic := cast_on.trueobjtype;
+		endif
+		SendSysMessage( caster, "All the magical effects active on this creature have been wiped." );
+	endif
+
+endprogram

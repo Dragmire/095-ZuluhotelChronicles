@@ -1,0 +1,20 @@
+use uo;
+include "include/client";
+include "include/damages";
+program textcmd_killem( speaker , range )
+
+	range := Cint( range );
+	
+	var mobiles := ListMobilesNearLocationEx( speaker.x , speaker.y , speaker.z , range,0x03 ); //Normal (0x1) + Hidden (0x2)
+    	foreach mobile in mobiles
+        	if( mobile.serial != speaker.serial )
+        		if( mobile.cmdlevel > speaker.cmdlevel and speaker.cmdlevel < 5 )
+				SendSysMessage( mobile , speaker.name + " is trying to barterban you." );
+			else
+        			SetObjProperty( mobile , "guardkill" , 1 );
+           			ApplyRawDamage( mobile , GetHP(mobile)+3 );
+           		endif
+        	endif
+    	endforeach
+    	
+endprogram

@@ -1,0 +1,95 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_SHIFTING_EARTH;
+const SPELL_EFFECT_ID		:= FX_SPELL_SHIFTING_EARTH;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_SHIFTING_EARTH;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_SHIFTING_EARTH;
+
+program cast_shifting_earth( parms )
+
+	var circle := GetCircle( SPELLID_SHIFTING_EARTH );
+	var element := EARTH;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on, caster, SPELLID_SHIFTING_EARTH );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_SHIFTING_EARTH ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+	
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_SHIFTING_EARTH );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY);
+	if( immunity == CURSED )
+		SendSysMessage( cast_on, "One of your equipped item increase the effect of the spell!" );
+		magery := magery * 2;
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster, cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+        if( !CanMod( cast_on, "dex" ) )
+        	EraseObjProperty( caster, "#Casting" );
+                return;
+        endif
+       
+	var prot := GetResultingElementalProt( cast_on, element );
+	if( prot )
+		magery := CInt( magery - ( magery * prot / 10 ) );
+	endif
+
+	if( magery < 1 )
+		magery := 1;
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+        var mod_amount := Resisted( caster, cast_on, circle, GetModAmount( caster ) );
+	var duration := GetModDuration( caster );
+        DoTempMod( cast_on, "dex", 0 - mod_amount, duration );
+
+endprogram

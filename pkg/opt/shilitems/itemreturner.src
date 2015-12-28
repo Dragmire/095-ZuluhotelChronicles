@@ -1,0 +1,27 @@
+use uo;
+use os;
+
+
+program itemreturner( item )
+
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+	set_script_option( SCRIPTOPT_NO_INTERRUPT, 1 );
+
+	var owner_serial := GetObjProperty( item, "ownerserial" );
+	if( !owner_serial )
+		return;
+	endif
+
+	var owner := SystemFindObjectBySerial( owner_serial );
+	if( !owner )
+		owner := SystemFindObjectBySerial( owner_serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		if( !owner )
+			return;
+		endif
+	endif
+
+	sleep( 4 );
+
+	MoveItemToContainer( item, owner.backpack );
+
+endprogram

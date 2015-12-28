@@ -1,0 +1,60 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+const HALT_THRESHOLD := 8;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/anchors";
+include "ai/main/mainloopquestie";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "ai/main/sleepmode";
+include "include/speech";
+include "ai/setup/questiesetup";
+include "ai/setup/modsetup";
+
+program Questie()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	me.graphic := 400 + me.gender;
+	if (len(me.title_suffix))
+		var newtitle := "";
+		foreach word in splitwords(me.title_suffix)
+			newtitle := newtitle + " " + word;
+		endforeach
+		me.title_suffix := newtitle;
+	endif
+
+    	SetWarMode( 0 );
+
+    	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+    case Distance( me, opponent )
+        1:
+        0:
+            return 1;
+        default:
+            RunToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+    endcase
+
+endfunction

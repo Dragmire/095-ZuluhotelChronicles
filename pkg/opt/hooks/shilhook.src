@@ -1,0 +1,138 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/random";
+include "include/classes";
+include "include/skillpoints";
+
+
+program shilhook()
+
+	Print( "Using ShilCheckSkill..." );
+	return 1;
+
+endprogram
+
+
+exported function ShilCheckSkill( who, skillid, difficulty, points )
+
+	if( who.IsA(POLCLASS_NPC) )
+		return 1;
+	elseif( who.cmdlevel )
+		return 1;
+	elseif( difficulty == 0 )
+		return 1;
+	elseif( difficulty < 0 )
+		return SkillAsPercentSkillCheck( who, skillid, difficulty, points );
+	else
+		return DifficultySkillCheck( who, skillid, difficulty, points );
+	endif
+
+endfunction
+
+
+function DifficultySkillCheck( who, skillid, difficulty, points )
+
+	var skill	:= GetEffectiveSkill( who, skillid );
+	var chance	:= Cint( skill - difficulty + 20 );
+	
+	if( chance < 0 )
+		return 0;
+	elseif( chance == 0 )
+		chance := 2;
+	else
+		chance := Cint( chance * 2.5 );
+		if( chance > 98 )
+			chance := 98;
+		endif
+	endif
+
+	var check := RandomInt(100);
+	if( check >= chance )
+		if( IsSpecialisedIn( who, skillid ) )
+			check := RandomInt(100);
+			if( check >= chance )
+				return 0;
+			else
+				points := 0;
+			endif
+		else
+			return 0;
+		endif
+	endif
+
+	If(GetBaseSkill(who,skillid) >= 130)
+		points :=0;
+		SetBaseSkill(who, skillid, 130);
+	endif
+
+	if( !who.npctemplate )
+		AwardStatPoints( who, skillid );
+		points := Cint( points * Cdbl(1.0 - (Cdbl(chance) / 100.0)) );
+		if( points > 0 )
+			AwardSkillPoints( who, skillid, points );
+		endif
+	endif
+
+	return 1;
+
+endfunction
+
+
+function SkillAsPercentSkillCheck( who, skillid, difficulty, points )
+
+	var skill	:= GetEffectiveSkill( who, skillid );
+	var chance	:= skill + Cint((difficulty+1) * 15);
+	if( chance < 2 )
+		chance := 2;
+	elseif( chance > 98 )
+		chance := 98;
+	endif
+	If(GetBaseSkill(who,skillid) >= 130)
+		points :=0;
+		SetBaseSkill(who, skillid, 130);
+	endif
+	var check := RandomInt(100);
+	if( check >= chance )
+		if( IsSpecialisedIn( who, skillid ) )
+			check := RandomInt(100);
+			if( check >= chance )
+				if( chance < 10 )
+					AwardSkillPoints( who, skillid, Cint(points/2) );
+				endif
+				return 0;
+			else
+				points := 0;
+			endif
+		else
+			if( chance < 10 )
+				AwardSkillPoints( who, skillid, Cint(points/2) );
+			endif
+			return 0;
+		endif
+	endif
+
+	if( !who.npctemplate )
+		AwardStatPoints( who, skillid );
+		if( points > 0 )
+			AwardSkillPoints( who, skillid, points );
+		endif
+	endif
+
+	return 1;
+
+endfunction
+
+
+function GetSuccessLevel( who, skillid, success_level )
+
+	success_level := Cint( success_level + IsSpecialisedIn( who, skillid ) );
+
+	if( success_level <= 0 )
+		success_level := 1; // it must be a success (just in case)
+	endif
+
+	return success_level;
+
+endfunction

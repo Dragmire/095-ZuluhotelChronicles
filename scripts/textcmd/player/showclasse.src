@@ -1,0 +1,27 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+
+include "include/classes";
+
+program show_classe( who )
+
+	var level;
+	
+	foreach classe in GetClasseIds()
+		EraseObjProperty( who , classe );
+		level := IsFromThatClasse( who , GetClasseSkills(classe) );
+		if( level )
+			SetObjProperty( who, classe, level );
+			SendSysMessage( who, "You're a qualified level " + level + " " + lower(GetClasseName(classe)));
+			return;
+		endif
+	endforeach
+	
+	SendSysMessage( who, "You aren't in any specific classe" );
+
+endprogram

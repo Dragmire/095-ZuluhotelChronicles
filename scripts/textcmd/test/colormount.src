@@ -1,0 +1,18 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Feb 10, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program Horse_Mount( Who, Text )
+
+   var Color := Cint( Text );
+
+      Var DoColor := GetEquipmentByLayer( who, 25 );
+      DoColor.graphic := Color;
+
+EndProgram

@@ -1,0 +1,89 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+include "include/random";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_GUST_OF_AIR;
+const SPELL_EFFECT_ID		:= FX_SPELL_GUST_OF_AIR;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_GUST_OF_AIR;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_GUST_OF_AIR;
+
+program cast_gust_of_air( parms )
+
+	var circle := GetCircle( SPELLID_GUST_OF_AIR );
+	var element := AIR;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on, caster, SPELLID_GUST_OF_AIR );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_GUST_OF_AIR ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+	
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayStationaryEffect( cast_on.x,
+				      cast_on.y,
+				      cast_on.z,
+				      SPELL_EFFECT_ID,
+				      SPELL_EFFECT_SPEED,
+				      SPELL_EFFECT_LOOP );
+	endif
+	PlaySoundEffect( cast_on, SFX_SPELL_GUST_OF_AIR1 );
+	PlaySoundEffect( cast_on, SFX_SPELL_GUST_OF_AIR2 );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var magery  	:= CInt(GetEffectiveSkill( caster, SKILLID_MAGERY ) / 10 );
+	if( immunity == CURSED )
+		circle := circle * 2;
+		magery := magery * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+	var kickbackx := CInt((Random(magery) - CInt(magery/2) ));
+	var kickbacky := CInt((Random(magery) - CInt(magery/2) ));
+	var kickbackz := CInt((Random(magery) - CInt(magery/2) ));
+	var newx	:= cast_on.x + kickbackx;
+	var newy	:= cast_on.y + kickbacky;
+	var newz	:= cast_on.z + kickbackz;
+	
+	if( CheckLosAt( cast_on, newx, newy, newz ) )
+		MoveCharacterToLocation( cast_on, newx, newy, newz );
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram

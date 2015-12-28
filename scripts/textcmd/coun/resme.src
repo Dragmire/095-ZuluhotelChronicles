@@ -1,0 +1,35 @@
+use os;
+use uo;
+use boat;
+
+
+program textcmd_resme( who )
+    if (who.dead)
+        Resurrect( who );
+	fixcolor(who);
+    else
+        SendSysMessage( who, "But I'm not dead yet!" );
+    endif
+endprogram
+
+function fixcolor(who)
+
+   var newcolor, racepicked := who.title_race;
+
+   if (racepicked=="Elf")
+	newcolor := 770;
+   elseif (racepicked=="Dark-Elf")
+	newcolor := 33877;
+   elseif (racepicked=="Goblin")
+	newcolor := 34186;
+   elseif (racepicked=="Barbarian")
+	newcolor := 33804;
+   elseif (racepicked=="Dwarf")
+	newcolor := 33888;
+   else
+	newcolor := who.truecolor;
+   endif
+
+   who.color := newcolor;
+
+endfunction

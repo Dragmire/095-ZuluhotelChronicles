@@ -1,0 +1,39 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/drinkpotion";
+include "include/attributes";
+include "include/client";
+include "include/random";
+
+program drink_blue (character, potion)
+
+	if( !CheckIfCanDrink(character) )
+		return;
+	endif
+
+	if( IsPoison( potion ) )
+		DoPoison( character, potion );
+
+	else
+		var power := GetPotionStrength( potion );
+		EmptyBottle( character, potion );
+		PlayObjectCenteredEffect( character, FX_BLESS_EFFECT, SPEED_SPELL_BLESS, LOOP_SPELL_BLESS );
+	
+		if( power > 3 )
+			SetStamina(character, GetMaxStamina(character));
+		else
+			var amt := RandomDiceStr("5d5+5") * power;
+			SetStamina(character, GetStamina(character) + amt);
+			if( GetStamina(character) > GetMaxStamina(character) )
+				SetStamina(character, GetMaxStamina(character));
+			endif
+		endif
+	endif
+
+	Detach();
+	sleep( DELAY_BETWEEN_DRINK );
+	CanDrink( character );
+
+endprogram

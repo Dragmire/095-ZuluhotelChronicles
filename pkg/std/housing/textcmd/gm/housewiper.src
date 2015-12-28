@@ -1,0 +1,119 @@
+use os;
+use uo;
+
+program housewiper( who )
+
+var multi := GetStandingHeight( who.x, who.y, who.z ).multi;
+
+if(!multi)
+SendSysMessage(who, "You are not on a house");
+return;
+endif
+
+var accountname := GetObjProperty( multi, "owneracct" );
+	print(accountname);
+        var test := FindAccount(accountname);
+
+        if(!test || test == error)//no account
+        	if(!CheckforCowns(multi))
+        	SendSysMessage(who, "No Owner account and No Active Co-owners....");
+        	Demolish(multi);
+        	endif
+	else//its here
+
+		SendSysMessage(who, "Owner is still active");
+
+	endif
+
+endprogram
+
+
+function Demolish(house)
+
+var addonitem,founditem;
+
+foreach item in (house.components)
+  DestroyItem(item);
+endforeach
+
+foreach item in (house.items)
+  DestroyItem(item);
+endforeach
+
+addonitem := CInt(GetObjProperty( house, "component1" ));
+if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+addonitem := CInt(GetObjProperty( house, "component2" ));
+if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+addonitem := CInt(GetObjProperty( house, "component3" ));
+if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+addonitem := CInt(GetObjProperty( house, "builtdeed" ));
+if (addonitem)
+  founditem := DestroyItem(SystemFindObjectBySerial(addonitem));
+  if (founditem!=1)
+founditem:=DestroyItem(SystemFindObjectBySerial(addonitem,1)); endif
+  if (founditem!=1) DestroyItem(SystemFindObjectBySerial(addonitem,2));
+endif
+endif
+
+if (house.objtype==0x608d)
+  foreach items in ListItemsNearLocation( house.x, house.y, 0, 8 )
+   if((items.objtype==0x177d) || (items.objtype==0xb41) ||
+(items.objtype==0xb42))
+    DestroyItem(items);
+   endif
+  endforeach
+endif
+DestroyMulti( house );
+
+endfunction
+
+
+function CheckforCowns(multi)
+
+
+
+	var acct:=0,who:=0,whichcown:=0;
+	var i;
+	for(i:=1;i<=len(GetObjProperty(multi, "Co-owner"));i:=i+1);
+		//who:=cint(SystemFindObjectBySerial(GetObjProperty(multi, "Co-owner" + i)));
+		who := SystemFindObjectBySerial( CInt(GetObjProperty( multi, "Co-owner" + i )) );
+
+		if(!who)
+
+			who:=SystemFindObjectBySerial(CInt(GetObjProperty(multi, "Co-owner" + i)),SYSFIND_SEARCH_OFFLINE_MOBILES);
+
+		endif
+
+			acct:=FindAccount(who.acctname);
+
+			if(!acct || acct == error)
+
+			//account is gone on THIS co-owner, check next,
+
+			else
+				whichcown:=i;
+				break;
+			endif
+
+
+	endfor
+
+	if(whichcown)
+
+		SetObjProperty(multi, "ownerserial", GetObjProperty(multi, "Co-owner" + whichcown));
+		SetObjProperty(multi, "owneracct", who.acctname);
+
+	else
+
+		return 0;
+
+	endif
+
+	EraseObjProperty(multi, "Co-owner"+whichcown);
+
+	return 1;
+
+endfunction

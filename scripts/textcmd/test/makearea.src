@@ -1,0 +1,19 @@
+use uo;
+
+
+program nukearea( who, text )
+    var ranget := cint( text );
+    var z := who.z - ranget;
+    var zstop := who.z + ranget;
+    Var count := 0;
+    
+    for( z ; z <= zstop ; z := z + 1 )
+    	foreach thingie in ListItemsNearLocation( who.x, who.y, z, ranget );
+        	DestroyItem( thingie );
+         count := count + 1;
+    	endforeach
+    endfor
+ 
+    SendSysMessage(who, "Destroyed " + count + " items." );
+        
+endprogram

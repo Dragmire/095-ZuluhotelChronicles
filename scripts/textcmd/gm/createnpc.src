@@ -1,0 +1,52 @@
+use uo;
+Use cfgfile;
+
+program textcmd_createnpc( who, template )
+
+	if( !template )
+		SendSysMessage( who, "Usage is .createnpc <template>" );
+		return;
+	endif
+
+	var forbidden := GetGlobalProperty( "ForbiddenTemplates" );
+	if( !forbidden )
+		forbidden := array;
+	endif
+
+	foreach monstername in forbidden
+	if(Lower(monstername)== Lower(template))
+		SendSysMessage( who, "This npc type is forbidden, you aren't allowed to create it." );
+		return;
+	endif
+	endforeach
+
+	var props array;
+	props.+facing := who.facing;
+	var loc := TargetCoordinates(who);
+
+	var result := CreateNpcFromTemplate( template, loc.x, loc.y, loc.z, props );
+	if (!result)
+		SendSysMessage( who, "NPC Creation Failed: " + result.errortext );
+  else
+  
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_created");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "NPC Serial",    hex(result.serial) });
+
+    AppendConfigFileElem("logging_created", "NPC", "Created " + template, elem);
+    UnloadConfigFile("logging_created");
+    EndIf
+  
+	endif
+
+endprogram

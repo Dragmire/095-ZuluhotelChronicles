@@ -1,0 +1,31 @@
+//
+// FIX: fields in itemdesc.cfg are moveable
+//
+// TODO: create menu for resurrectionfields, ank and all importent floor objects
+//
+// HISTORY: Author: the Writer  4/17/99
+
+use os;
+use uo;
+
+include "include/res";
+include "include/dotempmods";
+
+const EFFECT_SPARKLE := 0x373a;
+const SOUND_EFFECT_RES := 0x215;
+
+program resfield( mobile, field )
+
+    if( mobile.dead )
+ 
+        if (Distance( mobile, field ) == 0)
+            PlaySoundEffect( mobile, SOUND_EFFECT_RES );
+            mobile.poison_level := 0; // cure poison...
+            CurePoison(mobile,SFX_SPELL_CURE,"You have been cured!");
+            ResurrectMobile( mobile );
+            PlayObjectCenteredEffect( mobile, EFFECT_SPARKLE, 10,10);
+        endif
+
+    endif
+
+endprogram

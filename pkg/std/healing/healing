@@ -1,0 +1,295 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/dotempmods";
+include "include/classes";
+include "include/random";
+include "include/res";
+
+const SOUND_EFFECT_RES 	  := 0x215;
+const ACTION_EFFECT_CAST2 := 0x11;
+const BLOODY_BANDAGE 	  := 0x0e20;
+
+//To heal
+const BANDAGES_TO_HEAL	  := 1;
+const DELAY_TO_HEAL	  := 5;
+
+//To cure
+const BANDAGES_TO_CURE	  := 2;
+const DELAY_TO_CURE	  := 6;
+
+//To res
+const BANDAGES_TO_RES	  := 5;
+const DELAY_TO_RES	  := 10;
+const RES_DIFFICULTY	  := 105;
+
+//Delay multiplier when you heal yourself
+const DELAY_MULT_FOR_SELF := 2;
+
+//Multiply diff by this for the point value
+const POINTS_MULTIPLIER	  := 15;
+
+
+program use_bandages( character , bandages )
+
+	var withheal := { "Giantkin"	,
+			    "Orc"	,
+			    "Troll"	,
+			    "Human"	};
+
+	var withvet := { "Animal"	,
+			   "Dragonkin"	,
+			   "Ratkin"	};
+
+	if( !ReserveItem( bandages ) )
+		return;
+	endif
+
+	SendSysmessage( character, "Who would you like to heal?" );
+	var patient := Target( character , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+
+	//Targeting was canceled
+	if( !patient )
+		return;
+	endif
+
+	//The patient is too far
+	if( Distance( character , patient ) > 1 )
+		SendSysMessage( character , "The patient is too far." );
+		return;
+	endif
+
+	//The target isn't a mobile
+	if( !patient.strength )
+		SendSysMessage( character , "You can't heal that." );
+		return;
+	endif
+
+	//The target is a death char
+	if( patient.dead )
+		TryToRes( character , patient , bandages );
+		return;
+	endif
+
+
+	if( patient.graphic != CID_HUMAN_MALE and patient.graphic != CID_HUMAN_FEMALE and patient.npctemplate )
+		var type := GetObjProperty( patient , "Type" );
+		if( type in withheal )
+			if( patient.poisoned )
+				TryToCure( character , patient , bandages );
+				return;
+			elseif( patient.hp < patient.maxhp )
+				TryToHeal( character , patient , bandages );
+				return;
+			else
+				SendSysMessage( character ,"This patient don't even have a bruise!" );
+				return;
+			endif
+
+		elseif( type in withvet )
+			var parms := {};
+			parms[1] := character;
+			parms[2] := patient;
+			parms[3] := bandages;
+			Start_Script( ":veterinary:vet" , parms );
+			return;
+
+		else
+			SendSysmessage( character , "This creature can't be healed" );
+			return;
+		endif
+
+	else
+		if( patient.poisoned )
+			TryToCure( character , patient , bandages );
+			return;
+		elseif( patient.hp < patient.maxhp )
+			TryToHeal( character , patient , bandages );
+			return;
+		else
+			SendSysMessage( character ,"This patient don't even have a bruise!" );
+			return;
+		endif
+	endif
+
+	ReleaseItem( bandages );
+
+endprogram
+
+
+function TryToCure( character , patient , bandages )
+
+	if( bandages.amount < BANDAGES_TO_CURE )
+		SendSysMessage( character , "You don't have enough bandages." );
+		return;
+	endif
+
+	var delay 	:= DELAY_TO_CURE;
+
+	if( patient.serial = character.serial )
+		delay := Cint( delay * DELAY_MULT_FOR_SELF );
+		SendSysMessage( character , "You start to cure yourself" );
+	else
+		SendSysMessage( character , "You start to cure " + patient.name );
+	 	SendSysMessage( patient , character.name + " starts to cure you" );
+	endif
+
+	Sleep( delay );
+
+	if( Distance( character , patient ) > 1 )
+		SendSysMessage( character , "Your patient is too far." );
+		return;
+	endif
+
+	if( character.dead )
+		return;
+	endif
+
+	if( patient.dead )
+		SendSysMessage( character , "Your patient is dead." );
+	endif
+
+	var plvl 	:= PoisonLevel( patient );
+	var diff 	:= plvl * 20 + 15;
+	var points 	:= diff * POINTS_MULTIPLIER;
+
+	if( CheckSkill( character , SKILLID_HEALING , diff , points ) )
+		CurePoison( patient , 0 , character.name + " has cured you!" );
+		SendSysmessage( character , "You cured your patient." );
+	else
+		SendSysmessage( character , "You couldn't cure your patient." );
+	endif
+
+	SubtractAmount( bandages , BANDAGES_TO_CURE );
+	CreateItemInBackpack( character , BLOODY_BANDAGE , BANDAGES_TO_CURE );
+
+endfunction
+
+
+function TryToHeal( character , patient , bandages )
+
+	if( bandages.amount < BANDAGES_TO_HEAL )
+		SendSysMessage( character , "You don't have enough bandages." );
+		return;
+	endif
+
+	var delay 	:= DELAY_TO_HEAL;
+	var healing	:= Cint( GetSkill( character , SKILLID_HEALING ) / 10 );
+	var anatomy	:= Cint( GetSkill( character , SKILLID_ANATOMY ) / 5 );
+	var healed	:= RandomDiceStr( healing + "d4+" + healing ) + RandomDiceStr( "1d8+2" ) + anatomy;
+
+	if( patient.serial = character.serial )
+		delay := Cint( delay * DELAY_MULT_FOR_SELF );
+		SendSysMessage( character , "You start to heal yourself." );
+	else
+		SendSysMessage( character , "You start to heal " + patient.name );
+	 	SendSysMessage( patient , character.name + " starts to heal you" );
+	endif
+
+	if( GetObjProperty( character , CLASSEID_WARRIOR ) )
+		healed := Cint( healed * ClasseBonus( character , CLASSEID_WARRIOR ) );
+	endif
+
+	var count	:= 10;
+	var shp	:= character.hp;
+	while( delay )
+		Sleep( 1 );
+		delay := delay - 1;
+		if( character.hp < shp )
+			SendSysMessage( character , "Yours fingers slip..." );
+			count := count - 1;
+			shp   := character.hp;
+		endif
+	endwhile
+
+	if( Distance( character , patient ) > 1 )
+		SendSysMessage( character , "Your patient is too far." );
+		return;
+	endif
+
+	if( character.dead )
+		return;
+	endif
+
+	if( patient.dead )
+		SendSysMessage( character , "Your patient is dead." );
+	endif
+
+	var diff 	:= patient.maxhp - patient.hp;
+	var points 	:= diff * POINTS_MULTIPLIER;
+
+	var bonus := GetObjProperty( patient , "HealingIncrease" );
+	if( bonus )
+		healed := healed + Cint( healed * bonus * 0.1 );
+	endif
+
+	if( count < 1 )
+		count := 1;
+	endif
+
+	healed := Cint( healed * count / 10 );
+
+	if( CheckSkill( character , SKILLID_HEALING , diff , points ) )
+		HealDamage( patient , healed );
+		SendSysMessage( character , "You healed " + healed + " damage." );
+		SendSysmessage( patient , character.name + " healed " + healed + " damage." );
+	else
+		SendSysmessage( character , "You couldn't heal your patient." );
+	endif
+
+	SubtractAmount( bandages , BANDAGES_TO_HEAL );
+	CreateItemInBackpack( character , BLOODY_BANDAGE , BANDAGES_TO_HEAL );
+
+endfunction
+
+
+function TryToRes( character , patient , bandages )
+
+	var anatomy := GetSkill( character , SKILLID_ANATOMY );
+	var healing := GetSkill( character , SKILLID_HEALING );
+
+	if( anatomy < 90 or healing < 90 )
+		SendSysMessage( character , "You don't have enought skill to ressurect someone." );
+	 	return;
+	endif
+
+	if( bandages.amount < BANDAGES_TO_RES )
+		SendSysMessage( character , "You don't have enough bandages." );
+		return;
+	endif
+
+	SendSysMessage( character , "You try to bring back " + patient.name + " to life." );
+	SendSysMessage( patient , character.name + " is trying to bring you back to life." );
+
+	var delay := DELAY_TO_RES;
+
+	Sleep( delay );
+
+	if( Distance( character , patient ) > 1 )
+		SendSysMessage( character , "Your patient is too far." );
+		return;
+	endif
+
+	if( character.dead )
+		return;
+	endif
+
+	if( !patient.dead )
+		SendSysMessage( character , "Your patient is live already." );
+	 	return;
+	endif
+
+	if( CheckSkill( character , SKILLID_HEALING , RES_DIFFICULTY , RES_DIFFICULTY * POINTS_MULTIPLIER ) )
+		ResurrectMobile( patient , character );
+		PlaySoundEffect( patient , SOUND_EFFECT_RES );
+		SendSysmessage( character , "You bring your patient back to life!" );
+		SendSysMessage( patient , character.name + " brough you back to life!" );
+	else
+		SendSysmessage( character , "You couldn't resurrect your patient." );
+	endif
+
+	SubtractAmount( bandages , BANDAGES_TO_RES );
+	CreateItemInBackpack( character , BLOODY_BANDAGE , BANDAGES_TO_RES );
+
+endfunction

@@ -1,0 +1,161 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/time";
+include "include/time";
+include "include/classes";
+include "include/dotempmods";
+include "include/areas";
+include "include/constants/propids";
+
+program antilooting( who, corpse, item )
+	var amode ;
+	var serial := GetObjProperty( corpse, PROPID_CORPSE_CORPSE_OF );
+	if( !serial )
+		return 1;
+	elseif( who.cmdlevel )
+		return 1;
+	elseif( serial = who.serial )
+		return 1;		
+	elseif( GetObjProperty( corpse, PROPID_MOBILE_CANT_BE_LOOTED ) )
+		return 0;
+	elseif( IsInAntiLootingArea(who) )
+		SendSysMessage( who, "You can't loot here." );
+		return 0;
+	else
+		var guild1 := GetObjProperty( who, "guild_id" );
+		if( guild1 )
+			var guild2 := GetObjProperty( who, "guild_id" );
+			if( guild2 )
+				if( guild1 = guild2 )
+					return AddLooter( who, corpse );
+				else
+					guild1 := FindGuild( guild1 );
+					guild2 := FindGuild( guild2 );
+					if( guild1.IsEnemyGuild(guild2) )
+						return AddLooter( who, corpse );
+					elseif( guild1.IsAllyGuild(guild2) )
+						return AddLooter( who, corpse );
+					endif
+				endif
+			endif
+		endif
+		
+		if( IsInAntiLootingArea(who) )
+			SendSysMessage( who, "You can't loot here." );
+			return 0;
+		elseif( GetObjProperty( corpse, PROPID_CORPSE_IS_BLUE ) )
+			who.setCriminal(1);
+			amode := GetGlobalProperty("AntiLootMode");	
+			if (amode != "OFF")
+				if ( IsInAProtectedCity(who) )
+					if (amode = "JAIL")
+						Report( who, corpse );
+						AutoJail(who);
+					elseif (amode = "ON")
+					SendSysMessage( who, "You have been reported for attempted illegal looting" );
+					endif
+					return 0;
+				endif		
+			endif
+		endif
+	endif
+	var rmode := GetGlobalProperty("ReportLooters");	
+	if (rmode = "ANTI")
+		SendSysMessage( who, "You can't loot players during a quest - You have been reported for attempting to loot." );
+		return 0;
+	endif
+	if (rmode = "ON")
+		Report( who, corpse );
+		return AddLooter( who, corpse );
+	endif
+	return AddLooter( who, corpse );
+
+endprogram
+
+
+function AddLooter( looter, object )
+	var looters := GetObjProperty(object, PROPID_CORPSE_LOOTED_BY);
+	var victim;
+	if( !looters )
+		looters := dictionary;
+	endif
+
+	if( !looters.exists(looter.serial) )
+		looters[looter.serial] := looter.name;
+		return SetObjProperty(object, PROPID_CORPSE_LOOTED_BY, looters);
+	else
+		return 1;
+	endif
+endfunction
+
+function Report( looter, object )
+	var looters := GetObjProperty(object, PROPID_CORPSE_LOOTED_BY);
+	var victim;
+	if( !looters )
+		looters := dictionary;
+	endif
+
+	if( !looters.exists(looter.serial) )
+		//Report Code
+		foreach character in EnumerateOnlineCharacters()
+			if (character.serial = object.serial)
+				victim := character.name;
+			endif
+		endforeach
+		if (!victim)
+			victim := object.name;
+		endif
+		foreach character in EnumerateOnlineCharacters()
+			if( character.cmdlevel > 0 )
+SendSysmessage( character, looter.name +" looted "+victim+" at "+object.x+","+object.y+","+object.z, 3 ,130  );
+			endif
+		endforeach
+		looters[looter.serial] := looter.name;
+		return SetObjProperty(object, PROPID_CORPSE_LOOTED_BY, looters);
+	else
+		return 0;
+	endif
+endfunction
+
+function AutoJail (looter)
+	var days;
+	var acc	:= looter.acct;
+	var note := acc.getprop("Notes");
+	var offence := GetObjProperty(looter,"autojail");
+	if (!offence)
+		offence := 0;
+	endif
+	offence := offence + 1;
+	SetObjproperty(looter, "autojail",offence);
+	if (offence > 4)
+		offence := 4;
+	endif
+	case (offence)
+		1:	days := 3;
+		2:	days := 7;
+		3:	days := 14;
+		4: 	days := 28;
+	endcase
+	var jaildays := (days * 86400);
+	var secs := polcore().systime;
+	var year;
+	var month;
+	var day;
+	var hour;
+	var minutes;
+	CalculateDate( secs, year, month, day );
+	CalculateTime( secs, hour, minutes );
+	if (minutes < 10)
+	note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":0"+minutes+") town looting : "+days+" days";
+	else
+	note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":"+minutes+") town looting : "+days+" days";
+	endif
+	acc.setprop("Release", (ReadGameClock() + jaildays));
+	acc.setprop("Notes", note);
+	looter.frozen := 1;
+	MoveCharacterToLocation( looter, 5304, 1184, 0, 0);
+	SendSysMessage( looter, "You have been jailed for attempted town looting.");
+	DisconnectClient( looter );
+endfunction

@@ -1,0 +1,62 @@
+use uo;
+use os;
+use datafile;
+
+include "include/managers";
+
+program textcmd_savespawnpoints( who )
+
+	var points := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+	if( !points )
+		SendSysMessage(who, "No points returned. " + points.errortext);
+		return 0;
+	endif
+
+	var savefile := OpenDataFile("spawnpoints");
+	if( !savefile )
+		savefile := CreateDataFile("spawnpoints", DF_KEYTYPE_INTEGER);
+		if( !savefile )
+			SendSysMessage(who, "Couldn't create datafile " + savefile.errortext);
+			return 0;
+		endif
+	endif
+
+	var element;
+	var pt_data;
+	var key   := 1;
+	var count := 0;
+	var start := ReadGameClock();
+	foreach point in points
+		if( point && !point.container )
+			pt_data := GetObjProperty(point, PROPID_SPAWNPOINT_SETTING);
+			if( pt_data )
+				element := savefile.FindElement(key);
+				if( !element )
+					element := savefile.CreateElement(key);
+				endif
+			
+				element.SetProp("x", point.x);
+				element.SetProp("y", point.y);
+				element.SetProp("z", point.z);
+				element.SetProp("Name", point.name);
+				element.SetProp("PointData", pt_data);
+				key   := key + 1;
+				count := count + 1;
+			endif
+		endif
+	endforeach
+
+	element := savefile.FindElement(key);
+	while(element)
+		savefile.DeleteElement(key);
+		key := key + 1;
+		element := savefile.FindElement(key);
+	endwhile
+
+	UnloadDataFile("spawnpoints");
+
+	var msg := "Saving spawnpoints completed. Took " + (ReadGameClock()-start) + " seconds to complete. " + count + " spawnpoints were saved.";
+	SendSysMessage(who, msg);
+	syslog(msg);
+
+endprogram

@@ -1,0 +1,28 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+
+Include "include/yesno";
+
+Program textcmd_mount( who )
+
+    Foreach player in EnumerateOnlineCharacters()
+
+    If( YesNo( Who, "Next Player?" ) )
+    MoveCharacterToLocation( who, player.x , player.y, player.z );
+    Else
+    Return 0;
+    Endif
+
+//    MoveCharacterToLocation( who, player.x , player.y, player.z );
+
+    Endforeach
+
+Endprogram

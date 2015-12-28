@@ -1,0 +1,50 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/damages";
+
+program manadrainonhit( parms )
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var absorbed 	 := basedamage - rawdamage;
+	var drained;
+	var drainer;
+	
+	ApplyTheDamage( defender , attacker , rawdamage );
+	
+	if( !absorbed )
+		return;
+	endif
+	
+	if( GetObjProperty( armor , "Cursed" ) )
+		drained := defender;
+		drainer := attacker;
+	else
+		drained := attacker;
+		drainer := defender;
+	endif
+
+	var amount := absorbed;
+	
+	if( amount > drained.mana)
+		drained.mana := 0;
+	else
+		drained.mana := drained.mana - amount;
+	endif
+	
+	drainer.mana := drainer.mana + amount;
+	if( drainer.mana > drainer.maxmana)
+		drainer.mana := drainer.maxmana;
+	endif
+	
+
+endprogram
+

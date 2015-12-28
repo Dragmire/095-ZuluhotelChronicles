@@ -1,0 +1,44 @@
+use uo;
+use os;
+
+include "include/skillpoints";
+
+
+program shilcombat()
+
+	Print( "Using ShilcombatAdvancement..." );
+	return 1;
+
+endprogram
+
+
+exported function ShilCombatAdvancement( attacker, weapon, defender )
+Var SkillID := FindSkillidByIdentifier(weapon.attribute);
+	if( weapon )
+		AwardStatPoints( attacker, 43 );
+		AwardSkillPoints( attacker, weapon.skillid, 20 );
+	else
+		AwardStatPoints( attacker, 43 );
+		AwardSkillPoints( attacker, 43, 20 );
+	endif
+        if( SkillID != SKILLID_ARCHERY )
+	        AwardStatPoints( attacker, 27 );
+	        AwardSkillPoints( attacker, 27, 20 );
+        endif
+
+
+endfunction
+
+function FindSkillidByIdentifier(skid)
+  var retval;
+  case(skid)
+    "Wrestling": retval := SKILLID_WRESTLING;
+    "Fencing":   retval := SKILLID_FENCING;
+    "Swords":    retval := SKILLID_SWORDSMANSHIP;
+    "Swordsmanship":    retval := SKILLID_SWORDSMANSHIP;
+    "Mace":      retval := SKILLID_MACEFIGHTING;
+    "Macefighting":      retval := SKILLID_MACEFIGHTING;
+    "Archery":    retval := SKILLID_ARCHERY;
+  endcase
+  return retval;
+endfunction

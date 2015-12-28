@@ -1,0 +1,81 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/rituals";
+
+
+program rcreatefocus( parms )
+
+	var caster;
+	var magic_circle;
+	var power;
+	var item;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+	//Check if the caster have some unwanted equipment
+	if( !CheckRitualEquip( caster ) )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	magic_circle := LookForTheCircle( caster );
+	if( !magic_circle )
+		EndRitual( caster, captor );
+		return;
+	endif
+
+
+	//Ask for the crystal to refill
+	while( 1 )
+		SendSysMessage( caster, "Choose the mana crystal that you want to charge" );
+		var the_item := Target( caster, TGTOPT_CHECK_LOS );
+		if( !the_item )
+			SendSysMessage( caster, "The ritual is aborted" );
+			EraseObjProperty( caster, "#Casting" );
+		
+			if( GetObjProperty( magic_circle[1], "PermMagicCircle" ))
+				var i;
+				for( i := 5; i <= len(magic_circle); i := i + 1 )
+					DestroyItem( magic_circle[i] );
+				endfor
+			else
+				TryToUndoTheCircle( caster, magic_circle );
+			endif
+			return;
+		elseif( !Accessible( caster, the_item ) )
+			SendSysMessage( caster, "You can't reach that" );
+		elseif( the_item.objtype != MANA_CRYSTAL )
+			SendSysMessage( caster, "You can only charges mana crystals with this ritual" );
+		else
+			item := the_item;
+			break;
+		endif
+	endwhile
+
+	
+	//Try to perform the ritual
+	power := ProcessRitual( caster, item, magic_circle, SPELLID_RITUAL_OF_CHANNEL_MANA );
+	if( !power )
+		return;
+	endif
+
+	var amount := CInt( GetMaxMana(caster) * power / 2 );
+	var previous := GetObjProperty( item, "ManaLevel" );
+	if( previous )
+		SetObjProperty( item, "ManaLevel", previous + amount );
+	else
+		SetObjProperty( item, "ManaLevel", amount );
+	endif
+
+	SendSysMessage( caster, "The crystal now have : " + GetObjProperty( item, "ManaLevel" ) + " charges left" );
+
+endprogram

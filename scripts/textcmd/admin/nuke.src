@@ -1,0 +1,56 @@
+// command .nuke  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated June 25, 2000
+
+use uo;
+use os;
+
+program itemwipe( who )
+
+    var location1, location2, exitloop:=0, i:=0;
+
+    SendSysMessage( who, "Select area to Nuke");
+    location1 :=  TargetCoordinates( who );
+
+    if (!location1)
+       SendSysMessage( who, "Canceled.");
+       return;
+    endif
+
+    SendSysMessage( who, "Pick other corner:");
+
+    while (exitloop==0)
+       location2 :=  TargetCoordinates( who );
+       if (location1 == location2)
+          SendSysMessage( who, "Thats the same point");
+       else
+       	  exitloop :=1;
+       endif
+
+    endwhile
+
+    if (!location2)
+       SendSysMessage( who, "Canceled.");
+       return;
+    endif
+
+    var okayremove;
+    foreach item in ListObjectsInBox( location1.x,location1.y,location1.z, location2.x,location2.y,location2.z )
+        
+	if ((item.invisible<>1) and (!item.intelligence))
+	okayremove :=1;
+	else
+	okayremove :=0;
+	endif
+
+	if (item.objtype==0xa300 or item.objtype==0xa301) okayremove :=0; endif
+	
+	if (okayremove==1)
+	DestroyItem( item );
+	i:=i+1;
+       endif
+    endforeach
+
+    SendSysMessage( who, "Region Nuked: " + i+ " items.");
+
+endprogram

@@ -1,0 +1,13 @@
+Use uo;
+
+Program Mailbox( Who, Mailbox )
+
+    If( GetObjProperty( Mailbox, "UMailAcct" ) != GetObjProperty( Who, "UMailAcct" ) )
+    PrintTextAbovePrivate( Mailbox, "You don't own this mailbox." , Who );
+    Return 0;
+    Else
+    PrintTextAbovePrivate( Mailbox, "You open your mailbox." , Who );
+    SendViewContainer( Who, Mailbox );
+    Endif
+ 
+Endprogram

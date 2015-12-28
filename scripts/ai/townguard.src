@@ -1,0 +1,369 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "include/npcbackpacks";
+include "include/yesno";
+include "ai/main/npcinfo";
+
+include "ai/setup/modsetup";
+include "include/random";
+
+var configfile := ReadConfigFile("::npcdesc");
+var flee_point := 0;
+
+const UACTION_LOOK_AROUND   := 0x05;
+const UACTION_SALUTE        := 0x21;
+const HALT_THRESHOLD := 10; // how close before he barks?
+
+var speech := 49;
+var me := Self();
+
+program CastleGuard()
+
+	if (me.x >= 1385 and me.x <= 1414 and 
+	    me.y >= 3729 and me.y <= 3758)
+		Killme();
+	elseif (me.x >= 4413 and me.x <= 4428 and 
+	    me.y >= 1152 and me.y <= 1162)
+		Killme();
+	endif
+
+
+	if( me.name["<random>"] )
+		SetMeUp();
+	endif
+
+	FixStuff();
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	EnableMainEvents();
+	SetWarMode( 0 );
+	set_priority(100);
+
+	var ev;
+	var next_wander := ReadGameClock() + 10;
+	var wanders := 9;
+
+	while (1)
+
+		if (ReadGameClock() >= next_wander)
+			wanders:=wanders+1;
+			wander();
+			next_wander := ReadGameClock() + 10;
+			if (wanders>10)
+				ev := sleepmode();
+				wanders := 0;
+			else
+				ev := os::wait_for_event(5);
+			endif
+		else
+			ev := os::wait_for_event(5);
+		endif
+
+		if (ev) ProcessEvents(ev, wanders, next_wander); endif
+
+	endwhile
+
+endprogram
+
+function CloseDistance( opponent )
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        default:
+            RunToward( opponent );
+            return 0;
+    endcase
+endfunction
+
+function look_around()
+
+	foreach critter in listmobilesnearlocation(me.x, me.y, me.z, 15)
+		if ((critter.npctemplate) and (critter.script != "tamed") )
+			if (!configfile[critter.npctemplate].guardignore)
+				say("Ah ha! " + critter.name);
+				fight(critter);
+			endif
+		else
+			CheckForCriminals(critter);
+		endif
+	endforeach
+
+endfunction
+
+function sleepmode()
+
+	foreach critter in ListMobilesNearLocation( me.x,me.y,me.z, 32 )
+          if (!critter.npctemplate)
+		return 0;
+          endif
+	endforeach
+
+	var ev;
+
+	while (1)
+		ev := os::wait_for_event( 120 );
+
+		repeat
+		if (ev)
+		case (ev.type)
+                	SYSEVENT_ENGAGED:
+			SYSEVENT_DAMAGED:
+				return ev;
+			SYSEVENT_ENTEREDAREA:
+				if (!ev.source.npctemplate)
+					return ev;
+				endif
+		endcase
+		endif
+		until (! (ev := os::wait_for_event(120)) );
+
+	endwhile      
+
+endfunction       
+
+function CheckForCriminals(jerk)
+
+	if (jerk.dead)
+		return;
+	endif
+
+	if (jerk.criminal)
+		say("Stop Criminal!");
+		AddToHateList( jerk );
+		EraseObjProperty(jerk,"#quest");
+		EraseObjProperty(jerk,"#ignoreit");
+		fight(jerk);
+	elseif ( CheckHateList(jerk) )
+		say("You're not welcome in this town, "+ jerk.name );
+		EraseObjProperty(jerk,"#quest");
+		EraseObjProperty(jerk,"#ignoreit");
+		fight(jerk);
+	endif
+
+endfunction
+
+function AddToHateList(crim)
+
+	if (crim.npctemplate)
+		return;
+	endif
+
+	var Crooks := { };
+	if (!GetObjProperty(me,"crooks") )
+		Crooks[1] := crim.serial;
+		SetObjProperty(me,"crooks",crooks);
+		return;
+	else
+		Crooks := GetObjProperty(me,"crooks");
+	endif
+
+	var i;
+	foreach crook in crooks;
+		if ( crook = crim.serial )
+			return;//already hate him.
+		endif
+	endforeach
+
+	if (len(crooks)>3)
+		crooks[ Random(3)+1 ] := crim.serial;
+	else
+		crooks[ len(crooks)+1 ] := crim.serial;
+	endif
+
+	SetObjProperty(me,"crooks",crooks);
+
+endfunction
+
+function CheckHateList( you )
+
+	if (you.npctemplate)
+		return;
+	endif
+
+	var Crooks := { };
+	if (!GetObjProperty(me,"crooks") )
+		return 0;//can't be on my list cause I don't have one
+	else
+		Crooks := GetObjProperty(me,"crooks");
+	endif
+
+
+	var i;
+	foreach crook in crooks;
+		if ( crook = you.serial )
+			return 1;//hate you.
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function cleareventque()
+
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+
+endfunction
+
+function EnableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_LEFTAREA + SYSEVENT_DISENGAGED + SYSEVENT_OPPONENT_MOVED );
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_SPEECH, 3 );
+    EnableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function DisableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED );
+    DisableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function SetMeUp()
+
+	me.name := "<random>";
+
+	me.gender := Random(2);
+	me.graphic := 400+me.gender;
+
+	me.name := RandomName( me );
+	me.title_suffix := " the guard";
+
+	EquipFromTemplate( me , "FullPlate" );
+
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+		EquipItem(me, newbackpack);
+	endif
+
+	if (me.gender)
+		var myplate := GetEquipmentByLayer(me,LAYER_CHEST);
+		DestroyItem(myplate);
+		myplate := CreateItemAtLocation(5288 , 1176 , 0, 0x1c04,1);
+		EquipItem(me,myplate);
+	endif
+
+	var guardtype := Random(10)+1;
+	if (guardtype < 3 )
+
+		me.title_prefix := "Sir ";
+		me.title_suffix := " the Virtue Guard";
+		setobjproperty(me,"guardtype",guardtype);
+
+		var myshieldtype := 0x86ef; //order
+		if (guardtype = 2) myshieldtype := 0x86df; endif //chaos
+
+		var myshield := CreateItemAtLocation(5288 , 1176 , 0, myshieldtype,1);
+
+		var weapone := GetEquipmentByLayer(me,LAYER_HAND1);
+		if (weapone) destroyitem(weapone); endif
+		var weaptwo := GetEquipmentByLayer(me,LAYER_HAND2);
+		if (weaptwo) destroyitem(weaptwo); endif
+
+		EquipItem(me,myshield);
+
+		weapone:= CreateItemAtLocation(5288 , 1176 , 0, 0x0F60,1);//longsword
+		EquipItem(me,weapone);
+
+		var mounttype;
+		case (Random(4))
+		0:	mounttype := 0x3ea2;
+		1:	mounttype := 0x3e9f;
+		2:	mounttype := 0x3ea0;
+		3:	mounttype := 0x3ea1;
+		endcase
+
+		var mount := CreateItemAtLocation(5288 , 1176 , 0,0xF021,1);
+		mount.graphic := mounttype;
+		EquipItem(me,mount);
+
+	endif
+
+endfunction
+
+function ProcessEvents(byref ev, byref wanders, byref next_wander)
+
+	case (ev.type)
+	SYSEVENT_SPEECH:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		var evtext := lower(ev.text);
+
+		if ( (evtext["guards"]) or (evtext["guards!"]) )
+			look_around();
+		else
+			check_speech(ev.text, ev.source);
+		endif
+
+	SYSEVENT_ENGAGED:
+	SYSEVENT_DAMAGED:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if ( (ev.source) and (!ev.source.dead) )
+			say("Die " + ev.source.name + "!" );
+			AddToHateList( ev.source );
+			EraseObjProperty(ev.source,"#quest");
+			EraseObjProperty(ev.source,"#ignoreit");
+			Fight( ev.source );
+		endif
+	SYSEVENT_ENTEREDAREA:
+		wanders := 0;
+		PerformAction( me, UACTION_LOOK_AROUND );
+		look_around();
+	SYSEVENT_ITEM_GIVEN:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		TakeItem(ev.source,ev.item);
+	endcase
+
+endfunction
+
+function FixStuff()
+
+	me.graphic := 400+me.gender;
+
+	if ( me.name[" the "] ) me.name := splitwords(me.name)[1]; endif
+
+	var guardtype := Getobjproperty(me,"guardtype");
+	if (!guardtype)
+		me.title_suffix := " the Guard";
+		return;
+	endif
+	if (me.gender)
+		me.title_prefix := "Dame ";
+	else
+		me.title_prefix := "Sir ";
+	endif
+	me.title_suffix := " the Virtue Guard";
+
+endfunction
+
+function killme()
+
+	MoveCharacterToLocation(me, 5445,1153,0, MOVECHAR_FORCELOCATION);
+	RevokePrivilege( me, "invul" );
+	setobjproperty(me,"guardkill",1);
+	applyrawdamage(me,me.maxhp+3);
+
+endfunction

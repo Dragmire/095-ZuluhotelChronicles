@@ -1,0 +1,102 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_KARMA_BLAST;
+const SPELL_EFFECT_ID		:= FX_SPELL_KARMA_BLAST;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_KARMA_BLAST;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_KARMA_BLAST;
+
+program cast_shifting_earth( parms )
+
+	var circle := GetCircle( SPELLID_KARMA_BLAST );
+	var element := HOLY;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on , caster , SPELLID_KARMA_BLAST );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_KARMA_BLAST ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster , circle , TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster , "#Casting" );
+		cast_on := Reflected( caster , cast_on , circle );
+	else
+		PlayObjectCenteredEffect(cast_on, 
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	PlaySoundEffect( cast_on , 0x228 );
+
+	var immunity := IsProtected( caster , cast_on , circle );
+
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+
+	var magery := GetAttribute(caster, ATTRIBUTEID_MAGERY);
+	if( immunity == CURSED )
+		SendSysmessage( cast_on , "One of your equipped item increase the effect of the spell!" );
+		magery := magery * 2;
+		circle := circle * 2;
+	endif
+	var casterkarma := GetObjProperty(caster, "Karma");
+	if (!casterkarma)
+		casterkarma := 0;
+	endif
+	var castonkarma := GetObjProperty(cast_on, "Karma");
+	if (!castonkarma)
+		castonkarma := 0;
+	endif
+	var dif;
+	if (casterkarma > castonkarma)
+		dif := casterkarma - castonkarma;
+	elseif (castonkarma > casterkarma)
+		dif := castonkarma - casterkarma;
+	elseif (castonkarma == casterkarma)
+		SendSysmessage( caster , "You are of equal Karma!" );
+		ApplyElementalDamage( caster , cast_on , circle , 0 , element );
+		return;
+	endif
+	circle := dif / 1000;
+	var dmg := CalcSpellDamage( caster , cast_on , circle );
+	if (dmg > 175)
+		dmg := 175;
+	endif
+	if (casterkarma > castonkarma)
+		ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	else
+		ApplyElementalDamage( cast_on , caster , circle , dmg , element );
+		SendSysmessage( caster , "Their superior Karma reflects the spell!" );
+   	endif
+	EraseObjProperty( caster , "#Casting" );
+        
+endprogram

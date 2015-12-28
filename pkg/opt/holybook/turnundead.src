@@ -1,0 +1,69 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+include "include/eventid";
+
+program cast_owlsight( parms )
+	var ev := struct;
+	ev.+type;
+	ev.type := EVID_PEACEMADE;
+	var circle := GetCircle( SPELLID_TURN_UNDEAD );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;	
+		if( TryToCast( caster, SPELLID_TURN_UNDEAD ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster , circle , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	PlaySoundEffect( caster , SFX_SPELL_TURN_UNDEAD );
+
+	var magery := GetAttribute(caster, ATTRIBUTEID_MAGERY);
+	var duration := magery * 70;
+	var affected := ListMobilesNearLocation( cast_on.x , cast_on.y , cast_on.z , cint( magery / 20 ) );
+	var proped := array();
+	var turned := 0;
+	foreach cast_near in affected
+
+if( cast_near.npctemplate and GetObjProperty(cast_near, "Type") == "Undead" and cast_near.warmode )
+			turned := turned + 1;
+			SendEvent( cast_near, ev );
+			cast_near.warmode := 0;
+			PrintTextAbove(cast_near,cast_near.name+" is turned by the Holy Spell!");
+	PlayObjectCenteredEffect( cast_near, FX_SPELL_TURN_UNDEAD , SPEED_SPELL_TURN_UNDEAD , LOOP_SPELL_TURN_UNDEAD );
+			SendEvent( cast_near, ev );
+			cast_near.warmode := 0;
+		endif
+			
+	
+		
+	endforeach
+	if (!turned)
+		SendSysMessage( caster, "There's no hostile undead in range." );
+	endif
+	EraseObjProperty( caster , "#Casting" );
+	Sleep( Cint( magery ) );
+	
+	
+endprogram

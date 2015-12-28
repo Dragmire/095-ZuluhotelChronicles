@@ -1,0 +1,31 @@
+use uo;
+use os;
+
+include "include/damages";
+
+program cast_fireball( caster, effect , sound )
+
+	if( !effect )
+		SendSysmessage(caster, "this command plays a moving effect, then kills the target. Usage: ekill <effect>");
+		return;
+	endif
+
+	var tsound := cint(sound);
+	var teffect := cint(effect);
+
+	var parms := {};
+	var cast_on := Target( caster );
+	if (!cast_on)
+		return;
+	endif
+
+	PlaySoundEffect( cast_on, tsound  );
+	PlayMovingEffect( caster, cast_on, teffect , 5, 1 );
+    
+	if( cast_on.cmdlevel > caster.cmdlevel and caster.cmdlevel < 5 )
+		SendSysMessage( cast_on , caster.name + " is trying to kill you." );
+	else
+		ApplyTheDamage( cast_on, caster, cast_on.maxhp + 10  ); // note this is raw damage
+	endif
+   
+endprogram

@@ -1,0 +1,241 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_RISING_FIRE;
+const SPELL_EFFECT_ID		:= FX_SPELL_RISING_FIRE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_RISING_FIRE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_RISING_FIRE;
+
+program cast_rising_fire( parms )
+
+	var circle := GetCircle( SPELLID_RISING_FIRE );
+	var element := FIRE;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_RISING_FIRE ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetArea( caster, circle );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+endprogram
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+
+	var circle := GetCircle( SPELLID_RISING_FIRE );
+	var element := FIRE;
+
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster , 3 );
+	var victims := ListMobilesNearLocationEx( cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) , cint(range) , 0x03);
+
+	foreach mobile in victims
+
+		if( CheckLosAt( mobile, cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) ) )
+
+			var immunity := IsProtected( caster , mobile , circle );
+			var circ := circle;
+
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				dmg := CalcSpellDamage( caster , mobile , circ , AREA_EFFECT_SPELL );
+				send_attack( mobile , caster , SPELLID_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				ApplyElementalDamage( caster , mobile , circ , Cint(dmg / 2) , element );
+			endif
+		endif
+
+	endforeach
+
+	Sleep(1);
+	victims := ListMobilesNearLocationEx( cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) , 3 , 0x03);
+
+	foreach mobile in victims
+
+		if( CheckLosAt( mobile, cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) ) )
+			var immunity := IsProtected( caster , mobile , circle );
+			var circ := circle;
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+                       		PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				dmg := CalcSpellDamage( caster , mobile , circ , AREA_EFFECT_SPELL );
+				send_attack( mobile , caster , SPELLID_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				ApplyElementalDamage( caster , mobile , circ , Cint(dmg / 2) , element );
+			endif
+		endif
+
+	endforeach
+endfunction
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+
+	var circle := GetCircle( SPELLID_RISING_FIRE );
+	var element := FIRE;
+
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster , 3 );
+	var victims := ListMobilesNearLocationEx( cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) , cint(range) , 0x03);
+
+	foreach mobile in victims
+
+		if( CheckLosAt( mobile, cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) ) )
+
+			var immunity := IsProtected( caster , mobile , circle );
+			var circ := circle;
+
+			if( immunity != IMMUNED )
+			    if(!(mobile.npctemplate))
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				dmg := CalcSpellDamage( caster , mobile , circ , AREA_EFFECT_SPELL );
+				send_attack( mobile , caster , SPELLID_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				ApplyElementalDamage( caster , mobile , circ , Cint(dmg / 2) , element );
+			   endif
+			endif
+		endif
+
+	endforeach
+
+	Sleep(1);
+	victims := ListMobilesNearLocationEx( cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) , 3 , 0x03);
+
+	foreach mobile in victims
+
+		if( CheckLosAt( mobile, cint(cast_on.x) , cint(cast_on.y) , cint(cast_on.z) ) )
+			var immunity := IsProtected( caster , mobile , circle );
+			var circ := circle;
+			if( immunity != IMMUNED )
+			    if(!(mobile.npctemplate))
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+                       		PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				dmg := CalcSpellDamage( caster , mobile , circ , AREA_EFFECT_SPELL );
+				send_attack( mobile , caster , SPELLID_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				Sleepms(250);
+				PlayObjectCenteredEffect(mobile,
+							 SPELL_EFFECT_ID,
+							 SPELL_EFFECT_SPEED,
+							 SPELL_EFFECT_LOOP);
+
+				PlaySoundEffect( mobile , SFX_SPELL_RISING_FIRE );
+				ApplyElementalDamage( caster , mobile , circ , Cint(dmg / 2) , element );
+			   endif
+			endif
+		endif
+
+	endforeach
+endfunction

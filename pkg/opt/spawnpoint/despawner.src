@@ -1,0 +1,55 @@
+use uo;
+use os;
+use util;
+use basic;
+use cfgfile;
+
+include "include/all";
+include "include/starteqp";
+include "include/time";
+include "include/objtype"; // add start & end hair
+include "include/itemutil"; // added for getcursedlevel()
+
+program DeSpawner( point )
+	
+	var ptobj;
+	var spawno;
+	var pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+		pt_data	    := array;
+		pt_data[1]  := "NPC";	// Type
+		pt_data[2]  := "nil";	// Template
+		pt_data[3]  := 0;	// Max appear
+		pt_data[4]  := 0;	// Appear Range
+		pt_data[5]  := 0;	// Wander Range
+		pt_data[6]  := 0;	// Frequency
+		pt_data[7]  := 0;	// Disabled
+		pt_data[8]  := 0;	// Spawn in group.
+		pt_data[9]  := 0;	// Despawn on destroy
+		pt_data[10] := 0;	// Expire time
+		pt_data[11] := 0;	// Expire number
+		pt_data[12] := 0;	// Start spawning hours
+		pt_data[13] := 0;	// End spawning hours
+		pt_data[14] := "";	// Notes
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+	
+	set_critical(1);
+	foreach spawnsr in GetObjProperty(point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS)
+		spawno := SystemFindObjectBySerial(spawnsr);
+		case( pt_data[1] )
+			"NPC":
+			"Group":	KillMobile( spawno, 1 );
+			"Container":	DestroyItem( spawno );
+			"Item":		if( spawno )
+						if( !spawno.container )
+							DestroyItem( spawno );
+						endif
+					endif
+		endcase
+	endforeach
+	set_critical(0);
+	
+	return EraseObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	
+endprogram

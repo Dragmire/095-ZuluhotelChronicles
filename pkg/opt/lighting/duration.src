@@ -1,0 +1,54 @@
+///////////////////////////////////////////////////////////
+// Duration.src
+//
+// Destroys an item after a duration has passed.
+//
+// Creator: Oroborous
+// Contact: mkow@sympatico.ca
+//
+// Created: Dec-2000
+//
+// Parameters:
+//		params[1] = Ref to who.
+//		params[2] = Ref to item.
+///////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/string";
+include "include/change";
+
+program Duration(params)
+	var who := params[1];
+	var item := params[2];
+
+	var duration := GetObjProperty(item, "Duration");
+	if (!duration)
+		return 0;
+	endif
+
+	// Never start another script if item already has one.
+	var durpid := GetObjProperty(item, "DurationPID");
+	if (durpid)
+		return 0;
+	endif
+
+	// Set the pid so that it can be stopped if the item is unlit.
+	SetObjProperty(item, "DurationPID", getpid());
+	
+	while (item)
+		sleep(5);
+		duration := duration - 5;
+		SetObjProperty(item, "Duration", duration);
+	
+		if (duration > 0)
+			continue;
+		endif
+
+		ForceChange(who, item);
+		item.name := "a burned out " + TruncateArticle(item.desc);
+		EraseObjProperty(item, "DurationPID");
+		return 0;
+	endwhile
+endprogram

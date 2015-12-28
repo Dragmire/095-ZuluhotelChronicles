@@ -1,0 +1,126 @@
+include "auctioneer";
+include "include/itemutil";
+include "include/objtype";
+
+var gump_layout := {};
+var gump_data := {};
+var string_counter := 1;
+
+var itembox;
+
+program put_item_up_for_sale (parms)
+	var auctioneer := parms[1];
+	var player := parms[2];
+	var item := parms[3];
+	if (!auctioneer || !player || !item)
+		return;
+	endif
+
+	if (!MoveItemToContainer(item, auctioneer.backpack) )
+		PrintTextAbovePrivate(auctioneer, "Whoops!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	if (!ReserveItem(item))
+		PrintTextAbovePrivate(auctioneer, "Whoops!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	if (!ReserveItem(item))
+		PrintTextAbovePrivate(auctioneer, "Whoops!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	if (item.IsA(POLCLASS_CONTAINER))
+		PrintTextAbovePrivate(auctioneer, "Whoops!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	PrintTextAbovePrivate(auctioneer, "What category should I put this in?", player);
+	var category := SelectCategory(player);
+	if (!category)
+		PrintTextAbovePrivate(auctioneer, "Maybe next time, then.", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	itembox := find_or_create_item(storage, category, UOBJ_BANKBOX);
+	if (!itembox)
+		PrintTextAbovePrivate(auctioneer, "Whoops!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	var other_items := 0;
+	foreach item in ListRootItemsInContainer(itembox)
+		var selleracctname := GetObjProperty(item, "selleracctname");
+		if (selleracctname && selleracctname == player.acctname)
+			other_items := other_items + 1;
+		endif
+	endforeach
+	if (other_items >= MAX_AUCTIONS_PER_CATEGORY)
+		PrintTextAbovePrivate(auctioneer, "You already have as many auctions in that category as you're allowed!", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	if (!MoveItemToContainer(item, itembox))
+		PrintTextAbovePrivate(auctioneer, "I'm afraid I can't sell anything else in that category.", player);
+		sleep(1);
+		PrintTextAbovePrivate(auctioneer, "Please try again later.  Sorry.", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	case (item.objtype)
+		UOBJ_BACKPACK:
+		UOBJ_BAG:
+		UOBJ_POUCH:
+		UOBJ_WOODEN_BOX_1:
+		UOBJ_WOODEN_BOX_2:
+		UOBJ_BASKET:
+		UOBJ_PICNIC_BASKET:
+			var tname := SendTextEntryGump(player, "How shall I advertise this item?",
+					TE_CANCEL_ENABLE, TE_STYLE_NORMAL);
+			if (tname)
+				item.name := tname;
+			endif
+	endcase
+
+	var bidprice := SendTextEntryGump(player, "Enter the minimum bid:",
+				TE_CANCEL_DISABLE, TE_STYLE_NORMAL, 10, "(Must be at least 1 gold)");
+	bidprice := CInt(bidprice);
+	if (!bidprice || bidprice < 1)
+		PrintTextAbovePrivate(auctioneer, "Maybe next time, then.", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	endif
+
+	var auctiontime := SendTextEntryGump(player, "Enter the time the auction should last for:",
+				TE_CANCEL_DISABLE, TE_STYLE_NORMAL, 10, "(in days - Min 1, Max 7)");
+	auctiontime := CInt(auctiontime);
+	if (!auctiontime || auctiontime < 1)
+		PrintTextAbovePrivate(auctioneer, "Maybe next time, then.", player);
+		MoveItemToContainer(item, player.backpack);
+		return;
+	elseif (auctiontime > 7)
+		PrintTextAbovePrivate(auctioneer, "I'll just make that 7, then.", player);
+		auctiontime := 7;
+	endif
+
+	var auction_end_time := ReadGameClock() + auctiontime*24*3600;
+	SetObjProperty(item, "endtime", auction_end_time);
+	SetObjProperty(item, "minbid", bidprice);
+	SetObjProperty(item, "sellerserial", player.serial);
+	SetObjProperty(item, "sellername", player.name);
+	SetObjProperty(item, "selleracctname", player.acctname);
+
+	PrintTextAbovePrivate(auctioneer, "OK, I'll let you know how it goes!", player);
+	return;
+endprogram
+
+

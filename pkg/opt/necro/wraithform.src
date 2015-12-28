@@ -1,0 +1,102 @@
+use uo;
+use os;
+
+include "include/random";
+include "include/attributes";
+include "include/spelldata";
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_WRAITHFORM;
+const SPELL_EFFECT_ID		:= WRAITHFORM_MORPH_EFFECT;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_WRAITHFORM;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_WRAITHFORM;
+
+program cast_wraithform( parms )
+
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+	var circle := GetCircle( SPELLID_WRAITHFORM );
+	var plane := NECRO;
+	var caster;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_WRAITHFORM ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !CanMod(caster, "poly") )
+		SendSysMessage( caster, "You're already polymorphed in something." );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var oldchargraphic	:= caster.graphic;
+	var oldcharcolor	:= caster.color;
+	var casterskill	:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var duration		:= ModifyWithMagicEfficiency( caster, CInt( casterskill / 15 ) );
+	var range		:= ModifyWithMagicEfficiency( caster, CInt( casterskill / 30 ) );
+	var powerlvl		:= ModifyWithMagicEfficiency( caster, CInt( casterskill / 15 ) );
+	var sleeptime		:= 5;
+
+	sleeptime	:= CInt( sleeptime / ClasseBonus( caster, CLASSEID_MAGE ) );
+
+	var damagedie		:= "2d" + powerlvl;
+
+	caster.graphic		:= WRAITHFORM_WRAITH_GRAPHIC;
+	caster.color		:= WRAITHFORM_WRAITH_COLOR;
+
+	PlaySoundEffect( caster, WRAITHFORM_MORPH_SOUND );
+
+	set_critical(0);
+	EraseObjProperty( caster, "#Casting" );
+
+	while( duration > 0 && !caster.dead && !GetObjProperty(caster, "stop_wraithform") )
+
+		var targets := ListMobilesNearLocation( CInt(caster.x), CInt(caster.y), CInt(caster.z), CInt(range) );
+		foreach mobile in targets
+			if( ( mobile.serial != caster.serial ) && ( mobile.dead == 0 ) && ( !mobile.multi ) )
+				var protect := IsProtected( caster, mobile, circle );
+				if( protect != IMMUNED )
+					var dmg := RandomDiceStr( damagedie );
+					if( protect == CURSED )
+						dmg := dmg * 2;
+					endif
+			
+					PlayObjectCenteredEffect( mobile, WRAITHFORM_DRAIN_EFFECT, 7, 0x10 );
+					PlaySoundEffect( mobile, WRAITHFORM_DRAIN_SOUND );
+					ApplyPlanarDamage( caster, mobile, circle, dmg, plane );
+					SetMana(caster, GetMana(caster) + dmg);
+					if( GetMana(caster) > GetMaxMana(caster) )
+						SetMana(caster, caster.maxmana);
+					endif
+				endif
+			endif
+		endforeach
+
+		duration := duration - 1;
+		sleep( sleeptime );
+	
+	endwhile
+
+	if( caster.dead == 1 )
+		oldchargraphic := oldchargraphic + 2;
+	endif
+
+	caster.graphic	:= oldchargraphic;
+	caster.color	:= oldcharcolor;
+	PlayObjectCenteredEffect( caster, WRAITHFORM_MORPH_EFFECT, SPELL_EFFECT_SPEED, SPELL_EFFECT_LOOP );
+	PlaySoundEffect( caster, WRAITHFORM_MORPH_SOUND );
+
+endprogram

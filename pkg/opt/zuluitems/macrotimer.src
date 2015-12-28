@@ -1,0 +1,33 @@
+use os;
+use uo;
+
+program fiveminutetimer(player)
+
+
+	var time := 0;
+	var val;
+	Var account := Player.acct;
+	var offence;
+sleep(5*60);
+
+if (GetObjProperty(player,"starttime"))
+EraseObjProperty(player,"starttime");
+SendSysMessage(player,"You took too long to answer!");
+			If( !GetObjProperty( player, "#MacroOffence" ) )
+				SetObjProperty ( player, "#MacroOffence", 1);
+				EraseObjProperty(player, "#macrotest");
+				DisconnectClient( Player );
+
+			elseif( GetObjProperty( player, "#MacroOffence") )
+				offence := GetObjProperty( player, "#MacroOffence");
+				account.setprop( "Release", ( ReadGameClock() + (86400 * offence) ) );
+				MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+				SendSysMessage( Player, "You have been jailed");
+				offence := offence +1;
+				SetObjProperty( player, "#MacroOffence", offence);
+				EraseObjProperty(player, "#macrotest");
+				DisconnectClient( Player );
+			endif
+endif
+
+endprogram

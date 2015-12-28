@@ -1,0 +1,111 @@
+// Magic lock and Magic unlock  version .4
+// by Zulu (zulu@zuluhotel.com)   July 5, 2000
+
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/skillpoints";
+include "include/classes";
+include "include/starteqp";
+include "include/client";
+include "include/chests";
+
+program cast_strength( parms )
+
+	var circle := 3;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetThing(caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if (!cast_on.locked)
+		SendSysMessage(caster,"That is not locked!");
+		return;
+	endif
+
+	if (!canpick(cast_on))
+        	SendSysMessage(caster, "The Gods frown on picking this door!");
+        	PlayLightningBoltEffect( caster );
+        	return;
+	endif
+
+	if (GetObjProperty(cast_on, "#U"))
+        	if (GetObjProperty(cast_on, "#U") > ReadGameClock())
+                	SendSysMessage(caster, "You must wait to pick this lock!");
+                	return;
+        	endif
+	endif
+
+	var lvl := finddiff( cast_on );
+
+	if( !lvl )
+		SendSysMessage(caster, "You have no chance of picking that lock!");
+		return;
+	endif
+
+	if ( LockPickTheThing( caster, cast_on, lvl ) )
+		if (TypeOf(GetObjProperty(cast_on,"spawnchest"))=="Integer")
+			SpawnTheChest(cast_on);
+		endif
+	endif
+
+endprogram
+
+
+function SpawnTheChest(chest)
+
+	var level:=CInt(GetObjProperty(chest,"spawnchest"));
+
+	if(level)
+	  MakeLoot(chest,level+108);
+	  addchest(chest);
+	endif
+
+endfunction
+
+
+function LockPickTheThing( caster, chest, lvl )
+
+	var mobs := ListHostiles( caster, 4 );
+	if( len(mobs) )
+		SendSysMessage( caster, mobs[1].name + " broke your concentration!" );
+		return 0;
+	endif
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		lvl := CInt( lvl / CLASSE_BONUS );
+	endif
+
+	if( CheckSkill( caster, SKILLID_MAGERY, lvl, 0 ) )
+		PlaySoundEffect( chest, SFX_SPELL_UNLOCK1 );
+		PrintTextAbovePrivate( chest, "*Unlocked!*", caster );
+		SetObjProperty( chest, "L", caster.name );
+		chest.locked := 0;
+		return 1;
+	
+	else
+		PrintTextAbovePrivate( chest, "You fail to pick the lock.", caster );
+		SetObjProperty( caster, "#U", ReadGameClock() + 30 );
+		PlaySoundEffect( chest,SFX_SPELL_UNLOCK2 );
+		return 0;
+	endif
+
+endfunction

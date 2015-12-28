@@ -1,0 +1,73 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ICE_STRIKE;
+const SPELL_EFFECT_ID		:= FX_SPELL_ICE_STRIKE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ICE_STRIKE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ICE_STRIKE;
+
+program cast_ice_strike( parms )
+
+	var circle := GetCircle( SPELLID_ICE_STRIKE );
+	var element := WATER;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on, caster, SPELLID_ICE_STRIKE );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_ICE_STRIKE ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+	
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_ICE_STRIKE1 );
+	PlaySoundEffect( cast_on, SFX_SPELL_ICE_STRIKE2 );
+
+	
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	PlayObjectCenteredEffect( cast_on,
+				  SPELL_EFFECT_ID,
+                                  SPELL_EFFECT_SPEED,
+				  SPELL_EFFECT_LOOP );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram

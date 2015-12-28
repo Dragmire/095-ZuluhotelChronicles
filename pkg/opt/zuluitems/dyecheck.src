@@ -1,0 +1,68 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// Created by Zulu (zulu@cadvision.com) Jan 10, 2000
+// - Updated April 4, 2000
+//
+// to add items, load dyeitems.cfg
+//
+// item <object type>
+// {
+// player <cmd level>
+// }
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use os;
+use uo;
+use cfgfile;
+
+var dye_cfg :=ReadConfigFile( "::dyeitems" );
+
+program dyecheck( who, dyetub )
+
+	if( !ReserveItem( dyetub ) )
+		return;
+	endif
+
+	SendSysMessage( who, "Select something to dye" );
+	var use_on := Target( who, TGTOPT_CHECK_LOS );
+
+	if( !use_on )
+		return;
+	endif
+
+	if( !Accessible( who, use_on ) )
+		SendSysMessage( who, "You can't reach that." );
+		return;
+	endif
+
+	if( !ReserveItem( use_on ) )
+		return;
+	endif
+
+	var undyeable := GetObjProperty( use_on, "Undyeable" );
+	if( undyeable && (CInt(who.cmdlevel) < 2) )
+		SendSysMessage( who, use_on.desc + " cannot be colored" );
+		return;
+	endif
+
+	if( !dye_cfg )
+		SendSysMessage( who, "Could not open dyeitems.cfg" );
+		syslog( "Unable to open dyeitems.cfg" );
+		return;
+	endif
+
+	var element   := FindConfigElem( dye_cfg, use_on.objtype );
+	var dyeable   := GetObjProperty( use_on, "Dyeable" );
+	var allowlvl  := 10;
+	if( element )
+		allowlvl := CInt( element.player );
+	endif
+
+	if( (who.cmdlevel >= allowlvl) || (dyeable) || (who.cmdlevel >= 2) )
+		use_on.color := dyetub.color;
+	else
+		SendSysMessage( who, use_on.desc + " cannot be colored" );
+	endif
+
+endprogram

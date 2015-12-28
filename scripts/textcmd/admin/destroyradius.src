@@ -1,0 +1,16 @@
+use uo;
+
+
+program destroyradius( who, text )
+
+	var ranget := cint( text );
+	
+	foreach thingie in ListItemsNearLocation( who.x, who.y, who.z, ranget );
+		if( thingie.objtype != 0xa301 )
+			DestroyItem( thingie );
+		endif
+	endforeach
+	
+	SendSysMessage(who, "Destroyed everything in a radius of " + ranget);
+		
+endprogram

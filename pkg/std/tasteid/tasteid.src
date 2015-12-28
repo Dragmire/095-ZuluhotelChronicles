@@ -1,0 +1,82 @@
+use uo;
+use cfgfile;
+
+include "include/client";
+include "include/classes";
+include "include/itemutil";
+include "include/objtype";
+
+const UOBJECT_FLASK_EMPTY:= 0x1832;
+const UOBJECT_FLASK_FULL := 0x1834;
+const UOBJECT_FLASK_HEATED := 0x1833;
+
+const DEFAULT_POINT := 150;
+
+program do_tasteid( character )
+
+	var thepoints := DEFAULT_POINT;
+	var the_item;
+	var alchemcfg := ReadConfigFile("::itemdesc");
+	
+	SendSysMessage( character, "Select an object to taste." );
+	the_item := Target( character );
+	if( !the_item )
+		return;
+	endif
+	
+	if( !Accessible( character , the_item ) )
+		SendSysMessage( character , "You can't reach that." );
+		return;
+	endif
+	
+	if( Distance( character , the_item ) > 2 )
+		SendSysMessage( character , "That is too far." );
+		return;
+	endif
+	
+	if( !IsConsommable( the_item ) )
+		if( the_item.graphic != UOBJ_POISON_POTION and the_item.graphic != 0x0f0d and !alchemcfg[the_item.objtype].sname )
+			SendSysMessage( character , "You can't taste that!" );
+			return;
+		endif
+	endif
+	
+	if( !CheckSkill( character, SKILLID_TASTEID, -1, thepoints ))
+		SendSysmessage( character , "You're not sure..." );
+		return;
+	endif
+		
+	var poison_level := Cint(GetObjProperty(the_item, "Poisoned"));
+	var poison_descr;
+
+	case (poison_level)
+		1: poison_descr := "a lesser poison.";	break;
+		2: poison_descr := "a minor poison.";	break;
+		3: poison_descr := "a regular poison.";	break;
+		4: poison_descr := "a strong poison.";	break;
+		5: poison_descr := "a greater poison.";	break;
+		6: poison_descr := "a deadly poison.";	break;
+		7:
+		8:
+		9:
+		10: poison_descr := "an extremely deadly poison.";	break;
+		default: poison_descr := "nothing out of the ordinary.";
+	endcase	
+			
+	SendSysmessage( character , "This contains " + poison_descr );
+
+	var itemdesc := alchemcfg[the_item.objtype].sname;
+	if( itemdesc )
+		SendSysmessage(character, "It seems to be " + itemdesc);
+		SetName( the_item , itemdesc );
+	endif
+
+endprogram
+
+
+
+
+
+
+
+

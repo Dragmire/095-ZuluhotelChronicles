@@ -1,0 +1,109 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+include "include/dotempmods";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_WYVERN_STRIKE;
+const SPELL_EFFECT_ID		:= FX_SPELL_WYVERN_STRIKE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_WYVERN_STRIKE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_WYVERN_STRIKE;
+
+
+program cast_wyvernstrike( parms )
+
+	var circle := GetCircle( SPELLID_WYVERN_STRIKE );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_WYVERN_STRIKE ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+ 
+if( IsInAntiLootingArea( cast_on ) ) //safe zone
+SendSysMessage( caster, "You aren't allowed to do that." );
+		return 0;
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_WYVERN_STRIKE );
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayMovingEffect(caster,
+                                 cast_on,
+                                 SPELL_EFFECT_ID,
+                                 SPELL_EFFECT_SPEED,
+                                 SPELL_EFFECT_LOOP,
+                                 explode := 0);
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_WYVERN_STRIKE );
+
+	var protected := IsProtected( caster, cast_on, circle );
+	if( protected == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+	
+	if( protected == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg	:= CalcSpellDamage( caster, cast_on, circle );
+	var magery	:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var plvl	:= ModifyWithMagicEfficiency( caster, CInt( magery /40 ) + 1 );
+	var max	:= ModifyWithMagicEfficiency( caster, 4 );
+
+	if( protected == CURSED )
+		plvl := plvl * 2;
+	endif
+
+	plvl := Resisted( caster, cast_on, circle, plvl );
+
+	if( plvl > max )
+		plvl := max;
+	endif
+
+	var protection := GetResultingPlaneProtection( cast_on, plane );
+	if( protection )
+		plvl := plvl - CInt( plvl * protection * 0.25 );
+		if( plvl < 1 )
+			plvl := 0;
+		endif
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+	ApplyPlanarDamage( caster, cast_on, circle, dmg, plane );
+	if( plvl )
+		SetPoison( cast_on, plvl, "You were poisonned by " + caster.name + "'s Wyvern's Strike spell!" );
+	endif
+
+endprogram

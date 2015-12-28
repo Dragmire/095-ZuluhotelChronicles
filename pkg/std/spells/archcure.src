@@ -1,0 +1,70 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/dotempmods";
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_AGILITY;
+const SPELL_EFFECT_ID		:= FX_SPELL_AGILITY;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_AGILITY;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_AGILITY;
+program cast_archcure( parms )
+
+	var circle := 4;
+	var caster;
+	var thetarget;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		thetarget := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		thetarget := CanTargetArea(caster, circle);
+		if (!thetarget)
+			return;
+		endif
+	endif
+
+	PlaySoundEffect(caster, SFX_SPELL_ARCH_CURE);
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY);
+        var poison_level;
+
+	foreach cast_on in ListMobilesNearLocation( CInt(thetarget.x), CInt(thetarget.y), CInt(thetarget.z), CInt(magery/15) );
+	
+		if (cast_on.poisoned)
+			var diffi := (PoisonLevel(cast_on) * 15)+60;
+			var increase := GetObjProperty( cast_on, "HealingIncrease" );
+			if( increase )
+				diffi := diffi - (increase * 10);
+				if( diffi < 0 )
+					diffi := 10;
+				endif
+			endif
+		
+			if( GetObjProperty( caster, CLASSEID_MAGE ) )
+				diffi := CInt( diffi / CLASSE_BONUS );
+			endif
+	
+			if ( CheckSkill( caster, SKILLID_MAGERY, diffi, 0 ) )
+				CurePoison( cast_on, SFX_SPELL_CURE, caster.name+ " has CURED you!" );
+		        	PlaySoundEffect( cast_on, SFX_SPELL_CURE );
+			endif
+   		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+		endif
+	
+	endforeach
+
+endprogram

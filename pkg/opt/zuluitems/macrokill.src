@@ -1,0 +1,80 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+
+program code_equal_to_number( who, client );
+
+	var chr :=GetGlobalProperty("plychat");
+	var player := Target(who, TGTOPT_NOCHECK_LOS);
+	if( !player )
+		return 0;
+	elseif( !player.IsA(POLCLASS_MOBILE) )
+		SendSysMessage( who, "You must target a player." );
+		return 0;
+	elseif( player.IsA(POLCLASS_NPC) )
+		SendSysMessage( who, "You must target a player." );
+		return 0;
+	endif
+
+	SetObjProperty( player, "starttime", ReadGameClock() );
+
+	before := ReadGameClock(); // DEBUG
+
+	start_script( ":zuluitems:macrojail2", player );
+
+	var number  := RandomInt(10000)+1;
+	var text    := "Enter " + number + " below in order to pass the macrotest.";
+	var entered := CInt(SendTextEntryGump( player, text, 40 ));
+
+	if( entered == number )
+		EraseObjProperty( player, "starttime" );
+		SendSysMessage( player, "You passed!" );
+		PlayLightningBoltEffect(player);
+		textcmd_bcast( player, "entered the code correct." );
+		return 0;
+	else
+		textcmd_bcast( player, "failed the code once." );		
+		SendSysMessage( player, "Wrong code. You have one last chance." );
+		entered := CInt(SendTextEntryGump( player, text, 40 ));
+		if( entered == number )
+			EraseObjProperty( player, "starttime" );
+			SendSysMessage( player, "You passed!" );
+			PlayLightningBoltEffect(player);
+			textcmd_bcast( player, "The code was correct after the second try." );
+			return 0;
+		else
+			SendSysMessage( player, "You entered the wrong number!" );
+			textcmd_bcast( player, "failed after second try to enter the code correct." );
+			SendSysMessage( player, "Hope you like the jail." );
+			// insert jailcode
+		
+			endif
+
+
+
+
+
+
+
+	endif
+
+	//debug
+	var after := ReadGameClock();
+	timecheck := after - before;
+	var timechecktext := "took " + (after - before) + " seconds to manage through the macrotest";
+	textcmd_bcast( player, timechecktext );
+endprogram

@@ -1,0 +1,30 @@
+// regeneration march 25, 2001
+// zulu (zulu@zuluhotel.com)
+
+use uo;
+use os;
+
+program use_tech(who,tech)
+
+if (GetObjProperty(who,"#ctftech")) return; endif
+if (tech.invisible==1) return; endif
+if (GetObjProperty(tech,"user")==who.serial) return; endif
+
+SetObjProperty(who,"#ctftech","armor");
+PlaySoundEffect(who,13);
+
+tech.invisible:=1;
+start_script(":zuluctf:hud",who);
+who.ar_mod:=20;
+
+while (GetObjProperty(who,"#ctftech")=="armor")
+
+PlaySoundEffect(who,196);
+
+sleep(20);
+
+endwhile
+
+who.ar_mod:=0;
+
+endprogram

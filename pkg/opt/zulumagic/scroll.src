@@ -1,0 +1,127 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "getspellid";
+
+program use_scroll( who, scroll )
+
+	var shp := GetHp(who);
+	var sx := who.x;
+	var sy := who.y;
+	var sz := who.z;
+	var smana := GetMana(who);
+
+	set_critical( 1 );
+	if (!scroll.amount)
+		return;
+    	endif
+
+	if(!ReserveItem(scroll)) return; endif
+
+        var spellid := GetSpellId( scroll );
+	if (manacost(who,spellid) > GetMana(who))
+		PrintTextAbovePrivate(who,"Not enough mana!",who);
+		return;
+	endif
+
+	if (GetEffectiveSkill(who,SKILLID_MAGERY) < (GetSpellDifficulty( spellid ) - 20) )
+		PrintTextAbovePrivate(who,"Not a chance...",who);
+		return;
+	endif
+
+	SpeakPowerWords( who, spellid );
+
+	var loop := CInt((spellid + 7) / 8 * 500);
+	PerformAction(who,ANIM_CAST_DIR);
+
+	while ( loop > 500)
+		loop := loop - 1000;
+		sleep(1);
+		if ((GetHp(who) < shp ) && (smana>70))
+			SendSysMessage( who, "Your were interrupted while casting!");
+			PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+			PlaySoundEffect(who, 0x05b);
+			return;
+		endif
+/*
+		if (who.x != sx or who.y != sy or who.z != sz)
+			SendSysmessage( who , "You've lost your concentration!" );
+			PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+			PlaySoundEffect(who, 0x05b);
+			return;
+		endif
+*/
+	endwhile
+
+	sleepms(loop);
+	if ((GetHp(who) < shp ) && (smana>70))
+		SendSysMessage( who, "Your were interrupted while casting!");
+		PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+		PlaySoundEffect(who, 0x05b);
+		return;
+	endif
+
+/*
+	if (who.x != sx or who.y != sy or who.z != sz)
+		SendSysmessage( who , "You've lost your concentration!" );
+		PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+		PlaySoundEffect(who, 0x05b);
+		return;
+	endif
+*/
+	if (CanReadScroll(who))
+	if (CheckSkill( who, SKILLID_MAGERY, GetSpellDifficulty(spellid)-20, 0 ) )
+	        if ( ConsumeMana( who, spellid ) )
+	        	Detach();
+			SubtractAmount( scroll, 1 );
+                	StartSpellEffect( who, spellid );
+			return;
+		endif
+	endif
+	endif
+
+	PlaySoundEffect(who,0x005d);
+	PlayObjectCenteredEffect(who, 0x3735,10, 30);
+
+endprogram
+
+function CanReadScroll(me)
+
+	var cfg := ReadConfigFile(":combat:itemdesc");
+	var item;
+	var circle := 2;
+
+	var theweapon := GetEquipmentByLayer( me,  LAYER_HAND1   );
+	var theweapon2 := GetEquipmentByLayer( me,  LAYER_HAND2   );
+
+	if ((!theweapon) && (!theweapon2))
+		return 1;
+	endif
+
+	var weapon1 := cfg[theweapon.objtype].blocksCastingIfInHand;
+	var weapon2 := cfg[theweapon2.objtype].blocksCastingIfInHand;
+
+	if (weapon1==0 && !theweapon2)
+	return 1;
+	elseif (weapon2==0 && !theweapon)
+	return 1;
+	elseif (weapon1==0 && weapon2==0)
+	return 1;
+	endif
+
+	PrintTextAbovePrivate(me,"Your hands must be free to use that!",me);
+	return 0;
+
+endfunction
+
+function manacost(me,spellid)
+
+	var cfg := ReadConfigFile(":spells:spells");
+	var circle := cfg[ spellid ].circle;
+	cfg := ReadConfigFile("::circles");
+	return CInt(cfg[ circle ].mana);
+
+endfunction

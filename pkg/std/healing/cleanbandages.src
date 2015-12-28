@@ -1,0 +1,40 @@
+use os;
+use uo;
+
+include "include/utility";
+include "include/client";
+include "include/itemutil";
+
+const MAX_DISTANCE := 8;
+
+program cleanbandages( who, item )
+
+	if( (item.container).IsA(POLCLASS_CORPSE) )
+		SendSysMessage( who, "You can't use this while it is on the corpse." );
+		return 0;
+	endif
+
+	if( !ReserveItem(item) )
+		return;
+	endif
+
+	SendSysMessage( who, "Select a water source to clean them." );
+	var use_on := TargetCoordinates( who );
+	
+	if(!use_on)
+		return 0;
+	elseif( coordist( who.x, who.y, use_on.x, use_on.y ) > MAX_DISTANCE )
+		SendSysMessage( who, "That is too far away." );
+		return 0;
+	elseif( !IsWater(use_on) )
+        	SendSysMessage( who, "You must clean the bandages in clean water." );
+        	return 0;
+	endif
+
+	var amount := Cint(item.amount/2);
+	Destroyitem(item);
+	PlaySoundEffect( who, SFX_12 );
+	PerformAction( who, ANIM_FIDGET_2 );
+	CreateItemInBackpack( who, UOBJ_BANDAGE, amount );
+
+endprogram

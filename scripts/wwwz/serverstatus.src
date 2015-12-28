@@ -1,0 +1,175 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use http;
+
+Include "include/time";
+
+Const BYTES_IN_KILO	:= 1024.0;
+Const BYTES_IN_MEG	:= 1048576.0;
+
+Program Server_Status( )
+
+    Var system := PolCore();
+    Var itemcount := PolCore().itemcount;
+    Var mobcount := PolCore().mobilecount;
+    Var load := system.load;
+    Var totalplayers, players;
+    Var Seconds := system.systime;
+    Var Uptim      := system.uptime;
+    
+    Var LongestTime := GetGlobalProperty( "LongestUptime" );
+    If( Uptim > LongestTime )
+    SetGlobalProperty( "LongestUptime", Uptim );
+    LongestTime := GetGlobalProperty( "LongestUptime" );
+    Endif
+
+    Var vers := system.version;
+    Var Accts    := ListAccounts( );
+    Var TotalAccts    := Len( Accts );
+    Var Guilds    := ListGuilds( );
+    Var TotalGuilds    := Len( Guilds );
+    Var Uptime     := PolCore().uptime;
+/*
+    WriteHtml( "<html><head><title>Baroca Shard</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+*/
+    Writehtml(
+    "<center><font size=2>Server Hardware</font>"
+    +"<table width=100% border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>CPU</font></div></td>"
+    +"<td width=300><div align=center><font size=2>AMD Athlon 64 3200+ / 2.01GHz (2000MHz FSB)</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>RAM</font></div></td>"
+    +"<td width=300><div align=center><font size=2>2.5GB DDR PC3200 400MHz CL3</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>Video</font></div></td>"
+    +"<td width=300><div align=center><font size=2>Leadtek GeForce 6600 256MB DDR (PCI Express)</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>HDD</font></div></td>"
+    +"<td width=300><div align=center><font size=2>80Gb SCSI 10000RPM</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>OS</font></div></td>"
+    +"<td width=300><div align=center><font size=2>Windows XP Professional with SP2</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>Connection</font></div></td>"
+    +"<td width=300><div align=center><font size=2>6.0Mbps Down/384Kb Up</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=100><div align=center><font size=2>Developer</font></div></td>"
+    +"<td width=300><div align=center><font size=2><a href=mailto:red_unreal@hotmail.com>Baroca</a></font></div></td>"
+    +"</tr>"
+    +"</table></center>"
+    );
+    
+    Writehtml(
+    "<br><center><font size=2>Shard Statistics</font>"
+    +"<table width=100% border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Accounts</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + TotalAccts + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Guilds</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + TotalGuilds + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>NPC Count</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" +  mobcount + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Item Count</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + itemcount + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Megabits Sent/Received</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + FormatBytes( system.bytes_sent ) + "/" + FormatBytes( system.bytes_received ) + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Uptime</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + GetUpTimeString( Uptim ) + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Longest Uptime</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + GetUpTimeString( LongestTime ) + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Core Version</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + vers + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Scripts Base</font></div></td>"
+    +"<td width=200><div align=center><font size=2>Zuluhotel 3.0</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Scripts Version</font></div></td>"
+    +"<td width=200><div align=center><font size=2>UL2.3.96 Beta</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Server Started</font></div></td>"
+    +"<td width=200><div align=center><font size=2>Sept 16, 2005</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Server Date</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + GetDateString( Seconds ) + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Server Load</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + CStr( system.sysload ) + "%</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Timezone</font></div></td>"
+    +"<td width=200><div align=center><font size=2>(GMT-5:00) Eastern Time (BR & Brasil)</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Time</font></div></td>"
+    +"<td width=200><div align=center><font size=2>" + GetTimeString( Seconds ) + "</font></div></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=200><div align=center><font size=2>Location</font></div></td>"
+    +"<td width=200><div align=center><font size=2>BR, Brasil</font></div></td>"
+    +"</tr>"
+    +"</table></center>"
+    );
+ /*   
+    WriteHtml(
+    "</body></html>"
+    );
+*/
+Endprogram
+
+Function FormatBytes( bytes )
+
+    Var mb := CDbl( bytes ) / BYTES_IN_MEG;
+    Var type := "MB";
+
+    If( mb < 1.0 )
+    mb := CDbl(bytes) / BYTES_IN_KILO;
+    type := "KB";
+        If( mb < 1.0 )
+        mb := bytes;
+        type := "B";
+        Endif
+    Endif
+
+    Return CStr( mb ) + "" + type;
+
+Endfunction

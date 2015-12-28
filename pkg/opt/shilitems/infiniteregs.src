@@ -1,0 +1,60 @@
+use uo;
+use os;
+
+include "include/itemutil";
+include "include/objtype";
+
+
+var sub_bags_y := 74;
+
+var sub_bags_x_positions := { 29, 62, 93 };
+
+var the_sub_bags := { 0, 0, 0 };
+var sub_bags_obj := { 0xba33, 0xba34, 0xba35 };
+
+const BETWEEN_CHECKS := 12000;
+
+program infiniteregs( bag )
+
+	while( 1 && bag )
+
+		foreach item in EnumerateItemsInContainer( bag )
+			if ( item.container == bag )
+				if( item.objtype == 0xba33 )
+					the_sub_bags[1] := item;
+				elseif( item.objtype == 0xba34 )
+					the_sub_bags[2] := item;
+				elseif( item.objtype == 0xba35 )
+					the_sub_bags[3] := item;
+				endif
+			endif
+		endforeach
+
+		var i;
+		for( i := 1; i <= 3; i := i + 1 )
+			if( the_sub_bags[i] )
+				if( the_sub_bags[i].x != sub_bags_x_positions[i] )
+					the_sub_bags[i].movable := 1;
+					MoveItemToContainer( the_sub_bags[i], bag, sub_bags_x_positions[i], sub_bags_y );
+					the_sub_bags[i].movable := 0;
+				
+				elseif( the_sub_bags[i].y != sub_bags_y )
+					the_sub_bags[i].movable := 1;
+					MoveItemToContainer( the_sub_bags[i], bag, sub_bags_x_positions[i], sub_bags_y );
+					the_sub_bags[i].movable := 0;
+				endif
+			else
+				the_sub_bags[i] := CreateItemAtLocation( 0, 0, 0, sub_bags_obj[i], 1 );
+				if( the_sub_bags[i] )
+					the_sub_bags[i].movable := 1;
+					MoveItemToContainer( the_sub_bags[i], bag, sub_bags_x_positions[i], sub_bags_y );
+					the_sub_bags[i].movable := 0;
+				endif
+			endif
+		endfor
+	
+		sleep( BETWEEN_CHECKS );
+	
+	endwhile
+
+endprogram

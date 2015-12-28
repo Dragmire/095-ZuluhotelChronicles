@@ -1,0 +1,44 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program rquickhealing( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_QUICK_HEALING, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	//Apply the enchantment
+
+	var previous := GetObjProperty( item, "HealingIncrease" );
+	if(!previous)
+		SetObjProperty( item, "HealingIncrease", power );
+		SendSysMessage( caster, "The wearer of this " + item.desc + " will now receive a bonus on all healing action." );
+		SetNameByEnchant( item );
+	else
+		SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+	endif
+
+endprogram

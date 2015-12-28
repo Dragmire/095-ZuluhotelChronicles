@@ -1,0 +1,51 @@
+use uo;
+use os;
+
+include "include/spelldata";
+
+const DELAY_BETWEEN_USE	:= 10;
+
+program item_lightningstorm( who, item )
+
+	if( !ReserveItem( item ) )
+		return;
+	endif
+
+	var last_use := CInt(GetObjProperty( who, "#last_use_items" ));
+	if( last_use && last_use > CInt(ReadGameClock() - DELAY_BETWEEN_USE) )
+		SendSysMessage( who, "You must wait before using it again." );
+		return;
+	endif
+	
+	SetObjProperty( who, "#last_use_items", CInt(ReadGameClock()) );
+
+	if( !GetObjProperty( item, "RequireNoCharges" ) )
+		var charges := CInt(GetObjProperty( item, "charges" ));
+		if( !charges )
+			PrintTextAbovePrivate( item, "That is out of charges", who );
+			return;
+		else
+			charges := charges - 1;
+			SetObjProperty( item, "charges", charges );
+		endif
+	endif
+
+	Detach();
+
+	foreach mobile in ListMobilesNearLocationEx( who.x, who.y, who.z, 10, 0x03 );
+
+		if( (CheckLosAt( mobile, who.x, who.y, who.z ) ) && (mobile.serial != who.serial) )
+			var dmg := CalcSpellDamage( who, mobile, 4 );
+			send_attack( mobile, who, SPELLID_CHAIN_LIGHTNING);
+			PlayLightningBoltEffect( mobile );
+			PlaySoundEffect( mobile, SFX_SPELL_CHAIN_LIGHTNING );
+			PlayLightningBoltEffect( mobile );
+			ApplyElementalDamage( who, mobile, 4, dmg, AIR );
+		endif
+	
+	endforeach
+
+	sleep( DELAY_BETWEEN_USE );
+	EraseObjProperty( who, "#last_use_items" );
+
+endprogram

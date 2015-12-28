@@ -1,0 +1,33 @@
+use uo;
+
+include "include/itemutil";
+
+program unshrink_items( who, dolly )
+
+	SendSysMessage( who, "Un-shrink where?" );
+	var where := TargetCoordinates( who );
+	if (!where)
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	var objtype := GetObjProperty(dolly, "objtype");
+	var amount  := GetObjProperty(dolly, "amount");
+	var item := CreateItemAtLocation( where.x, where.y, where.z, objtype, amount );
+
+	if (!item)
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	DupeItem( dolly, item );
+	item.graphic := GetObjProperty( dolly, "graphic" );
+	if( GetObjProperty(dolly, "usescript") )
+		item.usescript := GetObjProperty(dolly, "usescript");
+	endif
+
+	SendSysMessage( who, "Done!" );
+
+
+endprogram
+

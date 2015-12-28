@@ -1,0 +1,618 @@
+use uo;
+use os;
+
+include "include/dotempmods";
+include "include/attributes";
+include "include/itemutil";
+include "include/spelldata";
+include "include/damages";
+include "include/client";
+include "include/rituals";
+
+program item_cast_spell( who, item )
+
+	if( !ReserveItem( item ) )
+		return;
+	endif
+
+	var use_delay := CInt( GetObjProperty( item, "BetweenUses" ) );
+	if( use_delay )
+		var last_use := CInt(GetObjProperty( item, "#last_use" ));
+		if( last_use && last_use > CInt(ReadGameClock() - use_delay) )
+			SendSysMessage( who, "You must wait before using it again." );
+			return;
+		else
+			SetObjProperty( item, "#last_use", CInt(ReadGameClock()) );
+		endif
+	endif
+
+	if( !GetObjProperty( item, "RequireNoCharges" ) )
+		var charges := CInt(GetObjProperty( item, "charges" ));
+		if( !charges )
+			PrintTextAbovePrivate( item, "That is out of charges", who );
+			EraseObjProperty( item, "#last_use" );
+			return;
+		else
+			charges := charges - 1;
+			SetObjProperty( item, "charges", charges );
+		endif
+	endif
+
+	var action := CInt( GetObjProperty( item, "PlayAnim" ) );
+	if( action )
+		PerformAction( who, action );
+	endif
+
+	var power_words := CStr( GetObjProperty( item, "PowerWords" ) );
+	if( power_words )
+		PrintTextAbove( who, power_words );
+	endif
+
+	var trigger_circle := CInt( GetObjProperty( item, "TriggerCircle" ) );
+	var magic_circle := {};
+	if( trigger_circle )
+		var appear_color := CInt( GetObjProperty( item, "CircleColor" ) );
+		var appear_sfx := CInt( GetObjProperty( item, "CircleSfx" ) );
+		CreateMagicCircleAround2( who, magic_circle, appear_color, appear_sfx );
+	endif
+
+	var delay	:= CInt( GetObjProperty( item, "SpellDelayMs" ) );
+	if( delay );
+		sleepms( delay );
+	endif
+
+	if( len(magic_circle) )
+		DestroyCircle( magic_circle );
+	endif
+
+	var reagents := GetObjProperty( item, "ReagentsNeeded" );
+	if( len( reagents ) )
+		foreach reagent in reagents
+			var objtype := CInt( reagent[1] );
+			var amount := CInt( reagent[2] );
+			if( objtype && amount )
+				if( !ConsumeObjType( who, objtype, amount ) )
+					PlayObjectCenteredEffect(who, FX_SPELL_FIZZLE, SPEED_SPELL_FIZZLE, LOOP_SPELL_FIZZLE );
+					PlaySoundEffect(who, SFX_SPELL_FIZZLE);
+					SendSysMessage(who, "Insufficient Reagents.");
+					EraseObjProperty( item, "#last_use" );
+					return;
+				endif
+			endif
+		endforeach
+	endif
+
+	var mana_cost := CInt( GetObjProperty( item, "ManaCost" ) );
+	if( mana_cost )
+		if( GetMana(who) < mana_cost )
+			PlayObjectCenteredEffect(who, FX_SPELL_FIZZLE, SPEED_SPELL_FIZZLE, LOOP_SPELL_FIZZLE);
+			PlaySoundEffect(who, SFX_SPELL_FIZZLE);
+			SendSysMessage(who, "Insufficient Mana.");
+			EraseObjProperty( item, "#last_use" );
+			return;
+		else
+			SetMana(who, GetMana(who) - mana_cost);
+		endif
+	endif
+
+	var skill_diff := CInt( GetObjProperty( item, "SpellDifficulty" ) );
+	if( skill_diff )
+		if( !CheckSkill( who, SKILLID_MAGERY, skill_diff, CInt(skill_diff * 20) ) )
+			if( mana_cost )
+				SetMana(who, GetMana(who) + mana_cost);
+				if( GetMana(who) > GetMaxMana(who) )
+					SetMana(who, who.maxmana);
+				endif
+			endif
+			
+			PlayObjectCenteredEffect(who, FX_SPELL_FIZZLE, SPEED_SPELL_FIZZLE, LOOP_SPELL_FIZZLE );
+			PlaySoundEffect(who, SFX_SPELL_FIZZLE);
+			SendSysMessage(who, "The spell fizzles");
+			EraseObjProperty( item, "#last_use" );
+			return;
+		endif
+	endif
+
+	var tgt_type := GetObjProperty( item, "TargetingType" );
+	if( !tgt_type )
+		EraseObjProperty( item, "#last_use" );
+		return;
+	endif
+
+	var alignment := GetObjProperty( item, "SpellTargetOption" );
+	if( !alignment )
+		alignment := TGTOPT_NEUTRAL;
+	else
+		case( alignment )
+			"helpful":	alignment := TGTOPT_HELPFUL;	break;
+			"neutral":	alignment := TGTOPT_NEUTRAL;	break;
+			"harmful":	alignment := TGTOPT_HARMFUL;	break;
+		endcase
+	endif
+
+	var affected := {};
+	case( tgt_type )
+		"self":		affected.append( who );			break;
+		"mobile":	GetTargetedMobile( who, affected, alignment );	break;
+		"coordinates":	GetTargetedCoor( who, affected );	break;
+		"area":		GetTargetedArea( who, item, affected );	break;
+	endcase
+
+	if( !len(affected) )
+		EraseObjProperty( item, "#last_use" );
+		return;
+	endif
+
+	var effect_type := GetObjProperty( item, "SpellEffectType" );
+	if( !effect_type )
+		EraseObjProperty( item, "#last_use" );
+		return;
+	endif
+
+	Detach();
+	case( effect_type )
+		"damage":	ProcessDamageEffect( who, item, affected );	break;
+		"summon":	ProcessSummonEffect( who, item, affected );	break;
+		"polymorph":	ProcessPolymorphEffect( who, item, affected, alignment );	break;
+		"bless":	ProcessBlessEffect( who, item, affected );			break;
+		"heal":		ProcessHealEffect( who, item, affected );			break;
+		"poison":	ProcessPoisonEffect( who, item, affected );	break;
+	endcase
+
+	if( GetObjProperty( item, "DestroyAfterUse" ) )
+		DestroyItem( item );
+	endif
+
+	if( use_delay )
+		sleep( use_delay );
+		EraseObjProperty( item, "#last_use" );
+	endif
+
+endprogram
+
+
+function CreateMagicCircleAround2( who, byref magic_circle, color := 0, sfx := 0 )
+
+	var x := who.x;
+	var y := who.y - 5;
+	var z := who.z;
+
+	if( sfx )
+		PlaySoundEffect( who, sfx );
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 7), z, 0x1cf1, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 7), z, 0x1cf2, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 7), z, 0x1cf3, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 7), z, 0x1cf4, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 2), (y + 7), z, 0x1cf5, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 2), (y + 6), z, 0x1cf6, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 2), (y + 5), z, 0x1cf7, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 2), (y + 4), z, 0x1cf8, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 2), (y + 3), z, 0x1cf9, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 3), z, 0x1cfa, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 2), z, 0x1cfb, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 2), z, 0x1cfc, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 2), z, 0x1cfd, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 2), z, 0x1cfe, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 3), (y + 2), z, 0x1cff, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 3), (y + 3), z, 0x1d00, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 3), (y + 4), z, 0x1d01, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 3), (y + 5), z, 0x1d02, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 3), (y + 6), z, 0x1d03, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 6), z, 0x1d04, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 6), z, 0x1d05, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 6), z, 0x1d06, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 6), z, 0x1d07, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 5), z, 0x1d08, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x - 1), (y + 4), z, 0x1d09, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 3), z, 0x1d0a, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 3), z, 0x1d0b, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 3), z, 0x1d0c, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 4), z, 0x1d0d, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 2), (y + 5), z, 0x1d0e, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 5), z, 0x1d0f, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 5), z, 0x1d10, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation(  x, (y + 4), z, 0x1d11, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+	magic_circle.append( CreateItemAtLocation( (x + 1), (y + 4), z, 0x1d12, 1 ) );
+	if( color )
+		magic_circle[len(magic_circle)].color := color;
+	endif
+
+endfunction
+
+
+function GetTargetedMobile( who, byref affected, alignment )
+
+	var cast_on := CanTargetSpell( who, TGTOPT_CHECK_LOS+alignment );
+	if( !cast_on )
+		return;
+	endif
+
+	affected.append( cast_on );
+
+endfunction
+
+
+function GetTargetedCoor( who, byref affected )
+
+	var cast_on := CanTargetArea( who );
+	if( !cast_on )
+		return;
+	endif
+
+	affected.append( cast_on );
+
+endfunction
+
+
+function GetTargetedArea( who, item, byref affected )
+
+	var cast_on := CanTargetArea( who );
+	if( !cast_on )
+		return;
+	endif
+
+	var radius := CInt( GetObjProperty( item, "SpellRadius" ) );
+	if( !radius )
+		radius := 0;
+	endif
+
+	radius := CInt( ModifyWithMagicEfficiency( who, radius ) );
+	if( !radius )
+		radius := 0;
+	endif
+
+	foreach mobile in ListMobilesNearLocation( cast_on.x, cast_on.y, cast_on.z, radius )
+		if( CheckLosAt( mobile, cast_on.x, cast_on.y, cast_on.z ) )
+			affected.append( mobile );
+		endif
+	endforeach
+
+endfunction
+
+
+function ProcessDamageEffect( who, item, affected )
+
+	var dmg;
+	var element	:= CInt( GetObjProperty( item, "ElementalSpell" ) );
+	var plane	:= CInt( GetObjProperty( item, "PlanarSpell" ) );
+	var circle	:= CInt( GetObjProperty( item, "SpellCircle" ) );
+	var dmgtype	:= CInt( GetObjProperty( item, "SpellDmgType" ) );
+	var fixeddmg	:= GetObjProperty( item, "FixedDamages" );
+	var noself	:= GetObjProperty( item, "DontAffectCaster" );
+
+	if( !circle )
+		circle := 1;
+	endif
+
+	if( !dmgtype )
+		dmgtype := DMGID_MAGIC;
+	endif
+
+	foreach mobile in affected
+		if( !noself || mobile.serial != who.serial )
+			PlayTheEffects( who, mobile, item );
+			Send_Attack( mobile, who );
+			var immunity := IsProtected( who, mobile, circle );
+			if( immunity != IMMUNED )
+				var circ := circle;
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+			
+				if( fixeddmg )
+					dmg := RandomDiceStr( CStr(fixeddmg) );
+				else
+					dmg := CalcSpellDamage( who, mobile, circ );
+				endif
+			
+				if( element )
+					ApplyElementalDamage( who, mobile, circ, dmg, element );
+				elseif( plane )
+					ApplyPlanarDamage( who, mobile, circ, dmg, plane );
+				else
+					ApplyTheDamage( mobile, who, Resisted( who, mobile, circ, dmg ), dmgtype );
+				endif
+			endif
+		endif
+	endforeach
+	
+endfunction
+
+function ProcessSummonEffect( who, item, affected )
+
+	var npctemplate := GetObjProperty( item, "SummonNpcTemplate" );
+
+	foreach place in affected
+		PlayTheEffects( who, place, item );
+		SummonCreature( who, npctemplate, place );
+	endforeach
+
+endfunction
+
+
+function ProcessPolymorphEffect( who, item, affected, alignment )
+
+	var new_form	:= CInt( GetObjProperty( item, "PolymorphInto" ) );
+	var new_color	:= CInt( GetObjProperty( item, "PolymorphColor" ) );
+	var duration	:= CInt( GetObjProperty( item, "PolymorphDuration" ) );
+	var mod	:= CInt( GetObjProperty( item, "PolymorphMod" ) );
+
+	if( !duration )
+		duration := GetModDuration( who );
+	endif
+
+	if( !mod )
+		mod := GetModAmount( who );
+		if( alignment == TGTOPT_HARMFUL )
+			mod := 0 - mod;
+		endif
+	endif
+
+	foreach mobile in affected
+		PlayTheEffects( who, mobile, item );
+		if( alignment == TGTOPT_HARMFUL )
+			Send_Attack( mobile, who );
+		endif
+	
+		PolymorphMobile( mobile, new_form, new_color, duration, mod );
+	endforeach
+
+endfunction
+
+
+function ProcessBlessEffect( who, item, affected )
+
+	var mod_id	   := GetObjProperty( item, "SpellModId" );
+	var mod_amount   := GetObjProperty( item, "SpellModAmount" );
+	var mod_duration := GetObjProperty( item, "SpellModDuration" );
+
+	if( !mod_id )
+		return;
+	endif
+
+	if( !mod_amount )
+		mod_amount := CInt( GetModAmount(who) );
+	else
+		mod_amount := RandomDiceStr( CStr(mod_amount) );
+	endif
+
+	if( !mod_duration )
+		mod_duration := CInt( GetModDuration(who) );
+	else
+		mod_duration := RandomDiceStr( CStr(mod_duration) );
+	endif
+
+	foreach mobile in affected
+		if( CanMod( mobile, mod_id ) )
+			PlayTheEffects( who, mobile, item );
+			DoTempMod( mobile, mod_id, mod_amount, mod_duration );
+		endif
+	endforeach
+
+endfunction
+
+
+function ProcessHealEffect( who, item, affected )
+
+	var healed := GetObjProperty( item, "SpellHealAmount" );
+	if( !healed )
+		healed := CInt( GetModAmount(who) );
+	else
+		healed := RandomDiceStr( CStr(healed) );
+	endif
+
+	healed := ModifyWithMagicEfficiency( who, healed );
+
+	foreach mobile in affected
+		PlayTheEffects( who, mobile, item );
+		var heal := healed;
+		var bonus := GetObjProperty( mobile, "HealingIncrease" );
+		if( bonus )
+			heal := heal + CInt(heal * bonus * 0.1 );
+		endif
+	
+		if( GetObjProperty(mobile, "Type" ) == "Undead" )
+			ApplyTheDamage( mobile, who, heal, DMGID_MAGIC );
+		else
+			HealTheDamage( mobile, heal );
+			SendSysMessage( who, "You healed " + heal + " damage." );
+		endif
+	endforeach
+
+endfunction
+
+
+function ProcessPoisonEffect( who, item, affected )
+
+	var p_level := GetObjProperty( item, "SpellPoisonLevel" );
+
+	if( !p_level )
+		p_level := ModifyWithMagicEfficiency( who, CInt(GetEffectiveSkill(who, SKILLID_MAGERY )/40)+1 );
+	endif
+
+	foreach mobile in affected
+		PlayTheEffects( who, mobile, item );
+		Send_Attack( mobile, who );
+		if( p_level )
+			SetPoison( mobile, p_level, who.name + " has poisoned you!" );
+		endif
+	endforeach
+
+endfunction
+
+
+function PlayTheEffects( who, targ, item )
+
+	var sfx	:= CInt( GetObjProperty( item, "SpellSfx" ) );
+	var fx	:= CInt( GetObjProperty( item, "SpellFx" ) );
+	var appear	:= CInt( GetObjProperty( item, "ItemAppear" ) );
+
+	if( sfx )
+		PlaySoundEffect( who, sfx );
+		PlaySoundEffect( targ, sfx );
+	endif
+
+	if( fx )
+		var fx_type := GetObjProperty( item, "SpellFxType" );
+		case( fx_type )
+			"moving":	PlayMovingEffect( who, targ, fx, 0xa, 0xa );	break;
+			"centered":	PlayObjectCenteredEffect( targ, fx, 0xa, 0xa );	break;
+			"stationary":	PlayStationaryEffect( targ.x, targ.y, targ.z, fx, 0xa, 0xa );	break;
+			"lightning":	PlayLightningBoltEffect( targ );	break;
+		endcase
+	endif
+
+	if( appear )
+		var duration	:= CInt( GetObjProperty( item, "ItemAppearDuration" ) );
+		var amount	:= CInt( GetObjProperty( item, "ItemAppearAmount" ) );
+		var color	:= CInt( GetObjProperty( item, "ItemAppearColor" ) );
+		if( !amount )
+			amount := 1;
+		endif
+	
+		var created := CreateItemAtLocation( targ.x, targ.y, targ.z, appear, amount );
+		if( duration && created )
+			if( color )
+				created.color := color;
+			endif
+		
+			sleepms( duration );
+			DestroyItem( created );
+		endif
+	endif
+
+endfunction

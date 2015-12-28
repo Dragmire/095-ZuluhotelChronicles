@@ -1,0 +1,27 @@
+use uo;
+
+include "include/objtype";
+include "include/spelldata";
+include "include/areas";
+include "include/client";
+include "../pkg/std/housing/utility";
+
+program cast_mark( caster )
+
+	var circle := 6;
+
+
+	SendSysMessage( caster, "Select a rune to mark." );
+	var cast_on := CanTargetThing(caster, circle, TGTOPT_CHECK_LOS );
+
+
+	PlayObjectCenteredEffect(  caster, FX_SPELL_MARK, SPEED_SPELL_MARK, LOOP_SPELL_MARK);
+	PlaySoundEffect( caster, SFX_SPELL_MARK );
+
+	SetObjProperty(cast_on, "x", caster.x);
+	SetObjProperty(cast_on, "y", caster.y);
+	SetObjProperty(cast_on, "z", caster.z);
+
+	SetName(cast_on, "a marked recall rune");
+   
+endprogram

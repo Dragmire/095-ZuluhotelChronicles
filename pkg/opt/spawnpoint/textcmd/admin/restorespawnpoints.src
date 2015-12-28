@@ -1,0 +1,81 @@
+use uo;
+use os;
+use datafile;
+
+include "include/managers";
+
+program textcmd_restorespawnpoints(who)
+
+	var start    := ReadGameClock();
+	var savefile := OpenDataFile("spawnpoints");
+	if( !savefile )
+		SendSysMessage(who, "Couldn't open spawnpoint datafile " + savefile.errortext);
+		return 0;
+	endif
+
+	var pt_data;
+	var destroyed := 0;
+	var points    := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+	if( points )
+		foreach point in points
+			if( point )
+				pt_data := GetObjProperty(point, PROPID_SPAWNPOINT_SETTING);
+				if( pt_data )
+					pt_data[9] := 1;
+					SetObjProperty(point, PROPID_SPAWNPOINT_SETTING, pt_data);
+				endif
+			
+				if( DestroyItem(point) )
+					destroyed := destroyed + 1;
+				endif
+			endif
+		endforeach
+	endif
+
+	var x;
+	var y;
+	var z;
+	var msg;
+	var name;
+	var point;
+	var element;
+	var created := 0;
+	foreach key in (savefile.Keys())
+		element := savefile.FindElement(key);
+		if( element )
+			x := CInt(element.GetProp("x"));
+			y := CInt(element.GetProp("y"));
+			z := CInt(element.GetProp("z"));
+			name := element.GetProp("Name");
+			pt_data := element.GetProp("PointData");
+		
+			point := CreateItemAtLocation(x, y, z, 0xa300, 1);
+			if( point )
+				if( name )
+					SetName(point, name);
+				endif
+			
+				if( pt_data )
+					SetObjProperty(point, PROPID_SPAWNPOINT_SETTING, pt_data);
+				endif
+			
+				start_script( ":spawnpoint:checkpoint", point );
+			
+				created := created + 1;
+			endif
+		endif
+	endforeach
+
+	UnloadDataFile("spawnpoints");
+
+	var time := ReadGameClock() - start;
+
+	msg := "Finished restoring spawnpoints from datafile. Took ";
+	msg := msg + time      + " seconds to complete. ";
+	msg := msg + destroyed + " old spawnpoints were destroyed. ";
+	msg := msg + created   + " spawnpoints were restored from the datafile.";
+
+	SendSysMessage(who, msg);
+	syslog(msg);
+
+endprogram

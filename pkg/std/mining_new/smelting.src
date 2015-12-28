@@ -1,0 +1,91 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/objtype";
+
+program smelt_that_ore (who, ore)
+
+  if(ore.movable == 0)
+    SendSysMessage(who, "You cannot smelt that.");
+    return;
+  endif
+  case(ore.objtype)
+    0x6009:  SmeltOre(who, ore, 0x6011,  10);
+    0x600a:  SmeltOre(who, ore, 0x6012,  35);
+    0x600b:  SmeltOre(who, ore, 0x6013,  55);
+    0x600c:  SmeltOre(who, ore, 0x6014,  65);
+    0x600d:  SmeltOre(who, ore, 0x6015,  75);
+    0x600e:  SmeltOre(who, ore, 0x6016,  91);
+    0x600f:  SmeltOre(who, ore, 0x6017,  95);
+    0x6010:  SmeltOre(who, ore, 0x6018,  98);
+    0xc500:  SmeltOre(who, ore, 0xc510,  50);
+    0xc501:  SmeltOre(who, ore, 0xc511,  97);
+    0xc502:  SmeltOre(who, ore, 0xc512,  60);
+    0xc503:  SmeltOre(who, ore, 0xc513,  130);
+    0xc504:  SmeltOre(who, ore, 0xc514,  15);
+    0xc505:  SmeltOre(who, ore, 0xc515,  20);
+    0xc506:  SmeltOre(who, ore, 0xc516,  25);
+    0xc507:  SmeltOre(who, ore, 0xc517,  45);
+    0xc508:  SmeltOre(who, ore, 0xc518,  70);
+    0xc509:  SmeltOre(who, ore, 0xc519,  88);
+    0xc50a:  SmeltOre(who, ore, 0xc51a,  40);
+    0xc50b:  SmeltOre(who, ore, 0xc51b,  80);
+    0xc50c:  SmeltOre(who, ore, 0xc51c,  94);
+    0xc50d:  SmeltOre(who, ore, 0xc51d,  30);
+    0xc50e:  SmeltOre(who, ore, 0xc51e,  84);
+    0xc530:  SmeltOre(who, ore, 0xc51f,  100);
+    0xc531:  SmeltOre(who, ore, 0xc520,  103);
+    0xc532:  SmeltOre(who, ore, 0xc521,  106);
+    0xc533:  SmeltOre(who, ore, 0xc522,  109);
+    0xc534:  SmeltOre(who, ore, 0xc523,  112);
+    0xc535:  SmeltOre(who, ore, 0xc524,  121);
+    0xc536:  SmeltOre(who, ore, 0xc525,  115);
+    0xc537:  SmeltOre(who, ore, 0xc526,  118);
+    0xc538:  SmeltOre(who, ore, 0xc527,  125);
+    0xc539:  SmeltOre(who, ore, 0xc528,  125);
+    0xc53a:  SmeltOre(who, ore, 0xc529,  125);
+    default: SendSysMessage(who,"You can't smelt that.");
+  endcase
+endprogram
+
+function SmeltOre(who, ore, ingot, difficulty)
+  if(!ReserveItem(ore))
+    return;
+  endif
+  if(!Accessible(who, ore))
+    SendSysMessage(who,"You can't reach that.");
+    return;
+  endif
+  var forge := Target(who);
+  if((forge.objtype == 0xfb1) || ((forge.objtype >= 0x197a) && (forge.objtype <= 0x19a9)))
+    if(!CheckLineOfSight(who, forge))
+      SendSysMessage(who,"you cant see that");
+      return;
+    endif
+    if(Distance(who, forge) > 2)
+      SendSysMessage(who,"that is too far away.");
+      return;
+    endif
+    if(CheckSkill(who, SKILLID_MINING, difficulty, ((difficulty / 2) + 10)))
+      var ingots := CreateItemInBackpack(who, ingot, GetAmount(ore));
+      ReserveItem(ingots);
+      if(ingots)
+        if(DestroyItem(ore))
+          PlaySoundEffect(forge, 0x22);
+          sleep(2);
+          SendSysMessage(who,"You create some ingots and place them in your pack.");
+	      return;
+        else
+          DestroyItem(ingots);
+        endif
+      endif
+    else
+      SubtractAmount(ore, (ore.amount / 2));
+	  SendSysMessage(who, "You destroy some ore.");
+      return;
+    endif
+  else
+    SendSysMessage(who, "That is not a forge.");
+  endif
+endfunction

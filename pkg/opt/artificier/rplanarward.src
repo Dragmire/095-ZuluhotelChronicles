@@ -1,0 +1,85 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+
+program relementalward( parms )
+
+
+	var layout := array(
+				"page 0",
+				"resizepic 50  0   2600 250 150",
+				"resizepic 100 255 5100 150 25",
+				"text 99 30 5 0",
+			
+				"page 1",
+				"text 85 60 0 1",
+				"text 85 80 0 2",
+				"button 250 65 2118 2117 1 0 6",
+				"button 250 85 2118 2117 1 0 7");
+			
+	var data := array(
+				"Select an plane",
+				"Necromancy",
+				"Holy");
+			
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_PLANAR_WARD, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	//Ask for the regeneration type
+	SendSysMessage( caster, "Select a plane." );
+	var plane := SendDialogGump( caster, layout, data );
+	if( !plane[0] )
+		SendSysMessage( caster, "The ritual is aborted" );
+		return;
+	endif
+
+
+	//Apply the enchantment
+	case( plane )
+		NECRO:
+			var previous := GetObjProperty( item, "NecroProtection" );
+			if( !previous )
+				SetObjProperty( item, "NecroProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against necromancy." );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's a stronger enchantment already on this item" );
+			endif
+			break;
+		
+		HOLY:
+			var previous := GetObjProperty( item, "HolyProtection" );
+			if( !previous  )
+				SetObjProperty( item, "HolyProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against holy magic." );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+	endcase
+
+
+endprogram

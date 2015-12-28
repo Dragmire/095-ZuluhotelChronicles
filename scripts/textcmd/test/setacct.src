@@ -1,0 +1,22 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+Program textcmd_mount( Who )
+
+    Var Account := Who.acct;
+
+    Var Res := Account.Set_UO_Expansion( "AOS" );
+    
+    SendSysMessage( Who, "Done: " + Res );
+    
+Endprogram

@@ -1,0 +1,153 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/attributes";
+include "include/classes";
+include "include/spelldata";
+
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_WRAITH_BREATH;
+const SPELL_EFFECT_ID		:= FX_SPELL_WRAITH_BREATH;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_WRAITH_BREATH;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_WRAITH_BREATH;
+
+program wraithbreath( parms )
+
+  	var circle := GetCircle( SPELLID_WRAITH_BREATH );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_WRAITH_BREATH ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetArea( caster, circle );
+	endif
+		
+	if( !cast_on )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+
+endprogram
+
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+
+  	var circle := GetCircle( SPELLID_WRAITH_BREATH );
+	var plane := NECRO;
+	var magery	:= GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var range	:= ModifyWithMagicEfficiency( caster, CInt( magery / 30 ) );
+	var duration	:= ModifyWithMagicEfficiency( caster, 15 );
+
+	EraseObjProperty( caster, "#Casting" );
+	var targets	:= ListMobilesNearLocationEx( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range, 0x03);
+	var victims	:= array;
+
+	foreach mobile in targets
+	   if(!(mobile.npctemplate))
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity == IMMUNED )
+				continue;
+			endif
+	
+			if( GetResultingPlaneProtection( mobile, plane ) >= 4 )
+				SendSysMessage( mobile, "You're protected from the spell." );
+				continue;
+			endif
+			
+			if( GetObjProperty( mobile, "FreeAction" ) >= 2 )
+				SendSysMessage( mobile, "You're protected from the spell." );
+				continue;
+			endif
+			
+			mobile.frozen := 1;
+			victims.append( mobile );
+			PlayObjectCenteredEffect( mobile, SPELL_EFFECT_ID, SPELL_EFFECT_SPEED, SPELL_EFFECT_LOOP );
+			PlaySoundEffect( mobile, SFX_SPELL_WRAITH_BREATH );
+			Send_attack( mobile, caster, SPELLID_WRAITH_BREATH );
+			SendSysMessage( mobile, "You get paralyzed from the power of " + caster.name + "'s spell!" );
+		endif
+	   endif
+	endforeach
+
+	sleep( duration );
+
+	foreach victim in victims
+		victim.frozen := 0;
+	endforeach
+
+endfunction
+
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+
+  	var circle := GetCircle( SPELLID_WRAITH_BREATH );
+	var plane := NECRO;
+	var magery	:= GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var range	:= ModifyWithMagicEfficiency( caster, CInt( magery / 30 ) );
+	var duration	:= ModifyWithMagicEfficiency( caster, 15 );
+
+	EraseObjProperty( caster, "#Casting" );
+	var targets	:= ListMobilesNearLocationEx( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range, 0x03);
+	var victims	:= array;
+
+	foreach mobile in targets
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity == IMMUNED )
+				continue;
+			endif
+	
+			if( GetResultingPlaneProtection( mobile, plane ) >= 4 )
+				SendSysMessage( mobile, "You're protected from the spell." );
+				continue;
+			endif
+			
+			if( GetObjProperty( mobile, "FreeAction" ) >= 2 )
+				SendSysMessage( mobile, "You're protected from the spell." );
+				continue;
+			endif
+			
+			mobile.frozen := 1;
+			victims.append( mobile );
+			PlayObjectCenteredEffect( mobile, SPELL_EFFECT_ID, SPELL_EFFECT_SPEED, SPELL_EFFECT_LOOP );
+			PlaySoundEffect( mobile, SFX_SPELL_WRAITH_BREATH );
+			Send_attack( mobile, caster, SPELLID_WRAITH_BREATH );
+			SendSysMessage( mobile, "You get paralyzed from the power of " + caster.name + "'s spell!" );
+		endif
+	endforeach
+
+	sleep( duration );
+
+	foreach victim in victims
+		victim.frozen := 0;
+	endforeach
+
+endfunction

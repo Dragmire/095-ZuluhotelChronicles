@@ -1,0 +1,25 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 05, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Include "include/resourceutil";
+
+Program TextCMD_HideCount( who )
+
+    Var item, hides_count;
+
+    hides_count := 0;
+
+    Foreach item In ListEquippedItems( who )
+    If ( is_a_backpack( item ) )
+    count_hides ( who, item, hides_count );
+    Endif
+    Endforeach
+
+    ShowHidesDialog( who );
+
+EndProgram

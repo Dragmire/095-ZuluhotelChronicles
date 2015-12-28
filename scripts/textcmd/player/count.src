@@ -1,0 +1,25 @@
+use uo;
+
+program textcmd_count(me)
+
+	var num := 0;
+	var totalnum := 0;
+
+	SendSysMessage(me, "Count what?");
+	var it := Target(me);
+	if (!it)
+		SendSysMessage(me, "Canceled");
+		return;
+	endif
+
+	foreach item in enumerateitemsincontainer(it)
+		if (item.container.serial == it.serial)
+			num := num + 1;
+		endif
+		totalnum := totalnum + 1;
+	endforeach
+
+	sendsysmessage(me, "Top items: " + num);
+	sendsysmessage(me, "Total items: " + totalnum);
+
+endprogram

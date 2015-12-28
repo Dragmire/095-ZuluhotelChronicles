@@ -1,0 +1,130 @@
+// Version 0.3
+
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/classes";
+include "include/spelldata";
+
+const SFX_MEDITATION := SFX_FA;
+const POINTS := 200;
+
+var weapcfg := ReadConfigFile( ":*:itemdesc" );
+
+program meditation( who )
+
+	if( ReadGameClock() < CInt(GetObjProperty( who, "#lastmeditation" ) + 30) )
+		SendSysMessage( who, "You must wait some time before being able to meditate again." );
+		return;
+	endif
+
+	if( GetMana(who) >= GetMaxMana(who) )
+		SendSysMessage( who, "You are at peace." );
+		return;
+	endif
+
+	if( who.poisoned )
+		SendSysMessage( who, "You can't meditate while poisoned." );
+		return;
+	endif
+
+	if( who.warmode )
+		SendSysMessage( who, "You can't meditate in war mode." );
+		return;
+	endif
+
+	if( InvalidInHands( who ) )
+		SendSysMessage( who, "You can't meditate with something in hands." );
+		return;
+	endif
+
+
+	var sx    := who.x;
+	var sy    := who.y;
+	var shp   := GetHp(who);
+	var wait  := 5;
+	var mage  := GetObjProperty( who, CLASSEID_MAGE );
+	var skill := GetAttribute( who, ATTRIBUTEID_MEDITATION );
+	var base  := CInt( (skill / 25) + (GetIntelligence(who) / 35) );
+	
+	if( mage )
+		wait := CInt( wait / ClasseBonus( who, CLASSEID_MAGE ) );
+		base := CInt( base * ClasseBonus( who, CLASSEID_MAGE ) );
+	endif
+
+	var modifier := 100 - CInt( GetMagicEfficiencyPenalty( who ) * 2 );
+	if( modifier <= 0 )
+		SendSysMessage( who, "Regenerative forces cannot penetrate your armor." );
+		sleep( 5 );
+		return;
+	endif
+
+			
+	if( CheckSkill( who, SKILLID_MEDITATION, -1, POINTS ) )
+		SendSysMessage( who, "You enter a meditative trance." );
+		SetObjProperty( who, "#lastmeditation", ReadGameClock() );
+		PrintTextAbove( who, "*Meditating*" );
+		PlaySoundEffect( who, SFX_MEDITATION );
+		while(	(who.x == sx) &&		// the character moved
+			(who.y == sy) &&		// the character moved
+			(GetMana(who) < GetMaxMana(who)) &&	// the character is full mana
+			(GetHp(who) >= shp ) &&		// the character was damaged
+			(!who.poisoned) &&		// the character was poisoned
+			(!who.warmode) &&		// the character got in war mode
+			(!InvalidInHands( who )))	// the character equipped an invalid equipment
+		
+			sleep( wait );
+
+			modifier := 100 - CInt( GetMagicEfficiencyPenalty( who ) * 2 );
+			if( modifier > 0 )
+				var restored := CInt( base * modifier / 100 );
+				if( restored )
+					SetMana(who, GetMana(who) + restored);
+				else
+					SendSysMessage( who, "Regenerative forces cannot penetrate your armor." );
+					sleep( 5 );
+					break;
+				endif
+			
+				if( GetMana(who) > GetMaxMana(who) )
+					SetMana(who, who.maxmana);
+				endif
+			else
+				SendSysMessage( who, "Regenerative forces cannot penetrate your armor." );
+				break;
+			endif
+		endwhile
+	
+		if( GetMana(who) >= GetMaxMana(who) )
+			SendSysMessage( who, "You stop meditating." );
+		else
+			SendSysMessage( who, "You lost your concetration." );
+		endif
+	else
+
+		SendSysMessage( who, "You cannot focus your concentration." );
+	endif
+
+endprogram
+
+
+function InvalidInHands( who )
+
+	var hand1	:= GetEquipmentByLayer( who, LAYER_HAND1 );
+	var hand2	:= GetEquipmentByLayer( who, LAYER_HAND2 );
+
+	if( hand1 || hand2 )
+		if( hand1 && weapcfg[hand1.objtype].BlocksCastingIfInHand != 0 )
+			return 1;
+		endif
+	
+		if( hand2 && weapcfg[hand2.objtype].BlocksCastingIfInHand != 0)
+			return 1;
+		endif
+	endif
+
+	return 0;
+
+endfunction

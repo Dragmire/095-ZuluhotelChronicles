@@ -1,0 +1,10 @@
+use os;
+use uo;
+
+program createswitch(who);
+
+    var item := CreateItemAtLocation( who.x, who.y, who.z, 0xf00f, 1 );
+    SendSysMessage(who, "You create a lever Controller.");
+
+
+endprogram

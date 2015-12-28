@@ -1,0 +1,44 @@
+// Macroers Nightmare - ZHS 
+// Macro Jail timer...
+use os;
+use uo;
+
+include "include/client";
+include "include/time";
+include "include/time";
+include "include/classes";
+include "include/dotempmods";
+
+function textcmd_bcast( who, text )
+var chr,i,plychat:=GetGlobalProperty("plychat"),csize:=plychat.size();
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(plychat[i]);
+if (chr.cmdlevel>0 && chr)
+SendSysMessage(chr,who.name+ ": "+text,3,130);
+endif
+endfor
+endfunction
+
+program fiveminutetimer(client)
+var before := ReadGameClock();
+sleep(5*60);
+
+var acc	:= client.acct;
+var playername := CStr( client.name );
+       
+if (GetObjProperty(client,"starttime"));
+	EraseObjProperty(client,"starttime");
+	SendSysMessage(client,"You took too long to answer!");
+	acc.setprop( "Release", (ReadGameClock() + 86400 ));
+	MoveCharacterToLocation( client, 5304, 1184, 0, 0 );
+	var after := ReadGameClock();
+	var notcheat := "The macrotest jailed the client after " + (after - before) + "seconds";
+	textcmd_bcast( playername, notcheat );
+	SendSysMessage( client, "You have been jailed for one day. Reason: Breaking macro rule." );
+	Broadcast( playername + " HAS BEEN JAILED DUE TO MACROING!", FONT_BOLD, 33 );
+	Broadcast( playername + " HAS BEEN JAILED DUE TO MACROING!", FONT_BOLD, 33 );
+	sleep(5*60);
+	DisconnectClient(client);
+endif
+
+endprogram

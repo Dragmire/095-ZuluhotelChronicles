@@ -1,0 +1,162 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Jan 02, 2005.
+   Version: 1.0
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/attributes";
+Include "include/gumps";
+Include "include/ranksystem";
+Include "include/sorting";
+
+Program Test( Who )
+
+    Var X := 75;
+    Var Y := 75;
+
+    Var Page := 1;
+    Var Count := 0;
+    Var Range := 1;
+
+    GFInitGump();
+    GFResizePic( 50, 50, 5054, 300, 325 );
+    GFTextLine( ( X - 20 ), ( Y - 20 ), 2601, "Use InsideUO to see the actual colors." ) ;
+    
+    GFPage( Page );
+    
+    Var i;
+
+    For( i := 1; i <= 30; i := i + 1 )
+
+    GFButtonID( X, Y + 3, 2117, 2118, 1, Range );
+    GFTextLine( ( X + 25 ), Y, 2601, "Hue Range " + ( Range - 1 ) + "/" + ( ( Range + 100 ) - 1 ) ) ;
+    Range := Range + 100;
+    Count := Count + 1;
+    Y := Y + 20;
+    
+    If( Count > 9 )
+    GFButtonPage( X, Y, 2648, 2649, Page + 1);
+    Page := Page + 1;
+    GFPage( Page );
+    GFButtonPage( X + 20, Y, 2650, 2651, Page - 1);
+    Count := 0;
+    Y := 75;
+    Endif
+    
+    SleepMS( 2 );
+    
+    Endfor
+
+    Var Change := GFSendGump( Who );
+    Change := Change[0];
+    
+    If( !Change )
+    Return 0;
+    Endif
+    
+    SendSysMessage( Who, "Hue Range: " + ( Change - 1 ) + "/" + ( ( Change + 100 ) - 1 ) );
+    
+    ShowRangesDialog( Who, Change );
+
+Endprogram
+
+Function ShowRangesDialog( Who, MinRange )
+
+    Var X := 75;
+    Var Y := 75;
+
+    Var Page := 1;
+    Var Count := 0;
+
+    GFInitGump();
+    GFResizePic( 50, 50, 5054, 300, 325 );
+
+    GFPage( Page );
+
+    Var i;
+    Var MaxRange := MinRange + 100;
+
+    For( i := MinRange; i <= MaxRange; i := i + 1 )
+
+    GFButtonID( X, Y + 3, 2117, 2118, 1, ( i -  1 ) );
+    GFTextLine( ( X + 25 ), Y, i, "Hue #" + ( i -  1 ) ) ;
+
+    Count := Count + 1;
+    Y := Y + 20;
+
+    If( Count > 9 )
+    GFButtonPage( X, Y, 2648, 2649, Page + 1 );
+    Page := Page + 1;
+    GFPage( Page );
+    GFButtonPage( X + 20, Y, 2650, 2651, Page - 1 );
+    Count := 0;
+    Y := 75;
+    Endif
+
+    SleepMS( 2 );
+
+    Endfor
+
+    Var Change := GFSendGump( Who );
+    Change := Change[0];
+    
+    If( !Change )
+    Return 0;
+    Endif
+
+    SendSysMessage( Who, "Hue: " + Change );
+    
+    DyeHair( Who, Change );
+
+Endfunction
+
+Function DyeHair( Who, Hue )
+
+    Var X := 75;
+    Var Y := 75;
+
+    Var Page := 1;
+    Var Count := 0;
+
+    GFInitGump();
+    GFResizePic( 50, 50, 5054, 300, 325 );
+    GFPage( Page );
+    
+    GFTextLine( ( X - 20 ), ( Y - 20 ), 2601, "Color your Hair or Beard?" ) ;
+    Y := Y + 20;
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 1 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Hair" );
+    Y := Y + 20;
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 2 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Beard" );
+    
+    Var Change := GFSendGump( Who );
+    Change := Change[0];
+
+    If( !Change )
+    Return 0;
+    Endif
+    
+    If( Who.SpendGold( 50000 ) )
+    
+    If( Change == 2 )
+    Var Beard    := GetEquipmentByLayer( Who, LAYER_BEARD );
+    Beard.color := Hue;
+    SendSysMessage( Who, "Your beard color is now " + Hue + "." );
+    Elseif( Change == 1 )
+    Var Hair     := GetEquipmentByLayer( Who, LAYER_HAIR );
+    Hair.color  := Hue;
+    SendSysMessage( Who, "Your hair color is now " + Hue + "." );
+    Endif
+    
+    Else
+    SendSysMessage( Who, "You do not have 50,000!" );
+    Return 0;
+    Endif
+
+Endfunction

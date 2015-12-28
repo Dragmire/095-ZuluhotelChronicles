@@ -1,0 +1,238 @@
+//////////
+// digtreasure.src
+//
+// Fires when the tool that was created when you decode a treasuremap 
+// is double clicked. Target the map you want to dig from and then a
+// ground tile. If you are close enough to the chest coords (chestx, y, z
+// in the map) according to your mining skill, a chest is created and
+// yummy loot is placed in it according to the map's level. The chest 
+// should be locked and trapped. The map and the digging tool are 
+// deleted after the chest is 'found'. The chest decays in 30 minutes.
+//
+// Author: Racalac, 4/24/99
+// Hint system added by Zulu, zuluhotel@home.com  01/02/2000
+// 
+/////////
+
+
+use uo;
+use os;
+use cfgfile;
+
+//set_debug(1);
+
+include "include/client";
+include "include/dist";
+include "include/objtype";
+include "include/starteqp";
+include "include/classes";
+
+const UOBJECT_TREASURE_CHEST := 0x0E40;
+
+var guardians := {};
+
+program dig_treasure( character , tool )
+
+	SendSysmessage( character, "Target a treasure map to dig from." );
+	var map := Target( character);
+
+	if(!map)
+		SendSysmessage( character , "Canceled." );
+		return;
+	endif
+
+	if( map.objtype != UOBJ_MAP1 )
+		SendSysmessage( character , "You must select a treasure map." );
+		return;
+	endif
+
+	var chestx := GetObjProperty( map , "chestx" );
+	var chesty := GetObjProperty( map , "chesty" );
+	var chestz := GetObjProperty( map , "chestz" );
+
+	if( (!chestx) or (!chesty) )  //z might be 0!
+		SendSysmessage( character , "That is not a treasure map." );
+		return;
+	endif
+
+	SendSysmessage( character , "Target a location to dig." );
+	var dig := TargetCoordinates( character );
+
+	if(!dig)
+		SendSysmessage( character , "Canceled." );
+		return;
+	endif
+	
+	var distt := CoorDist( character.x , character.y , dig.x , dig.y );
+	if( distt > 2 )
+		SendSysmessage( character , "That is too far away." );
+		return;
+	endif
+
+	if(!CheckLosAt( character , dig.x , dig.y , dig.z ) );
+		SendSysmessage( character , "You can't see that." );
+		return;
+	endif
+  
+	var range := GetRange( character );
+	var distn := coordist( dig.x , dig.y , chestx , chesty );
+	var dirns := "None";
+	var direw := "None";
+
+	if( distn > range )
+
+		if ( dig.y > chesty )
+			dirns := "North";
+		endif
+		
+		if ( dig.y < chesty )
+			dirns := "South";
+		endif
+		
+		if ( dig.x < chestx )
+			direw := "East";
+		endif
+		
+		if ( dig.x > chestx )
+			direw := "West";
+		endif
+
+		if (direw = "None")
+			SendSysmessage( character , "You dig for awhile and have a feeling to travel to the " + dirns + "." );
+		else
+			SendSysmessage( character , "You dig for awhile and have a feeling to travel to the " + dirns + ", " + direw + "." );
+		endif
+
+	else
+		var lvl := GetObjProperty( map , "level" );
+		DestroyItem( map );
+		DestroyItem( tool );
+		var current_items := ListItemsAtLocation( chestx , chesty , chestz );
+		foreach thing in current_items
+			if( thing.objtype = UOBJECT_TREASURE_CHEST )
+				DestroyItem( thing );
+			endif
+		endforeach
+		
+		Detach();
+		SendSysMessage( character , "You unleash the treasure's guardians!" );
+		SendSysMessage( character , "The chest will appears when all guardians will be destroyed." );
+		
+		var cfgfile	:= ReadConfigFile( "guardians" );
+		if( cfgfile )
+			var elem := FindConfigElem( cfgfile , lvl );
+			if( elem )
+				var total	:= GetConfigString( elem , "total" );
+				var num	:= GetConfigInt( elem,"num" );
+				var limit	:= RandomDiceStr( total );
+				var rand;
+				var template;
+				var i;
+
+				for( i := 1 ; i <= limit ; i := i + 1 )
+					rand := Random( num ) + 1;
+					template := GetConfigString( elem , ("creature" + rand) );
+					CreateGuardian( template, chestx, chesty, chestz );
+				endfor
+			endif
+		endif
+		
+		while( len(guardians) )
+			var new_array := {};
+			foreach guard in guardians
+				if( guard and GetHP(guard) )
+					new_array.append( guard );
+				endif
+			endforeach
+			guardians := new_array;
+			Sleep( 10 );
+		endwhile
+		
+		SendSysmessage( character , "Now that all guardians were defeated, the treasure is revealed!" );
+		var chest	 := CreateTreasureChest( lvl , chestx , chesty , chestz );
+		SetObjProperty( chest , "treasurechest" , 1 );
+		chest.saveonexit := 0;
+		chest.decayat	 := Cint(ReadGameClock()) + 1810;
+		chest.locked	 := 0;
+		Sleep(1800);
+		DestroyItem( chest );
+	endif
+
+endprogram
+
+
+function GetRange( character );
+
+	var skill := GetEffectiveskill( character , SKILLID_MINING );
+	if( GetObjProperty( character , CLASSEID_RANGER ) )
+		skill := Cint( skill * CLASSE_BONUS );
+	endif
+
+	if( skill >= 140 )
+		return 8;
+	elseif( skill >= 120 )
+		return 7;
+	elseif( skill >= 100 )
+		return 6;
+	elseif( skill >= 80 )
+		return 5;
+	elseif( skill >= 60 )
+		return 4;
+	elseif( skill >= 40 )
+		return 3;
+	elseif( skill >= 20 )
+		return 2;
+	else
+		return 1;
+	endif
+
+endfunction
+
+
+function CreateTreasureChest( lvl , x , y , z )
+
+	var chest := CreateItemAtLocation( x , y , z , UOBJECT_TREASURE_CHEST , 1 );
+	var lootgroup;
+
+	case( lvl )
+		1: lootgroup := 5;	break;
+		2: lootgroup := 6;	break;
+		3: lootgroup := 7;	break;
+		4: lootgroup := 8;	break;
+		5: lootgroup := 9;	break;
+		default: lootgroup := 5;
+	endcase
+
+	chest.movable := 0;
+	MakeLoot( chest , Cint(lootgroup) );
+
+	return chest;
+
+endfunction
+
+
+function CreateGuardian( template, x , y , z )
+
+	var dx := Random( 10 ) - 4;
+	var dy := Random( 10 ) - 4;
+
+	var nasty := CreateNpcFromTemplate( template , x+dx , y+dy , z , 0 );
+
+	if( !nasty )
+		CreateGuardian( template, x, y, z );
+	else
+		guardians.append( nasty );
+		SetObjProperty( nasty, "untamable", 1 );
+		SetObjProperty( nasty, "guardkill", 1 );
+		SetObjProperty( nasty, "noloot", 1 );
+		SetObjProperty( nasty, "nocut", 1 );
+
+		var anchor	:= struct;
+		anchor.+x	:= x;
+		anchor.+y	:= y;
+		anchor.+range	:= 10;
+		anchor.+psub	:= 25;
+		SetObjProperty( nasty, "Anchor", anchor);
+	endif
+	
+endfunction

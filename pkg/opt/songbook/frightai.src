@@ -1,0 +1,36 @@
+use uo;
+use npc;
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/bard";
+include "include/eventid";
+
+var npc := Self();
+
+program fright()
+	var originalscript := GetObjProperty(npc, "originalscript");
+	var frightlength := (GetObjProperty(npc, "frightlength")*4);
+	var runfrom := GetObjProperty(npc, "runfrom");
+	var opponent := SystemFindObjectBySerial( runfrom );
+	if (!opponent)
+		KillAI(npc);
+		return;
+	endif
+	var loop := 0;
+	while (loop < frightlength);
+		RunAwayFrom(opponent);
+		loop := loop + 1;
+		sleepms(100);
+	endwhile
+	KillAI(npc);
+endprogram
+
+function KillAI(npc)
+	var originalscript := GetObjProperty(npc, "originalscript");
+  	EraseObjProperty(npc, "originalscript");
+  	EraseObjProperty(npc, "frightlength");
+  	EraseObjProperty(npc, "runfrom");
+  	npc.script := originalscript;
+	RestartScript(npc);
+endfunction

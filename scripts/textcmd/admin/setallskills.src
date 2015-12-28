@@ -1,0 +1,22 @@
+use uo;
+
+include "include/client";
+
+program textcmd_setallskills( who , amount )
+
+	var targ := Target( who );
+	if( !targ )
+		return;
+	endif
+	
+	amount := Cint( amount )*10;
+
+	
+	for i := 0 to 48
+		//SetAttributeBaseValue(targ, i, amount);
+  SetBaseSkillBaseValue(targ, i, amount);
+	endfor
+	amount := amount/10;
+	SendSysMessage( targ , "All yours skills are now at " + amount + "." );
+
+endprogram

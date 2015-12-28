@@ -1,0 +1,51 @@
+////////
+// paralyze.src
+//
+// Paralyzes the target for 15 seconds.
+//
+// Author: Racalac, 4/29/99
+//
+// Note: DW, you should REALLY write your own comment headers :P
+////////
+
+
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/objtype";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program walkon_efield( who, item )
+
+	var diff    := 60;
+	var points  := 25;
+	var power   := 4;
+	var element := AIR;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+        var tPower := GetObjProperty( item, "ByTrueMage" );
+	if( tPower )
+		power := CInt( power * tPower );
+	endif
+	
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	var dmg := RandomDiceStr( power + "d8" );
+	PlaySoundEffect( who, SFX_SPELL_ENERGY_FIELD );
+	PerformAction( who, ANIM_HIT );
+	ApplyElementalDamageNoResist( who,creator,CInt(ResistedDefinedSkillGain( creator, who, dmg, diff, points )),element );
+
+endprogram

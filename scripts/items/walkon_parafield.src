@@ -1,0 +1,58 @@
+////////
+// paralyze.src
+//
+// Paralyzes the target for 15 seconds.
+//
+// Author: Racalac, 4/29/99
+//
+// Note: DW, you should REALLY write your own comment headers :P
+////////
+
+
+use uo;
+use os;
+
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+
+const DELAY_BETWEEN_CHECKS_MS	:= 750;
+
+program walkon_parafield( who, item )
+
+	var diff     := 50;
+	var points   := 25;
+	var duration := 10;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+
+	if( GetObjProperty( item, "ByTrueMage" ) )
+		diff := CInt( diff * CLASSE_BONUS );
+		points := CInt( points / CLASSE_BONUS );
+		duration := CInt( duration * CLASSE_BONUS );
+	endif
+	
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	PlaySoundEffect( who, SFX_SPELL_PARALYZE_FIELD );
+	if( CanMod( who, "p" ) )
+		if( !GetObjProperty( who, "FreeAction" ) )
+			if( !CheckSkill( who, SKILLID_MAGICRESISTANCE, diff, points ) )
+				PlayObjectCenteredEffect( who, FX_SPELL_PARALYZE, SPEED_SPELL_PARALYZE, LOOP_SPELL_PARALYZE );
+				PlaySoundEffect( who, SFX_SPELL_PARALYZE );
+				DoTempMod( who, "p", 1, duration );
+			endif
+		endif
+	endif
+
+endprogram

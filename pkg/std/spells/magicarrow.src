@@ -1,0 +1,68 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING	:= MOVING_SPELL_MAGIC_ARROW;
+const SPELL_EFFECT_ID		:= FX_SPELL_MAGIC_ARROW;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_MAGIC_ARROW;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_MAGIC_ARROW;
+
+program cast_magicarrow( parms )
+
+	var circle := GetCircle( SPELLID_MAGIC_ARROW );
+	var element := EARTH;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack( cast_on, caster, SPELLID_MAGIC_ARROW );
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_MAGIC_ARROW );
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayMovingEffect(caster,
+                                 cast_on,
+                                 SPELL_EFFECT_ID,
+                                 SPELL_EFFECT_SPEED,
+                                 SPELL_EFFECT_LOOP,
+                                 explode := 0);
+	endif
+	PlaySoundEffect( caster, SFX_SPELL_MAGIC_ARROW );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+endprogram

@@ -1,0 +1,29 @@
+use uo;
+use os;
+use util;
+use datafile;
+
+program removemanagers(me)
+
+	local regionfile := OpenDataFile("regions");
+	local keys := regionfile.Keys();
+	local managerpid;
+	local managerproc;
+	local ev := struct;
+	ev.+type;
+	ev.type := 0x0005; //EV_REGION_DELETED
+	local totalsent := 0;
+	
+	SendSysMessage(me, "Sending destroy event to the managers...");
+	foreach key in keys
+		managerpid := GetGlobalProperty("#regiondefs"+key);
+		if(managerpid)
+			managerproc := GetProcess(managerpid);
+			managerproc.SendEvent(ev);
+			totalsent := totalsent + 1;
+		endif
+	endforeach
+	
+	SendSysMessage(me, totalsent+" events sent.");
+	
+endprogram

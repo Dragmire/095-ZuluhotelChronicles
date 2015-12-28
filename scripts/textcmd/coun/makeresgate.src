@@ -1,0 +1,31 @@
+//
+// .create command - create items
+// Items created with this command will not decay.
+// Two forms:
+//   ".create [objtype] [amount]" - specify object type and amount
+//       amount defaults to 1
+//   ".create" - show the item creation menu, create one of that item
+//
+use uo;
+Use cfgfile;
+
+program textcmd_create( who, text )
+
+            SendSysMessage( who, "Now select a location on the ground, where you want the Res gate to appear." );
+            var place := TargetCoordinates( who );
+            var item := CreateItemAtLocation( place.x, place.y, place.z, "moongatea", 1 );
+            if(!place)
+            SendSysMessage( who, "Cancealed." );
+            return;
+            endif
+            if(!item)
+            SendSysMessage( who, "Something went wrong." );
+            return;
+            else
+            item.movable := 0;
+            item.decay := 0;
+            SendSysMessage( who, "Res gate has been placed." );
+            endif
+
+
+endprogram

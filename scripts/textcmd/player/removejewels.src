@@ -1,0 +1,22 @@
+// command .where  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated June 25, 2000
+
+use uo;
+
+include "include/client";
+
+program removejewels( who )
+
+	foreach item in ListEquippedItems( who )
+		if( item.layer == LAYER_RING || item.layer == LAYER_WRIST || item.layer == LAYER_EARS )
+			var cursed := CInt( GetObjProperty( item, "Cursed" ) );
+			if( !cursed || cursed == 3 )
+				MoveItemToContainer( item, who.backpack,1,1 );
+			endif
+		endif
+	endforeach
+
+	SendSysMessage( who, "All your equipepd jewelry were moved to your backpack." );
+
+endprogram

@@ -1,0 +1,52 @@
+use uo;
+use os;
+
+
+program risewond(corpse)
+
+	var x := corpse.x;
+	var y := corpse.y;
+	var z := corpse.z;
+	
+	var template := GetObjProperty( corpse , "risewond" );
+	var waittime := Cint( GetObjProperty( corpse , "risedelay" ) );
+	var master := getobjproperty (corpse, "master");
+	Sleep( waittime );
+	
+	if( corpse )
+		PrintTextAbove( corpse , "*the corpse begins to stir!*" );
+		Sleepms( 1500 ); 
+		var the_critter := CreateNpcFromTemplate( template , x , y , z );
+		if( the_critter )
+			SetObjProperty( the_critter , "noloot" , 1 );
+				
+			if ( !the_critter.backpack )
+				var newbackpack := CreateItemAtLocation(the_critter.x , the_critter.y , the_critter.z , 0xe75 , 1 );
+				EquipItem( the_critter , newbackpack );
+			endif
+
+			foreach item in EnumerateItemsInContainer( corpse )
+				MoveItemToContainer( item, the_critter.backpack );
+			endforeach
+
+			DestroyItem( corpse );
+	tame (master, the_critter);
+
+
+		endif
+	endif
+	
+endprogram
+
+function tame( who, lallogay )
+
+    SetObjProperty( lallogay , "master" , who );
+    SetObjProperty( lallogay , "script" , lallogay.script );
+        // hmm, 'script' could be read from npcdesc to restore..
+    
+    lallogay.setmaster( who );
+
+    lallogay.script := "tamed";
+    RestartScript(lallogay);
+
+endfunction

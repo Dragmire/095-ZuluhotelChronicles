@@ -1,0 +1,3539 @@
+use npc;
+use os;
+use uo;
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "include/npcbackpacks";
+include "include/yesno";
+include "ai/main/npcinfo";
+include "include/time";
+include "include/dotempmods";
+include "ai/setup/modsetup";
+include "include/random";
+include "ai/setup/killpcssetup";
+include "include/objtype";
+include "include/anchors";
+include "ai/main/chaoskillpcsloop";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "ai/setup/modsetup";
+include "ai/setup/killpcssetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+const HALT_THRESHOLD := 15;
+program staff_ai ()
+	me.dexterity_mod := 5000;
+	SetObjProperty(me,"WarriorForHire",1);
+	SetObjProperty(me,"ItemsDestroyed",0);
+	SetGlobalProperty("BBRunning",me.serial);
+	EraseGlobalProperty("BBChecking");
+	EraseGlobalProperty("BBCheck");
+	var robe := CreateItemAtLocation(5288 , 1176 , 0, 0x204f,1);
+	EquipItem(me,robe);
+	SetGlobalProperty("BBGM",me);
+	me.concealed := 1;
+	me.hidden := 1;
+	me.name := "Counselor HAL";	
+	SetObjProperty(me,"IsThief",10);
+	me.color := 1002;
+	me.truecolor := 1002;
+	SetStamina( me, GetMaxStamina(me));
+	SetHP( me, GetMaxHP(me));
+	SetMana( me, GetMaxMana(me));
+	var player := {};
+	var pnum := 1;
+	var running := 1;
+	var checking;
+	var naughty := 0;
+	var num := 0;
+	var temp;
+	var loop;
+	var pages := GetGlobalProperty("gmpages");
+	var donepages;
+	var ok;
+	var ev;
+	var reason;
+	var RunRaids;
+	var nextraid;
+	var owner := SystemFindObjectBySerial(GetObjProperty(me,"Owner"));
+	Init(owner);
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	var radius := GetObjProperty(me,"CheckRadius");
+	if (!radius)
+		radius := 5;
+	endif
+	//Load array with players
+	while (running)
+		if (GetObjProperty(me,"Support"))
+			Support();
+		endif
+		EraseObjProperty(me,"LinkClean");
+		foreach mob in EnumerateOnlineCharacters()
+			sleepms(stime);
+			if (!mob.cmdlevel and PlayerOnline(mob))			
+				checking := mob;
+				SetGlobalProperty("BBChecking",checking.name);
+	///////////////////////////////////////////////////////////////////////////
+	//Start of Main AI Loop
+	///////////////////////////////////////////////////////////////////////////
+		HideHal();
+	///////////////////////////////////////////////////////////////////////////
+	//Pause Mode
+	///////////////////////////////////////////////////////////////////////////
+		if (GetObjProperty(me,"Pause") == "ON")
+			SetGlobalProperty("BBChecking","Paused");
+			SetGlobalProperty("BBCheck","Paused");
+			while (GetObjProperty(me,"Pause") == "ON")
+			endwhile
+		endif
+	///////////////////////////////////////////////////////////////////////////
+	//Automatic Raid / Quest
+	///////////////////////////////////////////////////////////////////////////
+		if (GetObjProperty(me,"RunRaids") != "OFF")
+			nextraid := GetObjProperty(me,"NextRaid");
+			if (nextraid and (ReadGameClock() > nextraid))
+				RunRaid();
+			endif
+		endif
+	///////////////////////////////////////////////////////////////////////////
+	//Check For Quest Killing / Looting
+	///////////////////////////////////////////////////////////////////////////	
+	   	if (PlayerOnline(checking) and GetObjProperty(me,"QuestHelp"))
+			SetGlobalProperty("BBChecking",checking.name);
+			SetGlobalProperty("BBCheck","Quest Looting/Killing");
+			HideHal();
+			MoveCharacterToLocation(me,checking.x, checking.y,checking.z);	
+			CheckQuestLooters();
+		endif
+	///////////////////////////////////////////////////////////////////////////
+	//Support Staff
+	///////////////////////////////////////////////////////////////////////////
+	if (GetObjProperty(me,"Support"))
+		Support();
+		HideHal();
+	endif
+		///////////////////////////////////////
+		//Check for Sparring Multiple NPCs
+		///////////////////////////////////////
+	   	if (PlayerOnline(checking) and GetObjProperty(me,"NoNPCSparring") == "ON")
+			MoveCharacterToLocation(me,checking.x, checking.y,checking.z);
+			SetGlobalProperty("BBCheck","Illegal Sparring");
+			naughty := FindSparringNPCs(checking, 0 );
+			if (naughty == 1 and GetObjProperty(me,"NoNPCSparring") == "ON" and !checking.cmdlevel)
+				num := 0;
+				temp := 0;
+				while (num < 15 and checking)
+					Paws(1);
+					num := num + 1;
+					naughty := FindSparringNPCs(checking, 0);
+					if (naughty == 1)
+						temp := temp + 1;
+					endif
+				endwhile
+				if (temp > 8)
+					temp := checking.name+" is Sparring Multiple NPCs indoors @ "+checking.x+", "						+checking.y+", "+checking.z;
+					if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+						Report(temp);
+					endif
+					SparringMultiples(checking);
+				endif
+			endif
+			HideHal();
+		endif
+		////////////////////////////////////////////
+		//Answer Pages
+		////////////////////////////////////////////
+		if(PlayerOnline(checking))
+			if (GetObjProperty(me,"AnswerPages") == "ON")
+				pages := GetGlobalProperty("gmpages");
+				var answer;
+				loop := 0;
+				temp := {};
+				var comp;
+				foreach page in pages;
+					sleepms(stime);
+					loop := loop + 1;
+					temp[loop] := page;
+				endforeach	
+				loop := 0; 
+				foreach page in pages;
+					Paws(1);
+					loop := loop + 1;
+					comp := temp[loop+1];
+					answer := SystemFindObjectBySerial(cint(page));
+					if (answer and answer != me and !answer.cmdlevel and (!GetObjProperty(answer,"BBPage") or ReadGameClock() > GetObjProperty(answer,"BBPage"))and !GetObjProperty(answer,"pvping") and !GetObjProperty(answer,"cwarring"))
+						SetGlobalProperty("BBChecking",answer.name);
+						SetGlobalProperty("BBCheck","Answering Page");
+						SetObjProperty(answer,"BBPage",(ReadGameClock()+21600));
+						if (comp["stuck and cannot"] and GetObjProperty(me,"MoveStuck") == "ON")
+							PlayerStuck(answer);
+						else
+							ConfrontPlayer(answer);
+							AnswerPage(answer);	
+						endif
+					endif
+				endforeach
+				HideHal();
+			endif
+		endif
+		/////////////////////////////////////////////////////
+		//Check For Town Killing
+		/////////////////////////////////////////////////////	
+		if (PlayerOnline(checking) and GetObjProperty(me,"NoTKing") == "ON")
+			SetGlobalProperty("BBCheck","Illegal killing/looting");
+			MoveCharacterToLocation(me,checking.x, checking.y,checking.z);
+			var killer;
+			var aname;
+			var Near_Items;
+			var looters;
+			var bots;
+			var botlist;
+			var bot;
+			var bcount;
+			if (GetObjProperty(me,"NoTKing") == "ON"	and !checking.cmdlevel)
+				Near_Items := ListItemsNearLocation(checking.x, checking.y, checking.z,radius);
+					if (GetObjProperty(me,"Linked"))
+						botlist := GetObjProperty(me,"botlist");
+						if (botlist)
+							bots := GetObjProperty(me,"bots");
+							if (bots)
+								bcount := 0;
+								while (bcount < bots)
+									bcount := bcount + 1;
+									bot := botlist[bcount];
+									bot := SystemFindObjectBySerial(bot);
+									if (bot)
+										Near_Items := Near_items + ListItemsNearLocation(bot.x, bot.y, bot.z,radius);
+									endif
+								endwhile
+							endif
+						endif
+					endif
+					foreach thing in Near_Items
+						sleepms(stime);
+						if (GetObjProperty(thing,"WasBlue") == "Blue")	
+							Paws(1);
+							if (IsInAProtectedCity(thing) and !GetObjProperty(thing, "BBChecked") and !GetObjProperty(thing, "npctemplate"))
+								looters := GetObjProperty( thing , "LootedBy" );
+								if( looters )	
+									temp := "illegal looting: "+thing.x+", "+thing.y+", "+thing.z+" "+looters;
+										if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+											Report(temp);
+										endif
+								endif
+								SetObjProperty(thing,"BBChecked",1);
+								killer := SystemFindObjectBySerial(GetObjProperty(thing,"KillerSerial"));
+								aname := thing.name;
+								aname["A corpse of"] := "";
+								aname["Remains of"] := "";	
+								if (killer and killer.name != aname and !GetObjProperty(killer,"pvping"))
+									MoveCharacterToLocation(me,killer.x, killer.y,killer.z);
+									killer.frozen := 1;
+									temp := killer.name+" townkilled "+aname +" @ "	+thing.x+", "+thing.y+", "+thing.z;
+									if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+										Report(temp);
+									endif
+									if (GetObjProperty(me,"Confront") == "ON")
+										ConfrontPlayer(killer);	
+										IllegalPK(killer, aname, thing);
+									else
+										if (GetObjProperty(me,"AutoJail")= "ON")
+											AutoJail(killer, 3, "Townkilling");
+										else
+											killer.frozen := 0;
+											PlayLightningBoltEffect( killer );
+											SendSysMessage(killer, "You have been reported for : ");
+											SendSysMessage(killer, "Killing a Blue Player in Town");
+										endif
+									endif
+								endif
+							endif
+						endif
+				endforeach
+			endif
+			HideHal();
+		endif
+		///////////////////////////////////////////////////////////
+		//Smart macro check
+		///////////////////////////////////////////////////////////
+		var points;
+		var cx := checking.x;
+		var cy := checking.y;
+		var cz := checking.z;
+		var lastsaid := "";
+		var sed := "";
+		var hunting;
+		loop := 0;
+		var IsMacro := GetMacroString();
+		var checkednpcs := 0;
+		if (PlayerOnline(checking) and GetObjProperty(me,"MacroCheck") == "ON" and IsMacro == "Macroing is not allowed at this time, you will be jailed when caught" and CanMacroCheck())
+			if (!GetObjProperty(checking,"BBMacroCheck") or  ReadGameClock() > GetObjProperty(checking,"BBMacroCheck"))
+				loop := ReadGameClock() + 60;
+				SetGlobalProperty("BBCheck","Smart Macro Check");
+				points := 0;
+				while (ReadGameClock() < loop and PlayerOnline(checking) and points < 3)
+					//Detect Movement
+					if ((cx > checking.x+1)or(cx < checking.x-1)or(cy > checking.y+1)or(cy < checking.x-1)or(cz != checking.z))
+						points := points + 1;
+						cx := checking.x;
+						cy := checking.y;
+						cz := checking.z;
+					endif
+					//Detect Hunting
+					hunting := 0;
+					if (checkednpcs == 0)
+						foreach mob in ListHostiles( checking, 10, 0 );
+							sleepms(10);
+							if (mob.npctemplate and mob.script != "tamed" and mob.script != "warrior" and !mob.multi and GetObjProperty(mob,"Type") != "Animal")
+								points := points + 1;
+							endif	
+						endforeach
+						checkednpcs := 1;
+					endif
+					//Detect Speech
+					sed := Events(1, checking);
+					if (sed == lastsaid)
+						points := points - 1;
+					else
+						points := points + 1;
+						lastsaid := sed;
+					endif
+				endwhile
+				if (PlayerOnline(checking) and GetObjProperty(me,"MacroCheck") == "ON" and CanMacroCheck())
+					if (points < 3)
+						loop := ReadGameClock() + 21600;
+						SetObjProperty(checking,"BBMacroCheck",loop);
+						MacroTest(checking);
+					endif
+				endif
+				HideHal();
+			endif
+		endif
+		///////////////////////////////////////////////////////////////////////////
+		//Clean Up Rubbish
+		///////////////////////////////////////////////////////////////////////////
+		if (GetObjProperty(me,"CleanRubbish")= "ON")	
+			SetGlobalProperty("BBCheck","Cleaning up Rubbish");
+			SetGlobalProperty("BBChecking",checking.name);
+			MoveCharacterToLocation(me,checking.x, checking.y,checking.z);
+			CleanRubbish(checking);
+		endif
+		EmptyPack();
+		//////////////////////////////////////////////////////////////////////////
+		//Check For Summoned NPCs in Town
+		//////////////////////////////////////////////////////////////////////////
+		if (PlayerOnline(checking) and GetObjProperty(me,"NoTownSummons") == "ON")
+			MoveCharacterToLocation(me,checking.x, checking.y,checking.z);
+			SetGlobalProperty("BBCheck","Illegal Summons");
+			var ffs;
+			var inarena;
+			var bots;
+			var botlist;
+			var bot;
+			var bcount;
+			var affected := ListMobilesNearLocation(me.x, me.y, me.z, 20);
+			if (GetObjProperty(me,"Linked"))
+				botlist := GetObjProperty(me,"botlist");
+				if (botlist)
+					bots := GetObjProperty(me,"bots");
+					if (bots)
+						bcount := 0;
+						while (bcount < bots)
+							bcount := bcount + 1;
+							bot := botlist[bcount];
+							bot := SystemFindObjectBySerial(bot);
+							if (bot)
+								affected := affected := ListMobilesNearLocation(bot.x, bot.y, bot.z, radius);
+							endif
+						endwhile
+					endif
+				endif
+			endif
+			foreach critter in affected	
+				sleepms(stime);
+				if (GetObjProperty(critter, "summoned") and IsInAProtectedCity(critter))
+					ffs := GetObjProperty(critter,"master");
+					inarena := SystemFindObjectBySerial(ffs);
+					if (!GetObjProperty(inarena,"pvping") and !inarena.cmdlevel)
+						PlayLightningBoltEffect( critter );
+						RevokePrivilege( critter, "invul" );
+						setobjproperty(critter,"guardkill",1);
+						damage(critter,critter.maxhp+3);
+						Paws(1);
+					endif
+				endif					
+			endforeach
+			if (ffs)
+				ffs:= SystemFindObjectBySerial(ffs);
+			endif
+			if (ffs and !GetObjProperty(ffs,"pvping"))
+				temp := ffs.name+ " is summoning in town @ "+ffs.x+", "+ffs.y+", "+ffs.z;
+				if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")		
+					Report(temp);
+				endif
+				if (GetObjProperty(me,"Confront") == "ON")
+					ConfrontPlayer(ffs);
+					IllegalSummons(ffs);
+				else
+					if (GetObjProperty(me,"AutoJail") == "ON" and GetObjProperty(ffs,"BBWarned"))
+						AutoJail(ffs, 1, "Summoning in Town");
+					else
+						PlayLightningBoltEffect( ffs );
+						SendSysMessage(ffs, "You have been warned.");
+						SendSysMessage(ffs, "Summoning in town is illegal");
+						SetObjProperty(ffs,"BBWarned",1);
+					endif
+				endif
+			endif
+			HideHal();
+		endif
+		//////////////////////////////////////////////////////////////////////////
+		//Kick Jailed Characters
+		/////////////////////////////////////////////////////////////////////////
+		var noodle;
+		var msgdelay := GetObjProperty(me,"msgdelay");
+		if (PlayerOnline(checking) and GetObjProperty(me,"KickJailBirds") == "ON")
+			SetGlobalProperty("BBCheck","Online in Jail");
+			if(IsInJail(checking))
+				DisconnectClient(checking);
+			endif
+		elseif(GetObjProperty(me,"KickJailBirds") == "FAST")
+			MoveCharacterToLocation( me, 5304, 1184, 0, 0);
+			noodle := ListMobilesNearLocation(me.x, me.y, me.z, 20);
+			foreach convict in noodle
+				sleepms(stime);
+				if(IsInJail(convict))
+					DisconnectClient(convict);
+					sleepms(500);
+					if (GetObjProperty(me,"Report") == "ON" and PlayerOnline(convict))
+						foreach guy in EnumerateOnlineCharacters()
+			       			if  (guy.cmdlevel)
+								SendSysMessage(guy, "Counselor HAL: "+convict.name+" was kicked from jail.",3,130);
+							endif
+						endforeach
+					endif
+				endif
+			endforeach
+			MoveCharacterToLocation( me, checking.x, checking.y, checking.z, 0);
+		endif
+		HideHal();
+		//////////////////////////////////////////////////////////////////////////
+		//Check Wanted List
+		//////////////////////////////////////////////////////////////////////////
+		if(PlayerOnline(checking))
+			SetGlobalProperty("BBCheck","Wanted List");
+			reason := Arrest(checking);
+			if (reason)
+				temp := checking.name+ " was arrested : "+reason;
+				if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")		
+					Report(temp);
+				endif
+				AutoJail(checking,7,reason);
+			endif
+		endif
+		//////////////////////////////////////////////////////////////////////////
+		//Check Telegrams
+		//////////////////////////////////////////////////////////////////////////
+		var teresp;
+		if(PlayerOnline(checking))
+			reason := GiveMail(checking);
+			if (reason)
+				ConfrontPlayer(checking);
+				repeat
+				until (! (ev := os::wait_for_event(0)) );
+				loop := ReadGameClock() + 30;
+				while (ReadGameClock() < loop and !teresp)
+					teresp := Events(1,checking);
+				endwhile
+				Paws(2);
+				Say("I have a message for you :");
+				Paws(3);
+				Say(reason);
+				BrushOff(checking,15);
+			endif
+		endif
+		//////////////////////////////////////////////////////////////////////////
+		//Check BackPack
+		//////////////////////////////////////////////////////////////////////////
+		if(PlayerOnline(checking))
+			SetGlobalProperty("BBCheck","Backpack Check");
+			CheckPack(checking);
+		endif
+	////////////////////////////////////////////////////////////////////////////////
+	//End Main AI Loop
+	////////////////////////////////////////////////////////////////////////////////
+      SetGlobalProperty("BBChecking","None");
+	SetGlobalProperty("BBCheck","Idle");
+	endif
+	repeat
+	sleepms(stime);
+	until (! (ev := os::wait_for_event(0)) );
+	endforeach
+	//////////////////////////////////////////////////////////////////////////
+	//Main PeaceKeeper Link
+	//////////////////////////////////////////////////////////////////////////
+	var pki := GetObjProperty(me,"PKIncident");
+	var pk;
+	var li;
+	if (pki and GetObjProperty(me,"Linked"))
+		EraseObjProperty(me,"PKIncident");
+		pk := SystemFindObjectBySerial(pki);
+		if(pk)
+			CheckPeacekeeper(pk);
+		endif
+	endif
+	Paws(1);
+	endwhile
+endprogram
+
+function Events(length, player)
+    if (me.hidden or me.concealed)
+	return;
+    endif
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+    var cutout := ReadGameClock()+length;
+    var ev;
+    var temp;
+    while(ReadGameClock() < cutout and !ev.type)
+	sleepms(stime);
+	ev := os::wait_for_event( 1 );
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+		if(ev.source.cmdlevel > 2)
+			if(ev.text["clear warrants"])
+				Say("Wanted List Cleared.");
+				EraseGlobalProperty("WantedList");
+				return;
+			endif
+			if(ev.text["clear telegrams"])
+				Say("Telegrams Cleared.");
+				EraseGlobalProperty("Telegrams");
+				return;
+			endif	
+			if (ev.text["arrest"])
+				Warrant(ev.source);
+				return;
+			endif
+			if(ev.text["telegram"])
+				SendTelegram(ev.source);
+				return;
+			endif
+			if(ev.text["new response"])
+				NewResponse(ev.source);
+				return;
+			endif
+			if(ev.text["go crazy"])
+				GoCrazy(ev.source);
+				return;
+			endif
+			if(ev.text["kill"])
+				ExecuteScum(ev.source);
+				return;
+			endif
+			if(ev.text["debug on"])
+				SetObjProperty(me,"TestMode",1);
+				return;
+			endif
+			if(ev.text["debug off"])
+				EraseObjProperty(me,"TestMode");
+				return;
+			endif
+			if(ev.text["quest mode on"])
+				SetObjProperty(me,"QuestHelp",1);
+				say("Quest mode : ON");
+				return;
+			endif
+			if(ev.text["quest mode off"])
+				EraseObjProperty(me,"QuestHelp");
+				say("Quest mode : OFF");
+				return;
+			endif
+			if(ev.text["check radius"])
+				ChangeRange(ev.source);
+				return;
+			endif
+			if(ev.text["sleep time"])
+				ChangeStime(ev.source);
+				return;
+			endif
+			if(ev.text["run raid"])
+				SetObjProperty(me,"NextRaid",1);
+				Say("ok. Ill run a raid.");
+				Say("Raid frequency reset to 24 hrs");
+				SetObjProperty(me,"RunRaids","24");
+				return;
+			endif
+		endif
+		if (GetObjProperty(me,"Babble") == "HIGH")
+		        say(process_text(ev.text, "default",5));
+		endif
+		if (ev.source == player)
+	                return(ev.text);
+		else
+			if (Random(50) ==1)
+				case(Random(3)+1)
+					1:	Say("wait, im talking to "+player.name);
+					2:	Say("let me deal with "+player.name+" first");
+					3:	Say(player.name);
+					4:	Say("wait a sec.."+ev.souce.name);
+				endcase
+			endif
+		endif
+		if (GetObjProperty(me,"Babble") == "MEDIUM")
+		        say(process_text(ev.text, "default",38));
+		endif
+            SYSEVENT_ENGAGED:
+			if(Random(5) == 1)
+				case(Random(3)+1)
+					1:	Say("what are you doing Dave");
+					2:	Say("I'm afraid...I'm afraid, Dave");
+					3:	Say("stop Dave,...will you stop, Dave?");
+				endcase
+			endif
+      		if (ReadGameClock() > GetObjProperty(ev.source,"BBAttacker") or !GetObjProperty(ev.source,"BBAttacker"))
+		    		temp := ev.source.name +" attacked me @ "+me.x+", "+me.y+", "+me.z;
+				if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+					Report(temp);
+				endif
+				SetObjProperty(ev.source,"BBAttacker",(ReadGameClock()+ 21600));
+				Paws(4);
+				case(Random(3) +1)
+					1:	Say("nice, "+ev.source.name+" i reported ya for that :P");
+					2:	Say("ok..youve been reported for attacking me");
+					3:	Say("*reports "+ev.source.name+" for attacking him*");
+				endcase
+			endif
+            SYSEVENT_DAMAGED:
+			if(!me.concealed and !me.hidden)
+	          		KillHeathen(ev.source);
+			endif
+            SYSEVENT_ITEM_GIVEN:
+		case(Random(3)+1)
+			1:	Say( "wtf.. i dont want it");
+			2:	Say(ev.item.desc +"...?" );
+			3:	Say("no thanks");
+		endcase
+		MoveItemToContainer(ev.item, ev.source.backpack);
+                
+            default:
+                if (ev)
+                    //print( "Unknown event type " + ev.type + " from " + ev.source );
+                    //print( ev );
+                endif
+
+        endcase
+   endwhile        
+        // TODO: ReturnToPost();
+return;
+endfunction
+
+function Report (message)
+	var num := 0;
+	foreach guy in EnumerateOnlineCharacters()
+	       	if  (guy.cmdlevel)
+			num := num + 1;
+			if (GetObjProperty(me,"Report") == "ON")
+				SendSysMessage(guy, "Counselor HAL: "+message,3,130);
+			endif
+		endif
+	endforeach
+	if (num == 0 and (GetObjProperty(me,"Page") == "ON"))
+		var pages := GetGlobalProperty( "gmpages" );
+		if( !pages )
+			pages := {};
+		endif
+		var num_pages := pages.size();
+		pages[num_pages+1] := me.serial ;
+		pages[num_pages+2] := message;
+		SetGlobalProperty( "gmpages", pages );
+	endif
+endfunction
+
+function Paws (num)
+	while (num > 0)
+		
+		if(GetGlobalProperty("BBDie"))
+			//kill me
+			EraseGlobalProperty("BBDie");
+		endif
+		num := num -1;
+		sleep(1);
+	endwhile
+	return;
+endfunction
+
+function FindSparringNPCs(player, kill)
+	var num := 0;
+	foreach mob in ListHostiles( player, 6, 0 );
+		sleepms(10);
+		if (mob.npctemplate and mob.multi and player.multi and !GetObjProperty(mob,"summoned") and mob.z == player.z)	
+			num := num + 1;
+			if (kill)
+				PlayLightningBoltEffect( mob );
+				RevokePrivilege( mob, "invul" );
+				setobjproperty(mob,"guardkill",1);
+				damage(mob,mob.maxhp+3);
+			endif
+		endif
+	endforeach
+	if (num > 1)
+		return 1;
+	else 
+		return 0;
+	endif
+	return;
+endfunction
+	
+function ConfrontPlayer(player)
+    EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED,HALT_THRESHOLD);
+    EnableEvents( SYSEVENT_ITEM_GIVEN );
+ 	var ok;
+	foreach dude in EnumerateOnlineCharacters()	
+		sleepms(10);
+		if (dude.serial == player.serial)
+			ok := 1;
+		endif
+	endforeach
+	if (!ok or !player)
+		return;
+	endif
+	var temp := 0;
+	var loop := 0;
+	var pname := "";
+	while (loop < 30 and Distance(me,player) > 2)
+		MoveCharacterToLocation(me,player.x, player.y,player.z);
+		loop := loop + 1;
+	endwhile
+	me.facing := Random(9)+1;
+	
+	if (Random(2) == 1)
+		while (temp <= 3)
+			WalkAwayFrom(player);
+			temp := temp +1;
+		endwhile
+		me.hidden :=  0;
+		me.concealed := 0;
+	else 
+		WalkAwayFrom(player);
+		temp := 0;
+		loop := Random(3)+1;
+		while (temp <= loop)
+			WalkToward(player);
+			temp := temp + 1;
+		endwhile
+		temp := 0;
+		while (temp <= 3)
+			WalkAwayFrom(player);
+			temp := temp +1;
+		endwhile
+	endif
+	pname := SplitWords(player.name);
+	pname := pname[1];
+	if (!pname)
+		pname := "dude";
+	endif
+	TurnToward(player);
+	Case (Random (7) + 1)
+		1:	Say("hi "+pname);
+		2:	Say("hiya "+pname);
+		3:	Say("hello"+pname);
+		4:	Say("*boing*");
+			Paws(2);
+			Say(pname);
+		5:	Say(pname);
+		6:	Say(pname);
+		7:	Say("hi "+pname);
+	endcase
+	return;
+endfunction
+
+function BrushOff(player, length)
+	if (me.concealed or !player)
+		return;	
+	endif
+	var ev;
+	ResponseAI(player,length);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	return;
+DisableEvents( SYSEVENT_SPEECH);
+DisableEvents( SYSEVENT_ENGAGED);
+DisableEvents( SYSEVENT_DISENGAGED);
+DisableEvents( SYSEVENT_DAMAGED);
+DisableEvents(HALT_THRESHOLD);;
+DisableEvents( SYSEVENT_ITEM_GIVEN );
+endfunction
+
+function RanWalk(player)
+	if (me.concealed)
+		return;
+	endif
+	var num;
+	var loop;
+	var lookat;
+	var Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+	if (random(30) == 1)
+		foreach item in Near
+			sleepms(10);
+			if (Random(3)= 1)
+				lookat := item;
+			endif
+		endforeach
+		loop := 0;
+		if(lookat and CheckLineOfSight( me, lookat))
+			while (loop < 5 and Distance(me,lookat) > 1)
+				WalkToward(lookat);
+				loop := loop + 1;
+			endwhile
+			if (Random(3) == 1 and lookat.name and !GetObjProperty(lookat,"npctemplate") and !GetObjProperty(lookat, "WasBlue") and !lookat.invisible)
+				Paws(3);
+				case(Random(3)+1)
+					1:	Say("cool..."+lookat.name);
+						Paws(3);
+						Say("i love these");
+					2:	Say("i need one of these");
+						Paws(3);	
+						Say(lookat.name+"s rock!");
+					3:	Say("wish i had "+lookat.name+"... i need one");
+				endcase
+			endif
+		endif
+	endif
+	if(Random(15) == 1 and Distance(me,player) < 3)
+		num := Random(2)+1;
+		loop := 0;
+		while(loop < num)
+			WalkAwayFrom(player);
+			loop := loop + 1;
+		endwhile
+		if(Random(2) == 1)
+			TurnToward(Player);
+		endif
+	elseif (Random(15) == 1 and Distance(me,player) > 1)
+		num := Random(2)+1;
+		loop := 0;
+		while(loop < num)
+			if (Distance(me,player) > 2 )
+				WalkToward(player);
+			else
+				if (Random(2) == 1 and Distance(me,player) < 4)
+					RunAwayFrom(player);
+				else
+					WalkAwayFrom(player);
+				endif
+			endif
+			loop := loop + 1;
+		endwhile
+		if(Random(2) == 1 and Distance(me,player) < 4)
+			TurnToward(Player);
+		endif		
+	endif
+	return;
+Endfunction
+
+function SparringMultiples(checking)
+	var num := ReadGameClock()+60;
+	var temp;
+	var loop := 1;
+   if (GetObjProperty(me,"Confront") == "ON")
+	ConfrontPlayer(checking);
+	while (ReadGameClock() < num )
+	temp := Events(1, checking);
+	if(temp)
+		Paws(2);
+		Say("Did you know that sparring");
+		Paws(3);
+		Say("more than one NPC in a house");
+		Paws(2);
+		Say("is illegal?");
+		num := ReadGameClock()+60;
+		while (ReadGameClock() < num )
+			temp := Events(1,checking);
+			RanWalk(checking);
+			if (temp and FindSparringNPCs(checking, 0 ) == 1)
+				Paws(2);
+				case (Random(3)+1+ (60 - (num-ReadGameClock()))/10)
+					1:	Say("can u release or kill them please");
+					2:	Say("kill them b4 i do :)");
+					3:	Say("I'll kill them in "+num+" seconds!");
+					4:	Say("sort this out  first..");
+					5:	Say("this is against the rules");
+					6:	Say("cmon..kill them or i will");
+					7:	Say("stop sparring them :)");
+					8:	Say("I'm going to kill them..");	
+					9:	Say("Oh well...");
+				endcase
+			endif
+		endwhile
+	endif
+	endwhile;
+	if (!FindSparringNPCs(checking, 0));
+		case (Random(4)+1)
+			1:	Say("thanks :)");
+			2:	Say("ok..cool");
+			3:	Say("ok");
+				Paws(1);
+				Say("thats better :)");
+			4:	Say("great");
+		endcase
+	else
+		case(Random(5)+1)
+			1:	Say("shazzam!");
+			2:	Say(":/");
+			3:	Say("lol");
+			4:	Say("....");
+			5:	Say("cmon punk, make my day");
+		endcase
+		Paws(2);
+	endif
+  endif
+  if (FindSparringNPCs(checking, 0));
+	FindSparringNPCs(checking, 1);
+	if (GetObjProperty(me,"AutoJail") == "ON")
+		AutoJail(checking, 1, "Sparring NPCs Indoors");
+	else
+		PlayLightningBoltEffect( checking );
+		SendSysMessage(checking, "You have been warned.");
+		SendSysMessage(checking, "Sparring more than ONE npc indoors is illegal");
+	endif
+  endif
+  if (GetObjProperty(me,"Confront") == "ON")
+	  BrushOff(checking,30);
+  endif
+  return;
+endfunction
+
+function AnswerPage(answer)
+	if (me.concealed)
+		return;
+	endif
+	Paws(3);
+	var length := ReadGameClock() + 30;
+	var response;
+	while (ReadGameClock() < length and !response)
+		response := Events(1,answer);
+		RanWalk(answer);
+	endwhile
+	if (answer.x > 5291 and answer.x < 5311 and answer.y < 1191 and answer.y > 1179)
+		case(Random(5) + 1)
+			1:	Say("lol...pages from jail wont get answered");
+			2:	Say("i cant tell when ur getting out");
+			3:	Say("u will be released automatically when ur time is up");
+			4:	Say("i cant let you out...");
+				Paws(4);
+				Say("you will be let out when your time is up");
+			5:	Say("its illegal to page from jail");
+		endcase
+		BrushOff(answer,10);
+	else
+		Paws(3);
+		case (Random (9)+1)
+			1:	if (answer.multi)
+				Say("nice house");
+			else
+				Say("having fun?");
+			endif
+			2:	Say("whats the problem?");
+			3:	Say("whats up?");
+			4:	Say("hows things");
+			5:	Say("what can I do for ya");
+			6:	Say("Hail!");	
+			7: 	Say("sup?");
+			8:	Say("i r here..");
+			9:	Say("HAL2Win");
+		endcase
+		BrushOff(answer,60);
+	endif
+	return;
+endfunction
+
+function PlayerStuck(player)
+	var loop := 0;
+	var found1;
+	var stuck := 0;
+	var offset;
+	var response;
+	var oldname := me.name;
+	var oldgraphic := me.graphic;
+	me.graphic := 49;
+	me.name := " ";
+	var ev;
+	while (loop < 10 and Distance(me,player) > 0)
+		MoveCharacterToLocation(me,player.x, player.y,player.z);
+		loop := loop + 1;
+	endwhile
+	Paws(1);
+	loop := 0;
+	var temp := 0;
+	while (loop < 20 )
+		if (me.z != player.z)
+			me.z := player.z;
+		else
+			WalkAwayFrom(player);
+		endif	
+		loop := loop + 1;
+		Paws(1);
+		if (Distance(me,player) < 1)
+			stuck := 1;
+		else 
+			stuck := 0;
+		endif
+	endwhile
+	if (Distance(me,player) < 1)
+		stuck := 1;
+	endif
+	me.graphic := oldgraphic;
+	me.name := oldname;
+	if (stuck == 1)
+		ConfrontPlayer(player);
+		Paws(2);
+		Say("i think u r stuck");
+	else
+		ConfrontPlayer(player);
+		Paws(2);
+		Say("doesnt look like u are stuck");
+	endif
+	Paws(5);
+	loop := 0;
+	while( !found1 and loop < 100)
+		if(MoveCharacterToLocation(me,player.x-2,player.z-2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+2,player.y+2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x-2,player.y+2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+2,player.y-2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+2,player.y+0,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+0,player.y+2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+3,player.y+2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x-3,player.y+2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+3,player.y-2,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+3,player.y+0,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+0,player.y+3,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+2,player.y+3,player.z))
+		elseif(MoveCharacterToLocation(me,player.x-2,player.y+3,player.z))
+		elseif(MoveCharacterToLocation(me,player.x+2,player.y-3,player.z))
+		else // cant find a spot to stand!
+			Paws(3);
+			Say("Arrgh..problems - i need to get a gm");
+			return;
+		endif
+		if ((me.multi and player.multi) or (!me.multi and !player.multi))
+			found1 := 1;
+		endif
+	endwhile
+	if (found1 == 1 )
+		Paws(3);
+		case(Random(3) + 1 )
+			1:	Say("i can teleport u to where i am");
+				Paws(3);
+				Say("is that ok?");
+			2:	Say("if you want, i can teleport you");
+				Paws(3);
+				Say("to where i am standing");
+			3:	Say("shall i tele you to where im standing?");
+		endcase
+		repeat
+		until (! (ev := os::wait_for_event(0)) );
+		Paws(3);
+		Say("yes or no?");
+		loop := ReadGameClock() + 20;
+		while(ReadGameClock() < loop and !response)
+			response := Events(1,player);
+		endwhile
+		if(response["ok"] or response["ye"] or response["plz"] or response["please"])
+			Paws(2);
+			MoveCharacterToLocation(player, me.x, me.y, me.z);
+		endif
+		Paws(3);
+		Say("ok");
+		WalkAwayFrom(player);
+		WalkAwayFrom(player);
+		TurnToward(player);
+		BrushOff(player, 30);
+		return;
+	else
+		Paws(3);
+		Say("Arrgh..problems - i need to get a gm");
+		return;
+	endif
+	return;
+endfunction
+
+function IllegalPK (player, aname, corpse)
+	if (IsInJail(player))
+		return;
+	endif
+	var response;
+	var loop := ReadGameClock()+30;
+	var temp := "";
+	while (ReadGameClock() < loop and !response)
+		response := Events(1, player);
+		RanWalk(player);
+		loop := loop + 1;	
+	endwhile
+	Paws(4);
+	case(Random(9)+1)
+		1:	Say("hmmmmm..");
+		2:	Say("naughty naughty :P");
+		3:	Say("erm..");
+		4:	Say("ahem");
+		5:	Say("lol");
+		6: 	Say("sigh");
+		7:	Say("i guess you know why i'm here");
+		8:	Say("blah");
+		9:	Say("madness..");
+	endcase
+	Paws(5);
+	case(Random(3)+1)
+		1:	temp := "you killed "+aname+" in town...";
+		2:	temp := aname + " was killed by you in town";
+		3:	temp := "why did you town kill "+aname+"?";
+	endcase
+	Say(temp);
+	response := "";
+	loop := ReadGameClock()+10;
+	while (ReadGameClock() < loop and !response)
+		response := Events(1, player);
+		RanWalk(player);
+		loop := loop + 1;	
+	endwhile
+	Paws(6);
+	case(Random(5)+1)
+		1:	temp := aname + " was blue and in guarded area";
+		2:	temp := "killing blues in town is illegal and he was blue :/";
+		3:	temp := "he was blue! :P";
+		4:	temp := aname + " was blue at the time";
+		5:	temp := "it was in guarded area and "+aname+" was blue";
+	endcase
+	Say(temp);
+	Paws(6);
+	if (GetObjProperty(me,"AutoJail")= "ON")
+		Say("I'm going to have to jail you");
+		Paws(3);
+		AutoJail(player, 3, "Townkilling");
+	else
+		Say("I'm going to report this..");
+		player.frozen := 0;
+		PlayLightningBoltEffect( player );
+		SendSysMessage(player, "You have been warned.");
+	endif
+	BrushOff(player,60);
+	return;
+endfunction
+
+function ResponseAi(player, length)
+	if (!player)
+		return;	
+	endif
+	if (me.concealed or me.hidden)
+		return;
+	endif
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	var gmwords := {
+	"colour",
+	"fence",
+	"farm",
+	"garden",
+	"lock down",
+	"lockdown",
+	"u lock",
+	"you lock",
+	"hedge",
+	"race",
+	"house",
+	"item",
+	"quest",
+	"token",
+	"cw",
+	"color war",
+	"acc",
+	"change",
+	"jail",
+	"ban",
+	"bug",
+	"stole",
+	"skill",
+	"color",
+	"paint",
+	"lost",
+	"looted",
+	"pk",
+	"place",
+	"friend",
+	"rename",
+	"make",
+	"destroy",
+	"remove",
+	"move",
+	};
+
+	var staffwords := {
+	"gm",
+	"developer",
+	"seer",
+	"phoenix",
+	"raven",
+	"turek",
+	"slaine",
+	"dingo",
+	"braxus",
+	"nim",
+	"mom",
+	"onlin",
+	"on?",
+	"on ?"
+	};
+	
+	var swearwords := {
+	"shit",
+	"piss",
+	"cunt",
+	"fuck",
+	"slut",
+	"cock",
+	"hate",
+	"bitch",
+	"gay",
+	"fag"
+	};
+
+	var ignorewords := {
+	"ok",
+	"bye",
+	"cya",
+	"thank",
+	"oh",
+	"sorry",
+	"hey",
+	"staff"
+	};
+
+	var macrowords := {
+	"when",
+	"macro",
+	"hours",
+	"can i macro",
+	"is macro"
+	};
+
+	var skillwords := {
+	"alch",
+	"anat",
+	"lore",
+	"itemid",
+	"item id",
+	"parry",
+	"beggin",
+	"smith",
+	"bowcraf",
+	"peacema",
+	"campi",
+	"carp",
+	"cart",	
+	"cook",
+	"detect",
+	"enticem",
+	"eval",
+	"healin",
+	"fishin",
+	"forensi",
+	"herdi",
+	"hidin",
+	"provo",
+	"inscri",
+	"lockpic",
+	"magery",
+	"resist",
+	"tactic",
+	"snoopin",
+	"musicia",
+	"poisonin",
+	"archery",
+	"spirit",
+	"steali",
+	"tailori",
+	"taming",
+	"taste",
+	"tinkeri",
+	"track",
+	"vet",
+	"swords",
+	"mace",
+	"fenci",
+	"wrestl",
+	"lumbe",
+	"minin",
+	" med",
+	"stealth",
+	"remove tr"
+	};
+	
+	var guildwords := {
+	"guild",
+	"stone",
+	"clothing",
+	"master",
+	"move",
+	"clothe"
+	};
+
+	var totemwords := {
+	"totem",
+	"totie",
+	"totum"
+	};
+
+	var hairwords := {
+	"color",
+	"paint",
+	"hair",
+	"beard",
+	"dye"
+	};
+	
+	var nopewords := {
+	"tele",
+	"give",
+	"create",
+	"take",
+	"check",
+	"you",
+	"tele",
+	"give",
+	"create",
+	"take",
+	"check"
+	};
+
+	var uncursewords := {
+	"uncurse",
+	"remove curs",
+	"cursed",
+	"cant unequip"
+	};
+
+	var buywords := {
+	"buy",
+	"buy",
+	"get",
+	"get",
+	"pickaxe",
+	"armor",
+	"weapon",
+	"find"
+	};
+
+	var hirelingwords := {
+	"warrior",
+	"warrior",
+	"hireling",
+	"hireling",
+	"find",
+	"lost",
+	"where",
+	"comman"
+	};
+
+	var killedwords := {
+	"pkd",
+	"pked",
+	"pk'd",
+	"killed",
+	"killed",
+	"pkd",
+	"pked",
+	"pk'd",
+	"brit",
+	"mine",
+	"sanct",
+	"house",
+	"town",
+	"bank"
+	};
+
+	var fixwords := {
+	"fix gate",
+	"fixgate",
+	"int is bug",
+	"stats are bug",
+	"stats r bug",
+	"bugged int",
+	"bugged str",
+	"bugged dex",
+	"str is bug",
+	"dex is bug",
+	"i am bugg",
+	"im bug",
+	"ints bug",
+	"int's bug"
+	};
+
+	length := length + ReadGameClock();	
+	var maxlength := ReadGameClock()+180;
+	var num := 0;
+	var loop := 0;
+	var temp;
+	var respnum := 0;
+	var tempword;
+	var skillmode;
+	while (ReadGameClock() < length and ReadGameClock() < maxlength)
+		temp := Events(1,player);
+		RanWalk(player);
+		
+		//CHECK FOR HAIR TALK
+		respnum := 0;
+		loop := 0;
+		num := len(hairwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[hairwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 1)
+			TalkHair(player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK IF WANTS A GM
+		respnum := 0;
+		loop := 0;
+		num := len(gmwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[gmwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 0)
+			WantsGM(player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK IF PLAYER IS ANNOYED
+		respnum := 0;
+		loop := 0;
+		num := len(swearwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[swearwords[loop]])
+				respnum := respnum + 1;
+				tempword := swearwords[loop];
+			endif
+		endwhile
+		if (respnum > 1)
+			IsPissed(player,tempword);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR MACRO TALK
+		respnum := 0;
+		loop := 0;
+		num := len(macrowords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[macrowords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 1)
+			TalkMacro(player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR GUILD TALK
+		respnum := 0;
+		loop := 0;
+		num := len(guildwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[guildwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 1)
+			TalkGuild(player);
+			length := ReadGameClock() + 30;
+		endif
+	
+		//CHECK FOR SKILL TALK
+		respnum := 0;
+		loop := 0;
+		num := len(skillwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[skillwords[loop]])
+				respnum := respnum + 1;
+				tempword := skillwords[loop];
+			endif
+		endwhile
+		if (temp["raise"] or temp["train"])
+			skillmode := "raise";
+		elseif (temp["lower"] or temp["drop"] or temp["down"])
+			skillmode := "lower";
+		else skillmode := "";
+		endif
+		if (respnum > 0)
+			TalkSkills(tempword, skillmode);
+			length := ReadGameClock() + 30;
+		endif
+		
+		//CHECK FOR STAFF TALK
+		respnum := 0;
+		loop := 0;
+		num := len(staffwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[staffwords[loop]])
+				respnum := respnum + 1;
+				if(staffwords[loop] != "onlin" and staffwords[loop] != "on?" and staffwords[loop] != "on ?")						tempword := staffwords[loop];
+				endif
+			endif
+		endwhile
+		if (respnum > 0)
+			TalkStaff(player, tempword);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR TOTEM TALK
+		respnum := 0;
+		loop := 0;
+		num := len(totemwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[totemwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (temp["color"] or temp["paint"])
+			tempword := "color";
+		elseif (temp["find"] or temp["lost"] or temp["where"] or temp["move"] or temp ["retr"])
+			tempword := "find";
+		elseif (temp["use"] or temp["open"] or temp["have"])
+			tempword := "info";
+		elseif (temp["comman"] or temp ["comand"])
+			tempword := "commands";
+		endif
+		if (respnum > 0)
+			TalkTotem(tempword, player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR NO! TALK
+		respnum := 0;
+		loop := 0;
+		num := len(nopewords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[nopewords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 2)
+			SayNo(player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR UNCURSE TALK
+		respnum := 0;
+		loop := 0;
+		num := len(uncursewords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[uncursewords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 0)
+			TalkUncurse(player);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR BUY TALK
+		respnum := 0;
+		loop := 0;
+		num := len(buywords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[buywords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 1)
+			TalkBuy(respnum);
+			length := ReadGameClock() + 30;
+		endif
+
+		//CHECK FOR HIRELING TALK
+		respnum := 0;
+		loop := 0;
+		num := len(hirelingwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[hirelingwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 1)
+			if(temp["comman"])
+				TalkHireling(player, 1);
+			else
+				TalkHireling(player, 0);
+			endif
+			length := ReadGameClock() + 30;
+		endif
+	
+		//CHECK FOR KILLED TALK
+		respnum := 0;
+		loop := 0;
+		num := len(killedwords);
+		while (loop < num)
+			loop := loop + 1;
+			if(temp[killedwords[loop]])
+				respnum := respnum + 1;
+			endif
+		endwhile
+		if (respnum > 2)
+			WasKilled(player);
+			length := ReadGameClock() + 30;
+		endif
+		
+		//CHECK FOR FIX TALK
+		if (GetObjProperty(me,"FixStats") == "ON")
+			respnum := 0;
+			loop := 0;
+			num := len(fixwords);
+			while (loop < num)
+				loop := loop + 1;
+				if(temp[fixwords[loop]])
+					respnum := respnum + 1;
+				endif
+			endwhile
+			if (respnum > 0)
+				TalkFix(player);
+				length := ReadGameClock() + 30;
+			endif
+		endif
+
+		//CHECK FOR CUSTOM RESPONSE
+			CustomResponse(temp);
+	endwhile	
+	if (!GetObjProperty(me,"TestMode") or !player.cmdlevel)
+		case(Random(5)+1)
+			1:	Say("I have to go..");
+				Paws(3);
+				Say("page a GM if you have any probs");
+			2:	Say("I gotta go..page if u need anything");
+			3:	Say("*blocks ears*");
+				Say("*runs off*");
+				RunAwayFrom(player);
+				RunAwayFrom(player);
+			4:	Say("sorry..i really have to go");
+			5:	Say("brb");
+		endcase
+		Paws(5);
+		case(Random(5)+1)
+			1:	Say("cya");
+			2:	Say("bye");
+			3:	Say("ok cya");
+			4:	Say("*boing*");
+			5:	Say("cya later");
+		endcase
+		Paws(4);
+		HideHal();
+		Paws(7);
+	endif
+	return;
+endfunction
+
+function WantsGM(player)
+	Paws(3);
+	case(Random(9)+1)
+		1:	Say("theres no gm on at the moment");
+		2:	Say("no gms are on :/");
+		3:	Say("you need a gm for that..");
+			Paws(3);
+			Say("and none are on");
+		4:	Say("a gm can help you, but none are on");
+		5:	say("ill try to get a gm to come here");
+		6:	Say("that sort of stuff needs a gm");
+		7:	Say("i cant do much :/");
+			Paws(3);
+			Say("sounds like u need a gm");
+		8:	Say("ill get another staff to talk to you");
+		9:	Say("sorry, i cant help with that");
+			Paws(3);
+			Say("maybe a gm can");
+	endcase
+	return;
+endfunction
+
+function IsPissed(player, word)
+	Paws(3);
+	case(Random(5)+1)
+		1:	Say(word+"!");
+			RunAwayFrom(player);
+			RunAwayFrom(player);
+			Paws(2);
+			Say(word+"!!");
+			Paws(2);
+			Say("shit happens :P");
+		2:	Say("ya, it pisses you off..");
+		3:	Say("what can ya do..");
+			Paws(3);
+			Say("its a police state..");
+		4:	Say("go pk someone, u will feel better :P");
+		5:	Say(":/");
+	endcase
+	return;
+endfunction	
+
+function TalkSkills(word, mode)
+	Paws(3);
+	if (mode == "raise")
+		case(Random(3)+1)
+			1:	Say("Theres a skills trainer in brit that will train "+word);
+			2:	Say("all I can tell you is how to vendor train skills");
+			3:	Say("vendor training is all i can tell you..");
+		endcase
+		Paws(4);
+		Say("go to the skills trainer at brit bank");
+		Paws(4);
+		Say("and say 'vendor train <skill name>'");	
+		Paws(4);
+		Say("then pass him some gold coins");
+	elseif (mode == "lower")
+		case(Random(5)+1)
+			1: 	Say("staff will not lower skills");
+			2:	Say("you need to lower your own skills using the .skills menu");
+			3:	Say("only way to lower skills is with .skills");
+			4:	Say("if you want ill leave your page for a gm");
+			5:	Say("you might need to macro it");
+		endcase
+	else
+		case(Random(3)+1)
+			1:	Say("?");
+				Paws(2);
+				Say("what about "+word+"?");
+			2:	Say("I cant tell you the best way to gain skills");
+			3:	Say("what do you want to know about "+word);
+		endcase
+	endif
+	return;
+endfunction
+
+function TalkMacro(player)
+	Paws(3);
+	var IsMacro := GetMacroString();
+	if ( IsMacro == "Macroing is not allowed at this time, you will be jailed when caught")
+		IsMacro := 0;
+	endif
+	if (IsMacro == 0)
+		case(Random(3)+1)	
+			1:	Say("no macroing now..its from 8-4pm Swe time");
+			2:	Say("type .macro to check");
+			3:	Say("the time differences confuse me - i use .macro");
+		endcase
+	else
+		case(Random(3)+1)
+			1:	Say(IsMacro);
+			2:	Say("yep, you can macro now - use .macro");
+			3:	Say("hmmm...ok :");
+				Paws(3);
+				Say(IsMacro);
+		endcase
+	endif
+	return;
+endfunction
+
+function TalkGuild(player)
+	Paws(3);
+	case(Random(5)+1)
+		1:	Say("I cant do that, u need a gm");
+		2:	Say("guild clothing is done by gms");
+		3:	Say("if you want stone moved or guild clothes..");
+			Paws(3);
+			Say("you need a gm");
+		4:	Say("all guild stuff is done by gms");
+		5:	say("ill leave the page for a gm");
+	endcase
+	return;
+endfunction
+
+function TalkStaff(player, name)
+	Paws(3);
+	if (name["gm"] or name["deve"] or name["seer"])
+		case(Random(4)+1)
+			1:	Say("theres no "+name+" on atm");
+			2:	Say("a seer/gm/dev should be on soon");
+			3:	Say("you will need to wait");
+			4:	Say("i will leave your page for a gm");	
+		endcase
+	elseif (!name)
+		case(Random(3)+1)
+			1: 	Say("who do you want?");
+			2:	Say("is who online?");
+			3:	Say("??");
+		endcase
+	elseif (name)
+		case(Random(5)+1)
+			1:	Say("if you want "+name+" u will need to wait");
+			2:	Say(name+" isnt on right now");
+			3:	Say("they arent online atm");
+				Paws(3);
+				Say("ill leave the page for them");
+			4:	Say("hmmmm....");
+				Paws(5);
+				Say("no, "+name+" isnt on");
+			5:	say("they should be on soon");
+		endcase
+	else
+		Say("dunno...");
+	endif
+	return;
+endfunction
+
+function TalkTotem (word,player)
+	var totem;
+	var totemserial;
+	var message;
+	totemserial := GetObjProperty( player , "humuc" );
+	if (!totemserial)
+		message := "you have no totem";
+	endif
+	totem := SystemFindObjectBySerial( totemserial );
+	if (!totem or !totem.x)
+		message := "you have no totem";		
+	else
+		message := "ur totems at "+totem.x+", "+totem.y;
+	endif
+	if (!message)
+		message := "wtf - you dont have a totem";
+	endif
+	Paws(3);
+	case(word)
+		"color" :	case(Random(3) + 1)
+					1:	Say("only gms can color totems");
+					2:	Say("I cant color it, u need a gm");
+					3:	Say("a gm will need to color it");
+				endcase
+		"find"	:	case(Random(3) + 1)
+					1:	Say(message);
+					2:	Say("I cant retrieve it for you, use .wheretotem");
+					3:	Say(message);
+						Paws(3);
+						Say("thats all i can do to help");
+				endcase
+		"info" :	case(Random(3)+1)
+					1:	Say("takes a minimum of 110 alch to open a totem");
+					2:	Say("you need a totem, elixir and about 110 alch");
+						Paws(3);
+						Say("then u click the totem");
+					3:	Say("110 alch - it might take a few tries");
+				endcase
+		"commands" :	case(Random(3) + 1)
+					1:	Say("im not sure of the totem commands");
+					2:	Say("i think u can find the commands on the forum");
+					3:	Say("hmm..dunno - ill get a gm to come see ya ");
+				endcase
+	endcase
+	return;
+endfunction
+
+function TalkHair(player)
+	var length;
+	var response;
+	Paws(3);
+	case(Random(5)+1)
+		1:	Say("staff dont color hair or beards anymore");
+			Paws(3);
+			Say("you need to see the hairstylist npc in serps");
+		2:	Say("go to east serpents hold, see the hairstylist");
+		3:	Say("the hairstylist does that");
+			Paws(3);
+			Say("he's in serps, say 'dye hair' or 'dye beard'");
+		4:	Say("go to the hair stylist in serpents hold");
+			Paws(3);
+			Say("50k for beard / 100k for hair");
+		5:	say("i cant do that, ill leave the page for a gm");
+	endcase
+	length := ReadGameClock() + 15;
+	while (ReadGameClock() < length and !response)
+		response := Events(1,player);
+		RanWalk(player);
+		if (response["where"] or response["how"] or response["serp"] or response["dont know"] or response["?"])
+			Say("use the traveller to get to Serpents Hold");
+			Paws(3);
+			Say("the hairstylist is in East Serps");
+			Paws(3);
+			Say("read the signs that are there");
+		endif
+	endwhile
+	return;
+endfunction
+			
+function SayNo(player)
+	Paws(3);
+	case(Random(5)+1)
+		1:	Say("I cant do that :/");
+		2:	Say("no, sorry i cant");
+		3:	Say("its not allowed..");
+			Paws(3);
+			Say("sorry");
+		4:	Say("sorry, i cant do that");
+		5:	Say("thats against the rules");
+	endcase
+	var length := ReadGameClock() + 15;
+	var response;
+	while (ReadGameClock() < length and !response)
+		response := Events(1,player);
+		RanWalk(player);
+	endwhile
+	if (response["why"] or response["?"] or response["please"] or response["cmon"] or response["but"])
+		case(Random(6) + 1)
+			1:	Say("rule are rules..");
+				Paws(3);
+				Say("i didnt make them");
+			2:	Say("i cant, id lose my job");
+			3:	Say("its against the rules :/");
+			4:	Say("i cant...its illegal");
+			5:	Say("sorry");
+				Paws(3);
+				Say("im not allowed to do that");
+			6:	Say("try talking a gm into that :P");
+		endcase
+	endif	
+	return;
+endfunction
+
+function TalkUncurse(player)
+	Paws(3);
+	case(Random(5)+1)
+		1:	Say("you need  to go to");
+			Paws(3);
+			Say("the high priest in brit");
+		2:	Say("the high priest is east brit will uncurse");
+		3:	Say("go to east brit");
+			Paws(3);
+			Say("and find the high priest");
+		4:	Say("east brit has a high priest that will uncurse");
+		5:	Say("east from brit bank, then north and say");
+			Paws(4);
+			Say("'uncurse' to the high priest");
+	endcase
+	return;
+endfunction
+
+function TalkBuy(num)
+	Paws(3);
+	if (num < 2)
+		case(Random(3)+1)
+			1:	Say("i think you");
+				Paws(3);
+				Say("need a crafter to make that");
+			2:	Say("pretty sure only crafters can make those");
+			3:	Say("ask a crafter");
+		endcase
+	else
+		case(Random(3)+1)
+			1:	Say("britain has everything u need");
+			2:	Say("check around britain...");
+			3:	Say("britain...thats all im saying :P");
+		endcase
+	endif
+	return;
+endfunction
+
+function TalkHireling (player, flag)
+	var hireling;
+	var hirelingserial;
+	var message;
+	hirelingserial := GetObjProperty( player , "henchman" );
+	if (!hirelingserial)
+		message := "you have no warrior";
+	endif
+	hireling := SystemFindObjectBySerial( hirelingserial );
+	if (!hireling or !hireling.x)
+		message := "you have no warrior";		
+	else
+		message := "your warrior is at "+hireling.x+", "+hireling.y;
+	endif
+	if (!message)
+		message := "wtf - you dont have a warrior";
+	endif
+	Paws(3);
+	if (!flag)
+		case(Random(3)+1)
+			1:	Say(message);
+				Paws(3);
+				Say("thats all i can tell you");
+			2:	Say("hmmmmm...");
+				Paws(3);
+				Say(message);
+			3:	Say("....");
+				Paws(2);
+				Say(message);
+		endcase
+		Paws(3);
+		if(hireling.x > me.x -20 and hireling.y > me.y-20 and hireling.x < me.x +20 and hireling.y < me.y+20)
+			case(Random(2)+1)
+				1:	Say("wtf..thats right here");
+				2:	Say("oh ..its right here");
+				3:	Say("ah..lol");
+					Paws(2);
+					Say("there it is");
+			endcase
+		endif
+	else
+		case(Random(3)+1)
+			1:	Say("all i know is..");	
+				Paws(4);
+				Say("check the forum for commands");
+			2:	Say("the commands are on the zhs forum");
+			3:	Say("look on the forum to find the commands");
+		endcase
+	endif
+	return;
+endfunction
+
+function TalkFix(player)
+	var loop := 0;
+	var response;
+	Paws(3);
+	case(Random(3)+1)
+		1:	Say("are you bugged?");
+			Paws(3);
+			Say("shall i try to fix u?");
+		2:	Say("ill try to fix you if you want");
+		3:	Say("want me to try and fix?");
+	endcase
+	Paws(3);
+	Say("yes or no?");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !response)
+		response := Events(1,player);
+	endwhile
+	if (response["ok"] or response["ye"] or response["plea"] or response["plz"])
+		if (ReadGameClock() > GetObjProperty(player,"LastFixed") or !GetObjProperty(player,"LastFixed"))
+			FixPlayer(player);
+		else	
+			Paws(3);
+			Say("I only fixed you recently...you will need to wait");
+		endif
+	endif
+	Paws(3);
+	Say("ok..");
+	BrushOff(player,20);
+	return;
+endfunction
+
+function MacroTest(player)
+	if (GetObjProperty(player,"starttime"))
+		return;
+	endif
+	var lastgtest := GetGlobalProperty("LastGTest");
+	if (lastgtest < 3600 )
+		return;
+	endif
+	var layout := {
+	"page 0",
+	"noclose",
+	"nomove",
+	"nodispose",
+	"gumppic 200 200 2500",
+	"button 280 310 2128 2129 1 0 1",
+	"text 235 225 995 0",
+	"text 235 240 995 1",
+	"text 235 255 995 2",
+	"text 235 270 995 3",
+	"text 235 285 995 4",
+	};
+
+	var data := {
+	"This is a check for",
+	"macroing. You have",
+	"5 minutes to press",
+	"'ok' before you",
+	"will be jailed.",
+	};
+
+	var x:=220+Random(200);
+	var y:=140+Random(200);
+
+	layout[ 5]:="gumppic "+x+" "+y+" 2500";
+	layout[ 6]:="button "+(x+80)+" "+(y+110)+" 2128 2129 1 0 1";
+	layout[ 7]:="text "+(x+35)+" "+(y+25)+" 995 0";
+	layout[ 8]:="text "+(x+35)+" "+(y+40)+" 995 1";
+	layout[ 9]:="text "+(x+35)+" "+(y+55)+" 995 2";
+	layout[10]:="text "+(x+35)+" "+(y+70)+" 995 3";
+	layout[11]:="text "+(x+35)+" "+(y+85)+" 995 4";
+
+	if (player.npctemplate) return; endif
+
+	if(!player or !player.strength) 
+		return; 
+	endif
+
+	setobjproperty(player,"starttime",readgameclock());
+	start_script(":zuluitems:halmacrojailer", player);
+	SendDialogGump( player, layout, data );
+
+	if (!GetObjProperty(player,"starttime"))
+	return;
+	else
+	eraseobjproperty(player,"starttime");
+	endif
+	PlayLightningBoltEffect( player );
+	return;
+endfunction
+		
+function KillHeathen (player)
+	var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+	var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+	if (weaponone)
+		moveitemtocontainer(weaponone,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	if (weapontwo)
+		moveitemtocontainer(weapontwo,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	weaponone := CreateItemInInventory(me.backpack,0x9a19,1);
+	EquipItem(me,weaponone);		
+	weapontwo := CreateItemInInventory(me.backpack,0x1bc4,1);
+	SetObjProperty( weapontwo, "noloot" , 1 );
+	EquipItem(me,weapontwo);
+	me.warmode := 1;
+	SetOpponent(player);			
+	Fight(player);
+	if (weaponone)
+		moveitemtocontainer(weaponone,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	if (weapontwo)
+		moveitemtocontainer(weapontwo,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	return;
+endfunction
+
+function CloseDistance( opponent )
+
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+	if( Distance( me, opponent ) <= 1)
+		return 1;
+	else
+		RunToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+  return;
+endfunction
+
+function CleanRubbish(player)
+	var ok := 1;
+	var temp;
+	var num := 0;
+	var id;
+	var bots;
+	var botlist;
+	var bot;
+	var bcount;
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	var radius := GetObjProperty(me,"CheckRadius");
+	if (!radius)
+		radius := 5;
+	endif
+	Foreach item in EnumerateItemsInContainer(me.backpack)
+		sleepms(stime);
+		num := num + 1;
+	endforeach
+	SetObjProperty(me,"BPCount",num);
+	var Near_Items := ListItemsNearLocation(player.x, player.y, player.z,radius);
+	if (GetObjProperty(me,"Linked") and !GetObjProperty(me,"LinkClean"))
+		SetObjProperty(me,"LinkClean",1);
+		botlist := GetObjProperty(me,"botlist");
+		if (botlist)
+			bots := GetObjProperty(me,"bots");
+			if (bots)
+				bcount := 0;
+				while (bcount < bots)
+					bcount := bcount + 1;
+					bot := botlist[bcount];
+					bot := SystemFindObjectBySerial(bot);
+					if (bot)
+						Near_Items := Near_items + ListItemsNearLocation(bot.x, bot.y, bot.z,radius);
+					endif
+				endwhile
+			endif
+		endif
+	endif
+	ok := 1;
+	foreach thing in Near_Items
+		sleepms(stime);
+		if (thing.objtype == 0xF3C or (thing.color == 0 and thing.name == "a Robe") or thing.objtype == 0xe20)
+			DestroyItem(thing);
+		endif
+		if ((thing.objtype >= 0x2030) and (thing.objtype <= 0x2060))
+			DestroyItem(thing);
+		endif
+		if(thing.objtype == 0xf156 or  GetObjProperty(thing,"npctemplate") or GetObjProperty(thing,"WasBlue") or (thing.IsA(POLCLASS_CONTAINER) and thing.movable))
+			ok := 0;
+		endif
+		if (Distance(thing,player)<2)
+			ok := 0;
+		endif
+		if (me.multi)
+			ok := 0;
+			return;
+		endif
+		if (!thing.multi and thing.movable and !me.multi and !player.multi and PlayerOnline(player) and ok == 1)
+			temp := "taken from "+thing.x+", "+thing.y+", "+thing.z;
+			if (Keep(thing) and !GetObjProperty(me,"FullPack"))
+				MoveItemToContainer(thing,me.backpack);
+				SetObjProperty(thing,"TakenFrom",temp);
+			else
+				id := GetObjProperty(me,"ItemsDestroyed");
+				id := id + 1;
+				SetObjProperty(me,"ItemsDestroyed",id);
+				DestroyItem(thing);
+			endif
+		endif
+	endforeach
+endfunction
+			
+
+function Keep(object)
+	var k := 0;
+	var num := 0;
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	if( object.isA(POLCLASS_UOBJECT) )
+		foreach cprop_name in GetObjPropertyNames(object)
+			sleepms(stime);
+			if( cprop_name )
+				k := 1;
+			endif
+		endforeach
+	endif
+	if (object.dmg_mod > 10 or object.newbie or object.ar_mod > 10 or object.ar > 50 )
+		k := 1;
+	endif	
+	if (CInt(GetObjProperty(me,"BPCount")) > 120)
+		k := 0;
+		SetObjProperty(me,"FullPack",1);
+	endif
+	return(k);
+endfunction
+
+function EmptyPack()
+	if (GetObjProperty(me,"EmptyTrash"))
+		EraseObjProperty(me,"EmptyTrash");
+		foreach item in EnumerateItemsInContainer(me.backpack)
+			sleepms(50);
+			DestroyItem(item);
+		endforeach
+		EraseObjProperty(me,"FullPack");
+	endif
+	return;
+endfunction
+		
+function WasKilled(player)
+	var killer := GetObjProperty(player,"Killer");
+	var killeracct := GetObjProperty(player,"KillerAcct");
+	var deathx := GetObjProperty(player,"deathx");
+	var deathy := GetObjProperty(player,"deathy");
+	var deathz := GetObjProperty(player,"deathz");
+	var loop;
+	var response;
+	var temp;
+	Paws(5);
+	if (killer)
+		case(Random(3)+1)
+			1:	Say("says here that you were...");
+				Paws(3);
+				Say("last killed by "+killer);
+			2:	Say(killer + " killed you");
+			3:	Say("ok...last killer was");
+				Paws(3);
+				Say(killer);
+		endcase
+		if (killeracct)
+			Paws(5);
+			case(Random(3) + 1)
+				1:	Say("want me to report it?");
+				2:	Say("shall i page for a gm?");
+				3:	Say("shall I report it?");
+			endcase
+			loop := ReadGameClock() + 15;
+			while (ReadGameClock() < loop and !response)
+				response := Events(1,player);
+			endwhile
+			if (response["no"] or response["wait"])
+				return;
+			else
+				temp := player.name+" killed by "+killer+"/"+killeracct+" @ "+deathx+","+deathy+","+deathz;
+				if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+					Report(temp);
+				endif
+			endif
+		endif
+	endif
+	return;
+endfunction
+
+function IllegalSummons(player)
+	var response;
+	var loop := ReadGameClock()+30;
+	var temp := "";
+	while (ReadGameClock() < loop and !response)
+		response := Events(1, player);
+		RanWalk(player);
+		loop := loop + 1;	
+	endwhile
+	Paws(4);
+	case(Random(5)+1)
+		1:	Say("Its illegal to summon in town");
+		2:	Say("no summoning in town please");
+		3:	Say(":P no summons in town");
+		4:	Say("sorry, thats illegal");
+			Paws(3);
+			Say("summoning in town is");
+		5:	Say("dont summon in town plz");
+	endcase
+	Paws(3);
+	if (GetObjProperty(me,"AutoJail") == "ON" and GetObjProperty(player,"BBWarned"))
+		case(Random(3)+1)
+			1:	Say("well..thats jail...");
+			2:	Say("jail for j00!");
+			3:	Say("see ya in a day :P");
+		endcase
+		AutoJail(player, 1, "Summoning in Town");
+	else
+		PlayLightningBoltEffect( player );
+		SendSysMessage(player, "You have been warned.");
+		SetObjProperty(player,"BBWarned",1);
+		BrushOff(player,15);
+	endif
+	return;
+endfunction
+
+function Init(staff)
+	var loop := 0;
+	while (loop < 3)
+		WalkAwayFrom(staff);
+		loop := loop + 1;
+	endwhile
+	TurnToward(staff);
+	Say("Linking to Peacekeepers.");
+	Say("Waiting for Configuration..");
+	while(!GetObjProperty(me,"StartUp"))
+		Paws(1);
+	endwhile;
+	Say("Initiated...");
+	Paws(3);
+	HideHal();
+	SetObjProperty(me,"CheckRadius",5);
+	SetObjProperty(me,"SleepTime",50);
+	return;
+endfunction
+
+
+function AutoJail (looter, days, reason)
+	if(!reason)
+		reason := "Error!";
+	endif
+	if (!days)
+		days := 1;
+	endif
+	var acc	:= looter.acct;
+	var note := acc.getprop("Notes");
+	var jaildays := (days * 86400);
+	var secs := polcore().systime;
+	var year;
+	var month;
+	var day;
+	var hour;
+	var minutes;
+	CalculateDate( secs, year, month, day );
+	CalculateTime( secs, hour, minutes );
+	if (minutes < 10)
+		note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":0"+minutes+") "+reason+" ["+days+" days]";
+	else
+		note := note + " - "+month+"/"+day+"/"+year+" ("+hour+":"+minutes+") "+reason+" ["+days+" days]";
+	endif
+	acc.setprop("Release", (ReadGameClock() + jaildays));
+	acc.setprop("Notes", note);
+	looter.frozen := 1;
+	MoveCharacterToLocation( looter, 5304, 1184, 0, 0);
+	if (reason != "Error!")
+		SendSysMessage( looter, "You have been jailed for "+reason);
+	endif
+	DisconnectClient( looter );
+endfunction
+
+function Support()
+	SetGlobalProperty("BBCheck","Assisting");
+    EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED,HALT_THRESHOLD);
+    EnableEvents( SYSEVENT_ITEM_GIVEN );
+	var loop := 0;
+	var loop2 := 0;
+	var werd;
+	var response;
+	var temp;
+	var ev;
+	var staff := GetObjProperty(me,"Support");
+	staff	:= SystemFindObjectBySerial(staff);
+	SetGlobalProperty("BBChecking",staff.name);
+	while (GetObjProperty(me,"Support") and staff)
+		if (GetObjProperty(me,"TestMode"))
+			ResponseAI(staff,1);
+		else
+			Paws(1);
+		endif	
+		staff := GetObjProperty(me,"Support");
+		staff	:= SystemFindObjectBySerial(staff);
+		if(staff.concealed or staff.hidden)
+			if (!me.concealed)
+				Paws(3);
+				me.concealed := 1;	
+			endif
+			if (!me.hidden)
+				me.hidden := 1;
+			endif
+			MoveCharacterToLocation(me,staff.x, (staff.y-1), staff.z);	
+		else 
+			if (me.concealed)
+				Paws(3);
+				me.concealed := 0;
+			endif
+			if (me.hidden)
+				me.hidden := 0;	
+			endif
+			loop := 0;
+			while (Distance(me,staff)> 3 and loop < 10)
+				WalkToward(staff);
+				loop := loop + 1;
+			endwhile
+			if(Distance(me,staff)> 15)
+				MoveCharacterToLocation(me,staff.x, (staff.y-1), staff.z);	
+				WalkAwayFrom(staff);
+			endif
+			if (Random(5)= 1 and me.facing != staff.facing)
+				me.facing := staff.facing;
+			endif
+			if(Random(10)=1)
+				response := Events(1,staff);
+				response := SplitWords(response);
+				temp := Random(len(response))+1;
+				loop := temp + (Random(3)+1);
+				werd := "";
+				while(temp < loop)	
+					if(response[temp])
+						werd := werd + response[temp]+" ";
+					endif
+					temp := temp + 1;
+				endwhile
+				if (werd != "")
+					if (Random(2) == 1)
+						werd := werd + "...";
+					endif
+					Say(werd);
+					werd := "";
+				endif
+			endif
+			if(Random(300)=5)
+				Say(staff.name+" is my god :P");
+				loop := 0;
+				while(loop < 10)
+					RunToward(staff);
+					loop := loop + 1;
+				endwhile
+				Paws(1);
+			endif
+			if(Random(100) == 1)
+				case(Random(5) + 1)
+					1:	Say("afk a sec");
+					2:	Say("brb");
+					3:	Say("*gets beer*");
+					4:	Say("...");
+					5:	Say("hehe");
+				endcase
+				Paws(5);
+			endif
+		endif
+		response := Events(1,staff);
+		repeat
+		until (! (ev := os::wait_for_event(0)) );
+		if(Random(50) == 1)
+			RanWalk(staff);
+		endif
+	endwhile
+	HideHal();
+DisableEvents( SYSEVENT_SPEECH);
+DisableEvents( SYSEVENT_ENGAGED);
+DisableEvents( SYSEVENT_DISENGAGED);
+DisableEvents( SYSEVENT_DAMAGED);
+DisableEvents(HALT_THRESHOLD);;
+DisableEvents( SYSEVENT_ITEM_GIVEN );
+	return;
+endfunction	
+
+function WipeModsNotCritical ( who )
+
+        SendSysMessage (who, "Please wait....");
+
+	var had_mods := 0;
+	var modarray := GetObjProperty( who , "#mods" );
+	if( !modarray )
+		modarray := {};
+	else
+		had_mods := 1;
+	endif
+	
+	foreach mmod in modarray
+                UndoTheModNotCritical( who , mmod[1] , mmod[2] );
+	endforeach
+	EraseObjProperty( who , "#mods" );
+	
+	
+	var persitedmodarray := GetObjProperty( who , "mods" );
+	var newmods := {};
+	if( !persitedmodarray )
+		persitedmodarray := {};
+	else
+		had_mods := 1;
+	endif
+	
+	foreach mmod in persitedmodarray
+		if( mmod[1] != "poison" )
+                        UndoTheModNotCritical( who , mmod[1] , mmod[2] );
+		else
+			newmods.append( mmod );
+		endif
+	endforeach
+	
+	if( len(newmods) )
+		SetObjProperty( who , "mods" , newmods );
+	else
+		EraseObjProperty( who , "mods" );
+	endif
+	
+	return had_mods;
+
+endfunction
+
+function UndoTheModNotCritical ( who , prop , amt )
+
+	var 	msg,
+		sound;
+		
+	var 	oldvalue := amt;
+	
+	case (prop)
+		"cstr":
+		"str" :		who.strength_mod := who.strength_mod - amt; 
+		
+		"cdex":
+		"dex" :		who.dexterity_mod := who.dexterity_mod - amt;
+		
+		"cint":
+		"int" :		who.intelligence_mod := who.intelligence_mod - amt;
+		
+		"car":
+		"ar"  :		who.ar_mod := who.ar_mod - amt;
+				msg := "Armor is now " + who.ar;
+				sound := 0x01E3;
+				
+                ///"p"   :         who.SetParalyzed( 0 );
+		"call":
+		"all" :		who.strength_mod := who.strength_mod - amt; 
+				who.dexterity_mod := who.dexterity_mod - amt;
+				who.intelligence_mod := who.intelligence_mod - amt;
+				
+                ///"cpoly":
+                ///"poly":         who.ar_mod := who.ar_mod - cint( amt / 3 );
+                ///                msg := "Armor is now " + who.ar;
+                ///                sound := 0x01E3;
+                ///                who.strength_mod := who.strength_mod - amt; 
+                ///                who.dexterity_mod := who.dexterity_mod - amt;
+                ///                who.intelligence_mod := who.intelligence_mod - amt;
+				
+                ///"name"    :     who.name := oldvalue;
+                ///                msg := "Your name is now " + who.name;
+                ///                sound := 0x01E3;
+				
+                ///"graphic" :     who.graphic := oldvalue;
+                
+                ///"color"   :     who.color := oldvalue;
+		
+                ///"spiritspeak":  if (!amt)
+                ///                        RevokePrivilege( who, "hearghosts" );
+                ///                endif
+				
+                ///"title_prefix": who.title_prefix := oldvalue;
+        	
+                ///"title_suffix": who.title_suffix := oldvalue;
+        	
+                ///"gender":       who.gender := oldvalue;
+		
+                ///"hair":
+                ///        DestroyItem( GetEquipmentByLayer( who , LAYER_HAIR ));
+                ///        if (oldvalue)
+                ///                var newhair := CreateItemAtLocation(5288 , 1176 , 0, oldvalue, 1);
+                ///                newhair.color := GetObjProperty(who,"haircolor");
+                ///                EquipItem(who,newhair);
+                ///        endif
+                ///"beard":
+                ///        DestroyItem(GetEquipmentByLayer(who,LAYER_BEARD));
+                ///        if (oldvalue)
+                ///                var newhair := CreateItemAtLocation(5288 , 1176 , 0, oldvalue, 1);
+                ///                newhair.color := GetObjProperty(who,"haircolor");
+                ///                EquipItem(who,newhair);
+                ///        endif
+                ///"poison":
+                ///        who.hp_regen_rate := BaseRegenRate(who);
+                ///        who.SetPoisoned( 0 );
+        endcase 
+
+	if( sound )
+		PlaySoundEffectPrivate(who, sound, who);
+	endif
+	
+	if( msg )
+		PrintTextAbovePrivate(who,msg,who);
+	endif
+
+endfunction
+
+function MakeAnotherCheckToBeSure (who)
+
+        if (who.strength_mod != 0)
+                who.strength_mod := 0;
+        endif
+        if (who.dexterity_mod != 0)
+                who.dexterity_mod := 0;
+        endif
+        if (who.intelligence_mod != 0)
+                who.intelligence_mod := 0;
+        endif
+
+endfunction
+
+function FixPlayer(player)
+	var ev;
+	var loop := 0;
+	Paws(3);
+	var response;
+	var hasequipped := 0;
+	var alreadymounted;
+	var oktofix := 0;	
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	case(Random(3)+1)
+		1:	Say("ok, get naked and dismount");
+		2:	Say("dismount and unequip everything");
+		3:	Say("ok..");
+			Paws(3);	
+			Say("get naked..and dismount plz");
+	endcase
+	Paws(3);
+	Say("tell me when you are ready");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !response)
+		response := Events(1,player);
+	endwhile
+	if (response["ok"] or response["ready"] or response["go"])
+		foreach worn in ListEquippedItems ( player )
+			if ((worn and worn !=player.backpack)  && (worn.objtype < 0x2030 || worn.objtype > 0x2060))	
+				hasequipped := 1;
+			endif
+		endforeach
+		alreadymounted := GetEquipmentByLayer( player.serial, 25 );
+		if (alreadymounted)
+			Paws(3);
+			Say("Dismount please");
+		endif
+		if (hasequipped == 1)
+			Paws(3);
+			case(Random(3)+1)
+				1:	Say("u still have items equipped");
+				2:	Say("u are still wearing things");
+				3:	Say("u must unequip everything");
+			endcase
+		endif
+		if (hasequipped == 0 and !alreadymounted)
+			DoTempMod(player, "all", 50, 5);
+			WipeModsNotCritical(player);
+			MakeAnotherCheckToBeSure(player);	
+			PlayLightningBoltEffect( player );
+			Paws(3);	
+			Say("looks like you are fixed");
+			loop := ReadGameClock() + 21600;
+			SetObjProperty(player,"LastFixed",loop);
+		else
+			Paws(3);
+			Say("Say 'fix gate' when you are ready");
+		endif
+	endif
+	return;
+endfunction
+		
+function IsInJail (player)
+	var acc := player.acct;	
+	if (player.x > 5291 and player.x < 5311 and player.y < 1191 and player.y > 1179)
+		if (ReadGameClock()< acc.getprop("Release")  and !player.cmdlevel)
+			return 1;
+		else 
+			return 0;
+		endif
+	endif
+endfunction
+
+function PlayerOnline(player)
+	var ev;
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	repeat
+	sleepms(stime);
+	until (! (ev := os::wait_for_event(0)) );
+	var online := 0;
+	foreach person in EnumerateOnlineCharacters()	
+		sleepms(stime);
+		if (person == player)
+			online := 1;
+		endif
+	endforeach
+	if (player.dead)
+		return 0;
+	elseif (player.cmdlevel)
+		return 0;
+	elseif (GetObjProperty(player,"cwarring"))
+		return 0;
+	elseif (GetObjProperty(player,"pvping"))
+		return 0;
+	elseif (online == 1)
+		return 1;
+	else 
+		return 0;
+	endif
+endfunction
+
+function CanMacroCheck()
+	var secs := polcore().systime;
+	var hour;
+	var minutes;
+	CalculateTime( secs, hour, minutes );
+	if (((hour + 1) > MACRO_HOUR_START) and ((hour - 1) < MACRO_HOUR_END))
+		return 0;
+	else
+		return 1;
+	endif
+endfunction
+
+function Warrant(staff)
+	var loop;
+	var offender ;
+	var reason ;
+	var ev;
+	var wanted := GetGlobalProperty("WantedList");
+	if(!wanted)
+		wanted := {};
+	endif
+	var wlen := len(wanted);
+	if (wlen > 10)
+		Say("sorry, arrest list is full.");
+		return;
+	endif
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Who do you want arrested?");
+	Paws(2);
+	Say("say 'none' to cancel");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !offender)
+		offender := Events(1,staff);
+	endwhile
+	if (!offender or offender =="none")
+		Say("Cancelled.");
+		return;
+	endif
+	Paws(1);
+	Say(offender + " added to arrest list");
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("What Reason?");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !reason)
+		reason := Events(1, staff);
+	endwhile
+	if (!reason)
+		reason := "";
+	endif
+	reason := reason + " [warrant ref: "+staff.name+"]";
+	wanted[wlen+1] := offender;
+	wanted[wlen+2] := reason;
+	SetGlobalProperty("WantedList",wanted);
+	Paws(3);
+	Say(offender + " will be arrested on sight.");
+	Paws(2);	
+	Say("reason : "+ reason);
+	return;
+endfunction
+
+function Arrest(player)
+	var reason;
+	var suspect := player.name;
+	var detainee;	
+	var wanted := GetGlobalProperty("WantedList");
+	var wlen := len(wanted);
+	var temp := {};
+	var loop := -1;
+	var tnum;
+	while (loop < wlen)
+		loop := loop + 2;
+		if (lower(wanted[loop]) == lower(suspect))
+			detainee := wanted[loop];
+			reason := wanted[loop+1];
+			wanted[loop] := "";
+			wanted[loop+1] := "";
+		endif
+	endwhile
+	//rebuild wanted
+	loop := 0;
+	tnum := 0;
+	while(loop < wlen)
+		loop := loop + 1;
+		if(wanted[loop] != "")
+			tnum := tnum + 1;
+			temp[tnum] := wanted[loop];
+		endif
+	endwhile
+	SetGlobalProperty("WantedList",temp);
+	if(detainee and reason)
+		return(reason);
+	else
+		return;
+	endif
+endfunction
+	
+function SendTelegram(staff)
+	var loop;
+	var recip ;
+	var body ;
+	var ev;
+	var telegrams := GetGlobalProperty("Telegrams");
+	if(!telegrams)
+		telegrams := {};
+	endif
+	var tlen := len(telegrams);
+	if (tlen > 10)
+		Say("sorry, telegram list is full.");
+		return;
+	endif
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Who do you want to telegram?");
+	Paws(2);
+	Say("say 'none' to cancel");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !recip)
+		recip := Events(1,staff);
+	endwhile
+	if (!recip or recip =="none")
+		Say("Cancelled.");
+		return;
+	endif
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Enter Message :");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !body)
+		body := Events(1, staff);
+	endwhile
+	if (!body)
+		body := "";
+	endif
+	body := body + " //"+staff.name;
+	telegrams[tlen+1] := recip;
+	telegrams[tlen+2] := body;
+	SetGlobalProperty("Telegrams",telegrams);
+	Paws(2);
+	Say("Telegram will be given to "+recip);
+	return;
+endfunction
+	
+function GiveMail(player)
+	var reason;
+	var suspect := player.name;
+	var detainee;	
+	var wanted := GetGlobalProperty("Telegrams");
+	var wlen := len(wanted);
+	var temp := {};
+	var loop := -1;
+	var tnum;
+	while (loop < wlen)
+		loop := loop + 2;
+		if (lower(wanted[loop]) == lower(suspect))
+			detainee := wanted[loop];
+			reason := wanted[loop+1];
+			wanted[loop] := "";
+			wanted[loop+1] := "";
+		endif
+	endwhile
+	//rebuild wanted
+	loop := 0;
+	tnum := 0;
+	while(loop < wlen)
+		loop := loop + 1;
+		if(wanted[loop] != "")
+			tnum := tnum + 1;
+			temp[tnum] := wanted[loop];
+		endif
+	endwhile
+	SetGlobalProperty("Telegrams",temp);
+	if(detainee and reason)
+		return(reason);
+	else
+		return;
+	endif
+endfunction
+	
+function NewResponse(staff)
+	var loop;
+	var recip ;
+	var body ;
+	var ev;
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Enter Trigger Word(s) :");
+	Paws(2);
+	Say("say 'none' to cancel");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !recip)
+		recip := Events(1,staff);
+	endwhile
+	if (!recip or recip =="none")
+		Say("Cancelled.");
+		return;
+	endif
+	var rcfg := readconfigfile("responses");
+	if (rcfg[recip])
+		Say("sorry that word is already in my database.");
+		return;
+	endif
+	Paws(2);
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Enter Response :");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !body)
+		body := Events(1, staff);
+	endwhile
+	if (!body)
+		body := "";
+	endif
+	AddResponse(recip,body);
+	return;
+endfunction
+
+function AddResponse(stimulus, response)
+	var elem := {};
+	var elems := array;
+	elem.+pname;
+	elem.+pvalue;
+	var rcfg := readconfigfile("responses");
+	elem.pname := "Response";
+	elem.pvalue := response;
+	elems[1] := elem;
+	AppendConfigFileElem( "responses", "word", stimulus, elems );
+	unloadconfigfile("responses");
+	Say("New Response Added.");
+endfunction
+
+function CustomResponse(stimulus)
+	if(!stimulus)
+		return;
+	endif
+	var elem;
+	var response;
+	var rcfg := readconfigfile("responses");
+	foreach key in GetConfigStringKeys(rcfg)
+		if( stimulus[key])
+			elem := FindConfigElem(rcfg, key);
+			response := GetConfigString( elem, "Response" );				
+			if(response)
+				Paws(2);
+				Say(response);
+			endif
+		endif
+	endforeach
+endfunction		
+
+function showflame(who)
+  Detach();
+  var coolflame;
+    coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3709, 1 );
+    playsoundeffect(who, 0x208);
+    sleep(1);
+    destroyitem(coolflame);
+endfunction
+
+function GoCrazy(staff)
+	var loop := 0;
+	var count := Random(3)+4;
+	while (loop < count)
+		case(Random(3)+1)
+			1:	Crazy1(staff);
+			2:	Crazy2(staff);
+			3:	Crazy3(staff);
+		endcase
+		loop := loop + 1;
+	endwhile
+	return;
+endfunction
+
+function Crazy1(staff)
+	var mx := me.x;
+	var my := me.y;
+	var mz := me.z;
+	var loop := 0;
+	var count := Random(3)+ 3;
+	while (loop < count)
+		mx := mx + Random(6) - 3;
+		my := my + Random(6) - 3;
+		MoveCharacterToLocation(me,mx,my,mz);
+		showflame(me);
+		loop := loop + 1;
+	endwhile
+	return;
+endfunction
+
+function Crazy2(staff)
+	var loop := 0;
+	var count := Random(10) + 5;
+	var said := 0;
+	while (loop < count)
+		RunToward(staff);
+		loop := loop + 1;
+	endwhile
+	loop := 0;
+	count := Random(5) + 5;
+	while (loop < count)
+		RunAwayFrom(staff);
+		loop := loop + 1;
+		if (said == 0 and Random(3) == 1)
+			case (Random(3)+1)
+				1:	Say("weeeeeeeeeeeeee!");
+				2:	Say("zooooooooooooom!");
+				3:	Say("waaaaaaaaaagh!!");
+			endcase
+			said := 1;
+		endif
+	endwhile
+	loop := 0;
+	count := Random(5) + 5;
+	while (loop < count)
+		RunToward(staff);
+		loop := loop + 1;
+	endwhile
+endfunction
+
+function Crazy3(staff)
+	var loop := 0;
+	var heading := 0;
+	while(loop < 64)
+		loop := loop + 1;
+		if(heading > 8)
+			heading := 0;
+		endif
+		me.facing := heading;
+		heading := heading + 1;
+		loop := loop + 1;
+		sleepms(25);
+	endwhile
+endfunction
+
+function ExecuteScum(staff)
+	var staffkill;
+	Paws(1);
+	Say("kill what?");
+	Paws(1);
+	Say("<esc> to cancel");
+	var tgt := TargetCoordinates( staff );
+	if( tgt.mobile )
+ 		staffkill := tgt.mobile;
+	endif
+	if (!staffkill)
+		say("cancelled.");
+		return;
+	endif
+	KillHeathen(staffkill);
+endfunction
+
+function CheckPeacekeeper(pk)
+	var loop := 0;
+	MoveCharacterToLocation( me, pk.x, pk.y, pk.z, 0);
+	var li := GetObjProperty(pk,"lastincident");
+	if (GetObjProperty(me,"Confront") == "ON")
+		sleep(10);
+		me.hidden := 0;
+		me.concealed := 0;
+		while (loop < 3)
+			loop := loop + 1;
+			WalkAwayFrom(pk);
+		endwhile
+		TurnToward(pk);
+		sleep(1);
+		Say("Report");
+		Sleep(1);
+		PrintTextAbove(pk, "Last incident was :");
+		PrintTextAbove(pk,li);
+	endif
+	loop := ReadGameClock() + 10;
+	while(loop > ReadGameClock())
+		Sleep(1);
+		RanWalk(pk);
+	endwhile
+	if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+		loop := li + " @ "+me.x +", "+me.y +", "+ me.z;
+		Report(loop);
+	endif	
+	HideHal();
+	return;
+endfunction
+
+function RunRaid()
+	if(GetObjProperty(me,"RunRaids")="OFF")
+		return;
+	endif
+	var nr := GetObjProperty(me,"RunRaids");
+	if (!nr)
+		SetObjProperty(me,"RunRaids","OFF");
+		return;
+	endif
+	SetGlobalProperty("BBCheck","Running Raid");
+	SetGlobalProperty("BBChecking","None");
+	nr := (nr * 3600) + ReadGameClock();
+	SetObjProperty(me,"NextRaid",nr);
+	var area := Random(5)+1;
+	var minx;
+	var miny;
+	var maxx;
+	var maxy;
+	var maxz;
+	var maxnum;
+	var mex;
+	var mey;
+	var mez;
+	case (area)
+		1: 	area := "Britain Graveyard";
+		   	minx := 1339;
+		  	miny := 1446;
+			maxx := 1388;
+			maxy := 1491;
+			maxz := 18;
+			maxnum := 200;
+	
+		2: 	area := "Vesper Graveyard";
+			minx := 2729;
+			miny := 841;
+			maxx := 2781;
+			maxy := 893;
+			maxz := 0;	
+			maxnum := 150;	
+
+		3: 	area := "Yew GraveYard";
+			minx := 712;
+			miny := 1104;
+			maxx := 734;
+			maxy := 1134;
+			maxz := 0;	
+			maxnum := 75;
+
+		4: 	area := "Cove GraveYard";
+			minx := 2424;
+			miny := 1082;
+			maxx := 2452;
+			maxy := 1118;
+			maxz := 8;	
+			maxnum := 50;
+
+		5: 	area := "Moonglow GraveYard";
+			minx := 4529;
+			miny := 1299;
+			maxx := 4556;
+			maxy := 1334;
+			maxz := 8;	
+			maxnum := 100;
+	endcase
+	Broadcast("Counselor HAL: Raid starting in 5 minutes!");
+	Broadcast("Counselor HAL: Please keep clear of the graveyards.");
+	sleep(180);
+	Broadcast("Counselor HAL: Raid starting in approx. 2 minutes!");
+	//Start Spawning
+	Spawn(me, minx, miny, maxx, maxy, maxz, maxnum);
+	var bctype := Random(4)+1;
+	var bcmsg := area + " ";
+	case(bctype)
+		1:	bcmsg := bcmsg + " is under attack!";
+		2:	bcmsg := bcmsg + " has been invaded!";
+		3:	bcmsg := bcmsg + " is under the control of the forces of evil!";
+		4:	bcmsg := bcmsg + " has been taken over by an army of darkness!";
+	endcase
+	sleep(60);
+	Broadcast(bcmsg);
+	Broadcast("No PKing or Looting Players");
+	//Do Quest Policing
+	mex := minx + ((maxx-minx)/2);
+	mey := miny + ((maxy-miny)/2);
+	mez := maxz;
+	MoveCharacterToLocation(me, mex, mey, mez);
+	var running := 1;
+	var mleft;
+	var mobs;
+	var endmsg;
+	var duration := ReadGameClock() + 3600;
+	SetGlobalProperty("reportlooters","ANTI");
+	SetGlobalProperty( "NoNpcLooting" , 1 );
+	while (running and ReadGameClock() < duration)
+		mleft := 0;
+		mobs := ListMobilesNearLocation(me.x, me.y, me.z, 40);
+		foreach monster in mobs	
+			if (GetObjProperty(monster,"halspawn"))
+				mleft := mleft + 1;
+			endif
+		endforeach
+		if (mleft < 5)
+			running := 0;
+		endif
+		sleep(1);
+	endwhile
+	Broadcast("The raid is over!",FONT_BOLD,53);
+	endmsg := Random(3)+1;
+	case (endmsg)
+		1:		Broadcast(area + " has been cleared.");
+		2:		Broadcast(area + " has been liberated.");
+		3:		Broadcast(area + " is free of monsters.");
+	endcase
+	Broadcast("Counselor HAL: Normal PKing and looting rules apply in 5 mins..",FONT_BOLD,53);
+	sleep(180);
+	Broadcast("Counselor HAL: Normal PKing and looting rules apply in 2 mins..",FONT_BOLD,53);
+	sleep(120);
+	Broadcast("Counselor HAL: Normal PKing and looting rules apply.",FONT_BOLD,53);
+	SetGlobalProperty("reportlooters","ON");
+	EraseGlobalProperty( "NoNpcLooting" );
+	SetGlobalProperty("BBCheck","Idle");
+	SetGlobalProperty("BBChecking","None");
+	return;		
+endfunction
+
+function Spawn(who, minx, miny, maxx, maxy, maxz, maxnum);
+	var x;
+	var y;
+	var z;
+	var diff;
+	var type1 := (maxnum * 53) / 100;
+	var type2 := (maxnum * 42) / 100;
+	var type3 := (maxnum * 5) / 100;
+	var rangex := maxx - minx;
+	var rangey := maxy - miny;
+	var loop := 0;
+	var monner;
+	diff := 3;
+	while (loop < type1)
+		loop := loop + 1;
+		x := Random(rangex) + 1 + minx;
+		y := Random(rangey) + 1 + miny;
+		z := maxz;
+		monner := SpawnNpc(x,y,z,diff,who);
+		sleepms(25);				
+	endwhile
+	diff := 4;
+	loop := 0;
+	while (loop < type2)
+		loop := loop + 1;
+		x := Random(rangex) + 1 + (minx/5);
+		y := Random(rangey) + 1 + (miny/5);
+		z := maxz;
+		monner := SpawnNpc(x,y,z,diff,who);
+		sleepms(25);				
+	endwhile
+	loop := 0;
+	diff := 5;
+	while (loop < type3)
+		loop := loop + 1;
+		x := Random(rangex) + 1 + (minx/10);
+		y := Random(rangey) + 1 + (miny/10);
+		z := maxz;
+		monner := SpawnNpc(x,y,z,diff,who);
+		sleepms(25);				
+	endwhile
+endfunction
+	
+function SpawnNpc(x, y, z, diff,who )
+	
+	var group;
+	var g2 := Random(3)+1;
+	case(diff)	
+		1: case(g2)
+			1: group := 2;
+			2: group := 1;
+			3: group := 8;
+		   endcase	
+		2: case(g2)
+			1: group := 9;
+			2: group := 17;
+			3: group := 23;
+		   endcase
+		3: case(g2)
+			1: group := 69;
+			2: group := 70;
+			3: group := 71;
+		   endcase
+		4: case(g2)
+			1: group := 75;
+			2: group := 61;
+			3: group := 62;
+		   endcase
+		5: case(g2)
+			1: group := 63;
+			2: group := 76;
+			3: group := 77;
+		   endcase
+	endcase
+	var cfg := ReadConfigFile( ":spawnpoint:groups" );
+	if( !cfg )
+		return 0;
+	endif
+	
+	var elem	:= cfg[group];
+	var possibles	:= GetConfigStringArray( elem, "spawn" );
+	if( !possibles.size() )
+		return 0;
+	endif
+	
+	var template := possibles[RandomInt(possibles.size())+1];
+	if( !template )
+		return 0;
+	endif
+	
+	var critter := CreateNpcFromTemplate( template, x, y, z );
+	SetObjProperty(critter,"LFucker",who.name);
+	SetObjProperty(critter,"tmonster",1);
+	SetObjProperty(critter,"halspawn",1);
+	return critter;
+endfunction	
+
+function HideHal()
+	if (me.hidden == 0)
+		me.hidden := 1;
+	endif
+	if (me.concealed == 0)
+		me.concealed := 1;
+	endif
+	SetObjProperty(me,"IsThief",20);
+endfunction
+
+function CheckPack(player)
+	var temp;
+	var checkcw;
+	if (GetObjProperty(player,"cwarring"))
+		return;
+	endif
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		sleepms(stime);
+		checkcw := GetObjProperty( item, "CW" );
+		if ( checkcw and !GetObjProperty(player,"cwarring") and !GetObjProperty(me,"nocheckcw") )
+			temp := player.name+" has unauthorised CW equipment ("+item.desc+")";
+			if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON")
+				Report(temp);
+			endif
+		endif
+		if (!item.movable)
+			item.movable := 1;
+		endif
+	endforeach
+	return;
+endfunction
+
+function CheckQuestLooters()
+	var looters;
+	var killer;
+	var killerguy;
+	var txt;
+	var staffnum;
+	var lootar;
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	var radius := GetObjProperty(me,"CheckRadius");
+	if (!radius)
+		radius := 5;
+	endif
+	var Near_Items := ListItemsNearLocation(me.x, me.y, me.z,radius);
+	foreach thing in Near_Items
+		sleepms(stime);
+		if (GetObjProperty(thing,"WasBlue") and !thing.npctemplate)
+			killerguy  := GetObjProperty( thing , "KilledBy" );
+			looters := GetObjProperty( thing , "LootedBy" );
+			if( !looters )
+				looters := dictionary;
+			endif
+			if( killerguy and !GetObjProperty(thing,"HALKChecked"))
+				SetObjProperty(thing,"HALKChecked",1);
+				foreach player in EnumerateOnlineCharacters()
+					sleepms(stime);
+					if (killerguy == player.name)
+						killer := SystemFindObjectBySerial(killerguy);
+					endif
+				endforeach
+				if (killer)
+					thing.name["A corpse of"] := "";
+					thing.name["Remains of"] := "";
+					txt := killer.name + " killed "+thing.name+" during quest";
+					if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON" and txt)
+						Report(txt);
+					endif
+					staffnum := 0;
+					foreach guy in EnumerateOnlineCharacters()
+						sleepms(stime);
+		       			if  (guy.cmdlevel)
+							staffnum := staffnum + 1;
+						endif
+					endforeach
+					if (GetObjProperty(me,"AutoJail")= "ON" or staffnum == 0)
+						AutoJail(killer, 7, "killing "+thing.name+" during quest");
+					endif
+				endif
+			endif
+			if( (looters.keys()).size() and !GetObjProperty(thing,"HALLChecked") )
+				SetObjProperty(thing,"HALLChecked",1);
+				foreach serial in (looters.keys())
+					sleepms(stime);
+					if (looters[serial])
+						foreach player in EnumerateOnlineCharacters()
+							sleepms(stime);
+							if (looters[serial] == player.name)
+								lootar := SystemFindObjectBySerial(looters[serial]);
+							endif
+						endforeach
+						if (lootar)
+							thing.name["A corpse of"] := "";
+							thing.name["Remains of"] := "";
+							txt := lootar.name + " looted "+thing.name+" during quest";
+							if (GetObjProperty(me,"Report") == "ON" or GetObjProperty(me,"Page") == "ON" and txt)
+								Report(txt);
+							endif
+							staffnum := 0;
+							foreach guy in EnumerateOnlineCharacters()
+		     		  			if  (guy.cmdlevel)
+									staffnum := staffnum + 1;
+								endif
+							endforeach
+							if (GetObjProperty(me,"AutoJail")= "ON" or staffnum == 0)
+								AutoJail(killer, 7, "looting "+thing.name+" during quest");
+							endif
+						endif
+					endif
+				endforeach
+			endif
+		endif
+	endforeach
+endfunction
+
+function ChangeRange(staff)
+	var loop;
+	var offender ;
+	var reason ;
+	var ev;
+	Paws(2);
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	repeat
+	sleepms(stime);
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Enter new Check Range:");
+	Paws(2);
+	Say("say 'none' to cancel");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !offender)
+		offender := CInt(Events(1,staff));
+	endwhile
+	if (!offender or offender =="none")
+		Say("Cancelled.");
+		return;
+	endif
+	Paws(1);
+	if (offender < 0)
+		offender := 0;
+	endif
+	Say("Check Range Now : "+offender);
+	SetObjProperty(me,"CheckRange",offender);
+endfunction
+
+function ChangeStime(staff)
+	var loop;
+	var offender ;
+	var reason ;
+	var ev;
+	Paws(2);
+	var stime := GetObjProperty(me,"SleepTime");
+	if (!stime)
+		stime := 50;
+	endif
+	repeat
+	sleepms(stime);
+	until (! (ev := os::wait_for_event(0)) );
+	Say("Enter new Sleep Time (ms):");
+	Paws(2);
+	Say("say 'none' to cancel");
+	loop := ReadGameClock() + 30;
+	while (ReadGameClock() < loop and !offender)
+		offender := CInt(Events(1,staff));
+	endwhile
+	if (!offender or offender =="none")
+		Say("Cancelled.");
+		return;
+	endif
+	Paws(1);
+	if (offender < 0)
+		offender := 0;
+	endif
+	Say("Sleep Time Now : "+offender+"ms");
+	SetObjProperty(me,"SleepTime",offender);
+endfunction

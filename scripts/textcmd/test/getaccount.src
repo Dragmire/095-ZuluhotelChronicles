@@ -1,0 +1,16 @@
+Use uo;
+Use unicode;
+
+Include "include/client";
+
+program TextCMD_BCast( Who )
+
+    Var Res := Target( Who, TGTOPT_NOCHECK_LOS );
+    If( Res == Error )
+    SendSysMEssage( Who, "Error: " + Res.errortext );
+    Else
+    Var Acnt := Res.account;
+    SendSysMEssage( Who, "Account: " + Res.acctname );
+    Endif
+    
+EndProgram

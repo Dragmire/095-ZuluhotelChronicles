@@ -1,0 +1,22 @@
+use os;
+use uo;
+
+include "include/dismount";
+
+program dblclickself( who )
+
+	var mount := GetEquipmentByLayer( who, 25 );
+
+	if (!mount)
+		OpenPaperdoll( who, who );
+		return;
+	endif
+
+	if (who.warmode)
+		OpenPaperdoll( who, who );
+		return;
+	endif
+
+	Dismount( who, mount );
+
+endprogram

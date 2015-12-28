@@ -1,0 +1,300 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+
+//  Roaming Ranger AI 
+//
+// Slaine - 20.08.07
+//
+//  Only works with humanoid types!
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/roamingkillpcsloop";
+include "ai/combat/chaosfight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+Const DRINK_SOUND := 0x32;
+Const SOUND_EFFECT_HEAL	:= 0x1f3; 
+Const SOUND_EFFECT_CURE	:= 0x1e1;
+
+var runaway := 0;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	// FIND OTHER PARTY MEMBERS AND MOVE TOWARDS
+	var chaseloop := 0;
+	var runto;
+	foreach critter in ListMobilesInLineOfSight( me, 20 )
+		if (critter.name != me.name and GetObjProperty(critter,"RoamingNPC") and !runto)
+			runto := critter;
+		endif	
+	endforeach
+	var di:=distance(me,runto);
+	while ( di > 4 and chaseloop < 5)
+		RunToward( runto );
+		chaseloop := chaseloop + 1;
+	endwhile
+
+	SetWarMode( 0 );
+       
+	main_AI_loop();
+	
+
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+var weaponone;
+var weapontwo;
+var ppd;
+var tempmana;
+var omfg;
+var sleepdelay := 0;
+var chaseloop;
+
+//HEALING
+omfg := 0;
+if (GetHP(me) < (GetMaxHP(me)/1.5))
+if ( getobjproperty(me, "#potion") < ReadGameClock() or !GetObjProperty(me,"#potion")  )
+   	while (distance(me, opponent) <= 6 and omfg < 15)
+		RunAwayFrom(opponent);
+		omfg := omfg + 1;
+	endwhile	
+	me.hidden := 1;
+	sleep (4);
+	me.hidden := 0;
+	PlaySoundEffect (me, DRINK_SOUND);
+	PerformAction(me, ANIM_EAT);
+	HealDamage(me, RandomDiceStr("5d12+3"));
+	sleep(1);
+	PlaySoundEffect( me,  SFX_SPELL_HEAL );
+	PlayObjectCenteredEffect( me , FX_SPELL_HEAL , SPEED_SPELL_HEAL , LOOP_SPELL_HEAL );
+	if (omfg > 14)
+		turntoward( opponent );
+	endif	
+	setobjproperty(me, "#potion", (ReadGameClock() + 20));	
+endif
+endif
+//
+
+//RETARGET IF OPPONENT IS TEAM MEMBER
+if (GetObjProperty(opponent,"RoamingNPC"))
+	if (runrandom(opponent))
+		Sleepms(sleepdelay);
+	endif
+	RestartScript(me);
+	return;
+endif
+
+//PROVOKE OTHER PARTY MEMBERS ON TARGET
+foreach mob in ListHostiles( me, 20, 0 );
+	get_help(mob);
+endforeach
+//ANTI GANK
+var gank := 0;
+omfg := 0;
+foreach critter in ListMobilesInLineOfSight( me, 3 )
+	if (critter.name != me.name and !GetObjProperty(critter,"RoamingNPC") )
+		gank := gank +1;
+	endif
+endforeach
+if (gank > 1)
+	SetStamina( me, Getmaxstamina(me));
+	while (distance(me, opponent) <= 10 and omfg < 30)
+		RunAwayFrom(opponent);
+		omfg := omfg + 1;
+	endwhile
+	if (omfg > 29)
+		ReadyBow();
+		turntoward( opponent );
+		SetMana( me, GetMana(me) + 30);
+		CastSpell(me,opponent,"teleport");
+	endif
+endif
+//
+			
+//RETARGET IF NO LOS
+if (!CheckLineOfSight( me, opponent) )
+	if (GetObjProperty(me,"lastnolos") != opponent.name)
+		if (runrandom(opponent))
+			Sleepms(sleepdelay);
+		endif
+	endif
+	SetObjProperty(me,"lastnolos",opponent.name);
+	RestartScript(me);
+	return;
+endif
+//
+
+var crazymode := 0;
+//CRAZY ARCHING
+var targets2 := {};
+var notgts2 := 0;
+var ffs2 := 0;
+foreach critter in ListMobilesInLineOfSight( me, 10 )		
+	if (critter)
+		if (!critter.npctemplate or GetObjProperty(me,"killnpcs"))
+			notgts2 := notgts2 + 1;
+			targets2[notgts2] := critter;
+		endif
+	endif
+endforeach
+if (notgts2 > 2 and Random (5) = 1 )
+	ReadyBow();
+	var loop2 := 0;
+	var ccl2 := 0;
+	var blah;
+	var ok := 1;	
+	crazymode := 1;
+	while ( (loop2 < notgts2) and (GetHP(me)> (GetMaxHP(me) / 1.5)) and ok )
+		foreach critter in ListMobilesInLineOfSight( me, 2 )		
+			if (critter)
+				ok := 0;
+			endif
+		endforeach
+		loop2 := loop2 + 1;
+		opponent := targets2[loop2];
+		SetOpponent(opponent);
+		me.warmode := 1;	
+		blah := 0;
+		while (distance(me,opponent) < 5 and blah < 10)
+			RunAwayFrom(opponent);
+			blah := blah + 1;
+		endwhile
+		sleep(1);
+	endwhile
+endif
+//
+
+
+//DETERMINE CLASS AND ACT ACCORDINGLY
+var omage := GetObjProperty(opponent,"IsMage");
+var owarr := GetObjProperty(opponent,"IsWarrior");
+var ocraf := GetObjProperty(opponent,"IsCrafter");
+var obard := GetObjProperty(opponent,"IsBard");
+var othief:= GetObjProperty(opponent,"IsThief");
+var orang := GetObjProperty(opponent,"IsRanger");
+var amethod := 0;
+var ow1;
+var ow2;
+	if (omage)
+		if (GetMana(opponent) > 20)
+			amethod := "arch";
+		else
+			amethod := "arch";
+		endif
+	endif
+	if (owarr or ocraf or obard or othief)
+		amethod := "arch";
+	endif
+	if (orang)
+		amethod :="arch";
+	endif
+	ppd := distance(me, opponent);
+
+	//ANTI GM WEAPON
+	ow1 := GetEquipmentByLayer( opponent,  LAYER_HAND1 );
+	ow2 := GetEquipmentByLayer( opponent,  LAYER_HAND2 );
+	ow1 := GetObjProperty(ow1,"IsGMItem");
+	ow2 := GetObjProperty(ow1,"IsGMItem");
+	var wah := 0;
+	amethod := "arch";
+	if (amethod = "arch")
+		saywords := 0;
+		ReadyBow();
+		if ( (runaway < 100) or (!theammo) )
+		    	if (distance(me, opponent) <= 6)
+			RunAwayFrom(opponent);
+			return 0;
+    		else
+			runaway := 0;
+			return 1;
+    		endif
+    		else
+		case Distance( me, opponent )
+        		1:
+        		0:
+            			return 1;
+        		default:
+            			RunToward( opponent );
+            			return 0;
+    		endcase
+	    	endif
+	endif
+
+	// FIND OTHER PARTY MEMBERS AND MOVE TOWARDS
+	chaseloop := 0;
+	var runto;
+	foreach critter in ListMobilesInLineOfSight( me, 20 )
+		if (critter.name != me.name and GetObjProperty(critter,"RoamingNPC") and !runto)
+			runto := critter;
+		endif	
+	endforeach
+	var di:=distance(me,runto);
+	while ( di > 4 and chaseloop < 5)
+		RunToward( runto );
+		chaseloop := chaseloop + 1;
+	endwhile
+endfunction
+
+Function ReadyBow ()
+	if (GetObjProperty(me,"amethod") != "arch")
+		SetObjProperty(me,"oldmana",(GetMana(me)));
+		SetObjProperty(me,"amethod","arch");
+		PlaySoundEffect(me,0x0057);
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weapontwo);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,0x9a1b,1);
+		EquipItem(me,weaponone);	
+		weaponone.dmg_mod := 15;
+		foreach item in EnumerateItemsInContainer( me.backpack )
+			if (item.graphic = 0xf3f) 
+				DestroyItem(item);
+			endif
+		endforeach
+		CreateItemInInventory(me.backpack,0xf3f,100);
+		return;
+	endif		
+endfunction

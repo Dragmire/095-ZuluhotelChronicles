@@ -1,0 +1,59 @@
+use uo;
+use os;
+
+include "include/itemutil";
+include "include/objtype";
+
+const DELAY_BETWEEN_REFILL	:= 3600;
+const REAGENT_AMOUNT		:= 500;
+
+var reagents := { 0x0f0f, 0x0f10,
+		     0x0f11, 0x0f13, 0x0f15, 0x0f18,
+		     0x0f25, 0x0f30, 0x0f87, };
+
+var pagan_regs := {	0x0f78, 0x0f79, 0x0f7c, 0x0f7d,
+			0x0f7e, 0x0f7f, 0x0f80, 0x0f81,
+			0x0f82, 0x0f83, 0x0f87, 0x0f89,
+			0x0f8a, 0x0f8b, 0x0f8e, 0x0f8f,
+			0x0f90, 0x0f91 };
+		
+var the_x := { 55, 34, 76, 29,
+		  29, 54, 70, 29,
+		  48, 87, 69, 88,
+		  88, 83, 49, 68,
+		  59, 29 };
+		 
+var the_y := { 51, 58, 34, 34,
+		  98, 34, 94, 58,
+		  34, 51, 74, 70,
+		  85, 34, 75, 56,
+		  73, 76 };
+
+program infinitenormals( bag )
+
+	while( 1 && bag )
+		var i;
+		for( i := 1; i <= len(pagan_regs); i := i + 1 )
+			set_critical(1);
+		
+			var found_it := FindItemInContainer( bag, pagan_regs[i] );
+			if( !found_it )
+				found_it := CreateItemInContainer( bag, pagan_regs[i], REAGENT_AMOUNT );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			elseif( found_it.amount < REAGENT_AMOUNT )
+				var to_create := REAGENT_AMOUNT - found_it.amount;
+				found_it := CreateItemInContainer( bag, pagan_regs[i], to_create );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			endif
+		
+			set_critical(0);
+		endfor
+	
+		sleep( DELAY_BETWEEN_REFILL );
+	endwhile
+
+endprogram

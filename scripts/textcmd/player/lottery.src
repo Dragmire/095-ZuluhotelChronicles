@@ -1,0 +1,25 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+
+program lottery( who )
+
+	var last_win		:= GetGlobalProperty( "LastWinningNumber" );
+	var last_lottery	:= Cint( GetGlobalProperty( "CurrentLotery" ) ) - 1;
+	
+	if( !last_win )
+		SendSysMessage( who , "No drawing have taken place yet" );
+	else
+		var number := last_win[1];
+		var prize  := Cint(last_win[2]) * 250;
+		
+		SendSysMessage( who , "The winning number for lottery " + last_lottery + " was " + number + ", and the prize is " + prize + "gps." );
+	endif
+
+endprogram

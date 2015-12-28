@@ -1,0 +1,62 @@
+use os;
+use uo;
+
+include "include/client";
+include "include/spelldata";
+include "include/random";
+program raxweapon(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+var spell :=GetObjProperty(weapon, "effect"), range, dmg;
+
+if(spell="<blank>") 
+	SetObjProperty (weapon, "effect", cstr(Random(7))); 
+endif
+
+if ((Random(100) + 1)>20) 
+	return; 
+endif
+
+printtextaboveprivate (attacker,"You feel the power of " + weapon.desc + " unleash!",attacker);
+
+case (cint(spell))
+	"0":
+		PlayMovingEffect( attacker, defender, FX_MAGIC_ARROW, 5, 1 );
+		PlaySoundEffect( attacker, SFX_SPELL_MAGIC_ARROW );
+		range := 20;
+		dmg := (Random(range));
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"1":
+		PlaySoundEffect(defender, SFX_SPELL_HARM);
+		PlayObjectCenteredEffect( defender, FX_GLOW_SPIKE, 0x0a,0x1e);
+		range := 20;
+		dmg := (Random(range) + 10);
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"2":
+		PlayMovingEffect( attacker, defender, FX_FIREBALL, 5, 1 );
+		PlaySoundEffect( attacker, SFX_SPELL_FIREBALL );
+		range := 20;
+		dmg := (Random(range) + 20);
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"3":
+		PlaySoundEffect(defender, SFX_SPELL_LIGHTNING);
+		PlayLightningBoltEffect( defender);
+		range := 20;
+		dmg := (Random(range) + 30);
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"4":
+		PlayMovingEffect( attacker, defender, FX_ENERGY_BOLT, 0xa, 0x1e );
+		PlaySoundEffect( attacker, SFX_SPELL_ENERGY_BOLT );
+		range := 20;
+		dmg := (Random(range) + 40);
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"5":
+		PlayObjectCenteredEffect(defender, 0x3709, 0x0a, 0x1e );
+		PlaySoundEffect( attacker, SFX_SPELL_FLAME_STRIKE );
+		range := 20;
+		dmg := (Random(range) + 50);
+		ApplyRawDamage( defender, rawdamage + dmg );
+	"6":
+		ApplyRawDamage (defender, basedamage);
+endcase
+
+endprogram

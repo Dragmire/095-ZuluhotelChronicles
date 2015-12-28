@@ -1,0 +1,39 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program reactivearmor( caster )
+
+	var circle := 1;
+
+	if (!Can_Cast(caster,circle))
+		return;
+	endif
+
+   	var cast_on := Target( caster );
+
+    	if (!cast_on)
+      		SendSysMessage( caster, "Canceled.");
+		return;
+    	endif
+
+	PlaySoundEffect(cast_on, SFX_SPELL_REACTIVE_ARMOR);
+	PlayObjectCenteredEffect( cast_on, FX_SPELL_REACTIVE_ARMOR, SPEED_SPELL_REACTIVE_ARMOR, LOOP_SPELL_REACTIVE_ARMOR );
+	var magery 	:= GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var power 	:= ModifyWithMagicEfficiency( caster, CInt( magery / 15 ) );
+	var duration  := ModifyWithMagicEfficiency( caster, CInt( magery / 5 ) );
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		power := CInt( power * CLASSE_BONUS );
+		duration := CInt( duration * CLASSE_BONUS );
+	endif
+
+	/*SetObjProperty( cast_on, "ReactiveArmor", power );
+	Detach();
+	sleep( duration );
+	EraseObjProperty( cast_on, "ReactiveArmor" );*/
+
+endprogram

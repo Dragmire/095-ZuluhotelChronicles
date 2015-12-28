@@ -1,0 +1,19 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Program Test( Who )
+
+    Var Res := CreateMultiAtLocation( Who.x, Who.y, Who.z, 0x607A, CRMULTI_IGNORE_ALL );
+    If( Res == error )
+    SendSysMessage( Who, "Error " + res.errortext );
+    Endif
+
+Endprogram

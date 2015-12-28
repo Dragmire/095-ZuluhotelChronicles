@@ -1,0 +1,59 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+Include "include/findcity";
+Include "include/attributes";
+
+Program textcmd_mount( Who )
+
+    Var City_Coords := {
+    CITYCORDID_ALDEMORR,
+    CITYCORDID_KORDULA,
+    CITYCORDID_LEVENAUDE,
+    CITYCORDID_JADE,
+    CITYCORDID_YORKSHIRE,
+    CITYCORDID_MANDRAKE,
+    CITYCORDID_FARGO,
+    CITYCORDID_ISILMAND,
+    CITYCORDID_GANDLATHAR,
+    CITYCORDID_SPAR_LOUNGE,
+    CITYCORDID_CRAF_LOUNGE
+    };
+
+    Foreach Coord in City_Coords
+      Foreach Thing in ListObjectsInBox( Coord[1] + 25, Coord[2] + 25, -100, Coord[3] + 25, Coord[4] + 25, 100 );
+      If( Thing.IsA( POLCLASS_NPC ) && Legal_NPC( Thing ) )
+      RevokePrivilege( Thing, "invul" );
+      SetObjProperty( Thing, "guardkill", 1 );
+      ApplyRawDamage( Thing, GetHp( Thing ) + 3 );
+      Endif
+      SleepMS( 5 );
+      Endforeach
+    Endforeach
+    
+Endprogram
+
+Function Legal_NPC( NPC )
+
+     Var xScript := NPC.script;
+
+     Case( xScript )
+     "townguard":     Return 1;
+     "merchant":      Return 1;
+     "banker":        Return 1;
+     "animaltrainer": Return 1;
+     "barber":        Return 1;
+     Default:         Return 0;
+     Endcase
+
+Endfunction

@@ -1,0 +1,99 @@
+use uo;
+use os;
+
+var numlockdowns;
+var numsecure;
+
+program textcmd_sign( who )
+
+SendSysMessage( who, "Fix lockdowns & secure containers." );
+SendSysMessage( who, "Select house sign." );
+
+var sign := Target( who, TGTOPT_NOCHECK_LOS );
+if( !sign ) return 0; endif
+
+var house_serial := GetObjProperty( sign, "house_serial" );
+if( !house_serial ) return 0; endif
+
+var house := SystemFindObjectBySerial( CInt(house_serial) );
+if( !house ) return 0; endif
+
+DefaultContainers( house.objtype );
+
+SendSysMessage( who, "Defaults lockdowns: "+numlockdowns+" secure: "+numsecure);
+
+var lockdowns := CInt( SendTextEntryGump(who, "How many lockdowns? [0-"+numlockdowns+"]", TE_CANCEL_ENABLE, TE_STYLE_NORMAL, 4));
+
+if (lockdowns!="" && lockdowns>0)
+	if (lockdowns>numlockdowns) lockdowns:=numlockdowns; endif
+	SetObjProperty( house, "numlockdowns", CInt(lockdowns) );
+	SendSysMessage( who, "Lockdowns set to " + lockdowns+".");
+else
+	SendSysMessage( who, "Lockdowns not set.");
+endif
+
+var secure := CInt( SendTextEntryGump(who, "How many secure? [0-"+numsecure+"]", TE_CANCEL_ENABLE, TE_STYLE_NORMAL, 4));
+
+if (secure!="" && secure>0)
+	if (secure>numsecure) secure:=numsecure; endif
+	SetObjProperty( house, "numsecure", CInt(secure) );
+	SendSysMessage( who, "Secure set to " + secure+".");
+else
+	SendSysMessage( who, "Secure not set.");
+endif
+
+endprogram
+
+
+function DefaultContainers( housetype )
+
+	case (housetype)
+		0x6064: numlockdowns := 25;
+		        numsecure := 1;
+		0x6066: numlockdowns := 25;
+		        numsecure := 1;
+		0x6068: numlockdowns := 25;
+		        numsecure := 1;
+		0x606a: numlockdowns := 25;
+		        numsecure := 1;
+		0x606c: numlockdowns := 25;
+		        numsecure := 1;
+		0x606e: numlockdowns := 25;
+		        numsecure := 1;
+		0x6074: numlockdowns := 86;
+		        numsecure := 3;
+		0x6076: numlockdowns := 108;
+		        numsecure := 5;
+		0x6078: numlockdowns := 108;
+		        numsecure := 5;
+		0x607a: numlockdowns := 244;
+		        numsecure := 12;
+		0x607c: numlockdowns := 375;
+		        numsecure := 19;
+		0x607e: numlockdowns := 577;
+		        numsecure := 29;
+		0x608c: numlockdowns := 86;
+		        numsecure := 4;
+		0x608d: numlockdowns := 86;
+		        numsecure := 4;
+		0x60a0: numlockdowns := 42;
+		        numsecure := 3;
+		0x60a2: numlockdowns := 42;
+		        numsecure := 3;
+		0x6098: numlockdowns := 58;
+		        numsecure := 4;
+		0x609c: numlockdowns := 85;
+		        numsecure := 6;
+		0x609a: numlockdowns := 110;
+		        numsecure := 8;
+		0x609e: numlockdowns := 110;
+		        numsecure := 8;
+		0x6096: numlockdowns := 137;
+		        numsecure := 10;
+		0x6388: numlockdowns := 137;
+		        numsecure := 10;
+		0x6bb8: numlockdowns := 15;
+		        numsecure := 1;
+	endcase
+
+endfunction

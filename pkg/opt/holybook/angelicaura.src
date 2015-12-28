@@ -1,0 +1,92 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/classes";
+include "include/client";
+include "include/random";
+include "include/damages";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_TOUCH_OF_GOD;
+const SPELL_EFFECT_ID		:= FX_SPELL_TOUCH_OF_GOD;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_TOUCH_OF_GOD;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_TOUCH_OF_GOD;
+
+program cast_natures_touch( parms )
+
+	var circle := GetCircle( SPELLID_TOUCH_OF_GOD );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+ 	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_TOUCH_OF_GOD ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+	
+	var magery := GetAttribute( caster, ATTRIBUTEID_MAGERY );
+	var specbonus := GetObjProperty(caster, "IsMage");
+	if (!specbonus)
+		specbonus := 0;
+	endif
+	var affected := ListMobilesNearLocation( caster.x , caster.y , caster.z , cint( (magery / 40)+specbonus ) );
+	var healnpcs := 0;
+	if (caster.npctemplate)
+		healnpcs := 1;
+	endif
+	if (healnpcs == 0)
+		foreach cast_near in affected
+			if( !cast_near.npctemplate )
+				PlayObjectCenteredEffect(cast_near, 
+				SPELL_EFFECT_ID,
+				SPELL_EFFECT_SPEED,
+				SPELL_EFFECT_LOOP);
+				PlaySoundEffect( cast_near , SFX_SPELL_TOUCH_OF_GOD );
+				var healed := ModifyWithMagicEfficiency( caster , RandomDiceStr( "6d4+15" ) );
+				var bonus := GetObjProperty( cast_near , "HealingIncrease" );
+				if( bonus )
+					healed := healed + Cint( healed * bonus * 0.1 );
+				endif
+				if( healed < 0 )
+					healed := 0;
+				endif
+				HealTheDamage( cast_near , healed );
+			endif
+		endforeach
+		EraseObjProperty( caster , "#Casting" );
+	else
+		foreach cast_near in affected
+			if( cast_near.npctemplate )
+				PlayObjectCenteredEffect(cast_near, 
+				SPELL_EFFECT_ID,
+				SPELL_EFFECT_SPEED,
+				SPELL_EFFECT_LOOP);
+				PlaySoundEffect( cast_near , SFX_SPELL_TOUCH_OF_GOD );
+				var healed := ModifyWithMagicEfficiency( caster , RandomDiceStr( "6d4+15" ) );
+				var bonus := GetObjProperty( cast_near , "HealingIncrease" );
+				if( bonus )
+					healed := healed + Cint( healed * bonus * 0.1 );
+				endif
+				if( healed < 0 )
+					healed := 0;
+				endif
+				HealTheDamage( cast_near , healed );
+			endif
+		endforeach
+		EraseObjProperty( caster , "#Casting" );
+	endif
+	EraseObjProperty( caster , "#Casting" );
+endprogram

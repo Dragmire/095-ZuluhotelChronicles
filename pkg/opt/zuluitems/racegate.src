@@ -1,0 +1,85 @@
+use uo;
+use basic;
+
+// include "include/yesno";
+
+Const EFFECT_BLUE_SPARKLE  := 0x373a;
+
+
+program walkon_racegate(who, me)
+
+var racepicked := who.title_race;
+
+	if ( who.cmdlevel=0)  
+		if (CheckName(who.name))
+			SendSysMessage(who, "You are not allowed to play with a name which can identifies a member of Staff. You have to change it.",3,33);
+
+			foreach mobile in EnumerateOnlineCharacters()
+				if( mobile.cmdlevel )
+					SendSysMessage( mobile,	who.name + ", account: " + who.acctname + ", chooses an unacceptable name.",3,33 );
+				endif
+			endforeach
+
+			return;
+		endif
+	endif		
+	if (racepicked)
+		sendsysmessage(who, "You are already a " + racepicked);
+		return;
+	endif
+	
+	if(who.acctname)
+	 PlayObjectCenteredEffect( who, EFFECT_BLUE_SPARKLE, 10,10);
+	
+	var newcolor := getobjproperty(me, "color");
+	var sound := getobjproperty(me, "sound");
+	var racename :=getobjproperty(me, "racename");
+	
+	who.title_race := racename;
+	
+	/*
+	if ( YesNo(who, "Add race in name?") )
+	who.name := who.name + " the " + racename;
+	endif
+	*/
+	
+	if (sound)
+	        playsoundeffect(who, sound);
+	endif
+	
+	if (newcolor)
+	        who.color := newcolor;
+	        who.truecolor := newcolor;
+	endif
+	SendSysMessage(who, "You are now the race of " + racename + ".");
+	endif
+	
+	eraseobjproperty(who,"newbie");
+	movecharactertolocation(who, 1475, 1645, 20, MOVECHAR_FORCELOCATION);
+
+endprogram
+
+
+function CheckName(testname)
+
+	var name:=Upper(testname);
+	if (name["GM"])
+		return 1 ;
+	elseif (name["SCRIPTER"])
+		return 1 ;
+	elseif (name["ADMIN"])
+		return 1 ;
+	elseif (name["ADMINISTRATOR"])
+		return 1 ;
+	elseif (name["SEER"])
+		return 1 ;
+	elseif (name["DEVELOPER"])
+		return 1 ;
+	elseif (name["COUNSELOR"])
+		return 1 ;
+	elseif (name["COUNS"])
+		return 1 ;
+	endif
+	return 0 ;
+
+endfunction

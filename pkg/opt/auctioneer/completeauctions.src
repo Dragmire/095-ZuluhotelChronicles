@@ -1,0 +1,67 @@
+include "auctioneer";
+
+program complete_auctions ()
+	if (GetGlobalProperty("#checkingauctions"))
+		var aucpid := GetGlobalProperty("#checkingauctions");
+		if (getprocess(aucpid))
+			return;
+		endif
+	endif
+	SetGlobalProperty("#checkingauctions", getpid());
+
+	foreach category in ListCategoryNames()
+		var category_box := find_or_create_item(storage, category, UOBJ_BANKBOX);
+		foreach item in ListRootItemsInContainer(category_box)
+			CheckItemForClosing(item);
+		endforeach
+	endforeach
+
+	EraseGlobalProperty("#checkingauctions");
+endprogram
+
+
+function CheckItemForClosing(item)
+	var endtime := GetObjProperty(item, "endtime");
+	if (!endtime || endtime < ReadGameClock())
+		syslog("Ending auction for " + item.desc);
+		//see if it sold
+		var temp :=GetObjProperty(item, "current_high_bidder");
+		var buyer :=SystemFindObjectBySerial(CInt(temp));
+		if(!buyer) buyer:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_OFFLINE_MOBILES); endif
+		temp := GetObjProperty(item, "sellerserial");
+		var seller:=SystemFindObjectBySerial(CInt(temp));
+		if(!seller) seller:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_OFFLINE_MOBILES); endif
+
+		if (!buyer)
+			//Nope.  Put it back in the seller's bankbox.
+			var sellerbank := FindBankBox(seller);
+			if (MoveItemToContainer(item, sellerbank))
+				EraseObjProperty(item, "endtime");
+				EraseObjProperty(item, "minbid");
+				EraseObjProperty(item, "sellerserial");
+				EraseObjProperty(item, "selleracctname");
+				EraseObjProperty(item, "sellername");
+			endif
+		else
+			//Put it in the buyer's bankbox
+			var buyerbank := FindBankBox(buyer);
+			if (MoveItemToContainer(item, buyerbank))
+				var price := GetObjProperty(item, "minbid");
+				if (!price)
+					price := 0;
+				endif
+				AddAmountToGoldHeld(buyer, (0-price));
+				AddAmountToGoldHeld(seller, CInt(0.9*price));
+			
+				EraseObjProperty(item, "endtime");
+				EraseObjProperty(item, "minbid");
+				EraseObjProperty(item, "sellerserial");
+				EraseObjProperty(item, "selleracctname");
+				EraseObjProperty(item, "sellername");
+				EraseObjProperty(item, "current_high_bidder");
+				EraseObjProperty(item, "current_high_bid");
+			endif
+		
+		endif
+	endif
+endfunction

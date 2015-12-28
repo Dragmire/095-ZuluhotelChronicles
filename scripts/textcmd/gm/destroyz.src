@@ -1,0 +1,17 @@
+use uo;
+
+
+program destroyz( who, text )
+    var ranget := cint( text );
+    var z := who.z - ranget;
+    var zstop := who.z + ranget;
+    
+    for( z ; z <= zstop ; z := z + 1 )
+    	foreach thingie in ListItemsNearLocation( who.x, who.y, z, 2 );
+        	DestroyItem( thingie );
+    	endforeach
+    endfor
+ 
+    SendSysMessage(who, "Destroyed everything from a depth of " + Cint(who.z - ranget) + " to an height of " + zstop + "!");
+        
+endprogram

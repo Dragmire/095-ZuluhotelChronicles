@@ -1,0 +1,81 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 09, 2004.
+   Version: 1.0
+   Core: 093
+   Syntax: .privs
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Include "include/client";
+
+Program TextCMD_Privs( who )
+
+    SendSysMessage( who, "Select a player.", FONT_NORMAL, 2611 );
+
+    Var User     := Target( who, TGTOPT_NOCHECK_LOS );
+    Var Account  := User.acct;
+    Var Email    := Account.GetProp( "Email" );
+    Var IP       := Account.GetProp( "IP" );
+    
+    
+    If( !User )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2611 );
+    Return;
+    Endif
+    
+    If( !User.strength )
+    SendSysMessage( who, "You must target a player!", FONT_NORMAL, 2611 );
+    Return;
+    Endif
+
+    // Text X = Left- Right+, Y = Up- Down+, Hue, Rank
+
+    Var mllayout := {
+    "Page 0",
+    "ReSizePic 200 200 2620 350 140",
+
+    "Text 220 220 2494 0",    // Account Information
+    
+    "Text 240 240 2597 1",    // Account
+    "Text 280 240 2494 2",    // Account Val
+    
+    "Text 240 260 2597 3",    // Password
+    "Text 280 260 2494 4",    // Password Val
+    "Button 220 265 2104 2103 1 0 2", // Change Password
+    
+    "Text 240 280 2597 5",    // Email
+    "Text 280 280 2494 6",    // Email Val
+    "Button 220 285 2104 2103 1 0 4", // Change Email
+
+    };
+
+    Var mldata := {
+    "Account Information",
+
+    "Account",
+    User.acctname,
+    
+    "Password",
+    "Hidden",
+    
+    "Email",
+    Email,
+    };
+
+    Var Effect := SendDialogGump( who, mllayout, mldata );
+
+    Case( Effect[0] )
+
+    2:
+    Var NewPass := RequestInput( Who, Who.backpack, "Please enter a new password." );
+    If( !NewPass )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2611 );
+    Endif
+    Account.SetPassword( NewPass );
+
+    EndCase
+
+EndProgram

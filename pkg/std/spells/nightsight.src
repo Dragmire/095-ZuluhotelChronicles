@@ -1,0 +1,42 @@
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program cast_nightsight( parms )
+
+	var caster;
+	var cast_on;
+	var circle;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+
+	PlaySoundEffect(caster, SFX_SPELL_NIGHT_SIGHT );
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var duration := magery * 60;
+
+	foreach cast_near in ListMobilesNearLocation( cast_on.x, cast_on.y, cast_on.z, CInt(magery/15) );
+						
+		if( !GetObjProperty( cast_near, "#Blinded" ) )
+			cast_near.setlightlevel( 0, duration );
+			PlayObjectCenteredEffect( cast_near, FX_SPELL_NIGHT_SIGHT, SPEED_SPELL_NIGHT_SIGHT, LOOP_SPELL_NIGHT_SIGHT );
+		endif
+	
+	endforeach
+
+endprogram

@@ -1,0 +1,27 @@
+use uo;
+include "include/dismount";
+include "include/client";
+program textcmd_setallmod( who, newmod )
+
+	var targ := Target( who );
+	if( !targ )
+		return;
+	endif
+	
+	newmod := CInt(newmod);
+	foreach item in ListEquippedItems( targ )
+			var cursed := Cint( GetObjProperty( item , "Cursed" ) );
+			if( !cursed or cursed == 3 )
+				if ( item.layer != LAYER_MOUNT)
+					if ( item.layer != LAYER_HAIR)
+					MoveItemToContainer( item , targ.backpack );
+					endif
+				endif
+			endif
+	endforeach
+	targ.strength_mod	:= newmod;
+	targ.intelligence_mod 	:= newmod;
+	targ.dexterity_mod	:= newmod;
+	
+endprogram
+

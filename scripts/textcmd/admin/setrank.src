@@ -1,0 +1,25 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Jan 29, 2006.
+   Version: 0.9
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program TextCMD_SetRank( Who, Text )
+
+    Var Player := Target( Who );
+    
+    If( Cint( Text ) > Who.cmdlevel )
+    SendSysMessage( Player, "Can't make someone a higher rank than you." );
+    Return 0;
+    Endif
+
+    Player.cmdlevel := Cint( Text );
+
+    SendSysMessage( Who, Player.name + "'s rank has been set." );
+    SendSysMessage( Player, Who.name + " has changed your rank." );
+
+Endprogram

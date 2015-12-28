@@ -1,0 +1,88 @@
+use uo;
+use os;
+use npc;
+use cfgfile;
+
+include "include/areas";
+include "include/shousecheck";
+
+const SEARCH_RANGE := 8;
+
+program call_guards_script( who )
+
+	if( who.murderer )
+		SendSysMessage( who, "Guards won't answer to murderers' call." );
+		return 0;
+	elseif( shousecheck(who) )
+		SendSysMessage( who, "Can't call guards from inside a building." );
+		return 0;
+	elseif( who.criminal )
+		SendSysMessage( who, "Guards won't answer to criminals' call." );
+		return 0;
+	elseif( who.dead )
+		SendSysMessage( who, "You cannot call the guards while you're dead." );
+		return 0;
+	elseif( !IsInGuardedArea(who) )
+		SendSysMessage( who, "This isn't a guarded area." );
+		return 0;
+	elseif( LookAround(who) )
+		SendSysMessage( who, "The city guards have come to your rescue." );	
+	else
+		SendSysMessage( who, "The guards didn't answer your call since there's nothing to protect you from." );
+	endif
+
+endprogram
+			
+	
+function LookAround( who )
+
+	var npc_cfg := ReadConfigFile(":*:npcdesc");
+	var elem;
+	var guard;
+	var found := 0;
+	var wfh;
+	foreach mobile in ListMobilesNearLocation( who.x, who.y, who.z, SEARCH_RANGE )
+		wfh := GetObjProperty(mobile,"WarriorForHire");
+		if( mobile.IsA(POLCLASS_NPC) )
+			elem := FindConfigElem( npc_cfg, mobile.npctemplate );
+			if( !elem.guardignore && !GetObjProperty(mobile,"guardignore") and !wfh and !(shousecheck (mobile)))
+				if( IsInGuardedArea(mobile) )
+					set_critical(1);
+					guard := CreateNpcFromTemplate( "guard", mobile.x, mobile.y, mobile.z );
+					if( guard )
+						SetObjProperty( guard, "target", mobile.serial );
+					endif
+					set_critical(0);
+					found := 1;
+				endif
+			endif
+		elseif( !mobile.cmdlevel )
+			if( mobile.criminal || mobile.murderer )
+				if( IsInGuardedArea(mobile) )
+					set_critical(1);
+					guard := CreateNpcFromTemplate( "guard", mobile.x, mobile.y, mobile.z );
+					if( guard )
+						SetObjProperty( guard, "target", mobile.serial );
+						SetObjProperty(  mobile, "GuardCaller", who.name);
+						setObjProperty(mobile,"Killer","Guards"); //added
+						var plyr;
+						foreach character in EnumerateOnlineCharacters()
+							if (character.name == who.name)
+							plyr := character;
+							endif
+						endforeach
+						var acc := plyr.acct;
+						var accname := acc.name;	
+						SetObjProperty ( mobile, "KillerAcct", accname );	
+					endif
+					set_critical(0);
+					found := 1;
+				endif
+			endif
+		endif
+	endforeach
+	
+	return found;
+
+endfunction
+

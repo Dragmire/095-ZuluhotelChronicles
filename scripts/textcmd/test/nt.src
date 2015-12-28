@@ -1,0 +1,15 @@
+// .unban <accountname>
+//
+use uo;
+Use polsys;
+
+program textcmd_ban( who )
+
+ var thed := target( who );
+
+	var acc := thed.acct;
+	if(acc.getprop("JaTemCasa"))
+ acc.eraseprop("JaTemCasa");
+		sendsysmessage(who , "done!");
+	endif
+endprogram

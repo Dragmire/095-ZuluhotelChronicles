@@ -1,0 +1,10 @@
+
+Program CMD_Concealme( Who )
+
+    If( who.concealed >= 1 )
+    Who.concealed := 0;
+    else
+    Who.concealed := Who.cmdlevel;
+    Endif
+    
+Endprogram

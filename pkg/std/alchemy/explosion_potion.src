@@ -1,0 +1,52 @@
+use uo;
+use os;
+use cfgfile;
+include "include/checkcity";
+include "include/areas";
+const MOVING_EFFECT_PURPLE_POTION  := 0x0f0d;
+
+program use_explosion( character, potion )
+
+
+	if( !Accessible( character, potion) )
+		SendSysMessage( character, "You can't get to that!" );
+		return;
+	endif
+
+	SendSysMessage( character, "Select a target" );
+	var where := TargetCoordinates( character );
+
+
+	if( IsInAntiLootingArea(character) )
+		SendSysMessage( character, "You can't use that in town!" );
+		return;
+	endif
+
+	if( !where )
+		return;
+	endif
+
+	if( !CheckLosAt( character, where.x, where.y, where.z ) )
+		SendSysMessage( character, "You can't see that!" );
+		return;
+	endif
+ 
+if( IsInArea( character, AREAID_MINOC ) ) //safe zone
+SendSysMessage( character, "You can't use that in this area!" );
+return 0;
+endif
+
+	PlayMovingEffectXYZ( character.x, character.y, character.z+15,
+						 where.x, where.y, where.z,
+						 MOVING_EFFECT_PURPLE_POTION, 8, 0, 0 );
+
+	sleep(1);
+
+	var parms := {};
+	parms[1] := character;
+	parms[2] := potion;
+	parms[3] := where;
+
+	start_script( ":alchemy:exploder", parms );
+
+endprogram

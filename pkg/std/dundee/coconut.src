@@ -1,0 +1,12 @@
+use uo;
+use os;
+include "include/random";
+program coconut(who)
+
+	if ( Random(2) )
+		PlaySoundEffect(who, 0x24c);
+	else
+		PlaySoundEffect(who, 0x24d);
+	endif
+
+endprogram

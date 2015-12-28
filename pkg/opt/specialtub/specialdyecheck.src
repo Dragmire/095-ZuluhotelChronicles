@@ -1,0 +1,136 @@
+/////////////////////////////////////////////////////////////////////////////
+//  Dye System - version .4
+// Created by Zulu (zulu@cadvision.com) Jan 10, 2000
+// - Updated April 5, 2000
+//
+// to add items, load dyeitems.cfg
+//
+// item <object type>
+// {
+// player <cmd level>
+// }
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use os;
+use uo;
+use cfgfile;
+use util;
+
+include "include/client";
+include "include/skillpoints";
+include "include/utility";
+include "include/eventid";
+
+var dye_cfg :=ReadConfigFile( "dyeitems" );
+var holdvalue;
+
+var numcharges;
+var chosenname;
+var colors := {1182,1152,1,1306,1298,1179,1170,1183}; 
+var names  := {"dripstone" ,"ice rock","true black","mad blue","wonder","pink frost","crystal","doom"};
+
+program dyecheck( who, dyetub )
+
+
+	if(!dyetub.getprop("alreadyspecial"))
+		ReserveItem(dyetub);
+		var numcharges := randomint(3)+1;
+		dyetub.setprop("alreadyspecial",1);
+
+		holdvalue:= Random(8)+1;
+		var chosencolor := colors[holdvalue];
+		chosenname := names[holdvalue];
+		dyetub.color :=chosencolor;
+		dyetub.setprop("charges",numcharges);
+		numcharges := dyetub.getprop("charges");
+		dyetub.setprop("specialname",chosenname);
+		if(numcharges = 1)
+			dyetub.name := "Dye Tub of "+chosenname+" with "+numcharges+" charge.";
+		else
+			dyetub.name := "Dye Tub of "+chosenname+" with "+numcharges+" charges.";
+		endif
+		Releaseitem(dyetub);
+		return;
+	endif
+
+
+
+
+
+
+	var element, allowdye :=10;
+    
+	SendSysMessage(who, "Select something to dye");
+    
+	var item := Target( who, TGTOPT_NOCHECK_LOS );
+
+	ReserveItem(item);
+
+	If (!item)
+		SendSysMessage(who, "Canceled");
+		Releaseitem(dyetub);
+		Releaseitem(item);
+		return;
+	endif
+ 
+	if (NOT Accessible(who, item))
+		SendSysmessage( who, "You cannot reach that!" );
+		Releaseitem(dyetub);
+		Releaseitem(item);
+		return;
+	endif
+   
+	if( GetObjProperty( item, "Undyeable" ) )
+		SendSysMessage(who, item.desc + " cannot be colored");
+		return;
+	endif
+
+	if (!dye_cfg)
+		SendSysmessage (who, "Could not open dyeitems.cfg");
+		syslog( "Unable to open dyeitems.cfg" );
+		Releaseitem(dyetub);
+		Releaseitem(item);
+		return;
+	endif
+    
+	element :=FindConfigElem (dye_cfg, item.objtype);
+
+	if (element)
+		allowdye :=Cint(GetConfigInt(element, "player"));
+	else
+		allowdye := 4;
+	endif
+	numcharges := dyetub.getprop("charges");
+	if((!numcharges) && (numcharges <> 0))
+		SendSysMessage(who,"charges not defined. making 1");
+		dyetub.setprop("charges",1);
+		numcharges := dyetub.getprop("charges");
+	endif
+
+	
+	if(numcharges > 0)
+		if (who.cmdlevel>=allowdye)
+			item.color :=dyetub.color;
+			numcharges :=numcharges - 1;
+
+			dyetub.setprop("charges",numcharges);
+			if(numcharges = 0)
+				DestroyItem(dyetub);
+				SendSysMessage(who, "Now that you have used the last charge on your special dyetub it vanishes before your eyes");             
+			endif
+			chosenname := dyetub.getprop("specialname");
+			if(numcharges = 1)
+				dyetub.name := "Dye Tub of "+chosenname+" with "+numcharges+" charge.";
+			else
+				dyetub.name := "Dye Tub of "+chosenname+" with "+numcharges+" charges.";
+			endif
+		else  
+			SendSysMessage(who, item.desc + " cannot be colored");
+		endif
+	endif
+
+	Releaseitem(dyetub);
+	Releaseitem(item);
+
+endprogram

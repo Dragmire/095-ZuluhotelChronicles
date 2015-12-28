@@ -1,0 +1,73 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+include "include/dotempmods";
+include "include/classes";
+include "include/areas";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_POISON;
+const SPELL_EFFECT_ID		:= FX_SPELL_POISON;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_POISON;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_POISON;
+
+program cast_poison( parms )
+
+	var circle := GetCircle( SPELLID_POISON );
+	var caster;
+	var cast_on;
+	var fromhit;
+	var max := ModifyWithMagicEfficiency( caster, 4 );
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack( cast_on, caster, SPELLID_POISON );
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	var p_level := ModifyWithMagicEfficiency( caster, CInt(GetEffectiveSkill(caster, SKILLID_MAGERY )/40)+1 );
+	if( immunity == CURSED )
+		p_level := p_level * 2;
+	endif
+
+	p_level := Resisted( caster, cast_on, circle, p_level);
+
+	if( p_level > max )
+		p_level := max;
+	endif
+
+	if( p_level )
+		SetPoison( cast_on, p_level, caster.name + " has poisoned you!" );
+	endif
+
+endprogram

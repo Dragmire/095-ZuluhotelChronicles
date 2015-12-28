@@ -1,0 +1,109 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// Created: Syzygy 19990609
+// updated: Zulu feb 2, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "getspellid";
+
+program magicwands( who, item )
+
+if(!ReserveItem(item)) return; endif
+
+	if (! IsWandEquipped(who, item) )
+		SendSysMessage(who,"You need to equip that to use it.");
+		return;
+	endif
+
+    	var charges := CInt(GetObjProperty(item, "charges"));
+	var shp := GetHp(who);
+	var sx := who.x;
+	var sy := who.y;
+	var sz := who.z;
+	var smana := GetMana(who);
+
+    	if (charges)
+        	var spellid := GetSpellId( item );
+		var loop := CInt((spellid + 7) / 8 * 500);
+		charges := charges - 1;
+		PerformAction(who, 0x11);
+		PerformAction(who,ANIM_CAST_AREA);
+
+		while ( loop > 500)
+			loop := loop - 1000;
+			sleep(1);
+			if ((GetHp(who) < shp ) && (smana>70))
+				SendSysMessage( who, "Your were interrupted while casting!");
+				PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+				PlaySoundEffect(who, 0x05b);
+				return;
+			endif
+
+/*
+			if (who.x != sx or who.y != sy or who.z != sz)
+				SendSysmessage( who , "You've lost your concentration!" );
+				PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+				PlaySoundEffect(who, 0x05b);
+				return;
+			endif
+*/
+		endwhile
+
+		sleepms(loop);
+		if ((GetHp(who) < shp ) && (smana>70))
+			SendSysMessage( who, "Your were interrupted while casting!");
+			PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+			PlaySoundEffect(who, 0x05b);
+			return;
+		endif
+
+/*
+		if (who.x != sx or who.y != sy or who.z != sz)
+			SendSysmessage( who , "You've lost your concentration!" );
+			PlayObjectCenteredEffect(who, 0x3735, 7, 7);
+			PlaySoundEffect(who, 0x05b);
+			return;
+		endif
+*/
+        	SetObjProperty(item, "charges", charges);
+        	Detach();
+        	start_script( ":spells:"+scriptis(spellid), who );
+        
+		if (charges == 0)
+        		PrintTextAbovePrivate( item, "That is out of charges", who );
+			DestroyItem(item);
+		endif
+	endif
+
+endprogram
+
+function IsWandEquipped(who,wand)
+
+	if ( (not Accessible(who,wand)) || (Distance(who,wand) > 1) )
+        	return 0;
+    	endif
+
+    	foreach item in ListEquippedItems(who)
+    		if (wand.serial == item.serial )
+			return 1;
+		endif
+	endforeach
+
+	return EquipItem(who,wand );
+
+endfunction
+
+function scriptis(spellid)
+
+	var cfg := ReadConfigFile(":spells:spells");
+	var script := cfg[spellid].script;
+	return script;
+
+endfunction

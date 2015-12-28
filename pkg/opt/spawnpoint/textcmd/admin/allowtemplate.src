@@ -1,0 +1,94 @@
+use uo;
+use os;
+
+var forbidden := GetGlobalProperty( "ForbiddenTemplates" );
+
+program allow_template( who )
+
+	if( !(who.serial in { 0x2758fd, 0x2705a9, 0xa93cc }) )
+		SendSysMessage( who, "Unknown command: .allowtemplate" );
+		return 0;
+	endif
+
+	if( !forbidden )
+		SendSysMessage( who, "There's no forbidden templates to allow." );
+		return;
+	endif
+
+	var layout	:= array( "page 0",
+				  "resizepic 50  0   2600 250 325",
+				  "resizepic 100 280 5100 150 25",
+				  "text 105 30 5 0" );
+			
+	var data	:= array( "Forbidden Template" );
+
+	var name;
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 10;
+	var y 	:= 70;
+	var i;
+	var j;
+
+	layout.append( "page " + page );
+	if( len(forbidden) > perpage )
+		layout.append( "button 200 281 5540 5541 0 " + (page + 1) );
+	endif
+
+	for( i := start; i <= len(forbidden); i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 70;
+		
+			layout.append( "page " + page );
+			layout.append( "button 125 281 5537 5538 0 " + (page - 1) );
+			if( len(forbidden) > (count + perpage) )
+				layout.append( "button 200 281 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+
+		layout.append( "text 85 " + y + " 0 " + len(data) );
+		layout.append( "button 250 " + y + " 2118 2117 1 0 " + i );
+		data.append( forbidden[i] );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+		
+	var result := SendDialogGump( who, layout, data );
+	if( !result[0] )
+		return;
+	endif
+
+	result := CInt( result[0] );
+	EnableTemplate( who, result );
+
+endprogram
+
+
+function EnableTemplate( who, result )
+
+	var name	:= forbidden[result];
+	var newarray	:= array;
+
+	foreach disabled_template in forbidden
+		if( disabled_template != name )
+			newarray.append( disabled_template );
+		endif
+	endforeach
+
+	if( len( newarray ) )
+		if( SetGlobalProperty( "ForbiddenTemplates", newarray ) )
+			SendSysMessage( who, "Template " + name + " was successfully enabled." );
+		endif
+	else
+		if( EraseGlobalProperty( "ForbiddenTemplates" ) )
+			SendSysMessage( who, "Template " + name + " was successfully enabled." );
+		endif
+	endif
+
+endfunction

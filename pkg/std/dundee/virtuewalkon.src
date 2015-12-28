@@ -1,0 +1,34 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/bitwise";
+include "include/client";
+include "include/random";
+const EFFECT_SPARKLE := 0x373a;
+const SOUND_EFFECT_RES := 0x215;
+
+program virtuewalkon( parms );
+
+	var who := parms[1];
+	var item := parms[2];
+
+	if (who.isA(POLCLASS_NPC)) return; endif
+
+	var shrine:= GetObjProperty(item,"shrine");
+	if (!shrine ) return; endif
+
+	var shrineflag := GetObjProperty(who,"shrines");
+	if (!shrineflag) shrineflag := 0; endif
+	if (!FlagCheck(shrineflag, shrine))
+		PrintTextAbovePrivate(who,"You ponder...", who);
+	else
+		PrintTextAbovePrivate(who,"You know...", who);
+	endif
+	sleep(2);
+	var codex := ReadConfigFile(":dundee:codex");
+	var elem := FindConfigElem(codex, shrine);
+	var thoughts := GetConfigStringArray(elem,"text");
+	PrintTextAbovePrivate(who,thoughts[ Random(len(thoughts))+1 ],who);
+
+endprogram

@@ -1,0 +1,9 @@
+use uo;
+
+program textcmd_setlight( who, text )
+
+  Var Lvl := Cint( Text );
+  
+  Who.SetLightLevel( 0 , Lvl );
+  
+endprogram

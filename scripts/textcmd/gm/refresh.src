@@ -1,0 +1,36 @@
+//////////////////////////////////////////////////////////////////////////
+//									//
+//	".refresh" - Restore Hits, Mana and Stamina of the target.	//
+//									//
+//////////////////////////////////////////////////////////////////////////
+
+Use cfgfile;
+use uo;
+include "include/attributes";
+program textcmd_refresh(who)
+	
+	var mobile := Target(who);
+    SetHp(mobile, GetMaxHp(mobile));
+    SetMana(mobile, GetMaxMana(mobile));
+    SetStamina(mobile, GetMaxStamina(mobile));
+     
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_healed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Player Name",  mobile.name });
+    elem.append({ "Player Serial",  hex(mobile.serial) });
+
+    AppendConfigFileElem("logging_healed", "Healed", "", elem);
+    UnloadConfigFile("logging_healed");
+    EndIf
+
+endprogram

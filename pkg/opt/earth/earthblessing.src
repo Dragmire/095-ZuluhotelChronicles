@@ -1,0 +1,58 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_EARTH_BLESSING;
+const SPELL_EFFECT_ID		:= FX_SPELL_EARTH_BLESSING;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_EARTH_BLESSING;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_EARTH_BLESSING;
+
+program cast_earth_blessing( parms )
+
+	var circle := GetCircle( SPELLID_EARTH_BLESSING );
+	var caster;
+	var fromhit;
+
+ 	if (parms[1] == "#MOB")
+		caster := parms[2];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_EARTH_BLESSING ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	PlayObjectCenteredEffect(caster,
+                                 SPELL_EFFECT_ID,
+                                 SPELL_EFFECT_SPEED,
+                                 SPELL_EFFECT_LOOP);
+
+	PlaySoundEffect( caster, SFX_SPELL_EARTH_BLESSING );
+
+	var mod_amount := CInt( GetModAmount( caster ) * 1.5 );
+	var duration := CInt( GetModDuration( caster ) * 1.5 );
+
+	if( CanMod( caster, "all" ) )
+		DoTempMod( caster, "all", mod_amount, duration );
+	endif
+
+	if( CanMod( caster, "ar" ) )
+		DoTempMod( caster, "ar", CInt(mod_amount * 0.75)+1, duration );
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram
+
+                                               

@@ -1,0 +1,156 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/eventid";
+include "include/dotempmods";
+include "include/random";
+
+program spiritspeak( me )
+	Detach();
+	//first see if they are "already under the influence"
+	if (!CanMod(me,"spiritspeak",1))
+		SendSysMessage( me, "You are already in contact with the netherworld.");
+		return;
+	endif
+
+	if (!CheckSkill( me, SKILLID_SPIRITSPEAK, -3, 250 ))
+		SendSysMessage( me, "You fail to communicate with the netherworld." );
+		return;
+	endif
+	SendSysMessage( me, CheckSkill( me, SKILLID_SPIRITSPEAK, -3, 250 ));
+	SendSysMessage( me, "You contact the netherworld." );
+	PlaySoundEffect( me, SFX_SKILL_SPIRITSPEAK );
+
+	DoPersistedMod(me, "spiritspeak", 1, me.enabled( "hearghosts" ), 120);
+
+	//now see if they are near a necro gravestone:
+	var stonelevel := FindNecroGravestone(me);
+	if (stonelevel)
+	var caster := me;
+	var level;
+	var myx := caster.x;
+	var myy := caster.y;
+	PrintTextAbovePrivate( caster , "*What's this?*" , caster );
+        PlaySoundEffect( caster , 0x0058 );
+	PerformAction( caster , ACTION_BOW );
+	Sleep(2);
+	PlaySoundEffect( caster , 0x0108 );
+	
+	var npctemplate; 
+	var numnasties := GetObjProperty(caster, "IsMage");
+	if (!numnasties)
+		numnasties := 1;
+	endif
+	numnasties := Random(numnasties) + 1;
+	if (numnasties > 4)
+		numnasties := 4;
+	endif
+	if (numnasties < 1)
+		numnasties := 1;
+	endif
+	var num := 1;	
+	var mobile;
+	var x;
+	var y;
+	var nasty := {};
+	var term;
+	while (num <= numnasties and !term)
+	  if (caster.x > myx -5 and caster.x < myx + 5 and caster.y > myy - 5 and caster.y < myy + 5 and !caster.dead)	
+		level := ((GetAttribute( caster, 32))/10)*2;
+		if (level > 26)
+			level := 26;
+		endif
+		level := Random(level) +1;
+		npctemplate := GetUndeadType( level );
+		if (npctemplate != nasty [num-1])
+		x := caster.x + ( Random(10) - 5 );
+		y := caster.y + ( Random(10) - 5 );
+		mobile := CreateNPCfromTemplate( npctemplate , x , y , caster.z ,0 );
+		SetObjProperty( mobile , "tmonster" , 1 );
+		nasty[num] := mobile;
+		PerformAction( caster , ANIM_CAST_DIR );
+		PlaySoundEffect( caster , SFX_SKILL_SPIRITSPEAK );
+		RestartScript(mobile);
+		num := num +1;
+		endif
+	  else
+		SendSysMessage( caster , "You interrupted the summoning process." );	
+		numnasties := num;
+		term := 1;		
+	endif
+	endwhile
+	sleep (21600);
+	num := 1;
+	while (num <= numnasties)
+		if (nasty[num])
+			RevokePrivilege( nasty[num], "invul" );
+			setobjproperty( nasty[num], "guardkill", 1);
+			ApplyRawDamage( nasty[num], Cint(nasty[num].hp+3) );
+		endif
+		num := num +1;
+	endwhile
+	return;
+	endif
+
+endprogram
+
+function FindNecroGravestone(me)
+var lst;
+var level;
+	//create item 0xED6 and set it in a graveyard
+	//set cprop "necro" to 1
+	var tme := ReadGameClock();
+	foreach stone in ListItemsNearLocationOfType(me.x, me.y, me.z, 3, 0xED6 );
+		if( GetObjProperty( stone , "necro" ) )
+			lst := GetObjProperty(stone,"LastSS") + 21600;
+		  if (tme > lst)
+			level := Random((GetAttribute( me, 32)/10))*2;
+			if (level > 26)
+				level := 26;
+			endif
+			if (level < 1 )
+				level := 1;
+			endif
+			SetObjProperty(stone, "LastSS",ReadGameClock());
+			return level;
+		  else
+			SendSysMessage( me, "You hear a rumble, but nothing happens.." );
+		  endif
+		endif
+	endforeach
+
+endfunction
+
+function GetUndeadType( level )
+
+	case( level )
+	 	1: 	 return "skeleton";
+	 	2: 	 return "skeletonarcher";
+	 	3: 	 return "ghost";
+	 	4: 	 return "boneknight";
+	 	5: 	 return "shade";
+	 	6: 	 return "bonemage";
+	 	7: 	 return "spectre";
+	 	8: 	 return "flamingskeleton";
+	 	9: 	 return "liche";
+		10:	 return "bloodliche";
+		11:	 return "lichelord";
+		12: 	 return "skeletalassassin";
+		13:	 return "mummy";
+		14:	 return "vampire1";
+		15:	 return "vampire2";
+		16:	 return "void";
+		17:	 return "occultliche";
+		18: 	 return "darkspawn";
+		19: 	 return "daemonspawn";
+		20: 	 return "skeletalwarrior";
+		21: 	 return "daemon";
+		22: 	 return "dracula";
+		23:      return "undeaddrake";
+		24: 	 return "dracoliche";
+		25:	 return "undeadflayer";
+		26: 	 return "termuligin";
+		default: return "daemonlieutenant";
+	endcase
+endfunction

@@ -1,0 +1,42 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/drinkpotion";
+include "include/dotempmods";
+include "include/client";
+
+program drink_orange( character, potion )
+
+	if( !CheckIfCanDrink(character) )
+		return;
+	endif
+
+	if( IsPoison( potion ) )
+		DoPoison( character, potion );
+
+	else
+		var power := GetPotionStrength( potion );
+		EmptyBottle( character, potion );
+	
+		var plevel := PoisonLevel( character );
+		var bonus  := GetObjProperty( character, "HealingIncrease" );
+		if( bonus )
+			power := power + 1;
+		endif
+	
+		if( !plevel && !character.poisoned )
+			SendSysMessage( character, "You aren't poisoned" );
+		elseif( power < plevel )
+			SendSysMessage( character, "The potion isn't strong enough to cure you." );
+		else
+			PlayObjectCenteredEffect( character, FX_SPELL_CURE, SPEED_SPELL_CURE, LOOP_SPELL_CURE );
+			CurePoison( character, SFX_SPELL_CURE, "Cured!" );
+		endif
+	endif
+
+	Detach();
+	sleep( DELAY_BETWEEN_DRINK );
+	CanDrink( character );
+
+endprogram

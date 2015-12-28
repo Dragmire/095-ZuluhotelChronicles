@@ -1,0 +1,23 @@
+
+use uo;
+use os;
+use cfgfile;
+
+program textcmd_guards( who, text )
+
+	if( who.hidden )
+		SendSysMessage( who, "You can't call the guards while hidden." );
+	elseif( who.dead )
+		SendSysMessage( who, "You can't call the guards while dead." );
+	elseif( who.concealed )
+		SendSysMessage( who, "You can't call the guards while concealed." );
+	else
+		PrintTextAbove( who, "Guards!!!" );
+		if( text )
+			PrintTextAbove( who, text );
+		endif
+	
+		Start_Script( ":areas:callguards", who );
+	endif
+
+endprogram

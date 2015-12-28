@@ -1,0 +1,60 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING := MOVING_SPELL_FLAME_STRIKE;
+const SPELL_EFFECT_ID		 := FX_SPELL_FLAME_STRIKE;
+const SPELL_EFFECT_SPEED	 := SPEED_SPELL_FLAME_STRIKE;
+const SPELL_EFFECT_LOOP		 := LOOP_SPELL_FLAME_STRIKE;
+
+program cast_flamestrike( parms )
+
+	var circle := 7;
+	var element := FIRE;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack(cast_on,caster, SPELLID_FLAME_STRIKE);
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	endif
+PlayObjectCenteredEffect(cast_on, 0x3709, 1, 31 );
+	PlaySoundEffect( caster, SFX_SPELL_FLAME_STRIKE );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+endprogram

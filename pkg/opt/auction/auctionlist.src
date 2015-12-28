@@ -1,0 +1,125 @@
+// auction  version 1.2
+// by Zulu (zulu@zuluhotel.com)   November 12, 2000
+
+use os;
+use uo;
+
+include "include/utility";
+include "include/client";
+include "include/objtype";
+
+var storage:=FindStorageArea("Merchant Storage");
+var inv_sell:=find_or_create_item(storage,"AUCTION",0xe7c);
+
+if(!storage || !inv_sell) exit; endif
+
+program textcmd_online()
+
+SetGlobalProperty("#auctionlock",0);
+SetGlobalProperty("#aucnpc",0);
+
+ while (1)
+    anyitems();
+    sleep(20);
+ endwhile
+
+endprogram
+
+
+function sendmsg(msg,msgcolor)
+
+foreach character in EnumerateOnlineCharacters()
+	if( GetObjProperty( character, "auction" ) == 1 )
+		if( GetObjProperty( character, "barter" ) == 1 )
+			SendSysMessage(character,msg,3,msgcolor);
+		endif
+	endif
+endforeach
+
+endfunction
+
+
+function updateplayers(item)
+
+var bid:=GetObjProperty(item,"bid");
+
+  if (bid==0)
+    sendmsg(item.desc+" did not sell.",34);
+  else
+    sendmsg(item.desc+" sold for "+bid,70);
+  endif
+
+endfunction
+
+
+function anyitems()
+  var backpack:=EnumerateItemsInContainer(inv_sell),timeleft;
+
+  foreach item in backpack
+    timeleft:=(GetObjProperty(item,"time")-ReadGameClock());
+   
+    if ((!timeleft) || (timeleft==""))
+    elseif (timeleft<=0)
+    updateplayers(item);
+    item_done(item);
+    endif
+  endforeach
+
+endfunction
+
+function remove_properties(item)
+   EraseObjProperty(item,"seller");
+   //EraseObjProperty(item,"sellname");
+   EraseObjProperty(item,"buyer");
+   EraseObjProperty(item,"msg");
+   EraseObjProperty(item,"bid");
+   EraseObjProperty(item,"starting");
+   EraseObjProperty(item,"time");
+endfunction
+
+
+function item_done(item)
+
+var bid:=GetObjProperty(item,"bid"),returnitem,temp,bankbox;
+
+temp:=GetObjProperty(item,"seller");
+var seller:=SystemFindObjectBySerial(CInt(temp));
+if(!seller) seller:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_OFFLINE_MOBILES); endif
+
+temp:=GetObjProperty(item,"buyer");
+var good, buyer:=SystemFindObjectBySerial(CInt(temp));
+if(!buyer) buyer:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_OFFLINE_MOBILES); endif
+
+   remove_properties(item);
+
+   if(bid==0) // no bids return item to bank
+        bankbox:=FindBankBox(seller);
+	good:=MoveItemToContainer(item,bankbox);
+	if (!good) MoveItemToContainer( item, buyer.backpack); endif
+	return;
+   endif
+
+   // move item to buyer's bank
+   bankbox:=FindBankBox(buyer);
+   EraseObjProperty(item, "sellaccount");
+   EraseObjProperty(item, "sellname");
+   good:=MoveItemToContainer(item,bankbox);
+   if (!good) MoveItemToContainer( item, buyer.backpack); endif
+
+   pay_seller(bid,seller);
+
+endfunction
+
+
+function pay_seller(bid,seller)
+
+if (bid>60000)
+while (bid>60000)
+CreateItemInBackpack(seller,UOBJ_GOLD_COIN,60000);
+bid:=bid-60000;
+endwhile
+endif
+
+if (bid>0) CreateItemInBackpack(seller,UOBJ_GOLD_COIN,bid); endif
+
+endfunction

@@ -1,0 +1,30 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+Include "include/attributes";
+
+Program textcmd_mount( Who )
+
+    Var Item := Target( Who );
+
+    If( Item.IsA( POLCLASS_MOBILE ) )
+    SendSysMessage( Who, "Mobile." );
+    Endif
+    If( Item.IsA( POLCLASS_NPC ) )
+    SendSysMessage( Who, "Non-playable character." );
+    Endif
+    If( Item.IsA( POLCLASS_ITEM ) )
+    SendSysMessage( Who, "Item." );
+    Endif
+
+Endprogram

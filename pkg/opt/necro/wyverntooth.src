@@ -1,0 +1,21 @@
+use uo;
+use os;
+
+
+program use_wyverntooth( who, tooth )
+
+	SendSysMessage( who, "Select a victim." );
+	var targ := Target( who, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+	if( !targ )
+		return;
+	endif
+
+	var parms	:= {};
+	parms[1]	:= "#MOB";
+	parms[2]	:= who;
+	parms[3]	:= targ;
+
+	DestroyItem( tooth );
+	start_script( ":necro:wyvernstrike", parms );
+
+endprogram

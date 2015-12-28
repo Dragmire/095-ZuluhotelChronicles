@@ -1,0 +1,499 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/eventid";
+include "include/npcbackpacks";
+include "include/npccast";
+include "include/randname";
+include "include/animal";
+include "include/random";
+
+set_priority(5);
+
+const  HALT_THRESHOLD := 15;
+
+var me := Self();
+var npccfgfile := ReadConfigFile( "npcdesc" );
+var dmgsound   := npccfgfile[me.npctemplate].dmgsound;
+var hit        := npccfgfile[me.npctemplate].attackhitsound;
+var idlesnd1   := npccfgfile[me.npctemplate].idlesound1;
+var idlesnd2   := npccfgfile[me.npctemplate].idlesound2;
+var masterserial := GetObjProperty(me, "master");
+
+var mypack := FindMyPack(me.serial);
+var caster := 0;
+var spells;
+var summons := 0;
+var chaseloop := 0;
+var guarding :=0;
+var following := 0;
+var nextwatch := ReadGameClock();
+var saywords := 0;
+var master;
+var waittime := 120;
+var escortee;
+
+program employed()
+  Expand_Stats(me);
+  var type := GetObjProperty(me, "MerchantType");
+  Adjustment(me, type);
+  detach();
+  var online;
+  online := EnumerateOnlineCharacters();
+  foreach char in online
+    if(char.serial == masterserial)
+      master := char;
+      break;
+    endif
+  endforeach
+  if(!master)
+    master := SystemFindObjectBySerial(Cint(masterserial), SYSFIND_SEARCH_OFFLINE_MOBILES);
+  endif
+  me.setmaster(master);
+  if(!me.backpack)
+    var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+    EquipItem(me, newbackpack);
+  endif
+  var npccfg := readconfigfile("npcdesc");
+  if(GetObjProperty(me, "MerchantType") == "Mage")
+    caster := 1;
+    spells := GetConfigStringArray(npccfg[me.npctemplate], "spell");
+  endif
+  SetWarMode(0);
+  SetObjProperty(me, "serial", me.serial);
+  MainAILoop();
+endprogram
+
+function Adjustment(who, type)
+  if(type == "Mage")
+    ExpandStats(who, 200, 80, 225);
+    SetBaseSkillBaseValue(who, SKILLID_MAGERY,          BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_EVALINT,         BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_MAGICRESISTANCE, BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_TACTICS,         BaseSkillToRawSkill(700));
+    SetBaseSkillBaseValue(who, SKILLID_WRESTLING,       BaseSkillToRawSkill(700));
+  elseif(type == "Thief")
+    ExpandStats(who, 120, 140, 25);
+    SetBaseSkillBaseValue(who, SKILLID_FENCING,         BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_MAGICRESISTANCE, BaseSkillToRawSkill(60));
+    SetBaseSkillBaseValue(who, SKILLID_TACTICS,         BaseSkillToRawSkill(80));
+    SetBaseSkillBaseValue(who, SKILLID_ANATOMY,         BaseSkillToRawSkill(600));
+  elseif(type == "Paladin")
+    ExpandStats(who, 300, 100, 50);
+    SetBaseSkillBaseValue(who, SKILLID_MAGICRESISTANCE, BaseSkillToRawSkill(800));
+    SetBaseSkillBaseValue(who, SKILLID_TACTICS,         BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_SWORDSMANSHIP,   BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_MACEFIGHTING,    BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_FENCING,         BaseSkillToRawSkill(1000));
+    SetBaseSkillBaseValue(who, SKILLID_WRESTLING,       BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_ANATOMY,         BaseSkillToRawSkill(1000));
+  elseif((type == "Fighter1") or (type == "Fighter2") or (type == "Fighter3") or (type == "Fighter4"))
+    ExpandStats(who, 120, 90, 40);
+    SetBaseSkillBaseValue(who, SKILLID_MAGICRESISTANCE, BaseSkillToRawSkill(600));
+    SetBaseSkillBaseValue(who, SKILLID_TACTICS,         BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_SWORDSMANSHIP,   BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_MACEFIGHTING,    BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_FENCING,         BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_WRESTLING,       BaseSkillToRawSkill(900));
+    SetBaseSkillBaseValue(who, SKILLID_ANATOMY,         BaseSkillToRawSkill(900));
+  endif
+endfunction
+
+Function ExpandStats(me, st, dx, it)
+  If(st)
+    If(st <= 210)
+      me.SetStr(st);
+      me.strength_mod := 0;
+    Else
+      me.SetStr(210);
+      me.strength_mod := st - 210;
+    EndIf
+    me.hp := st;
+  EndIf
+  If(dx)
+    If(dx <= 210)
+      me.SetDex(dx);
+      me.dexterity_mod := 0;
+    Else
+      me.SetDex(210);
+      me.dexterity_mod := dx - 210;
+    EndIf
+    me.stamina := dx;
+  EndIf
+  If(it)
+    If(it<=210)
+      me.SetInt(it);
+      me.intelligence_mod := 0;
+    Else
+      me.SetInt(210);
+      me.intelligence_mod := it - 210;
+    EndIf
+    me.mana := it;
+  EndIf
+EndFunction
+
+function MainAILoop()
+  var ev;
+  var evtext;
+  nextwatch := ReadGameClock();
+  var sleeper := 0;
+  var mhp;
+  EnableMainEvents();
+  escortee := 0;
+  while(1)
+    if(ReadGameClock() > Cint(GetObjProperty(me, "Timer")))
+	  Release();
+    endif
+    mhp := me.hp;
+    ev := os::wait_for_event(waittime);
+    case (ev.type)
+	  SYSEVENT_SPEECH:         ProcessSpeech(ev);
+	  SYSEVENT_ENGAGED:        if(ev.source)
+	  	                     Fight(ev.source);
+	  	                   endif
+	  SYSEVENT_DAMAGED:        if(me.hp < mhp)
+                             PlaySoundEffect(me,dmgsound);
+                           endif
+                           if(ev.source)
+	  	                     Fight(ev.source);
+	  	                   endif
+	  SYSEVENT_ITEM_GIVEN:     if(ev.source.serial == masterserial)
+			                 TakeItem(ev);
+		                   endif
+	  EVID_ALL_ATTACK_CMD: fight(ev.target);
+	  EVID_ALL_FOLLOW_CMD: following := 1;
+                           escortee := ev.target;
+	  EVID_ALL_GUARD_CMD:  guarding := ev.target;
+		                   PrintTextAbove(me,"*guarding " + guarding.name + "*");
+    endcase
+	if(following == 1)
+      waittime := 0;
+	  Follow();
+    elseif(guarding)
+	  waittime := 7;
+	  Guard();
+    else
+	  waittime := 120;
+	endif
+  endwhile
+endfunction
+
+function Fight(opponent)
+  var oldfollowing := following;
+  me.dexterity_mod := 0;
+  following := 0;
+  if (opponent.serial == me.serial)
+    return;
+  endif
+  TurnToward(opponent);
+  SetOpponent(opponent);
+  var nextbreath := readgameclock();
+  var ev;
+  var loops := 0;
+  while((opponent) and (!opponent.dead or !opponent.hidden or !opponent.concealed) and (Distance(me,opponent) < 15))
+	if(!CloseDistance(opponent))
+	  loops := loops + 1;
+	  waittime := 0;
+	else
+	  loops := 0;
+	  waittime := 1;
+	endif
+    ev := wait_for_event(waittime);
+    case (ev.type)
+	  EVID_ALL_ATTACK_CMD: opponent := ev.target;
+	                       SetOpponent( opponent );
+	  EVID_ALL_FOLLOW_CMD: following := ev.target;
+	  EVID_ALL_GUARD_CMD:  guarding := ev.target;
+		                   PrintTextAbove(me,"*guarding " + guarding.name + "*");
+	  SYSEVENT_SPEECH:         ProcessSpeech(ev);
+	  SYSEVENT_ENGAGED:
+	  SYSEVENT_DAMAGED:        if(ev.source == opponent)
+                             PlaySoundEffect(me,dmgsound);
+                           endif
+                           if(ev.source)
+			                 if(ev.source != opponent)
+				               if((!CheckLineOfSight(me, opponent)) or (Random(8)=1))
+					             opponent := ev.source;
+					             SetOpponent(opponent);
+				               endif
+			                 endif
+			                 turntoward(opponent);
+		                   endif
+	  EVID_PEACEMADE:      SetWarMode(0);
+		                   opponent := 0;
+		                   following := oldfollowing;
+		                   return;
+    endcase
+	if(following)
+	  SetWarMode(0);
+	  opponent := 0;
+	  return;
+	endif
+	if(caster)
+	  if(nextbreath <= readgameclock())
+		sleep(1);
+		cast_offensive_spell(me,opponent);
+		nextbreath := readgameclock()+Random(10)+2;
+	  endif
+    endif
+	if(loops > 100 )
+	  RestartScript(me);
+	  return;
+	endif
+  endwhile
+  SetWarMode(0);
+  opponent := 0;
+  following := oldfollowing;
+endfunction
+
+function CloseDistance(opponent)
+  case Distance(me, opponent)
+    1:
+    0:       return 1;
+    default: if(!RunToward(opponent))
+               return 1;
+             else
+               return 0;
+             endif
+  endcase
+endfunction
+
+function Release()
+	PrintTextAbovePrivate(me, "I have decided to terminate my employment with you.", master);
+	me.setmaster(0);
+	EraseObjProperty(me, "master");
+	EraseObjProperty(me, "serial");
+	EraseObjProperty(me, "script");
+	SetAnchor(me.x,me.y,10,1);
+	me.script := npccfgfile[me.npctemplate].script;
+	RestartScript(me);
+endfunction
+
+function Fetch()
+  var tobj := Target(master);
+  if (tobj.container)
+    PlaySoundEffect(me, dmgsound);
+    return;
+  endif
+  var times := 0;
+  while((distance(me, tobj) > 1) and (times <= 5) and CheckLineOfSight(me,tobj))
+    if(!runtoward(tobj))
+      sleepms(100);
+      times := times + 1;
+    else
+      times := 0;
+    endif
+  endwhile
+  if((Accessible(me,tobj)) and (CheckLineOfSight(me,tobj)))
+	MoveItemToContainer(tobj, mypack);
+  else
+    say("but I cannot reach that.");
+  endif
+endfunction
+
+function drop()
+  var myitems;
+  foreach myitems in enumerateitemsincontainer(mypack)
+	if (myitems.container.serial == mypack.serial)
+      moveitemtolocation(myitems, me.x, me.y, me.z,0);
+	  sleepms(100);
+	endif
+  endforeach
+endfunction
+
+function TakeItem(ev)
+  var item := ev.item;
+  var amt := item.amount;
+  var timeleft := GetObjProperty(me, "Timer");
+  var cost := GetObjProperty(me, "HireCost");
+  var days := amt / cost;
+  if(Cint(item.objtype) == 0xeed)
+    days := days * 10800;
+    timeleft := timeleft + days;
+    SetObjProperty(me, "Timer", (ReadGameClock() + timeleft));
+	PrintTextAbove(me,"I'll just apply that towards my wages.");
+	DestroyItem(ev.item);
+	return;
+  else
+    var yourpack := ev.source.backpack;
+    MoveItemToContainer(item, yourpack);
+    say("I have no need for this");
+  endif
+endfunction
+
+function Guard()
+  if(nextwatch <= readgameclock())
+	nextwatch := readgameclock() + 7;
+	if(Random(8)=1 )
+	  say("I am guarding " + guarding.name);
+	endif
+	foreach mob in ListHostiles(guarding, 9, 0);
+	  Fight(mob);
+	  return;
+	endforeach
+  endif
+  if((!guarding.strength) or (guarding.dead) or (Distance(me,guarding) > 15))
+    say("I cannot guard that.");
+	guarding := 0;
+  endif
+endfunction
+
+function Follow()
+  var d := Distance(me, escortee);
+  if(d > 15)
+    escortee := 0;
+	following := 0;
+    say("My escort seems to have abandoned me.");
+    waittime := 120;
+  elseif(d > 6)
+    if(GetObjProperty(me, "Pause"))
+      waittime := 2;
+    else
+      var ma := 200 - me.dexterity;
+      me.dexterity_mod := me.dexterity_mod + ma;
+	  runToward(escortee);
+      me.dexterity_mod := me.desterity_mod - ma;
+      waittime := 0;
+    endif
+  elseif(d <= 2)
+    waittime := 1;
+  else
+    if(GetObjProperty(me, "Pause"))
+      waittime := 2;
+    else
+      var ma := 200 - me.dexterity;
+      me.dexterity_mod := me.dexterity_mod + ma;
+	  walkToward(escortee);
+      me.dexterity_mod := me.desterity_mod - ma;
+      waittime := 0;
+    endif
+  endif
+endfunction
+
+function ProcessSpeech(ev)
+  if(ev.source.serial != masterserial)
+	return;
+  endif
+  if(!master)
+	RestartScript(me);
+  endif
+  var evtext := lower(ev.text);
+  var ph := SplitWords(me.name);
+  var mename := lower(ph[1]);
+  if(evtext[mename + " kill"] or evtext[mename + " attack"] or evtext["all kill"] or evtext["all attack"])
+	var what := Target(master, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS);
+    if(what)
+      if (what.serial == ev.source.serial)
+		return;
+	  elseif(evtext["all kill"] or evtext["all attack"])
+		AllCommand(EVID_ALL_ATTACK_CMD, what);
+	  else
+        Fight(what);
+	  endif
+	endif
+  elseif(evtext[mename + " stop"] or evtext["all stop"])
+	guarding := 0;
+	following := 0;
+  elseif((evtext[mename + " come"]) or (evtext["all come"]))
+	var done := 0;
+	chaseloop := 0;
+	while(done == 0)
+	  chaseloop := chaseloop +1;
+	  done := CloseDistance(ev.source);
+	  if(chaseloop > 25)
+		done :=1;
+	  endif
+	endwhile
+  elseif(evtext[mename + " follow me"])
+    escortee := ev.source;
+    following := 1;
+  elseif(evtext[mename + " follow"])
+	var what := Target(master, TGTOPT_CHECK_LOS);
+	if(what)
+      escortee := what;
+      following := 1;
+	endif
+  elseif(evtext["all follow me"])
+	AllCommand(EVID_ALL_FOLLOW_CMD, ev.source);
+  elseif(evtext["all follow"])
+	var what := Target(master, TGTOPT_CHECK_LOS);
+	if(what)
+	  AllCommand(EVID_ALL_FOLLOW_CMD, what);
+	endif
+  elseif(evtext[mename + " dismiss"] or (evtext["all dismiss"]))
+	Release();
+  elseif(evtext[mename + " guard me"])
+	guarding := ev.source;
+	PrintTextAbove(me,"Im guarding you.");
+  elseif(evtext[mename + " guard"])
+    say("Who should I guard?");
+    var what := Target(master, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS);
+	if(what.hp)
+      guarding := what;
+	  PrintTextAbove(me,"Im guarding " + guarding.name);
+	endif
+  elseif (evtext["all guard me"])
+	guarding := ev.source;
+	PrintTextAbove(me,"Im guarding you");
+  elseif (evtext["all guard"])
+    say("Who should I guard?");
+	var what := Target(master, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS);
+	if(what.hp)
+      AllCommand(EVID_ALL_GUARD_CMD, what);
+	endif
+  elseif(evtext[mename + " fetch"]  or (evtext[mename + " get"]))
+    say("very well");
+	fetch();
+  elseif(evtext[mename + " drop"])
+    say("As you wish");
+	drop();
+  elseif((evtext[mename + " info"]) or (evtext[mename + " status"]))
+    var clk := GetObjProperty(me, "Timer") - ReadGameClock();
+    var days := clk / 10800;
+    say("I will continue to work for you for " + days + " days.");
+  endif
+endfunction
+
+function AllCommand(evtype,what)
+  var mobs := ListMobilesNearLocation(master.x, master.y, master.z, 9);
+  var eve array;
+  eve.+type := evtype;
+  eve.+source := me;
+  eve.+target := what;
+  SendEvent(me, eve);
+  foreach mob in mobs
+	if((GetObjProperty(mob, "master") == me.master.serial) and (mob.npctemplate == "employed"))
+	  SendEvent(mob, eve);
+	endif
+  endforeach
+endfunction
+
+function flee(opponent)
+  var runs := 0;
+  say("Argh! Run for your lives!");
+  while((distance(me, opponent) < 20) and (runs < 50))
+	runawayfrom(opponent);
+	runs := runs +1;
+	wait_for_event(0);
+  endwhile
+  say("Whew");
+  RestartScript(me);
+endfunction
+
+function EnableMainEvents()
+  EnableEvents(SYSEVENT_SPEECH);
+  EnableEvents(SYSEVENT_ENGAGED);
+  EnableEvents(SYSEVENT_DAMAGED);
+  EnableEvents(SYSEVENT_ITEM_GIVEN);
+  EnableEvents(EVID_PEACEMADE);
+endfunction
+
+function DisableMainEvents()
+  DisableEvents(SYSEVENT_SPEECH);
+  DisableEvents(SYSEVENT_ENGAGED);
+  DisableEvents(SYSEVENT_DAMAGED);
+  DisableEvents(SYSEVENT_ITEM_GIVEN);
+  DisableEvents(EVID_PEACEMADE);
+endfunction

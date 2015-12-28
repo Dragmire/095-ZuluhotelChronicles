@@ -1,0 +1,46 @@
+use os;
+use uo;
+
+include "include/areas";
+
+const MINS_BETWEEN_CHECKS := 10;
+
+program areaban( who )
+
+	while( who )
+		if( IsInForbiddenArea(who) )
+			SendSysMessage( who, "You are no longer welcome here.", 0x0, 33 );
+			SendPlayerToValidArea(who);
+		endif
+		Sleep( MINS_BETWEEN_CHECKS * 60 );
+	endwhile
+
+endprogram
+
+
+function SendPlayerToValidArea( who )
+
+	var possibles := {	{ 1475, 1645, 20 } ,	// Britain
+				{ 2477, 399 , 0  } ,	// Minoc
+				{ 634 , 849 , 1  } };	// Yew
+
+	var x;
+	var y;
+	var z;
+
+	foreach loc in possibles
+		if( !IsForbiddenAreaToRecallTo( who, loc[1], loc[2] ) )
+			x := loc[1];
+			y := loc[2];
+			z := loc[3];
+			return MoveCharacterToLocation( who, x, y, z, MOVECHAR_FORCELOCATION );
+		endif
+	endforeach
+	
+	x := 1475;
+	y := 1645;
+	z := 20;
+
+	return MoveCharacterToLocation( who, x, y, z, MOVECHAR_FORCELOCATION );
+
+endfunction

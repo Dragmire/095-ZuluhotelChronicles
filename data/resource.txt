@@ -1,0 +1,134 @@
+#
+#  RESOURCE.TXT: Resource System Data
+#
+
+GlobalResourcePool clay
+{
+	Units	10000
+}
+
+RegionalResourcePool clay
+{
+	Name	The Whole World
+	Units	0
+#	(regions/clay.cfg: Capacity is 10000)
+}
+
+RegionalResourcePool clay
+{
+	Name	Elite Donators Launge
+	Units	0
+#	(regions/clay.cfg: Capacity is 450000)
+}
+
+RegionalResourcePool clay
+{
+	Name	Donators Launge
+	Units	0
+#	(regions/clay.cfg: Capacity is 450000)
+}
+
+GlobalResourcePool fish
+{
+	Units	300000
+}
+
+RegionalResourcePool fish
+{
+	Name	The Whole World
+	Units	0
+#	(regions/fish.cfg: Capacity is 200000)
+}
+
+RegionalResourcePool fish
+{
+	Name	Elite Donators Launge
+	Units	0
+#	(regions/fish.cfg: Capacity is 450000)
+}
+
+RegionalResourcePool fish
+{
+	Name	Donators Launge
+	Units	0
+#	(regions/fish.cfg: Capacity is 450000)
+}
+
+GlobalResourcePool ore
+{
+	Units	50000
+}
+
+RegionalResourcePool ore
+{
+	Name	Whole World
+	Units	0
+#	(regions/ore.cfg: Capacity is 200000)
+}
+
+RegionalResourcePool ore
+{
+	Name	Elite Donators Launge
+	Units	0
+#	(regions/ore.cfg: Capacity is 999999)
+}
+
+RegionalResourcePool ore
+{
+	Name	Donators Launge
+	Units	0
+#	(regions/ore.cfg: Capacity is 999999)
+}
+
+GlobalResourcePool sand
+{
+	Units	10000
+}
+
+RegionalResourcePool sand
+{
+	Name	The Whole World
+	Units	0
+#	(regions/sand.cfg: Capacity is 200000)
+}
+
+RegionalResourcePool sand
+{
+	Name	Elite Donators Launge
+	Units	0
+#	(regions/sand.cfg: Capacity is 450000)
+}
+
+RegionalResourcePool sand
+{
+	Name	Donators Launge
+	Units	0
+#	(regions/sand.cfg: Capacity is 450000)
+}
+
+GlobalResourcePool wood
+{
+	Units	200000
+}
+
+RegionalResourcePool wood
+{
+	Name	The Whole World
+	Units	0
+#	(regions/wood.cfg: Capacity is 200000)
+}
+
+RegionalResourcePool wood
+{
+	Name	Elite Donators Launge
+	Units	0
+#	(regions/wood.cfg: Capacity is 450000)
+}
+
+RegionalResourcePool wood
+{
+	Name	Donators Launge
+	Units	0
+#	(regions/wood.cfg: Capacity is 450000)
+}
+

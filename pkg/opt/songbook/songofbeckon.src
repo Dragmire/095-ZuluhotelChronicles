@@ -1,0 +1,108 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/bard";
+include "include/eventid";
+include "include/checkcity";
+program cast_owlsight( player )
+	SetObjProperty( player , "#Casting", 1 );
+	var singinghp := GetHp( player );
+	var thecritter;
+	var duration;
+	var circle := GetCircle( SPELLID_SONG_OF_BECKON  );
+	var caster := player;
+	var cast_on := player;
+	var instrument := findinstrument( player );
+	var sfx_success;
+	var sfx_failure;
+	case( instrument.graphic )
+		UOBJ_HARP:	sfx_success := SFX_HARP_SUCC;
+				sfx_failure := SFX_HARP_FAIL;
+				break;
+				
+		UOBJ_LUTE:	sfx_success := SFX_LUTE_SUCC;
+				sfx_failure := SFX_LUTE_FAIL;
+				break;
+				
+		UOBJ_DRUM:	sfx_success := SFX_DRUM_SUCC;
+				sfx_failure := SFX_DRUM_FAIL;
+				break;
+				
+		UOBJ_TAMB:	sfx_success := SFX_TAMB_SUCC;
+				sfx_failure := SFX_TAMB_FAIL;
+				break;
+				
+		default:	PrintTextAbovePrivate( player, "You dont have an Instrument!",player );
+				EraseObjProperty( player , "#Casting" );
+				return;
+	endcase
+	
+
+	var peace := GetAttribute(caster, ATTRIBUTEID_PEACEMAKING);
+	var mus := GetAttribute(caster, ATTRIBUTEID_MUSICIANSHIP);
+	var spec := GetObjProperty(player,"IsBard");
+	var ps;
+	if (!spec)
+		spec := 0;	
+	endif
+	var proped := array();
+	var drain := (circle*4)-spec;
+	var difficulty := (circle*11)+(Random(25)-(spec*8));
+	//PrintTextAbove(player,"Difficulty:"+difficulty);
+	PerformAction( player, 0X021 );
+	if (difficulty > peace or difficulty > mus or !spec)
+		PlaySoundEffect( caster , sfx_failure );
+		EraseObjProperty( caster , "#Casting" );
+		PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+		ps := GetStamina( player ) -(drain/2);
+		if (ps < 0 )
+			ps := 0;
+		endif
+		GetStamina( player ) := ps;
+		return;
+	elseif (( GetStamina( player ) - drain ) <  0)
+		PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+		PrintTextAbovePrivate( player, "Out of Stamina!",player );
+		PlaySoundEffect( caster , sfx_failure );
+	else
+		ps := GetStamina( player ) -drain;
+		if (ps < 0 )
+			ps := 0;
+		endif
+		GetStamina( player ) := ps;
+		sleep(2);
+		if ( GetHp( player ) < singinghp)
+			PrintTextAbove(player,"*"+player.name+" plays a song poorly*");
+			PrintTextAbovePrivate( player, "You were interrupted!",player );
+			PlaySoundEffect( caster , sfx_failure );
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		else	
+			PerformAction( player, 0X021 );
+			PlaySoundEffect( caster , sfx_success );
+			PrintTextAbove(player,"Genero Coortus Malus Custos");
+		endif
+		sleep(2);
+		duration := (mus/2) * (spec);
+		PlaySoundEffect( player , 0x01f8 );
+		thecritter := CreateNPCfromTemplate( "wisp" , player.x , player.y , player.z );
+		thecritter.setmaster( player );
+		thecritter.script := "tamed";
+		SetObjproperty(thecritter,"guardkill",1);
+		SetObjproperty(thecritter,"tmonster",1);
+		SetObjProperty( thecritter , "master" , player.serial );
+		SetObjProperty( thecritter , "noloot" , 1 );
+		RestartScript( thecritter );
+	endif
+	EraseObjProperty( caster , "#Casting" );
+	Detach();
+	if (thecritter)
+		Sleep( duration );
+		ApplyRawDamage( thecritter, Cint( GetHp( thecritter ) + 3 ) );
+	endif
+
+	
+endprogram

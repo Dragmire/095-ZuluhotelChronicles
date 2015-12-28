@@ -1,0 +1,22 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program TextCMD_SetRank( Who, Text )
+
+    If ( ( Text == "" ) or ( !Text ) )
+    SendSysMessage( Who, ".donator <basic, elite, pro>" );
+    Return;
+    Endif
+
+    Var Donator := Target( Who );
+    Var DAcct   := Donator.acct;
+    DAcct.SetName( Text );
+
+Endprogram

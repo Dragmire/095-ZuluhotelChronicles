@@ -1,0 +1,51 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program dispel_field( parms )
+
+	var circle := 5;
+	var caster;
+	var cast_area;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_area := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_area := CanTargetArea(caster, circle);
+		if (!cast_area)
+			return;
+		endif
+	endif
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var therange := CInt(magery / 15 );
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		therange := CInt( therange * CLASSE_BONUS );
+	endif
+
+	var items := ListItemsNearLocation(cast_area.x, cast_area.y, cast_area.z, therange);
+	PlaySoundEffect( caster, SFX_SPELL_DISPEL_FIELD );
+   
+	foreach item in items
+		if( GetObjProperty(item, "f") )
+			PlayStationaryEffect( item.x, item.y, item.z, FX_SPELL_DISPEL_FIELD, SPEED_SPELL_DISPEL_FIELD, LOOP_SPELL_DISPEL_FIELD );
+                	DestroyItem(item);
+		endif
+	endforeach
+  
+endprogram

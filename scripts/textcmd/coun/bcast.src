@@ -1,0 +1,22 @@
+Use uo;
+
+Include "include/client";
+
+program TextCMD_BCast( Who, Text )
+
+    Var Min_CMDLevel := Who.cmdlevel;
+    Var Color;
+
+    /*Case( Min_CMDLevel )
+    1: Color := 2593;
+    2: Color := 2592;
+    3: Color := 2595;
+    4: Color := 2600;
+    5: Color := 1172;
+    EndCase*/
+
+    color := 1172;
+
+    Broadcast( who.name + " (Broadcast): " + text, 3, Color );
+    
+EndProgram

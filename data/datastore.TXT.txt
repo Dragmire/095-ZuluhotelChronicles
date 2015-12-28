@@ -1,0 +1,51 @@
+#
+#  DATASTORE.TXT: DataStore Data
+#
+
+DataFile
+{
+	Descriptor	::Emails
+	Name	Emails
+	Flags	0
+	Version	1
+	OldVersion	1
+}
+
+DataFile
+{
+	Descriptor	::IPs
+	Name	IPs
+	Flags	0
+	Version	1
+	OldVersion	1
+}
+
+DataFile
+{
+	Descriptor	::SessionIDs
+	Name	SessionIDs
+	Flags	0
+	Version	2
+	OldVersion	2
+}
+
+DataFile
+{
+	Descriptor	:spawnpoint:spawnpoints
+	Name	spawnpoints
+	Package	spawnpoint
+	Flags	1
+	Version	5
+	OldVersion	5
+}
+
+DataFile
+{
+	Descriptor	:sysbook:staticbooks
+	Name	staticbooks
+	Package	sysbook
+	Flags	1
+	Version	1
+	OldVersion	1
+}
+

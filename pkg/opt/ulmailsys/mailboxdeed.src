@@ -1,0 +1,117 @@
+Include "util/key";
+Include "include/objtype";
+Include "include/random";
+Include "include/yesno";
+
+Program Place_Mailbox( Who, Deed )
+
+    If( !Accessible( Who, Deed ) )
+    SendSysMessage( Who, "You can't reach that." );
+    Return;
+    Endif
+
+    If( !ReserveItem( deed ) )
+    SendSysMessage( Who, "This item is already being used." );
+    Return;
+    Endif
+    
+    If( GetGlobalProperty( Who.name ) )
+    SendSysMessage( Who, "You already own a mailbox." );
+    Return;
+    Endif
+
+    SendSysMessage( Who, "Where do you want to place your mailbox?" );
+ 
+    Var start := TargetCoordinates( Who );
+
+    If( !CheckLosAt( Who, Cint( start.x ), Cint( start.y ), Cint( start.z ) ) )
+    SendSysMessage( Who, "You can't see that." );
+    Return;
+    Endif
+
+    If( !Who.multi )
+    SendSysMessage( Who , "You have to be in your house to place this item." );
+    Return;
+    Endif
+        If( GetObjProperty( Who.multi, "ownerserial" ) != Who.serial )
+        Var co_owners := {};
+        Var i;
+        For( i := 1; i <= 5; i := i + 1 )
+            If( GetObjProperty( Who.multi, "Co-owner" + i ) )
+            co_owners.append( GetObjProperty( Who.multi, "Co-owner" + i ));
+            Endif
+        Endfor
+            If( !( Who.serial in co_owners ) )
+            SendSysMessage( Who, "You can only place this item if you own or co-own the house!" );
+            Return;
+        Endif
+    Endif
+
+    Var Mailbox := CreateItemAtLocation( start.x, start.y, start.z, 0x99EA, 1 );
+
+    Mailbox.decayat := 0;
+    Mailbox.movable := 1;
+
+
+    If( YesNo( Who, "Placed well?" ) )
+        If( RegisterUser( Who, Mailbox ) )
+        DestroyItem( Deed );
+        Else
+        DestroyItem( Mailbox );
+        Endif
+    Else
+    DestroyItem( Mailbox );
+    Endif
+
+Endprogram
+
+Function RegisterUser( Who, Mailbox )
+
+    Var User := Who.name;
+    Var UserSerial := Who.serial;
+    Var MailSerial := Mailbox.serial;
+    Var UserName := SendTextEntryGump( Who, "Please enter a username. EXAMPLE: JohnDoe32", 2557 );
+    
+    If( !Username )
+    SendSysMessage( Who, "Cancelled." );
+    Return 0;
+    Endif
+    
+    UserName := Username + "@Umail.com";
+    
+    If( !User OR !UserSerial OR !MailSerial )
+    SendSysMessage( Who, "Something went wrong." );
+    Return 0;
+    Endif
+    
+    Var Pass := "Umail" + Random( 6535 );
+    Var ret := CreateAccount( UserName, Pass, 1 );
+    var account;
+
+    If( ret == error )
+    SendSysMessage( who, "Sorry, email account creation failed.");
+    SendSysMessage( who, "Error: " + ret.errortext );
+    Return 0;
+    Else
+    account := FindAccount( UserName );
+    account.SetProp( "Umail", UserName );
+    account.SetProp( "UmailOwner", UserSerial );
+    account.SetProp( "Mailbox", MailSerial );
+    SendSysMessage( who, "Your email account has been created." );
+    SendSysMessage( who, "Your email is " + UserName );
+    SetObjProperty( Who, "UMailAcct", UserName );
+    SetObjProperty( Mailbox, "UMailAcct", UserName );
+    Endif
+    
+    Var Res1;
+
+    Res1 := SetObjProperty( Mailbox, "MailSerial", UserSerial );
+    
+    If( !Res1 )
+    SendSysMessage( Who, "Something went wrong." );
+    Return 0;
+    Else
+    Return 1;
+    Endif
+
+Endfunction

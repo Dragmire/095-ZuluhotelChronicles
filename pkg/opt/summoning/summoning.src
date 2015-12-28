@@ -1,0 +1,95 @@
+use uo;
+use os;
+use basic;
+
+include "include/npcbackpacks";
+include "include/attributes";
+include "include/spelldata";
+include "include/classes";
+include "include/client";
+
+program summon_creature( parms )
+
+	var caster		:= parms[1];
+	var npctemplate	:= parms[2];
+	var cast_loc		:= parms[3];
+	var sfx		:= parms[4];
+	var delay		:= parms[5];
+
+	var magery		:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+	elseif( GetObjProperty( caster, CLASSEID_WARRIOR ) )
+		magery := CInt( magery / ClasseBonus( caster, CLASSEID_WARRIOR ) );
+	endif
+
+	if( delay )
+		sleepms( delay );
+	endif
+
+	var duration		:= ModifyWithMagicEfficiency( caster, magery * 2 );
+
+	PlaySoundEffect( caster, sfx );
+
+	Detach();
+
+	var thecritter := CreateNpcFromTemplate( npctemplate, CInt(cast_loc.x), CInt(cast_loc.y), CInt(cast_loc.z) );
+	var power := CInt( ModifyWithMagicEfficiency( caster, CInt(magery / 3)) );
+	if( power > 100 )
+		power := 100;
+	elseif( power < 1 )
+		power := 1;
+	endif
+
+	SetObjProperty( thecritter, "master", caster.serial );
+	SetObjProperty( thecritter, "script", thecritter.script );
+	SetObjProperty( thecritter, "noloot", 1 );
+	SetObjProperty( thecritter, "summoned", 1 );
+	thecritter.setmaster( caster );
+	thecritter.script := "tamed";
+	RestartScript( thecritter );
+
+	set_critical( 1 );
+
+	var str	:= GetStrength(thecritter);
+	var int	:= GetIntelligence(thecritter);
+	var dex	:= GetDexterity(thecritter);
+
+	SetBaseStrength(thecritter, CInt(str * power / 100) );
+	SetBaseIntelligence(thecritter, CInt(int * power / 100) );
+	SetBaseDexterity(thecritter, CInt(dex * power / 100) );
+
+	SetHp(thecritter, GetMaxHp(thecritter));
+	SetMana(thecritter, GetMaxMana(thecritter));
+	SetStamina(thecritter, GetMaxStamina(thecritter));
+
+	for i := 0 to SKILLID__HIGHEST
+		if( i != SKILLID_MAGICRESISTANCE )
+			var initskill := GetEffectiveSkill( thecritter, i );
+			if( initskill )
+				SetBaseSkill( thecritter, i, initskill * power / 100 );
+			endif
+		else
+			SetBaseSkill( thecritter, i, magery );
+		endif
+	endfor
+
+	set_critical( 0 );
+
+	RestartScript( thecritter );
+
+	sleep( duration );
+
+	PlaySoundEffect( thecritter, 0x01fa );
+	PlayStationaryEffect( CInt(thecritter.x), CInt(thecritter.y), CInt(thecritter.z), 0x3728, 0xa, 0xa );
+	var backpack := FindExistingPack( thecritter.serial );
+	if( backpack )
+		foreach item in EnumerateItemsInContainer( backpack );
+  			MoveItemToLocation( item, thecritter.x, thecritter.y, thecritter.z, MOVEITEM_FORCELOCATION );
+		endforeach
+	endif
+	MoveCharacterToLocation( thecritter, 0, 0, 0, MOVECHAR_FORCELOCATION );
+	ApplyRawDamage(thecritter, GetHp(thecritter) + 3);
+
+endprogram

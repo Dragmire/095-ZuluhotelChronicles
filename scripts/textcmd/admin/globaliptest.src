@@ -1,0 +1,36 @@
+use os;
+use uo;
+use util;
+use basic;
+
+
+program iptest( who, client );
+
+
+	var iptest;
+	var number := 0;
+
+   	foreach player in EnumerateOnlineCharacters()
+		number := 0;
+		iptest := 0;
+        	if (player.cmdlevel == 0)
+			iptest := player.ip;
+			foreach char in EnumerateOnlineCharacters()
+				if( char.ip == iptest)
+					if (char.cmdlevel == 0)
+						number := number + 1;
+					endif
+				endif	
+				
+				if (number > 2)
+					SendSysMessage( who, "Person found with: "+number+" clients online!" );
+					SendSysMessage( who,  "The IP is: "+iptest);
+				endif
+			endforeach
+			
+		endif
+	endforeach
+
+
+
+endprogram

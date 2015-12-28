@@ -1,0 +1,20 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+
+Program BritainGate( who )
+
+    MoveCharacterToLocation( Who, 2897, 662, 0 );
+    SendSysMessage( Who, "Welcome to Vesper.", FONT_BOLD, 2600 );
+    SendSysMessage( Who, "This is a No-Pk/Loot Zone!", FONT_BOLD, 2611 );
+
+Endprogram

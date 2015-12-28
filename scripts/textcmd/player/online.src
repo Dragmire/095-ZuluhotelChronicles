@@ -1,0 +1,131 @@
+// command .online  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated sept 6, 2000 by Developer Giro (developergiro@galactica.it)
+
+use os;
+use uo;
+
+include "include/areas";
+
+
+global layout := {
+"page 0",
+"nodispose",
+"resizepic  50   0 2600 540 405", // background
+"resizepic 210 360 5100 200  25", // buttons
+
+"text 260 30 0 0", // title
+"text  80 60 0 1", // name
+"text 360 60 0 2"  // location
+};
+
+global data := {
+"",
+"Name",
+"Location",
+"", // 4
+};
+
+program textcmd_online( who )
+
+FillInArrays();
+
+SendDialogGump( who, layout, data );
+
+endprogram
+
+function FillInArrays()
+	var city;
+
+    // Variables designed to Store The full array of players, the number of players, and the current player
+    local players := EnumerateOnlineCharacters();
+    local numplayer := len(players);
+    local player;
+
+    // Counter.
+    local i := 0, online := 0, locationscount := 5, rowcount :=80, pagecount :=2, playercount :=0;
+
+    layout.append("page 1");
+
+    // Cycle through all the players in the game and add them to the goto list.
+    for (i := 1; i <= numplayer; i := i + 1)
+	player := players[i];
+    
+    If (player.cmdlevel==0)
+	online := online +1;
+	
+      playercount := playercount +1;
+	
+      if (playercount>13)
+      playercount :=1;
+      rowcount :=80;
+      // add forward button
+        layout.append("button 350 361 5540 5541 0 " + pagecount);
+      // add backward button
+	if (pagecount>2)
+		layout.append("button 260 361 5537 5538 0 " + (pagecount-2));
+	endif
+      layout.append("page " + pagecount);
+      pagecount := pagecount +1;
+      endif
+
+      layout.append("text 80 " + rowcount + " 0 " + locationscount);
+
+      fixname(player);
+
+      data.append(data[5]);
+
+      locationscount := locationscount + 1;
+
+      layout.append("text 360 " + rowcount + " 0 " + locationscount);
+      city := IsInACity(player);
+      if(!city OR city == "Blackthorn Castle")
+      	city := "Zulu Territory";
+      elseif ( city == "British Castle")
+	city := "Britain";
+      endif
+      If( city == "Zulu Territory")
+	data.append(city);
+      else
+     	 data.append(city+" Territory");
+      endif
+	//data.append("Zulu Territory");
+      locationscount := locationscount + 1;
+
+      data.append(player.name);
+      locationscount := locationscount + 1;
+      rowcount := rowcount +20;
+      endif
+      
+    endfor
+
+data[1] := online + " players online";
+
+if (pagecount>2)
+layout.append("button 260 361 5537 5538 0 " + (pagecount-2));
+endif
+
+endfunction
+
+function fixname(player)
+
+	local oldname :=player.name;
+	
+        local split := SplitWords( oldname ), i, newname :="";
+
+	for (i := 1; i <= 4; i := i + 1)
+
+	if (split[i])
+	  newname := newname + split[i] + " ";
+        endif
+
+	endfor
+
+	if (GetObjProperty(player,"guardtype")=2)
+		data[5] := "Chaos : " + newname;
+	elseif (GetObjProperty(player,"guardtype")=1)
+		data[5] := "Order : " + newname;
+	else
+	data[5] := newname;
+	endif
+endfunction

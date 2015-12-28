@@ -1,0 +1,245 @@
+////////////////////////////////////////////////////////////////////////////
+// Lottery Man v1.0
+// by DeveloperGiro of Zulu Hotel Italia Shard
+// http://www.zuluhotel.it   developergiro@galactica.it
+//
+// Comments :
+//
+//
+//
+////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use basic;
+use os;
+use uo;
+
+include "include/eventid";
+include "include/randname";
+include "include/utility";
+include "include/mrcspawn";
+include "include/speech";
+include "include/client";
+include "include/vetement";
+include "include/yesno";
+include "ai/setup/modsetup";
+include "include/random";
+include "include/objtype";
+
+const TIME_BETWEEN_LOTTERY	:= 60000;
+const COLOR_MODIFIER		:= 20;
+const PRIZE_MULTIPLIER		:= 1.5;
+const MAX_PER_STACK		:= 60000;
+const MAX_COLOR			:= 1000;
+const PRICE			:= 500;
+
+if( !GetGlobalProperty( "CurrentLotery" ) )
+	SetGlobalProperty( "CurrentLotery" , 1 );
+endif
+
+if( !GetGlobalProperty( "LastTicketNumber" ) )
+	SetGlobalProperty( "LastTicketNumber" , 0 );
+endif
+
+if( !GetGlobalProperty( "LastLottery" ) )
+	SetGlobalProperty( "LastLottery" , ReadGameClock() );
+endif
+
+
+var me := Self();
+
+if( me.name["<random>"] )
+	case( Random(2) )
+		0: me.graphic := 400; me.gender := 0;
+		1: me.graphic := 401; me.gender := 1;
+	endcase
+	SetName ( me , RandomName( me ) );
+	Habille( me , "noblemale" );
+endif
+
+EnableEvents( SYSEVENT_ITEM_GIVEN );
+EnableEvents( SYSEVENT_SPEECH );
+
+while (1)
+
+	if( ReadGameClock() > GetGlobalProperty( "LastLottery" ) + TIME_BETWEEN_LOTTERY )
+		DrawNumber();
+	endif
+
+	var ev;
+	ev := os::wait_for_event( 30 );
+	if (ev)
+		case (ev.type)
+			SYSEVENT_SPEECH:
+				Say( process_text(ev.text , "default" , 38) );
+				if( ev.text["lottery"] )
+					TurnToward (ev.source);
+					SellTicket(ev.source);
+				endif
+
+			SYSEVENT_ITEM_GIVEN:
+				TurnToward( ev.source );
+				LoadTicketData( ev.source , ev.item );
+		endcase
+	endif
+endwhile
+
+
+function SellTicket( who )
+
+	Say ("The ticket cost " + PRICE + "gold pieces");
+	if( YesNo( who , "Buy one?" ) )
+		if( who.spendgold( PRICE ) )
+			var lotterynum := Cint( GetGlobalProperty( "CurrentLotery" ) );
+			var ticketnum  := Cint( GetGlobalProperty( "LastTicketNumber" ) ) + 1;
+			SetGlobalProperty( "LastTicketNumber" , ticketnum );
+			if( lotterynum and ticketnum )
+				var ticket   := CreateItemInBackpack( who , 0x186E , 1 );
+				ticket.name    := "Lottery " + lotterynum + "  ticket n." + ticketnum;
+				ticket.graphic := 5360;
+				ticket.color   := GetCurrentColor( lotterynum );
+				SetObjProperty( ticket , "serie" , lotterynum );
+				SetObjProperty( ticket , "numero" , ticketnum );
+				Say( "You have a ticket for " + ticket.name );
+			else
+				Print( "ERROR #1 in lottery process, please fix me." );
+			endif
+		else
+			Say( "Thee don't have enough gold to afford that." );
+		endif
+	else
+		Say( "Thee could regret it later thou know..." );
+		Sleep( 2 );
+		Say( "Imagine all thou couldst have done with such a sum of money" );
+	endif
+
+endfunction
+
+function DrawNumber()
+
+	set_critical(1);
+	SetGlobalProperty( "LastLottery" , ReadGameClock() );
+	
+	var amount := Cint( GetGlobalProperty( "LastTicketNumber" ) );
+	if( !amount )
+		return;
+	endif
+		
+	SetGlobalProperty( "LastTicketNumber" , 0 );
+	
+	var lotterynum := Cint( GetGlobalProperty( "CurrentLotery" ) );
+	if( !lotterynum )
+		Print( "ERROR #2 in lottery process, please fix me." );
+		return;
+	endif
+	
+	SetGlobalProperty( "CurrentLotery" , lotterynum + 1 );
+	
+	var winning_number := RandomDiceStr( "1d"+amount );
+	if( !winning_number )
+		Print( "ERROR #3 in lottery process, please fix me." );
+		return;
+	endif
+	
+	var old_data := GetGlobalProperty( "LastWinningNumber" );
+	if( !old_data )
+		old_data := array;
+	elseif( !old_data[3] )
+		amount := amount + Cint( old_data[2] );
+	endif
+		
+	SetGlobalProperty( "LastWinningNumber" , { winning_number, amount, 0 } );
+	
+	set_critical(0);
+	
+	var prize := Cint( amount * PRICE * PRIZE_MULTIPLIER );
+	Say( "Lottery drawing n. " + lotterynum + " is taking place..." );
+	Broadcast( "Lottery man: Lottery drawing n. " + lotterynum + " is taking place..." );
+	Sleep( 10 );
+	Say( "And the winning number is... " + winning_number );
+	Broadcast( "Lottery man: And the winning number is... " + winning_number );
+	Sleep( 4 );
+	Say( "You have exactly " + Cstr(TIME_BETWEEN_LOTTERY-14) + " seconds to reclaim your " + prize + "gps prize." );
+	Broadcast( "Lottery man: You have exactly " + Cstr(TIME_BETWEEN_LOTTERY-14) + " seconds to reclaim your " + prize + "gps prize." );
+	Sleep( 4 );
+	Say( "After that the ticket will be expired." );
+	Broadcast( "Lottery man: After that the ticket will be expired." );
+
+endfunction
+
+function LoadTicketData( who , ticket )
+
+	if( (ticket.objtype != 0x186E) or (ticket.graphic != 5360) )
+		Say( "I have no use for that" );
+		MoveItemToContainer( ticket , who.backpack );
+		return;
+	endif
+	
+	var serie  := GetObjProperty (ticket, "serie");
+	var numero := GetObjProperty (ticket, "numero");
+	if( !serie or !numero )
+		Print( "ERROR #4 in lottery process, please fix me." );
+		Say( "That isn't a valid ticket." );
+		MoveItemToContainer( ticket , who.backpack );
+		return;
+	endif
+	
+	if( serie < (Cint(GetGlobalProperty( "CurrentLotery" )) - 1) )
+		Say( "This ticket is expired, sorry." );
+		DestroyItem( ticket );
+		return;
+		
+	elseif( serie >= Cint(GetGlobalProperty( "CurrentLotery" )) )
+		Say( "This lottery drawing has not taken place yet." );
+		MoveItemToContainer( ticket , who.backpack );
+		return;
+	endif
+	
+	var winning_array := GetGlobalProperty( "LastWinningNumber" );
+	if( !winning_array )
+		Print( "ERROR #5 in lottery process, please fix me." );
+		Say( "Oh no! I forgot the last wining number, I'm sorry but I can't pay you." );
+		DestroyItem( ticket );
+		return;
+	endif
+	
+	var winning_num := winning_array[1];
+	var amount := winning_array[2];
+	if( !winning_num or !amount )
+		Print( "ERROR #6 in lottery process, please fix me." );
+		Say( "Oh no! I forgot the last wining number, I'm sorry but I can't pay you." );
+		DestroyItem( ticket );
+		return;
+	endif
+	
+	if( numero != winning_num )
+		Say( "Sorry, you are not the winner" );
+		DestroyItem( ticket );
+		return;
+	endif
+	
+	DestroyItem( ticket );
+	var prize := Cint( amount * PRICE * PRIZE_MULTIPLIER );
+	
+	Say( "Congratulations, you are the winner of the lottery n. " + serie );
+	while( prize > MAX_PER_STACK )
+		CreateItemInBackpack( who , UOBJ_GOLD_COIN , MAX_PER_STACK );
+		prize := prize - MAX_PER_STACK;
+	endwhile
+	CreateItemInBackpack( who , UOBJ_GOLD_COIN , prize );
+	Say( "You have won " + prize + " gold pieces.");
+	winning_array[3] := 1;
+	SetGlobalProperty( "LastWinningNumber", winning_array );
+	
+endfunction
+
+function GetCurrentColor( lotterynum )
+
+	var mod := lotterynum % Cint(MAX_COLOR/COLOR_MODIFIER);
+	if( !mod )
+		return MAX_COLOR;
+	else
+		return Cint( mod * COLOR_MODIFIER );
+	endif
+	
+endfunction

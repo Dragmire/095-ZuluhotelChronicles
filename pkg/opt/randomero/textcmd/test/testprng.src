@@ -1,0 +1,23 @@
+use os;
+
+include "include/random";
+
+program textcmd_testPRNG(who, params)
+	var p:=SplitWords(params);
+	if(!(p[3]))
+		SendSysMessage(who, "Syntax: .testprng dices faces bonus" );
+	endif
+	var d:=CInt(p[1]), f:=CInt(p[2]), b:=CInt(p[3]);
+  var arr:={}, r;
+	for i:=1 to d*f
+		arr[i]:=0;
+	endfor
+	for i:=1 to 1000
+		r:=RandomDice(d, f, b)-b;
+		arr[r]:=arr[r]+1;
+		sleepms(1);
+	endfor
+	for i:=1 to d*f
+		SendSysMessage(who, "P["+(i+b)+"]="+arr[i]);
+	endfor
+endprogram

@@ -1,0 +1,10 @@
+Use os;
+
+Print( "#####################################################" );
+Print( "##                                                 ##" );
+Print( "## Scriptbase:  Zuluhotel 3.0                      ##" );
+Print( "## Scriptfinal: ZHC 1.0		                   ##" );
+Print( "## Server: Zuluhotel Chronicles                    ##" );
+Print( "## Copyright (C)2009 Snocks    	                   ##" );
+Print( "##                                                 ##" );
+Print( "#####################################################" );

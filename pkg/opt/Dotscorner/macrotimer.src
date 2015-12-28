@@ -1,0 +1,37 @@
+use os;
+use uo;
+
+// Change the following two values for length of test and amount of jail time
+const jail_days := 3;
+
+const tick_per_day := 86400;
+
+program macrotimer(params)
+
+    var player := params[1];
+    var macrotestminutes := params[2];
+
+    sleep( macrotestminutes * 60 );
+
+    if (GetObjProperty(player,"starttime"))
+	EraseObjProperty(player,"starttime");
+	SendSysMessage(player,"You took too long to answer!");
+	JailPlayer( player );
+    endif
+
+endprogram
+
+function JailPlayer( player )
+
+    var jailtime := tick_per_day * jail_days;
+    var acc := player.acct;
+
+    acc.setprop("Release", (ReadGameClock() + jailtime ));
+    MoveCharacterToLocation( player, 5304, 1184, 0, 0);
+    player.frozen := 1;
+
+    SendSysMessage( player, "You have been jailed for illegal macroing");
+
+    DisconnectClient( player );
+
+endfunction

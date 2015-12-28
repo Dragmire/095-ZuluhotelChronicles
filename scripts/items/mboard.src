@@ -1,0 +1,307 @@
+use uo;
+use os;
+
+include "include/clock";
+include "include/gumputil";
+
+var layout := {
+    "page 0",
+    "resizepic 50 50 5120 540 380",
+    "resizepic 75 25 5120 200 50",
+    "resizepic 365 405 5120 200 50",
+    "button 395 420 2121 2120 1 0 1",
+    "button 475 420 2130 2129 3 2 2",
+    "text 100 40 45 0",
+    "text 80 390 45 1",
+ 
+    "radio 100 100 5002 5003 1 1001",
+    "radio 100 150 5002 5003 0 1002",
+    "radio 100 200 5002 5003 0 1003",
+    "radio 100 250 5002 5003 0 1004",
+    "radio 100 300 5002 5003 0 1005",
+    "radio 100 350 5002 5003 0 1006",
+
+    "text 140  98 45 2",  // msg 1
+    "text 140 118 600 3",
+    "text 140 148 45 4",  // msg 2
+    "text 140 168 600 5",
+    "text 140 198 45 6",  // msg 3
+    "text 140 218 600 7",
+    "text 140 248 45 8",  // msg 4
+    "text 140 268 600 9",
+    "text 140 298 45 10", // msg 5
+    "text 140 318 600 11",
+    "text 140 348 45 12", // msg 6
+    "text 140 368 600 13",
+
+    "text 370  98 45 14",
+    "text 370 118 600 15",
+    "text 370 148 45 16",
+    "text 370 168 600 17",
+    "text 370 198 45 18",
+    "text 370 218 600 19",
+    "text 370 248 45 20",
+    "text 370 268 600 21",
+    "text 370 298 45 22",
+    "text 370 318 600 23",
+    "text 370 348 45 24",
+    "text 370 368 600 25",
+
+    "radio 330 100 5002 5003 0 1007",
+    "radio 330 150 5002 5003 0 1008",
+    "radio 330 200 5002 5003 0 1009",
+    "radio 330 250 5002 5003 0 1010",
+    "radio 330 300 5002 5003 0 1011",
+    "radio 330 350 5002 5003 0 1012",
+};
+
+var data := {
+    "Chaotic Realm",
+    "Welcome to the Message Board!"
+};
+
+
+var layout2 := {
+"page 0",
+"nodispose",
+"nomove",
+"resizepic  20 20 2620 517 260", // background
+
+"text     30  0  910 0 ",
+"text    400  0  910 1 ",
+
+"button  508 0 4011 4013 1 0 2", //modify notes button
+
+"textentry 30 30 500 20 910 2 2",
+"textentry 30 50 500 20 910 3 3",
+"textentry 30 70 500 20 910 4 4",
+"textentry 30 90 500 20 910 5 5",
+"textentry 30 110 500 20 910 6 6",
+"textentry 30 130 500 20 910 7 7",
+"textentry 30 150 500 20 910 8 8",
+"textentry 30 170 500 20 910 9 9",
+"textentry 30 190 500 20 910 10 10",
+"textentry 30 210 500 20 910 11 11",
+"textentry 30 230 500 20 910 12 12",
+"textentry 30 250 500 20 910 13 13"
+};
+
+var data2 := {
+    "Input Your New Message:",
+    "Save Message:",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+};
+
+var layout3 := {
+    "page 0",
+    "resizepic 50 50 5120 540 380",
+    "resizepic 75 25 5120 460 70",
+    "resizepic 365 405 5120 200 50",
+    "button 395 420 2121 2120 1 0 1",
+    "button 475 420 2130 2129 3 2 2",
+    "checkbox 80 392 210 211 0 3",
+    "checkbox 80 362 210 211 0 4",
+    "text 110 390 45 1",
+    "text 100 40 45 0",
+    "text 100 60 600 3",
+    "text 110 360 45 2",
+};
+
+var data3 := {};
+
+program messageboard( user, board )
+  var curday := ReadGameClock()/(GetDayLength()*60);
+  var message:={};
+
+  fillinarrays(board,curday);
+
+  var res := SendDialogGump( user, layout, data );
+  if (res[0] != 2)  //  Antwort != "OK"
+    return;
+  endif
+
+  var selected;
+  foreach key in (res.keys)
+    if (key > 1000)
+      selected := CStr(key - 1000);
+      break;
+    endif
+  endforeach
+
+message := GetObjProperty( board, "message" + selected );
+
+var topic:= message[1];
+
+if (topic==error)
+fillmessage(user,curday,board,selected,0);
+return;
+endif
+
+var username :=message[2];
+var userserial:= message[3];
+var space := find( topic, " ", 1 );
+var oldday := topic[1,space-1];
+var age := curday - CInt(oldday);
+
+  data3[1] := topic[space+1,len(topic)];
+if (user.serial==userserial || user.cmdlevel>1 || age>2)
+  data3[2] := "Delete";
+endif
+if (user.serial==userserial || user.cmdlevel>1)
+data3[3] := "Edit";
+endif
+
+  data3[4] := "Posted by " + username;
+
+var line :=3, i;
+
+for (i:=4; i<=14; i:=i+1)
+if (message[i]!=error)
+data3[line+2]:=message[i];
+layout3[line+12] := "text 100 " + (82 + ((line-2)*20)) + " 45 " + (line + 1);
+line:=line+1;
+endif
+
+endfor
+
+if (message[15])
+data3[line+2]:= "Message was edited by " + message[15];
+layout3[line+12] := "text 160 " + (82 + ((line-2)*21)) + " 600 " + (line + 1);
+endif
+
+  res := SendDialogGump( user, layout3, data3 );
+
+if (res[1]) return; endif
+
+if (res[3])
+    EraseObjProperty( board, "message" + selected );
+    SendSysMessage( user, "Message deleted." );
+elseif (res[4])
+fillmessage(user,curday,board,selected,1);
+endif
+
+endprogram
+
+
+// fill in arrays, this is called when player dclick on the message board
+// it just gets all the topics for each message and displays them.
+function fillinarrays(board,curday)
+
+  var message:={}, space, i, location:=3, age, oldday,username,temp;
+
+  for ( i := 1; i <= 12; i := i + 1 )
+  message := GetObjProperty( board, "message" + CStr(i) );
+
+    if ( message[1] == error )
+      data[location] := "[empty]";
+      data[location+1] :="";
+    else
+      temp:=message[1];
+      space := find( temp, " ", 1 );
+      oldday := temp[1,space-1];
+      age := curday - CInt(oldday);
+      data[location] := temp[space+1, 20];
+      username :=message[2];
+      temp:=username[1,14];
+      if (age == 1)
+        data[location+1] := temp + " (1 Day)";
+      else
+        data[location+1] := temp + " (" + age + " Days)";
+      endif
+
+    endif
+    location :=location+2;
+  endfor
+
+endfunction
+
+
+// get new message from user
+function fillmessage(who,curday,board,selected,saveperson)
+
+var temp:={};
+
+if (saveperson==1)
+temp := GetObjProperty( board, "message" + selected );
+data2[1]:="Edit Your Message:";
+endif
+
+SetNotes(board,selected);
+
+var whataction := SendDialogGump( who, layout2, data2 );
+
+if (whataction[0]!=2) return; endif
+
+var subnote,i,message:={};
+
+// get message
+for (i:=3; i<=13; i:=i+1)
+subnote:=whataction[i];
+subnote[1, find(subnote, ": ", 1)+1]:="";
+if (subnote!="")
+message[i+1]:=subnote;
+endif
+endfor
+
+// get topic
+subnote:=whataction[2];
+subnote[1, find(subnote, ": ", 1)+1]:="";
+// subnote[1, Find(subnote, "<Topic>", 1)+6]:="";
+if (subnote=="") subnote:="No Topic"; endif
+
+message[1] := CStr(curday) + " " + subnote;
+
+if (saveperson==0)
+message[2]:= who.name;
+message[3]:= who.serial;
+else
+message[2]:= temp[2];
+message[3]:= temp[3];
+message[15]:= who.name;
+endif
+
+SetObjProperty( board, "message"+selected, message );
+
+endfunction
+
+
+function SetNotes(board,selected)
+
+var i,message:={},topic;
+
+message := GetObjProperty( board, "message" + selected );
+
+data2[3]:=findtopic(message[1]);
+
+for (i:=4; i<=16; i:=i+1)
+if (message[i]!=error)
+data2[i]:=message[i];
+else
+data2[i]:="";
+endif
+endfor
+
+endfunction
+
+
+
+function findtopic(text)
+var space := find( text, " ", 1 );
+if (space==15)
+return "No Topic";
+else
+return text[space+1,len(text)];
+endif
+
+endfunction

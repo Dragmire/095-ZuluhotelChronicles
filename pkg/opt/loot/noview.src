@@ -1,0 +1,20 @@
+use uo;
+use os;
+
+program open_bag_on_corpse( who, bag )
+	
+	if( (bag.container).IsA(POLCLASS_CORPSE) )
+		SendSysMessage( who, "You can't open this while it is on the corpse." );
+	else
+		if( GetObjProperty( bag, "old_us" ) )
+			bag.usescrt := GetObjProperty( bag, "old_us" );
+		else
+			bag.usescript := "";
+		endif
+		
+		SendViewContainer( who, bag );
+	endif
+	
+	return 1;
+
+endprogram

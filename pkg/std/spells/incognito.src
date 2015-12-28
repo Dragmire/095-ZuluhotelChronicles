@@ -1,0 +1,95 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+include "include/random";
+program cast_incognito( caster )
+
+PrintTextAbovePrivate(caster,"This has been disabled.", caster);
+/*
+	if (!can_cast(caster, 5))
+        	return;
+	endif
+
+	var oldname:=GetObjProperty( caster, "realname" );
+
+	if (!oldname)
+		SetObjProperty( caster, "realname", caster.name );
+		oldname:=caster.name;
+	else
+		SetName( caster, CStr(oldname) );
+		EraseObjProperty( caster, "realname" );
+		PrintTextAbovePrivate(caster,"Your name is " + caster.name + ", again.", caster);
+		PlaySoundEffect(caster, SFX_SPELL_INCOGNITO);
+		return;
+	endif
+
+	var newname := AssignName(caster);
+	SetName( caster, newname );
+	PlaySoundEffect(caster, SFX_SPELL_INCOGNITO);
+	PrintTextAbovePrivate(caster,"Your new name is " + newname, caster);
+
+	Detach();
+	set_critical(1);
+	sleep( 60 * CInt(GetEffectiveSkill( caster, SKILLID_MAGERY )/10 ) );
+
+	SetName( caster, CStr(oldname) );
+	EraseObjProperty( caster, "realname" );
+	PrintTextAbovePrivate(caster,"Your name is " + caster.name + ", again.", caster);
+	PlaySoundEffect(caster, SFX_SPELL_INCOGNITO);
+*/
+endprogram
+
+function AssignName( me )
+
+	var index := "MALE";
+	if (me.graphic == 401)
+		index := "FEMALE";
+	endif
+
+    var title := PreserveTitle( me );
+    var cfg := ReadConfigFile( "::incognito" );
+
+	if (!cfg)
+		SendSysMessage(me,"Unable to read incognito.cfg");
+		return ("Ion Stang"+ title);
+	endif
+
+    var elem := FindConfigElem( cfg, index );
+    var number := GetConfigInt( elem, "Count" );
+
+    var dice_str := "1d" + CStr(number);
+
+    var choice := RandomDiceStr( dice_str );
+    var entry := "Name" + choice;
+
+    var str := GetConfigString( elem, entry );
+  
+    str := str + title;
+
+    return( str );
+
+endfunction
+
+
+function PreserveTitle( me )
+
+  var myname := me.name;
+  var start := find( myname, ">", 1 );
+
+if( !start )
+  return;
+endif
+
+  var title := myname[ start+1, (len( myname ) - 8) ];
+
+if( !title )
+  return("");
+endif
+
+  return( title );
+
+endfunction

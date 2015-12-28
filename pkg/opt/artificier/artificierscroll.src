@@ -1,0 +1,22 @@
+use uo;
+use os;
+
+include "include/spelldata";
+
+program use_scroll( who, scroll )
+
+	if( scroll.amount )
+		var spellid := GetObjProperty(scroll, "SpellId");
+		SubtractAmount( scroll, 1 );
+		var spell := GetScript( spellid );
+	
+		SetObjProperty( who, "#Casting", 1 );
+	
+		start_script( spell, who );
+	
+		while( GetObjProperty( who, "#Casting" ) )
+			sleep( 5 );
+		endwhile
+	endif
+
+endprogram

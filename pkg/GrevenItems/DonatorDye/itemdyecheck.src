@@ -1,0 +1,92 @@
+//Created by Jose Eduardo Lazaretti (Greven)
+
+use os;
+use uo;
+use cfgfile;
+
+var ALLOWED := 0;
+var cmdlvl := 0;
+var donatordye_cfg :=ReadConfigFile( "itemdye" );
+
+program donatordyecheck( who, donatordyetub )
+
+    ReserveItem(donatordyetub);
+    sendsysmessage(who, "Select the color");
+    var itemcor := target(who);
+
+
+    if(!itemcor)
+       sendsysmessage(who, "Canceled");
+       Releaseitem(donatordyetub);
+       return;
+    endif
+
+    var cor :=   itemcor.color;
+    var truecor := itemcor.truecolor;
+
+    donatordyetub.color := cor;
+    donatordyetub.truecolor := truecor;
+
+    var element, allowdonatordye :=10;
+    
+    SendSysMessage(who, "Select something to dye");
+    
+    var item := Target( who, TGTOPT_NOCHECK_LOS );
+
+    ReserveItem(item);
+
+    If (!item)
+       SendSysMessage(who, "Canceled");
+       Releaseitem(donatordyetub);
+       Releaseitem(item);
+       return;
+    endif
+ 
+    if (NOT Accessible(who, item))
+       SendSysmessage( who, "You cannot reach that!" );
+       Releaseitem(donatordyetub);
+       Releaseitem(item);
+       return;
+    endif
+   
+    if( GetObjProperty( item, "Undyeable" ) )
+    	SendSysMessage(who, item.desc + " cannot be colored");
+        Releaseitem(donatordyetub);
+    	return;
+    endif
+
+    if (!donatordye_cfg)
+       SendSysmessage (who, "Could not open itemdye.cfg, call a Staff Member, please.");
+       syslog( "Unable to open itemdye.cfg" );
+       Releaseitem(donatordyetub);
+       Releaseitem(item);
+       return;
+    endif
+    
+    element :=FindConfigElem (donatordye_cfg, item.objtype);
+
+    if (element)
+      allowdonatordye :=Cint(GetConfigInt(element, "player"));
+    else
+      allowdonatordye := 4;
+    endif
+
+    if(ALLOWED)
+	cmdlvl := who.cmdlevel==0;
+    else
+	cmdlvl := 0;
+    endif
+
+    If (cmdlvl>=allowdonatordye)
+       item.color := cor;
+       item.truecolor := truecor;
+    else  
+       SendSysMessage(who, item.desc + " cannot be colored");
+       return;
+    endif
+
+    releaseitem(donatordyetub);
+    Releaseitem(item);
+    destroyitem(donatordyetub);
+    
+endprogram

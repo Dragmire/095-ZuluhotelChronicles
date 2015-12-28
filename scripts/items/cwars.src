@@ -1,0 +1,2012 @@
+use os;
+use uo;
+include "include/client";
+include "include/time";
+include "include/time";
+include "include/classes";
+include "include/dotempmods";
+include "include/constants/propids";
+include "include/yesno";
+
+program pvp (who)
+	var cwred;
+	var cwblue;
+	var cwgreen;
+	var cwmgate;
+	var lfame;
+	var lkarma;
+	var jackpot;
+	var crimstatus;
+	var murstatus;
+	var sel;
+	var bcfee;
+	var sw;
+	if (GetObjProperty(who,"usingcwstone"))
+		return;
+	endif
+	Detach();
+	SetObjProperty(who,"usingcwstone",1);
+	if (GetObjProperty(who,"CWBanned"))
+		SendSysMessage( who, "Cancelled. You are Banned from Color Wars." );
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (GetGlobalProperty("cwars"))
+		SendSysMessage( who, "Cancelled. A match is in progress" );	
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (GetObjProperty(who,"cwarring"))
+		SendSysMessage( who, "You have already joined." );	
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (GetGlobalProperty("kothnum") > 40 and GetGlobalProperty("cwtype") == "k")
+		SendSysMessage( who, "Sorry, King of the Hill is Full." );	
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (who.cmdlevel < 1 and !GetGlobalProperty ( "cwarsinit"))
+		SendSysMessage( who, "Color Wars is not running at this time." );	
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (who.cmdlevel > 0  and !GetGlobalProperty ( "cwarsinit") and !GetGlobalProperty("cwars"))
+		EraseGlobalProperty("cwmonsters");
+		EraseGlobalProperty("powerball");
+		EraseGlobalProperty("cwsw");
+		EraseGlobalProperty("pbscorer");
+		while (sel != 999)
+			sel := CWEvent(who);
+		endwhile
+		SendSysmessage( who, "Start Color Wars?" ); 
+		var answer:=YesNo(who,"Start CWars?");
+		if (!answer)
+			SendSysMessage(who,"Cancelled.");
+			EraseObjProperty(who,"usingcwstone");
+			return;
+		endif
+		SendSysMessage(who,"Color Wars Initiated!");
+		bcfee := GetGlobalProperty("cwfee");
+		foreach guy in EnumerateOnlineCharacters()
+			if  (GetObjProperty(guy,"cwarring"))
+				EraseObjProperty(guy,"cwarring");
+			endif
+		endforeach
+		if (!bcfee)
+			bcfee := 5000;
+		endif
+		if (GetGlobalProperty("cwtype")=="2")
+			if (!GetGlobalProperty("quickcw"))
+				if (!GetGlobalProperty("powerball"))
+					Broadcast( "2 Team Color Wars will start in 20 minutes!", FONT_BOLD,53 );
+				else
+					Broadcast( "2 Team CW Gank Ball will start in 20 minutes!", FONT_BOLD,53 );
+				endif
+			else
+				if (!GetGlobalProperty("powerball"))
+					Broadcast( "2 Team Color Wars will start in 5 minutes!", FONT_BOLD,53 );
+				else
+					Broadcast( "2 Team CW Gank Ball will start in 5 minutes!", FONT_BOLD,53 );
+				endif
+			endif
+			Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+		endif
+		if (GetGlobalProperty("cwtype")=="3")
+			if (!GetGlobalProperty("quickcw"))
+				if (!GetGlobalProperty("powerball"))
+					Broadcast( "3 Team Color Wars will start in 20 minutes!", FONT_BOLD,53 );
+				else
+					Broadcast( "3 Team CW Gank Ball will start in 20 minutes!", FONT_BOLD,53 );
+				endif
+			else
+				if (!GetGlobalProperty("powerball"))
+					Broadcast( "3 Team Color Wars will start in 5 minutes!", FONT_BOLD,53 );
+				else
+					Broadcast( "3 Team CW Gank Ball will start in 5 minutes!", FONT_BOLD,53 );
+				endif
+			endif
+			Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+		endif
+		if (GetGlobalProperty("cwtype") == "k")
+			if (!GetGlobalProperty("quickcw"))
+				Broadcast( "King of the Hill will start in 20 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "King of the Hill will start in 5 minutes!", FONT_BOLD,53 );
+			endif
+			Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+		endif
+		Broadcast( "Enter through the gate at LB's Castle.", FONT_BOLD,53 );
+		SetGlobalProperty("cwarsinit",1);
+		SetGlobalProperty("cwarsjackpot",0);
+		SetGlobalProperty("cwred",0);
+		SetGlobalProperty("cwblue",0);
+		SetGlobalProperty("cwgreen",0);
+		EraseGlobalProperty("kothmax");
+		EraseGlobalProperty("maxplayer");
+		//OPEN MOONGATE
+		cwmgate := CreateItemAtLocation(1330,1619, 50, 0xf02c, 1);
+		SetObjProperty(cwmgate,"cwgate",1);
+		//
+		EraseObjProperty(who,"usingcwstone");
+		SetGlobalProperty("kothnum",1);
+		RunCWars();
+		return;
+	endif
+	if (who.cmdlevel > 1  and (GetGlobalProperty ( "cwarsinit") or GetGlobalProperty("cwars")))
+		SendSysmessage( who, "Abort Color Wars?" ); 
+		var answer:=YesNo(who,"Abort CWars?");
+		if (answer)
+			SendSysMessage(who,"Color Wars Aborted!.");
+			AbortCWars ();
+			EraseObjProperty(who,"usingcwstone");
+			return;
+		endif
+	endif
+	var cwMage := GetObjProperty (who,"IsMage");
+	var cwWarrior := GetObjProperty (who,"IsWarrior");
+	var cwRanger := GetObjProperty (who,"IsRanger");
+	var cwCrafter := GetObjProperty (who,"IsCrafter");
+	var cwBard := GetObjProperty (who,"IsBard");
+	var cwThief := GetObjProperty (who,"IsThief");
+	if ( cwBard or cwThief or cwCrafter )
+		SendSysmessage(who,"Sorry, your class is not supported.");
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	if (( GetStrength( Who ) < 90 ) && ( GetIntelligence( Who )  < 90 ) && ( GetDexterity( Who ) < 90 ) )
+		SendSysmessage(who,"Sorry, your stats are not high enough.");
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	var alreadymounted := GetEquipmentByLayer( who.serial, 25 );
+	if (alreadymounted)
+	SendSysmessage(who,"You must dismount to play Color Wars.");
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	var hasequipped := 0;
+	foreach worn in ListEquippedItems ( who )
+		if ((worn and worn !=who.backpack)  && (worn.objtype < 0x2030 || worn.objtype > 0x2060))	
+			hasequipped := 1;
+		endif
+	endforeach
+	if (hasequipped)	
+		SendSysmessage(who,"You must unequip all items to play.");
+		EraseObjProperty(who,"usingcwstone");
+		return;
+	endif
+	var notempty := 0;
+	var packtype;
+	var lastcolor := GetGlobalProperty("lastcolor");
+	var teamcolor;
+	var rednum;
+	var greennum;
+	var bluenum;
+	if (GetGlobalProperty("cwtype") == "2")
+		if (!lastcolor)
+			if (Random(10) < 5)
+				teamcolor := "Red";
+			else 
+				teamcolor := "Blue";
+			endif
+		endif
+		rednum := GetGlobalProperty("cwred");
+		if (!rednum)
+			rednum := 0;
+		endif
+		bluenum := GetGlobalProperty("cwblue");
+		if (!bluenum)
+			bluenum := 0;
+		endif	
+		if (lastcolor == "Red")
+			if (Random (10) < 5)
+				if (rednum - bluenum < 1)
+					teamcolor := "Red";
+				else
+					teamcolor := "Blue";
+				endif
+			else
+				teamcolor := "Blue";
+			endif
+		elseif (lastcolor == "Blue")
+			if (Random (10) < 5)
+				if (bluenum - rednum < 1)
+					teamcolor := "Blue";
+				else
+					teamcolor := "Red";
+				endif
+			else
+				teamcolor := "Red";
+			endif
+		elseif (lastcolor == "Green")
+			teamcolor := "Blue";
+		endif
+	endif
+	var et := {};
+	var etcount :=0 ;
+	var etran;
+	if (GetGlobalProperty("cwtype") == "3")
+		if (!lastcolor)
+			teamcolor := PickColor();
+			lastcolor := teamcolor;
+		endif
+		rednum := GetGlobalProperty("cwred");
+		if (!rednum)
+			rednum := 0;
+		endif
+		bluenum := GetGlobalProperty("cwblue");
+		if (!bluenum)
+			bluenum := 0;
+		endif
+		greennum := GetGlobalProperty("cwgreen");
+		if (!greennum)
+			greennum := 0;
+		endif
+		if (!teamcolor)
+			if (lastcolor == "Green")
+				teamcolor := "Blue";
+			endif
+			if (lastcolor == "Blue")
+				teamcolor := "Red";
+			endif
+			if (lastcolor == "Red")
+				teamcolor := "Green";
+			endif
+		endif
+		if (!teamcolor)
+			teamcolor := PickColor();
+		endif
+	endif
+	if (GetGlobalProperty("cwtype") == "k")
+		teamcolor := "Blue";
+	endif		
+	SetGlobalProperty("lastcolor",teamcolor);
+	SetObjProperty(who,"cwcolor",teamcolor);
+	var cwname := who.name;	
+	SetObjProperty(who,"cwname",cwname);
+	if (GetGlobalProperty("cwtype") == "2" or (GetGlobalProperty("cwtype") == "3"))
+		SendSysmessage(who,"You have joined the "+teamcolor+" team.");
+		//who.name := who.name + "["+teamcolor+"]";
+	endif
+	WipeMods( who );	
+	EraseObjProperty(who,"kothtime");
+	who.graphic := who.trueobjtype;
+	SetObjProperty(who,"cwhiding",0);
+	if (cwMage)	
+		DressMage (who);
+		packtype := "Mage";
+	elseif (cwWarrior)
+		DressWarrior(who);
+		packtype := "Warrior";
+	elseif (cwRanger)
+		DressRanger(who);
+		packtype := "Ranger";
+	else
+		DressPP(who);
+		packtype := "PP";
+	endif
+	SendSysmessage(who, packtype + " pack equipped.");
+	SetObjProperty(who,"cwarring",1);
+	lfame := GetObjProperty(who,"Fame");
+	lkarma := GetObjProperty(who,"Karma");
+	SetObjProperty(who,"cwfame",lfame);	
+	SetObjProperty(who,"cwkarma",lkarma);	
+	cwred := GetGlobalProperty("cwred");
+	crimstatus := who.criminal;
+	murstatus := who.murderer;
+	SetObjProperty(who,"cwcrim",crimstatus);
+	SetObjProperty(who,"cwmurd",murstatus);
+	EraseObjProperty(who,"freedeath");
+	EraseObjProperty(who,"cwdisqualify");
+	if (!cwred)
+		cwred := 0;
+	endif
+	cwblue := GetGlobalProperty("cwblue");
+	if (!cwblue)
+		cwblue := 0;
+	endif	
+	cwgreen := GetGlobalProperty("cwgreen");
+	if (!cwgreen)
+		cwgreen := 0;
+	endif	
+	if (GetObjProperty(who,"cwcolor" ) == "Red")
+		cwred := cwred +1;
+		MoveCharacterToLocation( who, 5388, 1198, 0, 0);
+	endif
+	if (GetObjProperty(who,"cwcolor") == "Blue")
+		cwblue := cwblue +1;
+		MoveCharacterToLocation( who, 5384, 1188, 0, 0);		
+	endif
+	if (GetObjProperty(who,"cwcolor") == "Green")
+		cwgreen := cwgreen +1;
+		MoveCharacterToLocation( who, 5379, 1198, 0, 0);	//////////GREEN START COORDS
+	endif
+	SetGlobalProperty("cwblue",cwblue);
+	SetGlobalProperty("cwred",cwred);
+	SetGlobalProperty("cwgreen",cwgreen);
+	EraseObjProperty(who,"usingcwstone");
+// tele in stuff
+endprogram
+
+function DressMage( player )
+	var acc	:= player.acct;
+	var accname := acc.name;
+	var ccode;
+	if (GetObjProperty (player,"cwcolor") =="Blue")
+		ccode := 0x493;
+	elseif (GetObjProperty (player,"cwcolor") =="Red")
+		ccode := 0x494;
+	else
+		ccode := 0x48a;
+	endif
+    	var hat := CreateItemInBackpack( player, 0x1718, 1);
+	hat.color := ccode;    	
+	SetObjProperty(hat,"CW",1);
+	SetObjProperty(hat,"OwnerAcct",accname);
+	SetObjProperty(hat,"OwnerName",player.name);
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;    
+	SetObjProperty(robe,"Cursed",1);
+	SetObjProperty(robe,"OwnerAcct",accname);
+	SetObjProperty(robe,"OwnerName",player.name);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	regbag.color := ccode;
+	regbag.movable := 0;
+	SetObjProperty(regbag,"CW",1);
+	SetObjProperty(regbag,"OwnerAcct",accname);
+	SetObjProperty(regbag,"OwnerName",player.name);
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 50);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 50);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 50);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 50);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 50);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 50);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 50);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 50);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	SetObjProperty(book,"OwnerAcct",accname);
+	SetObjProperty(book,"OwnerName",player.name);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+    	var staff := CreateItemInBackpack( player, 0xe8a, 1);
+	staff.color := ccode;
+	SetObjProperty(staff,"CW",1);
+	SetObjProperty(staff,"OwnerAcct",accname);
+	SetObjProperty(staff,"OwnerName",player.name);
+	staff.dmg_mod := 20;
+	staff.name := "a Quarterstaff of Power";
+endfunction
+
+function DressWarrior( player )
+	var ccode;
+	var acc	:= player.acct;
+	var accname := acc.name;
+	if (GetObjProperty (player,"cwcolor") =="Blue")
+		ccode := 0x493;
+	elseif (GetObjProperty (player,"cwcolor") =="Red")
+		ccode := 0x494;
+	else
+		ccode := 0x48a;
+	endif
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;    
+	SetObjProperty(robe,"Cursed",1);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+	SetObjProperty(robe,"OwnerAcct",accname);
+	SetObjProperty(robe,"OwnerName",player.name);
+    	var arms := CreateItemInBackpack( player, 0x1410, 1);
+	arms.color := ccode;    	
+	SetObjProperty(arms,"CW",1);
+	SetObjProperty(arms,"OwnerAcct",accname);
+	SetObjProperty(arms,"OwnerName",player.name);
+    	var legs := CreateItemInBackpack( player, 0x1411, 1);
+	legs.color := ccode;    
+	SetObjProperty(legs,"CW",1);
+	SetObjProperty(legs,"OwnerAcct",accname);
+	SetObjProperty(legs,"OwnerName",player.name);
+    	var helm := CreateItemInBackpack( player, 0x1412, 1);
+	helm.color := ccode;    
+	SetObjProperty(helm,"CW",1);
+	SetObjProperty(helm,"OwnerAcct",accname);
+	SetObjProperty(helm,"OwnerName",player.name);
+    	var gorg := CreateItemInBackpack( player, 0x1413, 1);
+	gorg.color := ccode;    
+	SetObjProperty(gorg,"CW",1);
+	SetObjProperty(gorg,"OwnerAcct",accname);
+	SetObjProperty(gorg,"OwnerName",player.name);
+    	var glove := CreateItemInBackpack( player, 0x1414, 1);
+	glove.color := ccode;
+	SetObjProperty(glove,"CW",1);    
+	SetObjProperty(glove,"OwnerAcct",accname);
+	SetObjProperty(glove,"OwnerName",player.name);
+	var bp := CreateItemInBackpack( player, 0x1415, 1);
+	bp.color := ccode;   
+	SetObjProperty(bp,"CW",1);
+	SetObjProperty(bp,"OwnerAcct",accname);
+	SetObjProperty(bp,"OwnerName",player.name);
+    	var heater := CreateItemInBackpack( player, 0x1b76, 1);
+	heater.color := ccode;
+	SetObjProperty(heater,"CW",1);     
+	SetObjProperty(heater,"OwnerAcct",accname);
+	SetObjProperty(heater,"OwnerName",player.name);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 50);
+	bandies.color := ccode;
+	SetObjProperty(bandies,"CW",1);
+	SetObjProperty(bandies,"OwnerAcct",accname);
+	SetObjProperty(bandies,"OwnerName",player.name);
+	bandies.movable := 0;
+	var kryss := CreateItemInBackpack( player, 0x1401, 1);
+	kryss.color := ccode;
+	kryss.dmg_mod := 20;
+	SetObjProperty(kryss,"CW",1);
+	SetObjProperty(kryss,"OwnerAcct",accname);
+	SetObjProperty(kryss,"OwnerName",player.name);
+	kryss.name := "Kryss of Power";
+    	var mace := CreateItemInBackpack( player, 0xf5c, 1);
+	mace.color := ccode;
+	SetObjProperty(mace,"CW",1);
+	SetObjProperty(mace,"OwnerAcct",accname);
+	SetObjProperty(mace,"OwnerName",player.name);
+	mace.dmg_mod := 20;
+	mace.name := "Mace of Power";
+    	var sword := CreateItemInBackpack( player, 0xf5e, 1);
+	sword.color := ccode;
+	SetObjProperty(sword,"CW",1);
+	SetObjProperty(sword,"OwnerAcct",accname);
+	SetObjProperty(sword,"OwnerName",player.name);
+	sword.dmg_mod := 20;
+	sword.name := "Broad Sword of Power";
+    	var spear := CreateItemInBackpack( player, 0xf63, 1);
+	spear.color := ccode;
+	SetObjProperty(spear,"CW",1);
+	SetObjProperty(spear,"OwnerAcct",accname);
+	SetObjProperty(spear,"OwnerName",player.name);
+	spear.dmg_mod := 20;
+	spear.name := "Spear of Power";
+endfunction
+
+function DressRanger( player )
+	var ccode;
+	var acc	:= player.acct;
+	var accname := acc.name;
+	if (GetObjProperty (player,"cwcolor") =="Blue")
+		ccode := 0x493;
+	elseif (GetObjProperty (player,"cwcolor") =="Red")
+		ccode := 0x494;
+	else
+		ccode := 0x48a;
+	endif
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;    
+	SetObjProperty(robe,"Cursed",1);
+	SetObjProperty(robe,"OwnerAcct",accname);
+	SetObjProperty(robe,"OwnerName",player.name);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var arms := CreateItemInBackpack( player, 0x13ee, 1);
+	arms.color := ccode;    	
+	SetObjProperty(arms,"CW",1);
+	SetObjProperty(arms,"OwnerAcct",accname);
+	SetObjProperty(arms,"OwnerName",player.name);
+    	var legs := CreateItemInBackpack( player, 0x13be, 1);
+	legs.color := ccode;   
+	SetObjProperty(legs,"CW",1); 
+	SetObjProperty(legs,"OwnerAcct",accname);
+	SetObjProperty(legs,"OwnerName",player.name);
+    	var helm := CreateItemInBackpack( player, 0x13c0, 1);
+	helm.color := ccode;  
+	SetObjProperty(helm,"CW",1);  
+    	var glove := CreateItemInBackpack( player, 0x13f2, 1);
+	glove.color := ccode;    
+	SetObjProperty(glove,"CW",1);
+	SetObjProperty(glove,"OwnerAcct",accname);
+	SetObjProperty(glove,"OwnerName",player.name);
+	var bp := CreateItemInBackpack( player, 0x13bf, 1);
+	bp.color := ccode; 
+	SetObjProperty(bp,"CW",1);
+	SetObjProperty(bp,"OwnerAcct",accname);
+	SetObjProperty(bp,"OwnerName",player.name);
+	var boots := CreateItemInBackpack( player, 0x170b, 1);
+	boots.color := ccode;   
+	SetObjProperty(boots,"CW",1);
+	SetObjProperty(boots,"OwnerAcct",accname);
+	SetObjProperty(boots,"OwnerName",player.name);
+	var bow := CreateItemInBackpack( player, 0x7600, 1);
+	bow.color := ccode;
+	SetObjProperty(bow,"CW",1);
+	SetObjProperty(bow,"OwnerAcct",accname);
+	SetObjProperty(bow,"OwnerName",player.name);
+	bow.dmg_mod := 15;
+	bow.name := "Bow of Power";
+	var arrow := CreateItemInBackpack( player, 0xf3f, 100);
+	arrow.color := ccode;
+	arrow.movable := 0;
+	SetObjProperty(arrow,"CW",1);
+	SetObjProperty(arrow,"OwnerAcct",accname);
+	SetObjProperty(arrow,"OwnerName",player.name);
+	var pot;
+	var potloop := 0;
+	while (potloop < 5)	
+		potloop := potloop + 1;
+		pot := CreateItemInBackpack (player ,0xdc02, 1);
+		pot.movable := 0;
+		SetObjProperty(pot,"CW",1);
+		SetObjProperty(pot,"OwnerAcct",accname);
+		SetObjProperty(pot,"OwnerName",player.name);
+		SetObjProperty( pot, "noloot" , 1 );
+	endwhile
+endfunction
+
+function DressPP( player )
+	var ccode;
+	var acc	:= player.acct;
+	var accname := acc.name;
+	if (GetObjProperty (player,"cwcolor") =="Blue")
+		ccode := 0x493;
+	elseif (GetObjProperty (player,"cwcolor") =="Red")
+		ccode := 0x494;
+	else
+		ccode := 0x48a;
+	endif
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	SetObjProperty(robe,"Cursed",1);
+	robe.color := ccode;    
+	SetObjProperty(robe,"CW",1);
+	SetObjProperty(robe,"OwnerAcct",accname);
+	SetObjProperty(robe,"OwnerName",player.name);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var arms := CreateItemInBackpack( player, 0x1410, 1);
+	arms.color := ccode; 
+	SetObjProperty(arms,"CW",1);   	
+	SetObjProperty(arms,"OwnerAcct",accname);
+	SetObjProperty(arms,"OwnerName",player.name);
+    	var legs := CreateItemInBackpack( player, 0x1411, 1);
+	legs.color := ccode;    
+	SetObjProperty(legs,"CW",1);
+	SetObjProperty(legs,"OwnerAcct",accname);
+	SetObjProperty(legs,"OwnerName",player.name);
+    	var helm := CreateItemInBackpack( player, 0x1412, 1);
+	helm.color := ccode; 
+	SetObjProperty(helm,"CW",1);   
+	SetObjProperty(helm,"OwnerAcct",accname);
+	SetObjProperty(helm,"OwnerName",player.name);
+    	var gorg := CreateItemInBackpack( player, 0x1413, 1);
+	gorg.color := ccode;   
+	SetObjProperty(gorg,"CW",1); 
+	SetObjProperty(gorg,"OwnerAcct",accname);
+	SetObjProperty(gorg,"OwnerName",player.name);
+    	var glove := CreateItemInBackpack( player, 0x1414, 1);
+	glove.color := ccode;    
+	SetObjProperty(glove,"CW",1);
+	SetObjProperty(glove,"OwnerAcct",accname);
+	SetObjProperty(glove,"OwnerName",player.name);
+	var bp := CreateItemInBackpack( player, 0x1415, 1);
+	bp.color := ccode;   
+	SetObjProperty(bp,"CW",1);
+	SetObjProperty(bp,"OwnerAcct",accname);
+	SetObjProperty(bp,"OwnerName",player.name);
+    	var heater := CreateItemInBackpack( player, 0x1b76, 1);
+	heater.color := ccode;     
+	SetObjProperty(heater,"CW",1);
+	SetObjProperty(heater,"OwnerAcct",accname);
+	SetObjProperty(heater,"OwnerName",player.name);
+	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	SetObjProperty(regbag,"CW",1);
+	SetObjProperty(regbag,"OwnerAcct",accname);
+	SetObjProperty(regbag,"OwnerName",player.name);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 50);
+	SetObjProperty(bandies,"CW",1);
+	SetObjProperty(bandies,"OwnerAcct",accname);
+	SetObjProperty(bandies,"OwnerName",player.name);
+	bandies.color := ccode;
+	bandies.movable := 0;
+	regbag.color := ccode;
+	regbag.movable := 0;
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 30);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 30);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 30);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 30);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 30);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 30);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 30);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 30);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	SetObjProperty(book,"OwnerAcct",accname);
+	SetObjProperty(book,"OwnerName",player.name);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+    	var kryss := CreateItemInBackpack( player, 0x1401, 1);
+	kryss.color := ccode;
+	kryss.dmg_mod := 20;
+	kryss.name := "Kryss of Power";
+	SetObjProperty(kryss,"CW",1);
+	SetObjProperty(kryss,"OwnerAcct",accname);
+	SetObjProperty(kryss,"OwnerName",player.name);
+    	var mace := CreateItemInBackpack( player, 0xf5c, 1);
+	mace.color := ccode;
+	mace.dmg_mod := 20;
+	mace.name := "Mace of Power";
+	SetObjProperty(mace,"CW",1);
+	SetObjProperty(mace,"OwnerAcct",accname);
+	SetObjProperty(mace,"OwnerName",player.name);
+    	var sword := CreateItemInBackpack( player, 0xf5e, 1);
+	sword.color := ccode;
+	sword.dmg_mod := 20;
+	sword.name := "Broad Sword of Power";
+	SetObjProperty(sword,"CW",1);
+	SetObjProperty(sword,"OwnerAcct",accname);
+	SetObjProperty(sword,"OwnerName",player.name);
+    	var spear := CreateItemInBackpack( player, 0xf63, 1);
+	spear.color := ccode;
+	SetObjProperty(spear,"CW",1);
+	SetObjProperty(spear,"OwnerAcct",accname);
+	SetObjProperty(spear,"OwnerName",player.name);
+	spear.dmg_mod := 20;
+	spear.name := "Spear of Power";
+endfunction
+
+function spellok ( what )
+
+	case( what )
+		0x1f40	  :		
+		0x1f44  :	
+		0x1f48  :
+		0x1f4d  :
+		0x1f53  :
+		0x1f5b  :
+		0x1f5e  :
+		0x1f4c  :
+		0x1f60  :
+		0x1f64  :
+		0x1f54  :		
+		0xf7a   :	return 0; 	
+
+		default:	return 1;
+	endcase
+
+endfunction
+
+function RunCWars ()
+	var running := 1;
+	var sw;
+	var cwred;
+	var cwgreen;
+	var cwblue;
+	var gate1;
+	var gate2;
+	var gate3;
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	var lfame;	
+	var lkarma;
+	var jackpot;
+	var disq;
+	var cwhiding;
+	var bcfee := GetGlobalProperty("cwfee");	
+	if (!bcfee)
+		bcfee := 5000;
+	endif
+	cwsleep (300);
+	KillMounts();
+	CheckPacks();
+	if (GetGlobalProperty("cwarsinit") and !GetGlobalProperty("quickcw"))
+		if (GetGlobalProperty("cwtype") == "2")
+			if (!GetGlobalProperty("powerball"))
+				Broadcast( "2 Team Color Wars will start in 15 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "2 Team CW Gank Ball will start in 15 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "3")
+			if (!GetGlobalProperty("powerball"))
+				Broadcast( "3 Team Color Wars will start in 15 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "3 Team CW Gank Ball will start in 15 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "k")
+			Broadcast( "King of the Hill will start in 15 minutes!", FONT_BOLD,53 );
+		endif
+		Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+	endif
+	KillMounts();
+	CheckPacks();
+	cwsleep (300);
+	if (GetGlobalProperty("cwarsinit") and !GetGlobalProperty("quickcw"))
+		if (GetGlobalProperty("cwtype") == "2")
+			if(!GetGlobalProperty("powerball"))
+				Broadcast( "2 Team Color Wars will start in 10 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "2 Team CW Gank Ball will start in 10 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "3")
+			if(!GetGlobalProperty("powerball"))
+				Broadcast( "3 Team Color Wars will start in 10 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "3 Team CW Gank Ball will start in 10 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "k")
+			Broadcast( "King of the Hill will start in 10 minutes!", FONT_BOLD,53 );
+		endif
+		Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+	endif
+	KillMounts();
+	CheckPacks();
+	cwsleep(300);
+	if (GetGlobalProperty("cwarsinit"))
+		if (GetGlobalProperty("cwtype") == "2" and !GetGlobalProperty("quickcw"))
+			if(!GetGlobalProperty("powerball"))
+				Broadcast( "2 Team Color Wars will start in 5 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "2 Team CW Gank Ball will start in 5 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "3" and !GetGlobalProperty("quickcw"))
+			if(!GetGlobalProperty("powerball"))	
+				Broadcast( "3 Team Color Wars will start in 5 minutes!", FONT_BOLD,53 );
+			else
+				Broadcast( "3 Team CW Gank Ball will start in 5 minutes!", FONT_BOLD,53 );
+			endif
+		endif
+		if (GetGlobalProperty("cwtype") == "k" and !GetGlobalProperty("quickcw"))
+			Broadcast( "King of the Hill will start in 5 minutes!", FONT_BOLD,53 );
+		endif
+		if (!GetGlobalProperty("quickcw"))
+			Broadcast( "Entry Fee: "+bcfee+"gp", FONT_BOLD,53 );
+		endif
+		if (GetGlobalProperty("cwtype") == "2" or GetGlobalProperty("cwtype") == "3")
+			Broadcast( "Please go to your ready rooms.", FONT_BOLD,53 );	
+			//OPEN READY ROOM GATES
+			gate1 := ListItemsNearLocation( 5378 , 1187 , 0 , 3 );
+			foreach item in gate1
+				if (item and GetObjProperty(item,"cwgate"))
+					DestroyItem(item);
+				endif
+			endforeach
+			gate2 := ListItemsNearLocation( 5386 , 1194 , 0 , 3 );
+			foreach item in gate2
+				if (item and GetObjProperty(item,"cwgate") )
+					DestroyItem(item);
+				endif
+			endforeach
+			gate3 := ListItemsNearLocation( 5378 , 1194 , 0 , 3 ); ////GREEN GATES
+			foreach item in gate3
+				if (item and GetObjProperty(item,"cwgate") )
+					DestroyItem(item);
+				endif
+			endforeach
+			//
+		endif
+	endif
+	KillMounts();
+	CheckPacks();
+	EraseGlobalProperty("quickcw");
+	cwsleep(300);
+	if (!GetGlobalProperty("cwarsinit"))
+		return;
+	else
+	SetGlobalProperty("cwars",1);
+	EraseGlobalProperty("cwarsinit");
+	jackpot := GetGlobalProperty("cwarsjackpot");
+	if (GetGlobalProperty("cwtype") == "2")
+		if(!GetGlobalProperty("powerball"))
+			Broadcast( "2 Team Color Wars starting in 1 minute..", FONT_BOLD,53 );
+		else
+			Broadcast( "2 Team CW Gank Ball starting in 1 minute..", FONT_BOLD,53 );
+			foreach player in EnumerateOnlineCharacters()	
+				if (GetObjProperty(player,"cwarring"))
+					SendSysMessage(player,"Kick the ball into an opponents base to win.");
+				endif
+			endforeach
+		endif
+	endif
+	if (GetGlobalProperty("cwtype") == "3")
+		if(!GetGlobalProperty("powerball"))
+			Broadcast( "3 Team Color Wars starting in 1 minute..", FONT_BOLD,53 );
+		else
+			Broadcast( "3 Team CW Gank Ball starting in 1 minute..", FONT_BOLD,53 );
+			foreach player in EnumerateOnlineCharacters()	
+				if (GetObjProperty(player,"cwarring"))
+					SendSysMessage(player,"Kick the ball into an opponents base to win.");
+				endif
+			endforeach
+		endif
+	endif
+	if (GetGlobalProperty("cwtype") == "k")
+		Broadcast( "King of the Hill starting in 1 minute..", FONT_BOLD,53 );
+		foreach player in EnumerateOnlineCharacters()	
+			if (GetObjProperty(player,"cwarring"))
+				SendSysMessage(player,"Kill everyone OR hold the 'hill' for 60 seconds to win.");
+			endif
+		endforeach
+	endif
+	// CREATE POWERBALL
+	var ball;
+	var ko;
+	var kos;	
+	if(GetGlobalProperty("powerball"))
+		ko := ListItemsNearLocation( 6082 , 1360 , 30 , 20 );
+		foreach item in ko
+			if(GetObjProperty(item,"iamkoth"))
+				kos := item;
+			endif
+		endforeach
+		if (kos)
+			ball := CreateItemAtLocation(kos.x,kos.y, kos.z, 0xc948, 1);
+			SetObjProperty(ball,"CW",1);
+		endif
+	endif
+	//
+	Broadcast( "Cash jackpot is : "+jackpot+"gp", FONT_BOLD,53);
+	//CLOSE MOONGATE
+	gate1 := ListItemsNearLocation( 1330 , 1619 , 50 , 3 );
+	foreach item in gate1
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	//
+	//REFRESH POWDER KEGS & CANNON BALLS
+	var ballsnkegs;
+	ballsnkegs := ListItemsNearLocation( 6094 , 1333 , 53 , 5 );
+	foreach item in ballsnkegs
+		if (item and GetObjProperty(item,"cwkeg"))
+			DestroyItem(item);
+		endif
+	endforeach
+	ballsnkegs := ListItemsNearLocation( 6060 , 1358 , 53 , 5 );
+	foreach item in ballsnkegs
+		if (item and GetObjProperty(item,"cwkeg"))
+			DestroyItem(item);
+		endif
+	endforeach
+	ballsnkegs := ListItemsNearLocation( 6105 , 1356 , 53 , 5 );
+	foreach item in ballsnkegs
+		if (item and GetObjProperty(item,"cwkeg"))
+			DestroyItem(item);
+		endif
+	endforeach
+	var cwtiles;
+	var cwtloop := 0;
+	var thingy;
+	cwtiles := ListItemsNearLocation( 6094 , 1333 , 53 , 5 );
+	foreach item in cwtiles
+		if (item and GetObjProperty(item,"cwgreenkeg"))
+			thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe7f, 1);
+			thingy.color := 0x48a;
+			thingy.movable := 0;
+			SetObjProperty(thingy,"cwkeg",1);
+			SetObjProperty(thingy,"CW",1);
+		endif
+		if (item and GetObjProperty(item,"cwgreenball"))
+			cwtloop := 0;
+			while (cwtloop < 4)
+				cwtloop := cwtloop + 1;
+				thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe73, 1);
+				thingy.color := 0x48a;
+				thingy.movable := 0;
+				SetObjProperty(thingy,"cwkeg",1);
+				SetObjProperty(thingy,"CW",1);
+			endwhile
+		endif
+		sleepms(25);
+	endforeach
+	cwtiles := ListItemsNearLocation( 6060 , 1358 , 53 , 5 );
+	foreach item in cwtiles
+		if (item and GetObjProperty(item,"cwredkeg"))
+			thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe7f, 1);
+			thingy.color := 0x494;
+			thingy.movable := 0;
+			SetObjProperty(thingy,"cwkeg",1);
+			SetObjProperty(thingy,"CW",1);
+		endif
+		if (item and GetObjProperty(item,"cwredball"))
+			cwtloop := 0;
+			while (cwtloop < 4)
+				cwtloop := cwtloop + 1;
+				thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe73, 1);
+				thingy.color := 0x494;
+				thingy.movable := 0;
+				SetObjProperty(thingy,"cwkeg",1);
+				SetObjProperty(thingy,"CW",1);
+			endwhile
+		endif
+		sleepms(25);
+	endforeach
+	cwtiles := ListItemsNearLocation( 6105 , 1356 , 53 , 5 );
+	foreach item in cwtiles
+		if (item and GetObjProperty(item,"cwbluekeg"))
+			thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe7f, 1);
+			thingy.color := 0x493;
+			thingy.movable := 0;
+			SetObjProperty(thingy,"cwkeg",1);
+			SetObjProperty(thingy,"CW",1);
+		endif
+		if (item and GetObjProperty(item,"cwblueball"))
+			cwtloop := 0;
+			while (cwtloop < 4)
+				cwtloop := cwtloop + 1;
+				thingy := CreateItemAtLocation(item.x,item.y, item.z, 0xe73, 1);
+				thingy.color := 0x493;
+				thingy.movable := 0;
+				SetObjProperty(thingy,"cwkeg",1);
+				SetObjProperty(thingy,"CW",1);
+			endwhile
+		endif
+		sleepms(25);
+	endforeach
+	//
+	//SPAWN MONSTERS
+	var cwmonsters;
+	var numcwmonsters;
+	var cwmloop := 0;
+	var cwbaddie;
+	var cwmx;
+	var cwmy;
+	if (GetGlobalProperty("cwmonsters") and GetGlobalProperty("cwtype") != "k")
+		cwmonsters := GetGlobalProperty("cwmonsters");
+		numcwmonsters := GetGlobalProperty("numcwmonsters");
+		if (!numcwmonsters)
+			numcwmonsters := 1;
+		endif
+		while (cwmloop < numcwmonsters)
+			cwmloop := cwmloop + 1;
+			cwmx := (Random(29)+1) + 6065;
+			cwmy := (Random(21)+1) + 1345;
+			cwbaddie := CreateNPCfromTemplate( cwmonsters , cwmx , cwmy , 0 );
+			cwbaddie.hidden := 1;
+		endwhile
+	endif
+	//
+	//SPAWN SPECIAL WEAPONS	
+	if (GetGlobalProperty("cwsw"))
+		cwtiles := ListItemsNearLocation( 6082 , 1360 , 30 , 10 );
+		foreach item in cwtiles
+			if (item and GetObjProperty(item,"cwswmace"))
+				sw := CreateItemAtLocation(item.x,item.y, item.z, 0xf5c, 1);
+				sw.color := 1300;
+				SetObjProperty(sw,"CW",1);
+				sw.dmg_mod := 25;
+				sw.name := "Mace of Vanquishing";
+			endif
+			if (item and GetObjProperty(item,"cwswbow"))
+				sw := CreateItemAtLocation(item.x,item.y, item.z, 0xf3f, 100);
+				sw.color := 1300;
+				SetObjProperty(sw,"CW",1);
+				sw := CreateItemAtLocation(item.x,item.y, item.z, 0x13b2, 1);
+				sw.color := 1300;
+				SetObjProperty(sw,"CW",1);
+				sw.dmg_mod := 20;
+				sw.name := "Bow of Vanquishing";
+			endif
+			if (item and GetObjProperty(item,"cwswstaff"))
+				sw := CreateItemAtLocation(item.x,item.y, item.z, 0x13f9, 1);
+				sw.color := 1300;
+				SetObjProperty(sw,"CW",1);
+				sw.dmg_mod := 25;
+				sw.name := "Gnarled Staff of Vanquishing";
+			endif
+			if (item and GetObjProperty(item,"cwswscroll"))
+				sw := CreateItemAtLocation(item.x,item.y, item.z, 0xb105, 5);
+				sw.color := 1300;
+				SetObjProperty(sw,"CW",1);
+			endif
+		endforeach
+	endif
+	var startx;
+	var starty;
+	var stries := 0;
+	var sfound := 0;
+	var slook;
+	var smove;
+	if (GetGlobalProperty("cwtype") == "k")
+		foreach player in EnumerateOnlineCharacters()	
+			if(GetObjProperty(player,"cwarring"))
+				PlaceKoth(player);
+			endif
+		endforeach
+	endif
+	KillMounts();
+	CheckPacks();
+	sleep(60);
+	//OPEN GATES
+	gate1 := ListItemsNearLocation( 6115 , 1333 , 30 , 3 );
+	foreach item in gate1
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	gate2 := ListItemsNearLocation( 6067 , 1394 , 30 , 3 );
+	foreach item in gate2
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	gate3 := ListItemsNearLocation( 6127 , 1308 , 30 , 3 ); //GREEN GATES
+	foreach item in gate3
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	if (GetGlobalProperty("cwtype") == "2" or GetGlobalProperty("cwtype") == "3")
+		if (!GetGlobalProperty("powerball"))
+			Broadcast( "Gates are open! Color Wars has started.", FONT_BOLD,53 );
+		else
+			Broadcast( "Gates are open! CW Gank Ball has started.", FONT_BOLD,53 );
+		endif
+	endif
+	if (GetGlobalProperty("cwtype") == "k")
+		Broadcast( "King of the Hill has started!", FONT_BOLD,53 );
+		foreach player in EnumerateOnlineCharacters()	
+			if(GetObjProperty(player,"cwarring"))
+				player.frozen := 0;
+				gate1 := ListItemsNearLocation( player.x , player.y , player.z , 2 );
+				foreach item in gate1
+					if (item and GetObjProperty(item,"cwgate"))
+						DestroyItem(item);
+					endif
+				endforeach
+			endif
+		endforeach
+	endif
+	//
+	//CLOSE GATES TO START ROOMS
+	var cwgate := CreateItemAtLocation(5378,1187, 0, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(5386,1194, 0, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(5378,1194, 0, 2083, 1); //GREEN GATES
+	SetObjProperty(cwgate,"cwgate",1);
+	//
+	//MAIN LOOP
+	var iamkoth;
+	var kothtemp;
+	var robe;
+	var kothmax;
+	var kothcomp;
+	var maxplayer;
+while (running)
+	cwred := 0;
+	cwblue := 0;
+	cwgreen := 0;
+	sleep(1);
+	foreach player in EnumerateOnlineCharacters()	
+		if (GetObjProperty(player,"cwarring"))
+			if (!player.dead )
+				if (player.hidden)
+					cwhiding := GetObjProperty(player,"cwhiding");
+					cwhiding := cwhiding + 1;
+					if (cwhiding > 60)
+						player.hidden := 0;
+						SendSysMessage(player,"You cannot hide anymore!");
+					endif
+					SetObjProperty(player,"cwhiding",cwhiding);
+				endif
+				if (GetGlobalProperty("cwtype")=="2")
+					if (GetObjProperty(player,"cwcolor") == "Red")
+						cwred := cwred + 1;
+					endif
+					if (GetObjProperty(player,"cwcolor") == "Blue")
+						cwblue := cwblue + 1;
+					endif
+				endif
+				if (GetGlobalProperty("cwtype")=="3")
+					if (GetObjProperty(player,"cwcolor") == "Red")
+						cwred := cwred + 1;
+					endif
+					if (GetObjProperty(player,"cwcolor") == "Blue")
+						cwblue := cwblue + 1;
+					endif
+					if (GetObjProperty(player,"cwcolor") == "Green")
+						cwgreen := cwgreen + 1;
+					endif
+				endif
+				if (GetGlobalProperty("cwtype")=="k" and GetObjProperty(player,"cwarring") and !player.dead)
+					if (GetObjProperty(player,"cwcolor") == "Blue")
+						cwblue := cwblue + 1;
+					endif
+					iamkoth := ListItemsNearLocation( 6082 , 1358 , 40 , 10 );
+					foreach item in iamkoth
+						if (GetObjProperty(item,"iamkoth"))
+							if (player.x==item.x and player.y==item.y and player.z==item.z)
+								kothtemp := GetObjProperty(player,"kothtime");
+								if (!kothtemp)
+									kothtemp := 0;
+								endif	
+								kothtemp := kothtemp + 1;
+								SetObjProperty(player,"kothtime",kothtemp);
+								SendSysMessage(player,"KotH Score : "+kothtemp);
+							//player.name := GetObjProperty(player,"cwname")+"["+kothtemp+"]";
+								player.hp := player.hp + 5;
+								if (player.hp > player.maxhp)
+									player.hp := player.maxhp;
+								endif
+								player.mana := player.mana + 5;
+								if (player.mana > player.maxmana)
+									player.mana := player.maxmana;
+								endif
+								player.stamina := player.stamina + 5;
+								if (player.stamina > player.maxstamina)
+									player.stamina := player.maxstamina;
+								endif
+								if (player.hidden)
+									player.hidden := 0;
+								endif
+							endif
+						endif
+					endforeach
+					foreach dude in EnumerateOnlineCharacters()
+						if (dude.dead and GetObjProperty(dude,"cwarring"))
+							EraseObjProperty(dude,"kothtime");
+						endif
+						if (!dude.dead and GetObjProperty(dude,"cwarring"))
+							kothcomp := GetObjProperty(dude,"kothtime");
+							if(!kothcomp)
+								kothcomp := 0;	
+							endif
+							kothmax := GetGlobalProperty("kothmax");
+							if (!kothmax)
+								kothmax := 0;
+							endif
+							if (kothcomp > kothmax)
+								SetGlobalProperty("kothmax",kothcomp);
+								SetGlobalProperty("maxplayer",dude.serial);
+							endif
+						endif
+					endforeach
+						if(GetGlobalProperty("kothmax"))
+							maxplayer :=SystemFindObjectBySerial(GetGlobalProperty("maxplayer"));
+							if (GetObjProperty(player,"cwarring") and !player.dead)
+								robe := GetEquipmentByLayer( maxplayer, 22 );
+								robe.color := 1300;
+							endif
+							foreach dude in EnumerateOnlineCharacters()
+						if(dude != maxplayer and GetObjProperty(dude,"cwarring") and !dude.dead)
+									robe := GetEquipmentByLayer( dude, 22 );
+									robe.color := 1171;
+						endif
+							endforeach
+						endif
+					if (kothtemp > 60)
+						foreach dude in EnumerateOnlineCharacters()		
+							EraseObjProperty(dude,"cwarring");
+						endforeach	
+						SetObjProperty(player,"cwarring",1);
+						running := 0;
+					endif		
+					
+				endif
+			else
+				if (player.warmode and player.dead)
+					disq := GetObjProperty(player,"cwdisqualify");
+					if (!disq)
+						SetObjProperty(player,"cwdisqualify",ReadGameClock());
+		SendSysMessage(player,"WARNING! : You have 10 seconds to go out of war mode  or you will be disqualified!");
+		SendSysMessage(player,"WARNING! : You have 10 seconds to go out of war mode  or you will be disqualified!");						else
+						if (ReadGameClock()>disq+10)
+							DisconnectClient(player);
+						endif
+					endif
+				endif
+			endif
+		endif
+	endforeach
+	if (GetGlobalProperty("cwtype")=="2" and !GetGlobalProperty("powerball"))
+		if (cwblue ==  0 or cwred == 0 )
+			running := 0;
+		endif
+	endif
+	if (GetGlobalProperty("cwtype")=="3" and !GetGlobalProperty("powerball"))
+		if ((cwblue==0 and cwred==0)or(cwblue==0 and cwgreen==0)or(cwred==0 and cwgreen==0))
+			running := 0;
+		endif
+	endif
+	if (GetGlobalProperty("cwtype") == "k")
+		if (cwblue < 2)
+			running := 0;
+		endif
+	endif
+	if (GetGlobalProperty("powerball"))
+		if( GetGlobalProperty("pbscorer"))
+			running := 0;
+		endif
+		if (cwblue == 0)
+			cwgate := CreateItemAtLocation(6115,1333, 30, 2083, 1);
+			SetObjProperty(cwgate,"cwgate",1);
+		endif
+		if (cwred == 0)
+			cwgate := CreateItemAtLocation(6067,1394, 30, 2083, 1);
+			SetObjProperty(cwgate,"cwgate",1);
+		endif
+		if (cwgreen == 0)
+			cwgate := CreateItemAtLocation(6127, 1308, 15, 2081, 1);
+			SetObjProperty(cwgate,"cwgate",1);
+		endif
+	endif
+	if ((cwblue == 0 and cwgreen == 0)or(cwblue == 0 and cwred == 0)or(cwred == 0 and cwgreen == 0))
+		gate1 := ListItemsNearLocation( 6115 , 1333 , 30 , 3 );
+		foreach item in gate1
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+		gate2 := ListItemsNearLocation( 6067 , 1394 , 30 , 3 );
+		foreach item in gate2
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+		gate3 := ListItemsNearLocation( 6127 , 1308 , 30 , 3 ); //GREEN GATES
+		foreach item in gate3
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+	endif
+	if (!GetGlobalProperty("cwars"))
+		running := 0;
+	endif
+endwhile
+	//
+	//END OF CWARS
+	if (!GetGlobalProperty("cwars"))
+		return;
+	endif
+	var winner ;
+	var payout;
+	if (GetGlobalProperty("cwtype")=="2" and !GetGlobalProperty("powerball"))
+		if ( cwblue > cwred )
+			Broadcast( "Blue team wins!.", FONT_BOLD,53 );	
+			winner := "Blue";	
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwblue"));
+		else
+			Broadcast( "Red team wins!.", FONT_BOLD,53 );
+			winner := "Red";
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwred"));
+		endif	
+		Broadcast( "Return to ready rooms to heal / get your prize.", FONT_BOLD,53 );	
+	endif
+	if (GetGlobalProperty("cwtype")=="3" and !GetGlobalProperty("powerball"))
+		if ((cwblue > cwred) and (cwblue>cwgreen))
+			Broadcast( "Blue team wins!.", FONT_BOLD,53 );	
+			winner := "Blue";	
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwblue"));
+		endif
+		if ((cwred > cwblue) and (cwred>cwgreen))
+			Broadcast( "Red team wins!.", FONT_BOLD,53 );	
+			winner := "Red";	
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwred"));
+		endif
+		if ((cwgreen > cwred) and (cwgreen>cwblue))
+			Broadcast( "Green team wins!.", FONT_BOLD,53 );	
+			winner := "Green";	
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwgreen"));
+		endif
+		Broadcast( "Return to ready rooms to heal / get your prize.", FONT_BOLD,53 );	
+	endif
+	var winnername;
+	var wn;
+	if  (GetGlobalProperty("powerball"))
+		winner := GetGlobalProperty("pbscorer");
+		wn := GetGlobalProperty("kicker");
+		winnername := SystemFindObjectBySerial(wn);
+		winnername := winnername.name;
+		if(winner=="Blue")
+			Broadcast( "Blue team wins!.", FONT_BOLD,53 );	
+			if (winnername)
+				Broadcast( "Goal Scorer: "+winnername, FONT_BOLD,53 );	
+			endif
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwblue"));
+		elseif (winner=="Red")
+			Broadcast( "Red team wins!.", FONT_BOLD,53 );	
+			if (winnername)
+				Broadcast( "Goal Scorer: "+winnername, FONT_BOLD,53 );	
+			endif
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwred"));
+		elseif (winner=="Green")
+			Broadcast( "Green team wins!.", FONT_BOLD,53 );	
+			if (winnername)
+				Broadcast( "Goal Scorer: "+winnername, FONT_BOLD,53 );	
+			endif
+			payout := (GetGlobalProperty("cwarsjackpot") / GetGlobalProperty("cwgreen"));
+		endif
+		Broadcast( "Go to a Ready Room to Heal / Claim Prize.", FONT_BOLD,53 );	
+		gate1 := ListItemsNearLocation( 6115 , 1333 , 30 , 3 );
+		foreach item in gate1
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+		gate2 := ListItemsNearLocation( 6067 , 1394 , 30 , 3 );
+		foreach item in gate2
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+		gate3 := ListItemsNearLocation( 6127 , 1308 , 30 , 3 );
+		foreach item in gate3
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+	endif
+	var kothwinner;
+	if (GetGlobalProperty("cwtype")=="k")
+		foreach player in EnumerateOnlineCharacters()	
+			if(GetObjProperty(player,"cwcolor")=="Blue")
+				if(GetObjProperty(player,"cwarring"))						
+					if (!player.dead)
+						kothwinner := player;
+						//player.name := GetObjProperty(player,"cwname");
+						SetObjProperty(player,"cwprize",GetGlobalProperty("cwarsjackpot"));
+						Broadcast( "King of the Hill Winner: "+player.name, FONT_BOLD,53 );	
+						Broadcast( "Go to a Ready Room to Heal / Claim Prize.", FONT_BOLD,53 );	
+					endif
+				endif
+			endif
+		endforeach
+	endif
+	if (GetGlobalProperty("cwtype")=="2" or GetGlobalProperty("cwtype")=="3")
+		foreach player in EnumerateOnlineCharacters()	
+			if (GetObjProperty(player,"cwarring"))
+				if (GetObjProperty (player, "cwcolor") == winner )
+					SetObjProperty(player,"cwprize",payout);
+				endif
+			endif
+		endforeach
+	endif
+	//	
+	foreach player in EnumerateOnlineCharacters()		
+		if (GetObjProperty(player,"cwarring"))
+			StripPlayer(player);
+		endif
+		sleepms(50);
+	endforeach
+	//CREATE PRIZE STONES
+	var pstone;
+	pstone := CreateItemAtLocation(6067,1399, 30, 0xa394, 1);	
+	SetObjProperty(pstone,"cwgate",1);
+	pstone := CreateItemAtLocation(6115,1324, 30, 0xa394, 1);
+	SetObjProperty(pstone,"cwgate",1);
+	pstone := CreateItemAtLocation(6132,1312, 30, 0xa394, 1); //GREEN PRIZE STONE
+	SetObjProperty(pstone,"cwgate",1);
+	var healer1 := CreateNpcFromTemplate( "healer", 6116, 1325, 30, 0 );
+	var healer2 := CreateNpcFromTemplate( "healer", 6070, 1399, 30, 0 );
+	var healer3 := CreateNpcFromTemplate( "healer", 6132, 1308, 30, 0 ); //GREEN HEALER
+	//
+	var nooey := 0;
+	while (nooey < 90)
+		sleep (1);
+		nooey := nooey + 1;
+		cwsleep(1);
+	endwhile
+	//CLEAR ARENA
+	CleanArena();
+	var kick := 0;
+	foreach player in EnumerateOnlineCharacters()	
+		if (GetObjProperty(player,"cwarring"))
+			if (player.x > 6035 and player.x < 6119 and  player.y < 1411 and player.y > 1312)
+				kick := 1;
+			endif
+			if (player.x > 6111 and player.x < 6133 and  player.y < 600 and player.y > 586)
+				kick := 1;
+			endif
+			if (kick == 1)
+				SendSysMessage( player, "You took too long to leave." );
+				EraseObjProperty(player,"cwarring");
+				EraseObjProperty(player,"cwcolor");
+				EraseObjProperty(player,"cwprize");
+				lfame := GetObjProperty(player,"cwfame");
+				lkarma:= GetObjProperty(player,"cwkarma");
+				if (lfame)
+					SetObjProperty(player,"Fame",lfame);
+				endif
+				if (lkarma)
+					SetObjProperty(player,"Karma",lkarma);
+				endif
+				//player.name := GetObjProperty(player,"cwname");
+				MoveCharacterToLocation( player, 5384, 1179, 0, 0);
+				foreach worn in ListEquippedItems (player )
+					checkcw := GetObjProperty( worn, "CW" );
+					if ( checkcw )
+						EraseObjProperty(worn,"Cursed");
+						MoveItemToContainer(worn, player.backpack);
+						checkcw := 0;
+					endif
+				endforeach
+				foreach item in EnumerateItemsInContainer( player.backpack )
+					checkcw := GetObjProperty( item, "CW" );
+					if ( checkcw )
+						found := found + 1;
+						cwitem[found] := item;
+						checkcw := 0;
+					endif
+				endforeach
+				while ( loop < found )
+					loop := loop + 1;	
+					DestroyItem(cwitem[loop]);
+				endwhile
+			endif
+		endif
+		loop := 0;
+		found := 0;
+		kick := 0;
+	endforeach
+	//
+	//CLOSE GATES
+	cwgate := CreateItemAtLocation(6115,1333, 30, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(6067,1394, 30, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(6127, 1308, 15, 2081, 1); //GREEN GATES
+	SetObjProperty(cwgate,"cwgate",1);
+	//
+	//REMOVE PRIZE STONES
+	gate1 := ListItemsNearLocation( 6067 , 1399 , 30 , 2 );
+	foreach item in gate1
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	gate2 := ListItemsNearLocation( 6115 , 1324 , 30 , 2 );
+	foreach item in gate2
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	gate3 := ListItemsNearLocation( 6132 , 1312 , 30 , 2 ); //GREEN GATE
+	foreach item in gate3
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	//
+	//KILL HEALERS
+	RevokePrivilege( healer1, "invul" );
+	setobjproperty( healer1, "guardkill", 1);
+	ApplyRawDamage( healer1, Cint(healer1.hp+3) );
+	RevokePrivilege( healer2, "invul" );
+	setobjproperty( healer2, "guardkill", 1);
+	ApplyRawDamage( healer2, Cint(healer2.hp+3) );
+	RevokePrivilege( healer3, "invul" );
+	setobjproperty( healer3, "guardkill", 1);  //GREEN HEALER
+	ApplyRawDamage( healer3, Cint(healer3.hp+3) );
+	//
+	EraseGlobalProperty("cwars");
+	endif
+endfunction
+
+function AbortCWars ();
+EraseGlobalProperty("cwarsinit");
+var cwfee := GetGlobalProperty("cwfee");
+if (!cwfee)
+	cwfee := 5000;
+endif
+Broadcast( "Color Wars is cancelled!", FONT_BOLD,53 );
+var cwitem := {};
+var checkcw := 0;
+var found := 0;
+var loop := 0;
+var lfame;	
+var lkarma;
+foreach player in EnumerateOnlineCharacters()	
+	if (GetObjProperty(player,"cwarring"))
+		CreateItemInBackpack( player, 0xeed, cwfee);
+		EraseObjProperty(player,"cwarring");
+		EraseObjProperty(player,"cwcolor");
+		EraseObjProperty(player,"cwprize");
+		lfame := GetObjProperty(player,"cwfame");
+		lkarma:= GetObjProperty(player,"cwkarma");
+		//player.name := GetObjProperty(player,"cwname");
+		if (lfame)
+			SetObjProperty(player,"Fame",lfame);
+		endif
+		if (lkarma)
+			SetObjProperty(player,"Karma",lkarma);
+		endif
+			MoveCharacterToLocation( player, 5384, 1179, 0, 0);
+		foreach worn in ListEquippedItems (player )
+			checkcw := GetObjProperty( worn, "CW" );
+			if ( checkcw )
+				EraseObjProperty(worn,"Cursed");
+				MoveItemToContainer(worn, player.backpack);
+				checkcw := 0;
+			endif
+		endforeach
+		foreach item in EnumerateItemsInContainer( player.backpack )
+			checkcw := GetObjProperty( item, "CW" );
+			if ( checkcw )
+				found := found + 1;
+				cwitem[found] := item;
+				checkcw := 0;
+			endif
+		endforeach
+		while ( loop < found )
+			loop := loop + 1;	
+			DestroyItem(cwitem[loop]);
+		endwhile
+	endif
+	loop := 0;
+	found := 0;
+	endforeach
+	var cwgate;	
+	var gate1;
+	var gate2;
+	var gate3;
+	gate1 := ListItemsNearLocation( 5378 , 1187 , 0 , 3 );
+	foreach item in gate1
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	gate2 := ListItemsNearLocation( 5386 , 1194 , 0 , 3 );
+	foreach item in gate2
+		if (item and GetObjProperty(item,"cwgate") )
+			DestroyItem(item);
+		endif
+	endforeach
+	gate3 := ListItemsNearLocation( 5378 , 1194 , 0 , 3 ); ////GREEN GATES
+	foreach item in gate3
+		if (item and GetObjProperty(item,"cwgate") )
+			DestroyItem(item);
+		endif
+	endforeach
+	gate1 := ListItemsNearLocation( 1330 , 1619 , 50 , 3 );
+	foreach item in gate1
+		if (item and GetObjProperty(item,"cwgate"))
+			DestroyItem(item);
+		endif
+	endforeach
+	cwgate := CreateItemAtLocation(5378,1187, 0, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(5386,1194, 0, 2083, 1);
+	SetObjProperty(cwgate,"cwgate",1);
+	cwgate := CreateItemAtLocation(5378,1194, 0, 2083, 1); //GREEN GATES
+	SetObjProperty(cwgate,"cwgate",1);
+	EraseGlobalProperty("cwars");
+endfunction
+
+function cwsleep (delay)
+	var ttw := delay;
+	while (ttw > 0 and GetGlobalProperty("cwarsinit"))
+		ttw := ttw -1;
+		if(!GetGlobalProperty("quickcw"))
+			sleep (1);
+		endif
+		CheckAbusers();
+	endwhile
+	CheckAbusers();
+	return;
+endfunction
+
+function CWEvent(who)
+	var type := GetGlobalProperty("cwtype");
+	if (!type)
+		SetGlobalProperty("cwtype","2");
+		type := "2";
+	endif
+	var fee := GetGlobalProperty("cwfee");
+	if (!fee)
+		SetGlobalProperty("cwfee",5000);	
+		fee := 5000;
+	endif
+	var tstring;
+	var fstring;
+	var tstring2 := "";
+	var sw := GetGlobalProperty("cwsw");
+	case(type)
+		"2" : tstring := "2 Team CW, ";
+		"3" : tstring := "3 Team CW, ";
+		"k" : tstring := "KoTH, ";
+	endcase
+	fstring := fee;
+	fstring := fstring +"gp fee";
+	tstring := tstring + fstring;
+	if (sw)
+		tstring2 := tstring2 + "SW:ON";
+	else
+		tstring2 := tstring2 + "SW:OFF";
+	endif
+	if (GetGlobalProperty("powerball"))
+		tstring2 := tstring2 + " - GB:ON";
+	else
+		tstring2 := tstring2 + " - GB:OFF";
+	endif
+	if (GetGlobalProperty("quickcw"))
+		tstring2 := tstring2 + " - Quick Start:ON";
+	else
+		tstring2 := tstring2 + " - Quick Start:OFF";
+	endif
+	var DiffLayout := {
+	"page 0",
+	"resizepic 30 30 83 350 270",
+	"button 50 90 2104 2103 1 0 2001",
+	"button 50 110 2104 2103 1 0 2002",
+	"button 50 130 2104 2103 1 0 2003",
+	"button 50 150 2104 2103 1 0 2004",
+	"button 50 170 2104 2103 1 0 2005",
+	"button 50 190 2104 2103 1 0 2006",
+	"button 50 210 2104 2103 1 0 2007",
+	"button 50 230 2104 2103 1 0 2008",
+	"text 50 42 35 0",
+	"text 50 62 35 1",
+	"text 70 85 35 2",
+	"text 70 105 35 3",
+	"text 70 125 35 4",
+	"text 70 145 35 5",
+	"text 70 165 35 6",
+	"text 70 185 35 7",
+	"text 70 205 35 8",
+	"text 70 225 35 9",
+	"button 181 245 2128 2129 1 0 1"
+	};
+
+	var DiffData := {
+	tstring,
+	tstring2,
+	"2 Team CW",
+	"3 Team CW",
+	"KotH",
+	"Add Monsters",
+	"Change Entry Fee",
+	"Special Weapons",
+	"Gank Ball",
+	"Quick Start"
+	};
+	var Difficulty;
+	var number;
+	var res := SendDialogGump( who, DiffLayout, DiffData );
+	var text;
+	var entered;
+	if (res[0] == 0)
+		SendSysMessage(who, "Aborted.");
+		return 999;
+	endif
+	if (res[0]==1)
+		return 999;
+	endif
+	Difficulty := res[0] - 2000;
+
+	if (Difficulty == 1)
+		SetGlobalProperty("cwtype","2");
+	elseif (Difficulty == 2)
+		SetGlobalProperty("cwtype","3");
+	elseif (Difficulty == 3)
+		SetGlobalProperty("cwtype","k");
+		EraseGlobalProperty("powerball");
+	elseif (Difficulty == 4)
+		text := "Enter NPC Template Name:";
+		entered := (SendTextEntryGump( who, text, 40 ));
+			if (!entered)
+				SendSysMessage(who,"Cancelled.");
+			else
+				SetGlobalProperty("cwmonsters",entered);
+				text := "Enter # of Spawns";
+				entered := Cint(SendTextEntryGump( who, text, 40 ));
+				if (!entered)
+					SendSysMessage(who,"Cancelled.");
+					EraseGlobalProperty("cwmonsters");
+				else
+					SetGlobalProperty("numcwmonsters",entered);
+					SendSysMessage(who, "Will Spawn: "+entered+" "+GetGlobalProperty("cwmonsters")+" during CWars");
+				endif
+			endif
+
+	elseif (Difficulty == 5)
+		number := CInt( SendTextEntryGump(who, "Enter Cost : ", TE_CANCEL_ENABLE, TE_STYLE_NORMAL, 4));
+		if (number)
+			SetGlobalProperty("cwfee",number);	
+		else
+			SendSysMessage(who,"Cancelled");
+			SetGlobalProperty("cwfee",5000);	
+		endif
+	elseif (Difficulty == 6)
+		if(GetGlobalProperty("cwsw"))
+			EraseGlobalProperty("cwsw");
+		else
+			SetGlobalProperty("cwsw",1);
+		endif
+	elseif (Difficulty == 7)
+		if (!GetGlobalProperty("powerball") and GetGlobalProperty("cwtype") != "k")
+			SetGlobalProperty("powerball",1);
+		else
+			EraseGlobalProperty("powerball");
+		endif
+	elseif (Difficulty == 8)
+		if(!GetGlobalProperty("quickcw"))
+			SetGlobalProperty("quickcw",1);
+		else
+			EraseGlobalProperty("quickcw");
+		endif
+	else 
+
+		Difficulty := 999;
+	endif
+	return Difficulty;
+endfunction
+
+function PickColor()
+	var team := Random(3)+1;
+	var tcolor;
+	case (team)
+		1:	tcolor := "Red";
+		2:	tcolor := "Blue";
+		3:	tcolor := "Green";
+	endcase
+	if (!tcolor)
+		tcolor := "Red";
+	endif
+	return(tcolor);
+endfunction
+
+function PlaceKoth(player)
+	var found := 0;
+	var gate1;
+	var kothtile;
+	var kothname;
+	var cwgate;
+	var kothnum := GetGlobalProperty("kothnum");
+	if (!kothnum)
+		kothnum := 1;
+	endif
+	kothname := "koth"+kothnum;
+	kothtile := ListItemsNearLocation( 6081 , 1357 , 30 , 60 );
+	foreach item in kothtile
+		if (GetObjProperty(item,kothname))
+			MoveCharacterToLocation( player, item.x, item.y, item.z, 0);
+			found := 1;
+			kothnum := kothnum + 1;
+			SetGlobalProperty("kothnum",kothnum);
+		endif
+		sleepms(5);
+	endforeach
+	if (found == 1)
+		cwgate := CreateItemAtLocation(player.x,player.y+1, player.z, 2083, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x+1,player.y+1, player.z, 2083, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x+1,player.y-1, player.z, 2083, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x+1,player.y+1, player.z, 2081, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x,player.y-1, player.z, 2083, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x-1,player.y, player.z, 2081, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x-1,player.y+1, player.z, 2081, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+		cwgate := CreateItemAtLocation(player.x+1,player.y, player.z, 2081, 1);
+		SetObjProperty(cwgate,"cwgate",1);
+	endif
+	if (found == 0)
+		SendSysMessage(player,"Error teleporting you!");
+		SendSysMessage(player,"You must enter KotH manually!");
+		player.frozen := 0;
+		gate1 := ListItemsNearLocation( 5378 , 1187 , 0 , 3 );
+		foreach item in gate1
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+		gate1 := ListItemsNearLocation( 6115 , 1333 , 30 , 3 );
+		foreach item in gate1
+			if (item and GetObjProperty(item,"cwgate"))
+				DestroyItem(item);
+			endif
+		endforeach
+	endif
+endfunction
+
+function KillMounts()
+	var iscw;
+	var mounts := ListMobilesNearLocation(5384, 1175, 0, 10);
+	var owner;
+	foreach critter in mounts
+		if (critter.script == "tamed")
+			owner := GetObjProperty(critter,"master");
+			owner := SystemFindObjectBySerial(owner);
+			if (owner)
+				if (GetObjProperty(owner,"cwarring"))
+						RevokePrivilege( critter, "invul" );
+						setobjproperty( critter, "guardkill", 1);
+						ApplyRawDamage( critter, Cint(critter.hp+3) );
+				endif
+			endif
+		endif
+	endforeach
+endfunction
+
+function CleanArena()
+	var itenz;
+	foreach guy in EnumerateOnlineCharacters()
+	      if  (guy.cmdlevel)
+			SendSysMessage(guy,"Cleaning up Color Wars Arena...",3,130);
+		endif
+	endforeach
+	itenz := ListItemsNearLocation( 6080 , 1356 , 30 , 51 );
+	foreach item in itenz
+		if (GetObjProperty(item,"deathx") and GetObjProperty(item,"deathy"))
+			DestroyItem(item);
+		endif
+		if (GetObjProperty(item,"CW"))
+			DestroyItem(item);
+		endif
+		sleepms(25);
+	endforeach
+	itenz := ListItemsNearLocation( 6080 , 1356 , 53 , 40 );
+	foreach item in itenz
+		if (GetObjProperty(item,"deathx") and GetObjProperty(item,"deathy"))
+			DestroyItem(item);
+		endif
+		if (GetObjProperty(item,"CW"))
+			DestroyItem(item);
+		endif
+		sleepms(25);
+	endforeach
+	foreach guy in EnumerateOnlineCharacters()
+	      if  (guy.cmdlevel)
+			SendSysMessage(guy,"Color Wars Arena cleaned & reset.",3,130);
+		endif
+	endforeach		
+	EraseGlobalProperty("quickcw");
+endfunction
+
+function StripPlayer(player)
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	foreach worn in ListEquippedItems (player )
+		checkcw := GetObjProperty( worn, "CW" );
+		if ( checkcw )
+			EraseObjProperty(worn,"Cursed");
+			MoveItemToContainer(worn, player.backpack);
+			checkcw := 0;
+		endif
+	endforeach
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		checkcw := GetObjProperty( item, "CW" );
+		if ( checkcw or item.objtype == 0xf0e or item.objtype == 0xe20)
+			found := found + 1;
+			cwitem[found] := item;
+			checkcw := 0;
+		endif
+	endforeach
+	while ( loop < found )
+		loop := loop + 1;	
+		DestroyItem(cwitem[loop]);
+	endwhile
+endfunction
+
+function CheckPacks ()
+		var ok := 1;
+		var baditem;
+		foreach player in EnumerateOnlineCharacters()
+			if (GetObjProperty(player,"cwarring"))
+				foreach item in EnumerateItemsInContainer( player.backpack )
+					if (item and !GetObjProperty(item,"CW") and !item.desc["scroll"])
+						if(item.objtype != 0xc920 and item.objtype != 0x09ea and item.objtype != 0x1040 and item.objtype != 0x09b7
+						and item.objtype != 0x1608 and item.objtype != 0x09e9 and item.objtype != 0x1044 and item.objtype != 0x0c77
+						and item.objtype != 0xf0e and item.objtype != 0xe20)
+							ok := 0;
+							baditem := item.desc;
+						endif
+					endif
+				endforeach
+				foreach worn in ListEquippedItems (player )
+					if ( !GetObjProperty( worn, "CW" ))
+						if ((worn and worn !=player.backpack)  && (worn.objtype < 0x2030 || worn.objtype > 0x2060))	
+							ok := 0;
+							baditem := worn.desc;
+						endif
+					endif
+				endforeach
+				if (ok == 0)
+					if (GetGlobalProperty("cwdisqualify"))
+						SendSysmessage( player,"You have been disqualified for possession of illegal items in Color Wars ("+baditem+")");
+						DisconnectClient(player);	
+					endif
+					foreach character in EnumerateOnlineCharacters()
+						if( character.cmdlevel > 0 )
+							SendSysmessage( character,player.name+" has illegal items in the CW arena ("+baditem+")");
+						endif
+					endforeach
+				endif
+			endif
+			sleepms(10);
+		endforeach
+endfunction
+
+function CheckAbusers()
+	var players := ListMobilesNearLocation(5384, 1175, 0, 11);
+	var owner;
+	var owneracct;
+	foreach dude in players
+		if (!GetObjProperty(dude,"cwarring") and !dude.npctemplate and !dude.cmdlevel)
+			foreach item in EnumerateItemsInContainer( dude.backpack )
+				if (GetObjProperty(item,"CW"))
+					owner := GetObjProperty(item,"OwnerName");
+					owneracct := GetObjProperty(item,"OwnerAcct");
+					foreach guy in EnumerateOnlineCharacters()
+				       	if  (guy.cmdlevel)	
+							SendSysMessage(guy,dude.name+" is in illegal possession of CW equipment.",3,130);
+							SendSysMessage(guy,"Type : "+item.desc,3,130);
+							SendSysMessage(guy,"Original Owner : "+owner,3,130);
+							SendSysMessage(guy,"Owner's Account: "+owneracct,3,130);
+						endif
+					endforeach
+					DestroyItem(item);
+					if (!GetObjProperty(dude,"CWBanned"))
+						BanPlayer(dude);
+					endif
+				endif
+			endforeach
+		endif
+	endforeach
+endfunction
+
+function BanPlayer(player)
+	SetObjProperty(player,"CWBanned",1);
+	SendSysMessage(player,"You have been banned from Color Wars.");
+	SendSysMessage(player,"Staff have been notified of your abuse.");
+	foreach guy in EnumerateOnlineCharacters()
+      	if  (guy.cmdlevel)	
+			SendSysMessage(guy,player.name+" has been banned from Color Wars.",3,130);
+		endif
+	endforeach
+endfunction

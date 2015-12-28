@@ -1,0 +1,119 @@
+use http;
+use os;
+use uo;
+
+const MIN_CHARACTERS_FOR_ACCOUNT_NAME := 4;
+const MAX_CHARACTERS_FOR_ACCOUNT_NAME := 10;
+const MIN_CHARACTERS_FOR_PASSWORD     := 4;
+
+const ERRORTYPE_NO_DOMAIN       := 1;
+const ERRORTYPE_FREE_SERVER     := 2;
+const ERRORTYPE_EXISTING_ADRESS := 3;
+
+program create_account()
+
+	var account_name := QueryParam("user");
+	var password1    := QueryParam("pass");
+	var password2    := QueryParam("pass2");
+	var email_adress := QueryParam("email");
+	
+	if( TypeOf(account_name) != "String" || account_name == "" )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( TypeOf(password1) != "String" || password1 == "" )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( TypeOf(password2) != "String" || password2 == "" )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( TypeOf(email_adress) != "String" || email_adress == "" )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( len(account_name) < MIN_CHARACTERS_FOR_ACCOUNT_NAME )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( len(account_name) > MAX_CHARACTERS_FOR_ACCOUNT_NAME )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( len(password1) < MIN_CHARACTERS_FOR_PASSWORD )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( password1 != password2 )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	elseif( password1 == account_name )
+		WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+	else
+		var valid := IsValidEmail(email_adress);
+		if( !valid )
+			case( valid.errortype )
+				ERRORTYPE_NO_DOMAIN:
+					WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+				ERRORTYPE_FREE_SERVER:
+					WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+				ERRORTYPE_EXISTING_ADRESS:
+					WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+				default:
+					WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+			endcase
+		else
+			var account := CreateAccount(account_name, password1, 1 );
+			if( !account )
+				case( account.errortext )
+					"Account already exists":
+						WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+					default:
+						WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+				endcase
+			else
+				account.setProp("Email", email_adress);
+				WriteHtml("<html><head><meta http-equiv=refresh content=0;URL=http://dronewarshard.servegame.com:4040/confirmar.htm></head></html>");
+			endif
+		endif
+	endif
+	
+endprogram
+
+
+function IsValidEmail( byref adress )
+
+	var ret;
+	var arobas := Find(adress, "@", 0);
+	if( arobas == 0 )
+		ret := error;
+		ret.+errortype := ERRORTYPE_NO_DOMAIN;
+	else
+		var domain := adress[arobas+1, len(adress)-arobas];
+		if( !domain )
+			ret := error;
+			ret.+errortype := ERRORTYPE_NO_DOMAIN;
+		else
+			case( domain )
+				"lycos.it":
+				"freemail.com":
+					ret := error;
+					ret.+errortype := ERRORTYPE_FREE_SERVER;
+				default:
+					ret := RegisterEmail(adress);
+			endcase
+		endif
+	endif
+	
+	return ret;
+	
+endfunction
+
+
+function RegisterEmail( byref adress )
+
+	var ret;
+	var registered := GetGlobalProperty("RegisteredEmailAdresses");
+	if( !registered )
+		registered := dictionary;
+		SetGlobalProperty("RegisteredEmailAdresses", registered);
+	endif
+	
+	if( registered.exists(adress) )
+		ret := error;
+		ret.+errortype := ERRORTYPE_EXISTING_ADRESS;
+	else
+		registered[adress] := 1;
+		SetGlobalProperty("RegisteredEmailAdresses", registered);
+		ret := 1;
+	endif
+	
+	return ret;
+
+endfunction

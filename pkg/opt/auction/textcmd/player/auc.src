@@ -1,0 +1,619 @@
+// auction  version 1.2
+// by Zulu (zulu@zuluhotel.com)   November 12, 2000
+
+use uo;
+use os;
+
+include "include/utility";
+include "include/itemutil";
+
+var storage:=FindStorageArea("Merchant Storage");
+var inv_sell:=find_or_create_item(storage,"AUCTION",0xe7c);
+
+if(!storage || !inv_sell) exit; endif
+
+var gumpx, gumpy;
+
+var layout := {
+"page 0",
+"nodispose",
+"resizepic 25 0 2600 500 400",
+"resizepic 45 60 5100 450 25",
+"resizepic 45 330 5100 450 25",
+"text 150 25 995 0",
+"text 70 60 0 1",
+"button 110 63 5002 5003 1 0 11",
+"text 150 60 0 2",
+"button 200 63 5002 5003 1 0 12",
+"text 240 60 0 3",
+"button 360 63 5002 5003 1 0 13",
+"text 405 60 0 4",
+"button 445 63 5002 5209 0 2",
+"text 65 330 0 5",
+"button 95 333 5002 5003 1 0 15",
+"text 125 330 0 6",
+"button 210 333 5002 5003 1 0 16",
+"text 240 330 0 7",
+"button 285 333 5002 5003 1 0 17",
+"text 315 330 0 8",
+"button 445 333 5002 5003 1 0 18",
+"page 2",
+"text 70 100 200 36",
+"text 70 120 600 37",
+"text 70 140 200 38",
+"text 70 160 200 39",
+"text 70 180 600 40",
+"text 70 200 600 41",
+"text 70 220 200 42",
+"text 70 240 600 43",
+"text 70 260 600 44",
+"text 70 280 200 45",
+"page 1"
+};
+
+var data := {
+"AUCTION SELECTION MENU",
+"Join",
+"Leave",
+"Barter on/off",
+"Help",
+"Bid",
+"Description",
+"View",
+"Auction Members",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"0",
+"Join: allows you to join the auction.",
+"Leave: allows you to leave the auction.",
+"Barter on/off: turns on or off barter, for use",
+"with .barter.",
+"Bid: allows you to bid on an item. The price",
+"inside of () is the current bid.",
+"Description: gives you info on a selected item.",
+"View: allows you to see the item and view what is",
+"inside a backpack, container or spellbook.",
+"Auction Members: shows you the current members."
+};
+
+var layout2 := {
+"page 0",
+"nodispose",
+"resizepic  50   0 2600 540 405",
+"resizepic 210 360 5100 200  25",
+"text 260 30 0 0",
+"text  80 60 0 1",
+"text 455 60 0 2"
+};
+
+var data2 := {
+"",
+"Name",
+"Barter Message",
+""
+};
+
+var layout3 := {
+"page 0",
+"nodispose",
+"resizepic  100   0 2600 450 200",
+"page 1",
+"text 130 40  300 0",
+"text 130 60  300 1",
+"text 130 80  300 2",
+"text 130 100 300 3",
+"text 130 120 300 4",
+"text 130 140 300 5",
+"text 170 40  0 6",
+"text 180 60  0 7",
+"text 200 80  0 8",
+"text 230 100 0 9",
+"text 230 120 0 10",
+"text 213 140 0 11"
+};
+
+var data3 := {
+"Item:",
+"Seller:",
+"Message:",
+"Starting Bid:",
+"Current  Bid:",
+"Time Left:",
+"",
+"",
+"",
+"",
+"",
+""
+};
+
+program textcmd_testgump( who )
+
+if (who.title_race=="ZuluCTF") return; endif
+
+var temp, newitem;
+
+  buildgump();
+
+  var res :=    SendDialogGump( who, layout, data );
+
+          foreach key in (res.keys)
+            if (key >99)
+              temp:=key;
+              break;
+            endif
+          endforeach
+
+if (temp>99)
+newitem:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_STORAGE_AREAS);
+endif
+
+  case (res[0])
+    // join the auction
+    11: if (!GetObjProperty(who,"auction")==1)
+          SetObjProperty(who,"auction",1);
+	  SendSysMessage(who,who.name+" has joined the auction.",3,70);
+          updateplayers(who);
+        endif
+    // quit the auction
+    12: if (check(who))
+          EraseObjProperty(who,"auction");
+          SendSysMessage(who,who.name+" has left the auction.",3,34);
+          updateplayers(who);
+        endif
+
+    // barter message
+    13: if (check(who))
+          barter(who);
+        endif
+
+    // bid on an item
+    15: if (check(who) && checkitem(newitem)) biditem(who, newitem); endif
+
+// view description
+    16: if (check(who) && checkitem(newitem)) buildinfo(who,newitem); endif
+
+// view item
+    17: if (check(who) && checkitem(newitem)) viewitem(who,newitem); endif
+
+// players
+    18: if (check(who))
+          FillInArrays();
+          SendDialogGump( who, layout2, data2 );
+        endif
+endcase
+
+endprogram
+
+function checkitem(newitem)
+
+if (newitem) return 1; else return 0; endif
+
+endfunction
+
+function check(who)
+
+if (GetObjProperty(who,"auction")==1)
+return 1;
+else
+SendSysMessage(who,"You need to join the auction first.",3,34);
+return 0;
+endif
+
+endfunction
+
+function biditem(who,item)
+
+if (GetObjProperty(item,"time")-ReadGameClock()<=0) return; endif
+
+var playerbid,startbidding;
+
+var startbid:=GetObjProperty(item,"starting");
+var currentbid:=GetObjProperty(item,"bid");
+
+if (currentbid==0)
+startbidding:=startbid;
+else
+startbidding:=currentbid+10;
+endif
+
+playerbid:=CInt(RequestInput(who,who.backpack,"What is your bid for " + item.name + "("+startbidding+")"));
+
+if((playerbid=="") || (!playerbid))
+SendSysMessage(who,"canceled.",3,34);
+return;
+endif
+
+startbid:=GetObjProperty(item,"starting");
+currentbid:=GetObjProperty(item,"bid");
+
+if (currentbid==0)
+startbidding:=startbid;
+else
+startbidding:=currentbid+10;
+endif
+
+if(playerbid<0)
+SendSysMessage(who,"Your bid was not accepted.",3,34);
+return;
+endif
+
+var count := 0;
+while (GetGlobalProperty("#auctionlock")==1 && count < 100 )
+sleep(1);
+count := count + 1;
+endwhile
+
+if( count >= 100 )
+exit;
+endif
+
+SetGlobalProperty("#auctionlock",1);
+
+startbid:=CInt(GetObjProperty(item,"starting"));
+currentbid:=CInt(GetObjProperty(item,"bid"));
+
+if (currentbid==0)
+startbidding:=startbid;
+else
+startbidding:=currentbid+10;
+endif
+
+var temp;
+
+if (CInt(GetObjProperty(item,"time"))-ReadGameClock()<=5)
+SendSysMessage(who,"Bidding is closed on that item.",3,34);
+SetGlobalProperty("#auctionlock",0);
+return;
+endif
+
+if (who.serial==GetObjProperty(item,"seller"))
+SendSysMessage(who,"You cannot bid on your own items.",3,34);
+SetGlobalProperty("#auctionlock",0);
+return;
+endif
+
+temp:=GetObjProperty(item,"buyer");
+var buyer:=SystemFindObjectBySerial(CInt(temp));
+if(!buyer) buyer:=SystemFindObjectBySerial(CInt(temp),SYSFIND_SEARCH_OFFLINE_MOBILES); endif
+
+if (who.serial==buyer.serial)
+SendSysMessage(who,"You cannot bid twice in a row.",3,34);
+SetGlobalProperty("#auctionlock",0);
+return;
+endif
+
+if((currentbid==0) && (playerbid<startbid))
+SendSysMessage(who,"Bids start at "+startbidding,3,34);
+SetGlobalProperty("#auctionlock",0);
+return;
+endif
+
+if((playerbid>currentbid+9) || (currentbid==0))
+
+          if (who.spendgold(playerbid))
+                if (currentbid>0)
+		temp:=CInt(GetObjProperty(item,"bid"));
+
+	        if (temp>60000)
+                  while (temp>60000)
+                    CreateItemInBackpack(buyer,UOBJ_GOLD_COIN,60000);
+                    temp:=temp-60000;
+        	  endwhile
+                endif
+                if (temp>0) CreateItemInBackpack(buyer,UOBJ_GOLD_COIN,temp); endif
+                endif
+
+                SetObjProperty(item,"buyer",who.serial);
+                SetObjProperty(item,"bid",playerbid);
+                SetObjProperty(item,"time",CInt(GetObjProperty(item,"time"))+30);
+                updatebid(item,who.name);
+                SendSysMessage(who,"Your bid was accepted.",3,70);
+                SetGlobalProperty("#auctionlock",0);
+                return;
+          else
+                SendSysMessage(who,"You do not have "+playerbid,3,34);
+                SetGlobalProperty("#auctionlock",0);
+                return;
+          endif
+
+
+elseif(playerbid<(currentbid+9))
+                SendSysMessage( who, "Your bid must be higher than " + (currentbid+9),3,34);
+                SetGlobalProperty("#auctionlock",0);
+                return;
+endif
+
+                SendSysMessage( who, "Your bid was not accepted",3,34);
+                SetGlobalProperty("#auctionlock",0);
+
+endfunction
+
+
+function updatebid(item, playername)
+// sendmsg("new bid from : "+playername,300,0x4B);
+sendmsg("bid on : "+item.desc+" "+GetObjProperty(item,"bid"),300,0);
+//sendmsg("time left: "+(getobjproperty(item, "time")-ReadGameClock()),300,0);
+endfunction
+
+
+function buildinfo(who, whichone)
+
+    var timeleft,itemname:=whichone.name;
+
+        timeleft:=(GetObjProperty(whichone,"time")-ReadGameClock());
+
+	if (whichone.objtype==0xff2 || whichone.objtype==0x1c13)
+	data3[7] := "Book";
+	else
+        data3[7] := whichone.desc;
+        endif
+	data3[8] := GetObjProperty(whichone, "sellname");
+        data3[9] := GetObjProperty(whichone, "msg");
+        if (timeleft<=0)
+        data3[12] := "Bidding is closed.";
+	else
+	data3[12] := timeleft;
+	endif
+	data3[10] := GetObjProperty(whichone, "starting");
+        data3[11] := GetObjProperty(whichone, "bid");
+	layout3.append("tilepic 430 80 " + whichone.graphic);
+	SendDialogGump( who, layout3, data3 );
+
+endfunction
+
+function buildgump()
+
+    var i, totalitems :=1, gumpx :=1, gumpy :=3, amount,timeleft;
+
+var textlayout := {70,210,345,95,175,255};
+var buttlayout := {130,270,405,120,205,280};
+var pictlayout := {75,215,350,120,205,280};
+
+        var backpack := EnumerateItemsInContainer( inv_sell );
+
+    foreach item in backpack
+
+        timeleft := (GetObjProperty(item, "time")-ReadGameClock());
+
+        if ((!timeleft) || (timeleft==""))
+        else
+        gumpy := gumpy +1;
+        if (gumpy==7)
+                gumpy :=4;
+        gumpx := gumpx +1;
+        if (gumpx==4)
+        gumpx :=1;
+        endif
+        endif
+
+        data[totalitems+9] := item.desc;
+        amount := GetObjProperty(item, "bid");
+
+        if (amount==0) amount := GetObjProperty(item, "starting"); endif
+
+        if (timeleft > 0)
+                data[totalitems+18] := amount;
+        else
+                data[totalitems+18] := "closed";
+        endif
+
+        layout.append("croppedtext "+textlayout[gumpx]+" "+textlayout[gumpy]+" 115 17 995 "+(totalitems+8));
+        layout.append("text "+(textlayout[gumpx]+50)+" "+(textlayout[gumpy]+50)+" 995 "+(totalitems+17));
+	layout.append("radio "+buttlayout[gumpx]+" "+buttlayout[gumpy]+" 210 211 0 " + item.serial);
+        layout.append("tilepic "+pictlayout[gumpx]+" "+pictlayout[gumpy]+" "+item.graphic);
+
+        totalitems := totalitems +1;
+        endif
+
+    endforeach
+
+endfunction
+
+
+function updateplayers(who)
+return;
+  if (GetObjProperty(who,"auction")==1)
+    sendmsg(who.name+" has joined the auction.",70,0);
+  else
+    sendmsg(who.name+" has left the auction.",34,0);
+  endif
+
+endfunction
+
+
+function sendmsg(msg,msgcolor,msgsound)
+
+foreach character in EnumerateOnlineCharacters()
+	if( GetObjProperty( character, "auction" ) == 1 )
+		if( GetObjProperty( character, "barter" ) == 1 )
+			SendSysMessage(character,msg,3,msgcolor);
+		endif
+	endif
+endforeach
+
+endfunction
+
+
+function barter(who)
+
+if (GetObjProperty(who,"barterban"))
+SendSysMessage(who,"You are banned from sending messages.",3,34);
+return;
+endif
+
+
+if(GetObjProperty(who,"barter")==1)
+EraseObjProperty(who,"barter");
+SendSysMessage( who,"You have turned off barter messages.",3,34);
+else
+SetObjProperty(who,"barter",1);
+SendSysMessage(who,"You have turned on barter messages.",3,70);
+SendSysMessage(who,"Use .barter to send messages.",3,55);
+return;
+endif
+
+endfunction
+
+
+function viewitem(byref who, byref item)
+
+if (GetObjProperty(item,"time")-ReadGameClock()<=0)
+SendSysMessage(who,"Bidding is closed.",3,34);
+return;
+endif
+
+if( !item.IsA(POLCLASS_CONTAINER) )
+	SendSysMessage( who, "You can only view contents of containers." );
+	return 0;
+elseif( item.objtype==0xefa )
+	SendSysMessage( who, "You can only view contents of containers." );
+	return 0;
+else
+
+var pause:=0,totalitems:=0;
+
+SendSysMessage(who,item.desc+" includes:",3,600);
+
+foreach auction_item in EnumerateItemsInContainer(inv_sell)
+    	if (auction_item.container.serial==item.serial)
+    	if ((auction_item.objtype>=0xff0 && auction_item.objtype<=0x0ff4) || (auction_item.objtype==0x0fef))
+    	SendSysMessage(who,"[book] "+auction_item.desc,3,600);
+	else
+	SendSysMessage(who,auction_item.desc,3,600);
+	endif
+    	totalitems:=totalitems+1;
+        pause:=pause+1;
+        if (pause==4) sleep(1); pause:=0; endif
+	endif
+endforeach
+
+if (totalitems==0)
+   SendSysMessage(who,"nothing.",3,600);
+else
+   SendSysMessage(who,totalitems+" total item(s).",3,600);
+endif
+
+endif
+
+endfunction
+
+
+function view_old()
+var pause:=0,totalitems:=0;
+
+SendSysMessage(who,item.desc+" includes:",3,600);
+
+foreach auction_item in EnumerateItemsInContainer(inv_sell)
+    	if (auction_item.container.serial==item.serial)
+    	SendSysMessage(who,auction_item.desc,3,600);
+    	totalitems:=totalitems+1;
+        pause:=pause+1;
+        if (pause==4) sleep(1); pause:=0; endif
+	endif
+endforeach
+
+if (totalitems==0)
+   SendSysMessage(who,"nothing.",3,600);
+else
+   SendSysMessage(who,totalitems+" total item(s).",3,600);
+endif
+
+endfunction
+
+
+function FillInArrays()
+
+    var player,onoff;
+
+    var i:=0,online:=0,locationscount:=5,rowcount:=80,pagecount:=2,playercount:=0;
+
+    layout2.append("page 1");
+
+	foreach player in EnumerateOnlineCharacters()
+		if( !player.cmdlevel )
+			if( GetObjProperty( player, "auction" ) )
+			online := online + 1;
+      playercount:=playercount +1;
+       
+      if (playercount>13)
+      playercount :=1;
+      rowcount :=80;
+        layout2.append("button 350 361 5540 5541 0 " + pagecount);
+        if (pagecount>2)
+                layout2.append("button 260 361 5537 5538 0 " + (pagecount-2));
+        endif
+      layout2.append("page " + pagecount);
+      pagecount := pagecount +1;
+      endif
+
+      layout2.append("text 80 " + rowcount + " 0 " + locationscount);
+
+      fixname(player.name);
+      data2.append(data2[5]);
+      locationscount := locationscount + 1;
+
+      layout2.append("text 480 " + rowcount + " 0 " + locationscount);
+
+      if (GetObjProperty(player,"barter")==1)
+      onoff:="turned on";
+      elseif (GetObjProperty(player,"barterban"))
+      onoff:="banned";
+      else
+      onoff:="turned off";
+      endif
+
+      data2.append( onoff );
+      locationscount := locationscount + 1;
+
+      data2.append(player.name);
+      locationscount := locationscount + 1;
+      rowcount := rowcount +20;
+endif
+endif
+     
+    endforeach
+
+data2[1] := online + " Auction Members";
+
+if (pagecount>2)
+layout2.append("button 260 361 5537 5538 0 " + (pagecount-2));
+endif
+
+endfunction
+
+function fixname(oldname)
+
+  var split:=SplitWords(oldname),i,newname:="";
+
+  for(i:=1;i<=6;i:=i+1)
+    if (split[i]) newname:=newname+split[i]+" "; endif
+  endfor
+
+  data2[5]:=newname;
+
+endfunction

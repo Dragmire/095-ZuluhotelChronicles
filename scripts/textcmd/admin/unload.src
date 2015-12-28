@@ -1,0 +1,12 @@
+use uo;
+use os;
+
+program unload( who, text )
+
+	if( !text )
+		unload_scripts();
+	else
+		unload_scripts( text );
+	endif
+
+endprogram

@@ -1,0 +1,188 @@
+use uo;
+use os;
+
+const SOUND_EFFECT_EAT1 := 0x3b;     
+const SOUND_EFFECT_EAT2 := 0x3c; 
+const SOUND_EFFECT_EAT3 := 0x3d; 
+const SOUND_EFFECT_TWINKLE := 0x0203;
+const POISON_SOUND := 0x247;
+const EFFECT_SPARKLE  := 0x373a;
+const ACTION_EAT := 0x22;
+
+include "include/dotempmods";
+include "include/attributes";
+include "include/drinkpotion";
+include "include/random";
+program eat_food( character, food )
+
+	//don't eat locked down food
+	if (food.movable == 0)
+		SendSysMessage(character, "You can't eat that.");
+		return;
+	endif
+
+	//temporary message string
+	var themsg := "";
+
+	//get the foodvalue of the food being eaten.  if it doesn't have this property set, use the default of 1
+	var foodvalue := 1;
+	if ( GetObjProperty(food,"foodvalue") )
+		foodvalue := GetObjProperty(food,"foodvalue");
+	endif
+
+//	Not implemented at this time
+//	//find out if the food has a special effect when eaten
+	var eaten_effect := 0;
+//	if ( getobjproperty(food,"eaten_effect") )
+//		eaten_effect := getobjproperty(food,"eaten_effect");
+//	endif
+
+	//Send a message based on the food value and play a sound effect
+	var random_number := Random(3) + 1;
+	if (foodvalue <= 0)
+		case (random_number)
+			1:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT1);
+			themsg := "Yuk!";
+			2:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT2);
+			themsg := "Gross!";
+			3:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT3);
+			themsg := "Disgusting!";
+		endcase
+	elseif (foodvalue <=3)
+		case (random_number)
+			1:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT1);
+			themsg := "Good!";
+
+			2:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT2);
+			themsg := "Yum!";
+
+			3:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT3);
+			themsg := "Tasty!";
+		endcase
+	elseif (foodvalue <=6)
+		case (random_number)
+			1:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT1);
+			themsg := "Delicious!";
+
+			2:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT2);
+			themsg := "Great!";
+
+			3:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT3);
+			themsg := "Very tasty!";
+		endcase
+	else
+		case (random_number)
+			1:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT1);
+			themsg := "Absolutely delicious!";
+
+			2:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT2);
+			themsg := "That was fabulous!";
+
+			3:
+			PlaySoundEffect(character,SOUND_EFFECT_EAT3);
+			themsg := "That tasted wonderful!";
+		endcase
+	endif
+
+	var plvl := IsPoison( food );
+
+	//destroy what was eaten, in certain cases returning another item
+	//wheel of cheese returns a large wedge of cheese
+	if (food.objtype == 0x097e)
+		SubtractAmount( food, 1);
+		CreateItemInBackpack(character, 0x097d, 1);
+	//large wedge of cheese returns a small wedge of cheese
+	elseif (food.objtype == 0x097d)
+		SubtractAmount( food, 1);
+		CreateItemInBackpack(character, 0x097c, 1);
+	//everything else
+	else
+		SubtractAmount( food, 1);
+	endif
+
+	//motion effect
+	PerformAction(character, ACTION_EAT);
+
+	//Find out how hungry the character is
+	var hunger := GetObjProperty(character, "hunger");
+	if (!hunger)
+		hunger := 0;
+	endif
+
+	//If they're not hungry, tell them so
+	if ((!hunger) || (hunger < 1))
+		themsg := "You're stuffed!";
+	endif
+
+	//If they can eat more and the food has no special effect, just change their hunger
+	//and give them some stamina
+	if (!eaten_effect)
+		hunger := hunger - foodvalue;
+		SetStamina(character, GetStamina(character) + (Random( 5 )+foodvalue));
+
+		//Make sure that they didn't go above their maximum stamina
+		if (GetStamina(character) > GetMaxStamina(character))
+			SetStamina(character, character.maxstamina);
+		endif
+
+	//Otherwise, the food does have a special effect, so do it.
+	else
+		hunger := hunger - foodvalue;
+		case (eaten_effect)
+			"mana_gain_small":		SetMana(character, GetMana(character) + 10);
+			"mana_gain_medium":		SetMana(character, GetMana(character) + 20);
+			"mana_gain_large":		SetMana(character, GetMana(character) + 30);
+			"mana_gain_huge":		SetMana(character, GetMana(character) + 40);
+			"health_gain_small":	SetHp(character, GetHp(character) + 10);
+			"health_gain_medium":	SetHp(character, GetHp(character) + 20);
+			"health_gain_large":	SetHp(character, GetHp(character) + 30);
+			"health_gain_huge":		SetHp(character, GetHp(character) + 40);
+			default:				SetStamina(character, GetStamina(character) + (Random( 5 )+foodvalue));
+		endcase
+
+		//Play a pretty sparkle and sound effect.
+		PlayObjectCenteredEffect( character, EFFECT_SPARKLE, 10,10);
+		PlaySoundEffect(character,SOUND_EFFECT_TWINKLE);
+
+		//make sure that none of the special effects took the character above their maximum
+		if (GetHp(character) > GetMaxHp(character))
+			SetHp(character, GetMaxHp(character));
+		endif
+		if (GetMana(character) > GetMaxMana(character))
+			SetMana(character, GetMaxMana(character));
+		endif
+		if (GetStamina(character) > GetMaxStamina(character))
+			SetStamina(character, GetMaxStamina(character));
+		endif
+	endif
+
+	//Set the character's hunger to the new hunger level, unless its below 0, which is the minimum
+	if (hunger < 0)
+		SetObjProperty(character, "hunger", 0);
+	else
+		SetObjProperty(character, "hunger", hunger);
+	endif
+
+	//send the eating message
+	SendSysMessage(character, themsg);
+
+	//Do poison stuff
+	Detach();
+
+	if( plvl )
+		sleep(90);
+		SetPoison( character, plvl, "You don't feel so well..." );
+	endif
+
+endprogram

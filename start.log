@@ -1,0 +1,17 @@
+POL095-2003-07-05 (VS.NET) compiled on Jul  5 2003 16:38:41
+Copyright (C) 1993-2003 Eric N. Swanson
+
+Reading Configuration.
+Opening UO client data files.
+Unable to open UO datafile: C:/spel/Ultima Online/map0.mul
+POL.CFG specifies UODataFileRoot as 'C:/spel/Ultima Online/'.  Is this correct?
+  The following files must be present in that directory:
+      map0.mul
+      multi.idx
+      multi.mul
+      staidx0.mul
+      statics0.mul
+      tiledata.mul
+      verdata.mul    (optional - only if present on client install)
+Server Shutdown: initializing random number generator
+Execution aborted due to: Error opening UO datafile.

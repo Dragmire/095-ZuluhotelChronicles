@@ -1,0 +1,18 @@
+Use os;
+Use uo;
+
+Include "include/itemutil";
+Include "include/attributes";
+Include "include/eventid";
+Include "include/objtype";
+Include "include/client";
+Include "include/yesno";
+
+
+Program skillgate( Who, gate )
+
+    MoveCharacterToLocation( Who, 6043, 411, 0 );
+    SendSysMessage( Who, "Welcome to the Battle Grounds.", FONT_BOLD, 2600 );
+    SendSysMessage( Who, "This is a No-Pk/Loot Zone!", FONT_BOLD, 2611 );
+
+Endprogram

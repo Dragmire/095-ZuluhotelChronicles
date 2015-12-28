@@ -1,0 +1,19 @@
+use os;
+use uo;
+use util;
+use basic;
+
+var timecheck;
+var before;
+    
+program macrosak( who)
+
+	var player := Target( who,TGTOPT_NOCHECK_LOS );
+    
+ if( (ReadGameClock() > Cint(GetObjProperty( player ,"#macrostart" ) +36000 )) && !GetObjProperty( player, "#allowmacro"))
+		SendSysMessage( who, "no macro!");
+
+else
+		SendSysMessage( who, "macro!");
+	endif
+endprogram

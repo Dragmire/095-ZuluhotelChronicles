@@ -1,0 +1,58 @@
+use uo;
+use boat;
+
+program neowipeall_boat( who )
+
+var counter:=0;
+SendSysMessage(who, "Wiping Boats from the Whole World... Just wait several minutes...");
+
+//Starting the Proccess
+	
+	foreach boat in (ListMultisInBox(1, 1, -127, 6144, 4095, 127))
+  if(boat.IsA(POLCLASS_BOAT))
+   
+   var boattag := boat.multi;
+    
+   if (boattag.has_offline_mobiles)
+boattag.move_offline_mobiles( 2897, 666, 0 );
+    endif
+
+  var oldhatch := boat.serial;
+    foreach item in EnumerateItemsInContainer( oldhatch );
+      DestroyItem(item);
+    endforeach
+
+    foreach item in (boattag.items)
+      DestroyItem(item);
+    endforeach
+	
+foreach item in EnumerateItemsInContainer( boattag.hold )
+          DestroyItem(item);
+        endforeach
+	
+endif
+
+var res := DestroyMulti( boat );
+
+    if (!res)
+        SendSysMessage( who, "Can't delete: " + res.errortext );
+	SendSysMessage( who, "The boat is: "+boat.serial);
+	
+		//Nice boat finder added by me :D (c)2004 Neoheartz
+	var bs:=boat.serial;
+
+	var ship := SystemFindBoatBySerial( bs );
+            if (ship)
+                SendSysMessage( who, "That ship is located at ("+ship.x+","+ship.y+")" );
+            else
+                SendSysMessage( who, "That ship doesn't seem to exist." );
+            endif
+
+    else
+	counter:=counter+1;
+endif
+	
+endforeach
+
+SendSysMessage(who, "Done ! We Wiped almost "+counter+" boats. Nice job, heh?");
+endprogram

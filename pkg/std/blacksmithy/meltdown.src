@@ -1,0 +1,135 @@
+////Items to Ingots, v3
+//Description:  This script will melt metal items into ingots, 1/2 the ammount it took to make the
+//		item
+//fixed:	Smelting off others paperdolls, colored items now melt to colored ingots
+//todo: 	Possibly add support for unlisted colored items to retain their colors after 
+//		being melted down
+////by Dex (rgaffey@pe.net)
+
+////////////
+//// 20010329 Jaleem Fixed smelting ingots in ingots
+////////////
+
+
+use uo;
+use cfgfile;
+use os;
+
+include "include/client";
+include "include/objtype";
+include "include/classes";
+
+const DIVIDER			:= 3;
+const SOUND_EFFECT_BELLOWS 	:= 0x2c;
+const SOUND_EFFECT_BUBBLE 	:= 0x22;
+
+var smith_cfg := ReadConfigFile( "blacksmithy" );
+
+function is_an_ingot (item)
+  if ((item.objtype >= UOBJ_INGOTS_START and item.objtype <= UOBJ_INGOTS_END) or
+      (item.objtype >= UOBJ_INGOTS2_START and item.objtype <= UOBJ_INGOTS2_END) or
+      (item.objtype = UOBJ_GOLD_INGOT))
+      return 1;
+  else
+      return 0;
+  endif
+endfunction
+
+program smeltarmor(character)
+
+	SendSysmessage( character, "What do you wish to smelt into ingots?" );
+	var use_on := Target( character , TGTOPT_CHECK_LOS );
+                
+        if (is_an_ingot (use_on))
+                SendSysMessage ( character, "That cannot be melted down!");
+                return;
+        endif
+
+	if(!ReserveItem(use_on)) return; endif
+
+	if( !use_on )
+		SendSysmessage( character, "Targetting cancelled" );
+		return;
+	endif
+	
+	if( smith_cfg[use_on.objtype] and !GetObjProperty( use_on , "ownerserial" ) )
+	
+		SendSysmessage (character, "Select a forge to use that on");
+	
+		var use_forge := Target( character );
+		if (!use_forge)
+			SendSysmessage( character, "Targetting cancelled" );
+			return;
+		endif
+
+		if ((use_forge.objtype = UOBJ_SMALL_FORGE) or ((use_forge.objtype >= UOBJ_FORGE_START) and (use_forge.objtype <= UOBJ_FORGE_END)))
+	   		SmeltToIngots( character , use_on );
+		else
+	   		SendSysmessage( character, "You must use that on a forge" );
+		endif
+	endif
+	
+endprogram
+
+
+
+function SmeltToIngots( character, tbsmelted )
+
+	var 	skill := 60;
+	var	element,
+		material,
+		what,
+		ingottype;
+  
+	what := tbsmelted.objtype;
+	element := FindConfigElem( smith_cfg , what );
+	
+	if (element)
+		material 	:= element.Material;
+	else
+		SendSysmessage( character , "That cannot be melted down!" );
+		return;
+	endif
+	
+	ingottype := GetObjProperty( tbsmelted , "ForgedWith" );
+	if( !ingottype )
+		ingottype := 0x6011;
+	endif
+	
+	var orediff := smith_cfg[ingottype].Difficulty;
+	skill := skill + Cint( orediff / DIVIDER );
+
+	var giveback := GetEffectiveSkill( character , SKILLID_BLACKSMITHY ) - orediff;
+	if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+		skill	:= Cint( skill / ClasseBonus( character , CLASSEID_CRAFTER ) );
+		giveback := Cint( giveback * ClasseBonus( character , CLASSEID_CRAFTER ) );
+	endif
+
+	PlaySoundEffect(character,SOUND_EFFECT_BELLOWS);
+	Sleep (1);
+	PlaySoundEffect(character,SOUND_EFFECT_BELLOWS);
+	Sleep (1);
+	PlaySoundEffect(character,SOUND_EFFECT_BUBBLE);
+	
+	if (CheckSkill( character , SKILLID_BLACKSMITHY , skill , 0 ))
+	
+		if( giveback > 95 )
+			giveback := 95;
+		endif
+		
+		giveback := Cint(giveback * material / 100);
+		if( giveback < 1 )
+			giveback := 1;
+		endif
+		
+		var item := CreateItemInBackpack( character , ingottype , giveback );
+		if( item )
+			SendSysmessage( character , "You turned your " + tbsmelted.desc + " back into " + giveback + " " + smith_cfg[ingottype].Name + " ingots." );
+			DestroyItem( tbsmelted );
+		endif
+	else
+		SendSysmessage( character , "You fail to smelt down the item and destroy it in your attempt!" );
+		DestroyItem( tbsmelted );
+	endif
+
+endfunction

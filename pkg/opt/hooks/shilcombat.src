@@ -1,0 +1,56 @@
+use uo;
+use os;
+
+include "include/skillpoints";
+include "include/attributes";
+include "include/areas";
+
+program shilcombat()
+
+	print( "Using ShilcombatAdvancement..." );
+	return 1;
+
+endprogram
+
+
+exported function ShilCombatAdvancement( attacker, weapon, defender )
+Var SkillID := FindSkillidByIdentifier(weapon.attribute);
+var skill := GetAttribute( attacker ,  SkillID );
+
+If ( !IsInArea(defender, AREAID_MINOC_MINES))
+If( weapon )
+	if( SkillID != SKILLID_ARCHERY)
+		AwardStatPoints( attacker, skillID );
+		AwardPoints( attacker, SkillID, 13);
+
+	elseif( SkillID == SKILLID_ARCHERY)
+		AwardStatPoints( attacker, skillID );
+		AwardPoints( attacker, SkillID, 16);
+	endif
+
+	Else
+
+	AwardStatPoints( attacker, 43 );	
+	AwardPoints( attacker, 43, 13);
+
+	Endif
+
+	AwardPoints( attacker, 27, 10 );
+endif
+
+
+endfunction
+
+function FindSkillidByIdentifier(skid)
+  var retval;
+  case(skid)
+    "Wrestling": retval := SKILLID_WRESTLING;
+    "Fencing":   retval := SKILLID_FENCING;
+    "Swords":    retval := SKILLID_SWORDSMANSHIP;
+    "Swordsmanship":    retval := SKILLID_SWORDSMANSHIP;
+    "Mace":      retval := SKILLID_MACEFIGHTING;
+    "Macefighting":      retval := SKILLID_MACEFIGHTING;
+    "Archery":    retval := SKILLID_ARCHERY;
+  endcase 
+  return retval;
+endfunction

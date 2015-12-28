@@ -1,0 +1,186 @@
+use uo;
+use os;
+use basic;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/objtype";
+include "include/drinkpotion";
+include "include/dotempmods";
+include "include/classes";
+include "include/itemutil";
+include "include/string";
+include "include/random";
+
+const DIFF_MULTIPLIER	:= 25;
+const POINT_MULTIPLIER	:= 20;
+
+program do_poisoning( character )
+
+	var the_item;
+	var potion;
+	var skill;
+	var strength;
+
+	SendSysMessage( character, "Select a poison potion." );
+
+	potion := Target( character, TGTOPT_CHECK_LOS );
+	if( !potion )
+		return;
+	endif
+
+	if( !Accessible( character, potion ) || !potion.movable )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+
+	if( !IsInContainer( character.backpack, potion ) )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( potion.graphic != UOBJ_POISON_POTION )
+		SendSysMessage(character, "You must select a poison potion!");
+		return;
+	endif
+ 
+	if( potion.container != character.backpack )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( !ReserveItem( potion ) )
+		return;
+	endif
+
+	SendSysMessage( character, "Select an object to which to apply this poison" );
+
+	the_item := Target( character, TGTOPT_CHECK_LOS );
+	if( !the_item )
+		return;
+	endif
+
+	if( !Accessible( character, the_item ) || !the_item.movable )
+		SendSysMessage( character, "You can't reach that!" );
+		return;
+	endif
+
+	if( !ReserveItem( the_item ) )
+		return;
+	endif
+
+	if( the_item.newbie )
+		SendSysMessage( character, "You can't poison that." );
+		return 0;
+	endif
+
+	if( the_item.isa( POLCLASS_WEAPON ) )
+		PoisonWeapon( character, potion, the_item );
+	elseif( IsConsommable( the_item ) )
+		PoisonFood( character, potion, the_item );
+	else
+		SendSysMessage( character, "You can poison that." );
+	endif
+
+endprogram
+
+
+function PoisonWeapon( character, potion, the_item )
+
+	var power := CInt( GetPotionStrength( potion ) );
+	var diff  := CInt( power * DIFF_MULTIPLIER );
+	var poisoning_skill := GetAttribute(character, ATTRIBUTEID_POISONING );
+
+	if( GetObjProperty( the_item, "IsGMItem" ) )
+		diff := diff + 20;
+	endif
+
+	if( diff > 160 )
+		diff := 160;
+	endif
+
+	SubtractAmount( potion, 1 );
+	CreateItemInBackpack( character, UOBJ_EMPTY_BOTTLE, 1 );
+
+	if( poisoning_skill < 50 )
+		power := power - 2;
+	elseif( poisoning_skill < 75 )
+		power := power - 1;
+	elseif( poisoning_skill > 160 )
+		power := power + 2;
+	elseif( poisoning_skill > 135 )
+		power := power + 1;
+	endif
+
+	if( power < 1 )
+		power := 1;
+	endif
+
+	if( CheckSkill( character, SKILLID_POISONING, diff, diff * POINT_MULTIPLIER ) )
+		if( GetObjProperty( character, CLASSEID_THIEF ) )
+			power := power + 1;
+		endif
+
+		PlaySoundEffect( character, SFX_248 );
+		SetObjProperty( the_item, "SkillPoisoned", CInt( power * 3 ) );
+		SendSysMessage( character, "You successfully apply the poison on the " + TruncateArticle(the_item.desc) + "." );
+	else
+		poisoning_skill := poisoning_skill - CInt( diff / 2 );
+		if( GetObjProperty( character, CLASSEID_THIEF ) )
+			poisoning_skill := poisoning_skill * CLASSE_BONUS;
+		endif
+
+		if( Random(100) > poisoning_skill )
+			SetPoison( character, power, "You fail and poison yourself!" );
+		else
+			SendSysMessage( character, "You fail to apply the poison properly" );
+		endif
+	endif
+
+endfunction
+
+
+function PoisonFood( character, potion, the_item )
+
+	if( GetObjProperty( the_item, "Poisoned" ) )
+		SendSysMessage( character, "This is already poisoned." );
+		return;
+	endif
+
+	var power := GetPotionStrength( potion );
+	var diff  := power * (DIFF_MULTIPLIER-5);
+
+	if( diff > 120 )
+		diff := 120;
+	endif
+
+	SubtractAmount( potion, 1 );
+	CreateItemInBackpack( character, UOBJ_EMPTY_BOTTLE, 1 );
+
+	if( CheckSkill( character, SKILLID_POISONING, diff, diff * POINT_MULTIPLIER ) )
+		if( GetObjProperty( character, CLASSEID_THIEF ) )
+			power := CInt( power * ClasseBonus( character, CLASSEID_THIEF ) );
+		endif
+
+		if( power > 7 )
+			power := 7;
+		endif
+
+		PlaySoundEffect( character, SFX_248 );
+		SetObjProperty( the_item, "Poisoned", power );
+		SendSysMessage( character, "You successfully poisoned this " + TruncateArticle(the_item.desc) + "." );
+	else
+		var poisoning_skill := GetAttribute( character, ATTRIBUTEID_POISONING ) - CInt( diff / 2 );
+		if( GetObjProperty( character, CLASSEID_THIEF ) )
+			poisoning_skill := poisoning_skill * ClasseBonus( character, CLASSEID_THIEF );
+		endif
+
+		if( Random(100) > poisoning_skill )
+			SetPoison( character, power, "You fail and poison yourself!" );
+		else
+			SendSysMessage( character, "You fail to apply the poison properly" );
+		endif
+	endif
+
+endfunction

@@ -1,0 +1,177 @@
+use uo;
+use os;
+use basic;
+
+include "include/spelldata";
+include "include/npcbackpacks";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ANIMATE_DEAD;
+const SPELL_EFFECT_ID		:= FX_SPELL_ANIMATE_DEAD;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ANIMATE_DEAD;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ANIMATE_DEAD;
+
+program cast_animate_dead( parms )
+    
+	var circle := GetCircle( SPELLID_ANIMATE_DEAD );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] = "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;	
+		if( TryToCast( caster, SPELLID_ANIMATE_DEAD ) != SUCCESS )
+				EraseObjProperty( caster , "#Casting" );
+
+			return;
+		endif
+		SendSysmessage(caster, "What corpse do you wish to animate?");
+		cast_on := CanTargetThing ( caster , circle , TGTOPT_CHECK_LOS );
+	endif
+			
+	if( !cast_on )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+		
+	if( !fromhit )
+		EraseObjProperty( caster , "#Casting" );
+		cast_on := Reflected( caster , cast_on , circle );
+	endif
+	
+	if( cast_on.objtype <> CORPSE_OBJTYPE )
+		SendSysMessage(caster , "That is not a corpse!");
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+		
+	if( !GetObjProperty(cast_on , "npctemplate") )
+		SendSysmessage(caster, "You can't animate an human soul.");
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+
+	var immunity := IsProtected( caster , cast_on , circle );
+	if( immunity = IMMUNED )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+	
+	var npctemplate := GetObjProperty( cast_on , "npctemplate" );
+	var magery := GetEffectiveSkill( caster , SKILLID_MAGERY );
+	var duration := ModifyWithMagicEfficiency( caster , magery * 3 );
+	var power := ModifyWithMagicEfficiency( caster , magery - 60 );
+	
+	if( !power )
+		return;
+	endif
+	
+	if( power > 95 )
+		power := 95;
+	endif
+	
+	var prevpower := GetObjProperty( cast_on , "animated" );
+	if ( prevpower )
+		power := Cint( power * prevpower / 500 );
+	endif
+	
+	var protection := GetResultingPlaneProtection( cast_on , plane );
+	if( protection )
+		var modifier := 100 - (protection * 20);
+		if( modifier < 1 )
+			modifier := 0;
+		endif
+			
+		duration := Cint( duration * modifier / 1000 );
+		power := Cint( duration * modifier / 1000 );
+		
+		if( !duration or !power )
+			PrintTextAbovePrivate( cast_on , "The nature of the target prevent it from being animated!" , caster );
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+	
+	if ( power < 1 )
+		PrintTextAbovePrivate( cast_on , "There's not enough life essence left in this corpse to animate it!" , caster );
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+	
+	var thecritter;
+	thecritter := CreateNPCfromTemplate( npctemplate , cast_on.x , cast_on.y , cast_on.z );
+
+	SetObjProperty( thecritter , "master" , caster.serial );
+	SetObjProperty( thecritter , "script" , thecritter.script );
+	SetObjProperty( thecritter , "noloot" , 1 );
+	SetObjProperty( thecritter , "animated" , power );
+	SetObjProperty( thecritter , "Type" , "Undead" );
+	
+	var truename := ExtractName( cast_on.desc );
+	thecritter.name   := "a Reanimated " + truename;
+	thecritter.color  := ANIMATE_DEAD_CORPSE_COLOR;
+	
+	if ( !thecritter.backpack )
+		var newbackpack := CreateItemAtLocation(thecritter.x , thecritter.y , thecritter.z , 0xe75 , 1 );
+		EquipItem( thecritter , newbackpack );
+	endif
+
+	foreach item in EnumerateItemsInContainer( cast_on )
+		MoveItemToContainer( item, thecritter.backpack );
+	endforeach
+
+	DestroyItem( cast_on );
+	
+	thecritter.setmaster( caster );
+	thecritter.script := "tamed";
+	RestartScript( thecritter );
+	
+    	PlaySoundEffect( caster, SFX_SPELL_ANIMATE_DEAD );
+	PlayObjectCenteredEffect(thecritter, 
+				 SPELL_EFFECT_ID,
+				 SPELL_EFFECT_SPEED,
+				 SPELL_EFFECT_LOOP);
+
+	
+	thecritter.strength_mod 	:= 0;
+	thecritter.intelligence_mod 	:= 0;
+	thecritter.dexterity_mod 	:= 0;
+	
+	thecritter.setstr( Cint(thecritter.strength * power / 500) );
+	thecritter.setint( Cint(thecritter.intelligence * power / 500) );
+	thecritter.setdex( Cint(thecritter.dexterity * power / 500) );
+	
+	thecritter.strength_mod 	:= Cint(GetObjProperty( thecritter , "BaseStrmod" ) * power / 600 );
+	thecritter.intelligence_mod 	:= Cint(GetObjProperty( thecritter , "BaseIntmod" ) * power / 600 );
+	thecritter.dexterity_mod 	:= Cint(GetObjProperty( thecritter , "BaseDexmod" ) * power / 600 );
+	
+	thecritter.hp 			:= thecritter.maxhp;
+	thecritter.mana 		:= thecritter.maxmana;
+	thecritter.stamina 		:= thecritter.maxstamina;
+	
+	for i := 0 to 48
+		var initskill := GetEffectiveSkill( thecritter , i );
+		if( initskill )
+			SetBaseSkill( thecritter, i, initskill * power / 100 );
+		endif
+	endfor
+	
+	EraseObjProperty( caster , "#Casting" );
+	sleep( duration );
+	
+	PrintTextAbovePrivate( thecritter , "The spell effect wear off" , caster );
+	thecritter.name := truename;
+	ApplyRawDamage( thecritter, GetMaxHP(thecritter) + 3 );
+
+endprogram

@@ -1,0 +1,147 @@
+
+use uo;
+use cfgfile;
+
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/bard";
+include "include/eventid";
+include "include/checkcity";
+
+program bard_provoke( character )
+
+	var instrument := findinstrument( character );
+
+	if( !instrument )
+		SendSysmessage( character, "You don't have an instrument to play!" );
+		return;
+	endif
+	
+	if( CheckCity(character) )
+		SendSysmessage( character, "You can't provoke in town!" );
+		return;
+	endif
+
+	SendSysMessage( character, "Who would you like to provoke" );
+
+	var thetarg := Target( character, TGTOPT_CHECK_LOS );
+	if( !thetarg )
+		return;
+	elseif( !GetIntelligence(thetarg) )
+		SendSysMessage( character, "You cannot provoke that!" );
+		return;
+	elseif( thetarg = character )
+		SendSysMessage( character, "You cannot provoke yourself!" );
+		return;
+	endif
+	if( CheckCity(character) )
+		SendSysmessage( character, "You can't provoke in town!" );
+		return;
+	endif
+
+
+	var configfile := ReadConfigFile( "::npcdesc" );
+	var theobj	 := thetarg.npctemplate;
+	var elem	 := FindConfigElem( configfile, theobj );
+	var difficulty;
+
+	if( elem and !(elem.Privs = "invul") )
+		difficulty := Cint( elem.provoke );
+		
+	elseif( !thetarg.npctemplate and !thetarg.cmdlevel )
+		difficulty := Cint( thetarg.intelligence );
+	else
+		SendSysMessage( character, "You cannot provoke that!" );
+		return;
+	endif
+
+	if( !difficulty )
+		difficulty := 100;
+	elseif( difficulty > 150 )
+		difficulty := 150;
+	endif
+	
+	SendSysmessage( character, "Against who would you like to provoke " + thetarg.name + "?" );
+	var newtarg := Target( character, TGTOPT_CHECK_LOS+TGTOPT_HARMFUL );
+	if( !newtarg )
+		SendSysmessage( character, "Canceled.");
+		return;
+	elseif( !GetIntelligence(newtarg) )
+		SendSysmessage( character, cstr(thetarg.name + " is now very angry against " + newtarg.desc + " but since it is inanimated he will ignore it.") );
+		return;
+	elseif( newtarg = thetarg )
+		SendSysmessage( character, "You cannot provoke something against itself." );
+		return;
+	endif
+	
+	if( newtarg.npctemplate )
+		elem	 := FindConfigElem( configfile, newtarg.npctemplate );
+		if( elem.Privs = "invul" )
+			SendSysMessage( character, "You cannot provoke against an invul npc!" );
+			return;
+		endif
+	endif
+
+	var ev := struct;
+	ev.+ type;
+	ev.+ source;
+
+	var sfx_success;
+	var sfx_failure;
+	case( instrument.graphic )
+		UOBJ_HARP:	sfx_success := SFX_HARP_SUCC;
+				sfx_failure := SFX_HARP_FAIL;
+				break;
+				
+		UOBJ_LUTE:	sfx_success := SFX_LUTE_SUCC;
+				sfx_failure := SFX_LUTE_FAIL;
+				break;
+				
+		UOBJ_DRUM:	sfx_success := SFX_DRUM_SUCC;
+				sfx_failure := SFX_DRUM_FAIL;
+				break;
+				
+		UOBJ_TAMB:	sfx_success := SFX_TAMB_SUCC;
+				sfx_failure := SFX_TAMB_FAIL;
+				break;
+				
+		default:	PrintTextAbovePrivate( character, "That's not something you can play", character );
+				return;
+	endcase
+		
+	if( CheckSkill( character, SKILLID_PROVOCATION, difficulty, Cint(difficulty * 10) ) )
+		if( CheckSkill( character, SKILLID_MUSICIANSHIP, difficulty, Cint(difficulty * 5) ) )
+			PlaySoundEffect( character, sfx_success );
+			ev.source	:= character;
+			ev.type		:= SYSEVENT_ENGAGED;
+			SendEvent( newtarg, ev );
+			ev.source	:= thetarg;
+			ev.type		:= SYSEVENT_ENGAGED;
+			SendEvent( newtarg, ev );
+			ev.source	:= newtarg;
+			ev.type		:= EVID_PEACEMADE;
+			SendEvent( thetarg, ev );
+			ev.type		:= SYSEVENT_DAMAGED;
+			SendEvent( thetarg, ev );
+			PrintTextAbovePrivate( thetarg, "You provoke " + thetarg.name + " to attack " + newtarg.name + "!", character );
+		else
+			PlaySoundEffect( character, sfx_failure );
+			ev.source	:= character;
+			ev.type		:= EVID_PEACEMADE;
+			SendEvent( thetarg, ev );
+			ev.type		:= SYSEVENT_DAMAGED;
+			SendEvent(thetarg, ev);
+			PrintTextAbovePrivate( thetarg, "You enrage " + thetarg.name + "!", character );
+		endif
+	else
+		PlaySoundEffect( character, sfx_failure );
+		ev.source	:= character;
+		ev.type		:= EVID_PEACEMADE;
+		SendEvent( thetarg, ev );
+		ev.type		:= SYSEVENT_DAMAGED;
+		SendEvent(thetarg, ev);
+		PrintTextAbovePrivate( thetarg, "You enrage " + thetarg.name + "!", character );
+	endif
+
+endprogram 

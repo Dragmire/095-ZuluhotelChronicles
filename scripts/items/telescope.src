@@ -1,0 +1,60 @@
+use uo;
+use os;
+
+include "include/coords";
+
+program use_telescope( character  )
+
+
+    SendSysMessage( character, "Select an object to use this on" );
+    var use_on := TargetCoordinates( character);
+
+    if (!use_on)
+        return;
+    endif
+
+    if (use_on.desc)
+    SendSysMessage(character, "you can see " + CStr(use_on.desc));
+    else
+    SendSysMessage(character, "you can see " + CStr(use_on.name));
+    endif
+
+    if (use_on.objtype)
+	SendSysMessage(character, "object type is " + CStr(use_on.objtype));
+    elseif (use_on.item.objtype)
+	SendSysMessage(character, "object type is " + CStr(use_on.item.objtype));
+    endif
+
+    sleep(1);
+    if (use_on.dead)
+    SendSysMessage(character, "dead is " + CStr(use_on.dead));
+    endif
+
+    if (use_on.corpseType)
+    SendSysMessage(character, "corpse type is " + CStr(use_on.corpseType));
+    endif
+
+    sleep(1);
+    SendSysMessage(character, "position is " + ToSextant(use_on.x, use_on.y));
+
+    if (use_on.height)
+    sleep(1);
+    SendSysMessage(character, "height is " + use_on.height);
+    endif
+
+    if (use_on.color)
+    sleep(1);
+    SendSysMessage(character, "color is " + use_on.color);
+    endif
+
+    if (use_on.layer)
+    sleep(1);
+    SendSysMessage(character, "layer is " + use_on.layer);
+    endif
+
+    if (use_on.container)
+    sleep(1);
+    SendSysMessage(character, "container is " + use_on.container);
+    endif
+
+endprogram

@@ -1,0 +1,49 @@
+use uo;
+use os;
+
+include "include/client";
+
+program textcmd_arm(player, baggie)
+	var x := baggie.x;
+	var y := baggie.y;
+	var z := baggie.z;
+	var xmod;
+	var ymod;
+	var moved;
+	if (player.x < baggie.x)
+		xmod := 1;
+	endif
+	if (player.y < baggie.y)
+		ymod := 1;
+	endif	
+	if (player.x > baggie.x)
+		xmod := -1;
+	endif
+	if (player.y > baggie.y)
+		ymod := -1;
+	endif
+	x := x + xmod;
+	y := y + ymod;
+	baggie.movable := 1;
+	moved := MoveItemToLocation(baggie,x,y,z,0);
+	if (!moved)
+		x := x + (xmod*-2);
+		y := y + (ymod*-2);
+		MoveItemToLocation(baggie,x,y,z,0);
+	endif
+	baggie.movable := 0;
+	SetObjProperty(baggie,"kicker",player.serial);
+	var goal := ListItemsNearLocation( baggie.x , baggie.y , baggie.z , 1 );
+	var goalcolor;
+	var teamcolor;
+	foreach item in goal
+		if (GetObjProperty(item,"cwgoal"))
+			goalcolor := GetObjProperty(item,"cwgoal");
+			teamcolor := GetObjProperty(player,"cwcolor");
+			if(teamcolor != goalcolor)
+				SetGlobalProperty("pbscorer",teamcolor);
+				SetGlobalProperty("kicker",player.serial);
+			endif
+		endif
+	endforeach
+endprogram

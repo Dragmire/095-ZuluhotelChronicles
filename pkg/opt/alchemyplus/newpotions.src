@@ -1,0 +1,327 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/dotempmods";
+include "include/attributes";
+include "include/mobileutil";
+include "include/drinkpotion";
+include "include/classes";
+include "include/client";
+
+program use_product (me, what)
+
+	/*if( !ReserveItem(what) )
+		return;
+	endif*/
+
+	if( !CheckIfCanDrink(me) )
+		return;
+	endif
+
+	if (CInt(GetObjProperty(what,"itemtype"))==33)
+	SetObjProperty( me, "#potion", ReadGameClock() + (DELAY_BETWEEN_DRINK*2) );
+	endif
+
+	if( IsPoison( what ) )
+		DoPoison( me, what );
+	else
+		var item := FindItemType(what);
+		if( !item )
+			PrintTextAbovePrivate(me,"Nothing happens",me);
+		else
+			PlayEffects( me, item );
+
+			if( item.usecreate )
+				CreateItemInContainer(me.backpack,item.usecreate,1);
+			endif
+
+			if( NukeTotemIngredient(me,item) )
+				DoEffect( me, item, what );
+			endif
+		endif
+	endif
+
+	Detach();
+	sleep(DELAY_BETWEEN_DRINK);
+        CanDrink( me );
+
+endprogram
+
+function FindItemType(what)
+
+	var itemtype := CInt(GetObjProperty(what,"itemtype"));
+	var items := ReadConfigFile( "alchemyplus" );
+	return FindConfigElem(items,itemtype);
+
+endfunction
+
+function PlayEffects(me,item)
+
+	if (item.usenoise)
+		PlaySoundEffect(me,item.usenoise);
+	endif
+
+	if (item.useanim)
+		PerformAction(me,item.useanim);
+	endif
+
+	if (item.useeffect)
+		PlayObjectCenteredEffect( me, item.useeffect, 10,10);
+	endif
+
+endfunction
+
+function DoEffect( me, item, what )
+
+	if (item.skillcheck)
+		if( !CheckSkill( me, SKILLID_ALCHEMY, item.skillcheck, item.skillcheck * 5 ) )
+			if( GetObjProperty( me, CLASSEID_MAGE ) )
+				if( !CheckSkill( me, SKILLID_ALCHEMY, item.skillcheck, item.skillcheck * 5 ) )
+					DoBadThingTo(me,Random(CInt(item.skillcheck/5)));
+					SubtractAmount( what, 1 );
+					return;
+				endif
+			else
+				DoBadThingTo(me,Random(CInt(item.skillcheck/5)));
+				SubtractAmount( what, 1 );
+				return;
+			endif
+		endif
+	endif
+
+	case (item.effect)
+		"invis":	DoInvisEffect(me, what );		break;
+		"cunning":	DoCunningEffect( me, item, what );	break;
+		"protection":	DoProtectionEffect( me, item, what );	break;
+		"bless":	DoBlessEffect( me, item, what );	break;
+		"fullheal":	DoFullHeal( me, what );		break;
+		"fullmana":	DoFullMana( me, what );		break;
+		"poly":		DoPolyEffect( me, item, what );	break;
+		"totem":	MakeTotem( me, what );			break;
+		default:	PrintTextAbovePrivate(me,"Nothing happens",me);
+				SubtractAmount( what, 1 );
+	endcase
+
+endfunction
+
+function DoInvisEffect( me, what )
+
+	Detach();
+	var duration := 30;
+	if( GetObjProperty( what, "ByTrueMage" ) )
+		SendSysMessage( me, "This potion is so potent that it contain 2 doses." );
+		EraseObjProperty( what, "ByTrueMage" );
+		ReleaseItem( what );
+		duration := 60;
+	else
+		SubtractAmount( what, 1 );
+	endif
+
+	me.hidden := 1;
+
+	sleep( duration );
+
+	me.hidden := 0;
+
+endfunction
+
+function DoCunningEffect( me, item, what )
+
+	var strength	 := GetPotionStr( item, what );
+	var mod_amount := RandomDiceStr(strength+"d10");
+	var duration   := strength * 20;
+	if( CanMod( me, "int" ) )
+		DoTempMod( me, "int", mod_amount, duration );
+	endif
+	SubtractAmount( what, 1 );
+
+endfunction
+
+function DoProtectionEffect( me, item, what )
+
+	var strength	 := GetPotionStr( item, what );
+	var mod_amount := RandomDiceStr(strength+"d2");
+	var duration   := strength * 15;
+	if( CanMod( me, "ar" ) )
+		DoTempMod(me, "ar", mod_amount, duration);
+	endif
+	SubtractAmount( what, 1 );
+
+endfunction
+
+function DoBlessEffect( me, item, what )
+
+	var strength	 := GetPotionStr( item, what );
+	var mod_amount := RandomDiceStr(strength+"d3");
+	var duration   := strength * 15;
+	if( CanMod( me, "all" ) )
+		DoTempMod(me, "all", mod_amount, duration);
+	endif
+	SubtractAmount( what, 1 );
+
+endfunction
+
+function DoFullHeal( me, what )
+
+	SetHp(me, GetMaxHp(me));
+	if( GetObjProperty( what, "ByTrueMage" ) )
+		EraseObjProperty( what, "ByTrueMage" );
+		SendSysMessage( me, "This potion is so potent, that only half of it is needed to refresh your health." );
+		ReleaseItem( what );
+	else
+		SubtractAmount( what, 1 );
+	endif
+
+endfunction
+
+function DoFullMana( me, what )
+
+	SetMana(me, GetMaxMana(me));
+	if( GetObjProperty( what, "ByTrueMage" ) )
+		EraseObjProperty( what, "ByTrueMage" );
+		SendSysMessage( me, "This potion is so potent, that only half of it is needed to refresh your mana." );
+		ReleaseItem( what );
+	else
+		SubtractAmount( what, 1 );
+	endif
+
+endfunction
+
+function DoBadThingTo(me, howbad)
+
+	if (howbad < 6)
+		PrintTextAbovePrivate(me,"Gah!  Your hair falls out!",me);
+		PrintTextAbovePrivate(me,"Gah!  That did not work!",me);
+		DestroyItem(GetEquipmentByLayer(me,LAYER_HAIR));
+		DestroyItem(GetEquipmentByLayer(me,LAYER_BEARD));
+	
+	elseif (howbad < 12)
+		PrintTextAbovePrivate(me,"Ugh... Your don't feel so well...",me);
+		if( CanMod( me, "all" ) )
+			DoTempMod(me,"all", 0-(Random(20)+1),200+Random(400) );
+		endif
+	
+	elseif (howbad < 10)
+		PrintTextAbovePrivate(me,"Doh!",me);
+		DoPersistedMod(me,"color",Random(47)+1301,me.color,200+Random(400) );
+
+	else
+		var x := CInt(howbad/4);
+		SetPoison(me, x, "Gack! You've been poisoned!");
+	endif
+
+endfunction
+
+function DoPolyEffect( me, item, what )
+
+	var strength	 := GetPotionStr( item, what );
+	var critter 	 := Random(8);
+	var newcolor 	 := 1401+(strength*10)+critter;
+	var mod_amount := (strength*5)+critter;
+	var duration 	 := strength * 120;
+	if( CanMod( me, "poly" ) )
+		DoTempMod( me, "poly", mod_amount, duration );
+		if( CanMod( me, "color", 1 ) )
+			DoPersistedMod( me, "color", newcolor, me.color,duration );
+		endif
+	endif
+	SubtractAmount( what, 1 );
+
+endfunction
+
+function GetPotionStr( item, what )
+
+	var strength := GetStrength(item);
+	var bonus := CInt(GetObjProperty( what, "ByTrueMage" ));
+	if( strength )
+		return (strength + bonus);
+	else
+		return 0;
+	endif
+
+endfunction
+
+function MakeTotem( me, what )
+
+	DestroyItem( what );
+
+	set_critical(1);
+	Detach();
+	var parms := {};
+	parms .+ script := "humuc";
+
+	var thecritter := CreateNpcFromTemplate("humuc", CInt(me.x - 1), me.y, me.z, parms);
+	if (!thecritter)
+		thecritter := CreateNpcFromTemplate("humuc", me.x, CInt(me.y - 1), me.z, parms);
+		if (!thecritter)
+			return;
+		endif
+	endif
+
+	SetObjProperty( thecritter, "master", me.serial );
+	SetObjProperty( thecritter, "script", thecritter.script );
+	SetObjProperty( me, "humuc", CInt(thecritter.serial) );
+  
+	thecritter.setmaster( me );
+
+	thecritter.script := "humuc";
+	thecritter.name := me.name;
+
+	RestartScript(thecritter);
+
+	CopySkills( me, thecritter );
+	if( GetObjProperty( me, CLASSEID_MAGE ) )
+		SetObjProperty( thecritter, CLASSEID_MAGE, GetObjProperty( me, CLASSEID_MAGE ) );
+		SetStrengthMod(thecritter, GetStrengthMod(thecritter) + GetAttribute( me, "strength" ) );
+		SetObjProperty( thecritter, "BaseStrmod", GetObjProperty( thecritter, "BaseStrmod" ) + GetStrength(me) );
+		SetIntelligenceMod(thecritter, GetIntelligenceMod(thecritter) + GetAttribute( me, "intelligence" ) );
+		SetObjProperty( thecritter, "BaseIntmod", GetObjProperty( thecritter, "BaseIntmod" ) + GetIntelligence(me) );
+		SetDexterityMod(thecritter, GetDexterityMod(thecritter) + GetAttribute( me, "dexterity" ) ) ;
+		SetObjProperty( thecritter, "BaseDexmod", GetObjProperty( thecritter, "BaseDexmod" ) + GetDexterity(me) );
+	endif
+
+	set_critical(0);
+
+endfunction
+
+
+function NukeTotemIngredient(me,item)
+
+	var findtype;
+	if (item.itemtype == 36)
+		findtype := 37;
+	elseif (item.itemtype == 37)
+		findtype := 36;
+	else
+		return 1;
+	endif
+
+	if (GetObjProperty(me, "humuc") )
+		if ( SystemFindObjectBySerial(CInt(GetObjProperty(me, "humuc"))) )
+			SendSysMessage(me,"You already have a pet!");
+			return 0;
+		endif
+	endif
+
+	var otherthing;
+	var thingfound := 0;
+	foreach otheritem in EnumerateItemsInContainer(me.backpack)
+		if (otheritem.objtype == 0x7059)
+			otherthing := FindItemType(otheritem);
+			if (otherthing.itemtype == findtype)
+				thingfound := 1;
+				DestroyItem(otheritem);
+				return 1;
+			endif
+		endif
+	endforeach
+
+	if (!thingfound)
+		SendSysMessage(me,"You don't have all the ingredients!");
+		return 0;
+	else
+		return 0;
+	endif
+
+endfunction

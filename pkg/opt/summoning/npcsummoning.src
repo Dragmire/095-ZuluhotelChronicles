@@ -1,0 +1,55 @@
+use uo;
+use os;
+
+include "include/npcbackpacks";
+include "include/attributes";
+include "include/spelldata";
+include "include/eventid";
+include "include/client";
+include "include/random";
+
+program summon_creature( parms )
+
+	var caster		:= parms[1];
+	var npctemplate	:= parms[2];
+	var sfx		:= parms[3];
+
+	var magery		:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var duration		:= magery * 2;
+
+	PlaySoundEffect( caster, sfx );
+
+	Detach();
+
+	var thecritter := CreateNpcFromTemplate( npctemplate, CInt(caster.x + Random(1)), CInt(caster.y + Random(1)), CInt(caster.z) );
+	SetObjProperty( thecritter, "summoned", 1 );
+
+	var ev array;
+	ev.+type := SYSEVENT_ENGAGED;
+	ev.+source := 0;
+
+	foreach critter in ListMobilesInLineOfSight( thecritter, 5 )
+		if ((!critter.npctemplate) || (critter.script == "tamed"))
+                	ev.source := critter;
+			SendEvent(thecritter, ev);
+		endif
+	endforeach
+
+	sleep( duration );
+
+	PlaySoundEffect( thecritter, 0x01fa );
+//	PlayStationaryEffect( thecritter.x, thecritter.y, thecritter.z, 0x3728, 10, 10);
+	var backpack := FindExistingPack( thecritter.serial );
+	if( backpack )
+		foreach item in EnumerateItemsInContainer( backpack );
+  			MoveItemToLocation( item, thecritter.x, thecritter.y, thecritter.z, MOVEITEM_FORCELOCATION );
+		endforeach
+	endif
+
+	RevokePrivilege( thecritter, "invul" );
+	SetObjProperty(thecritter,"guardkill",1);
+	MoveCharacterToLocation(thecritter,5288,1176,0,MOVECHAR_FORCELOCATION);
+	ApplyRawDamage(thecritter, GetHp(thecritter) + 3);
+
+
+endprogram

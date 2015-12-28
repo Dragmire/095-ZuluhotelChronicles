@@ -1,0 +1,34 @@
+//look way down at the bottom and change:
+//	dolly.usescript := ":dundee:shrunknpcs";
+//to whatever package you place shrunknpcs in.
+//
+
+use uo;
+
+include "include/itemutil";
+
+program textcmd_shrink( who )
+
+	SendSysMessage( who, "Shrink what?" );
+	var item := Target( who );
+	if (!item)
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+
+	var dolly := CreateItemInContainer(who.backpack,0xba32,1);
+	if (!dolly)	SendSysMessage(who,"No dolly!"); return; endif
+
+	SetObjProperty(dolly, "graphic", item.graphic);
+	SetObjProperty(dolly, "objtype", item.objtype);
+	SetObjProperty(dolly, "amount", item.amount );
+	DupeItem( item, dolly );
+	if( item.usescript )
+		SetObjProperty(dolly, "usescript", item.usescript );
+	endif
+
+	dolly.graphic := 0x1f28;
+	dolly.usescript := ":shrunk:shrunkitems";
+	SendSysMessage(who,"Done!");
+
+endprogram

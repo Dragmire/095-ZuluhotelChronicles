@@ -1,0 +1,22 @@
+// Locking Spawning Chest system  version .1
+// by Zulu (zulu@zuluhotel.com)   July 5, 2000
+
+use uo;
+use os;
+
+include "include/chests";
+include "include/checkcity";
+
+program lockchests(chest)
+
+	if(CheckCity(chest)==1) return;	endif
+	if(chest.multi) return; endif
+	if(chest.movable) return; endif
+	if(chest.locked) return; endif
+	if(getobjproperty(chest,"houseserial")) return; endif
+	if(getobjproperty(chest,"lockeddown")) return; endif
+	if(getobjproperty(chest,"ctfchest")) return; endif
+
+	lockem(chest);
+
+endprogram

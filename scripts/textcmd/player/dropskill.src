@@ -1,0 +1,64 @@
+Use uo;
+Use cfgfile;
+
+Include "include/client";
+Include "include/yesno";
+
+Program TextCMD_Lower( Who )
+
+    Var layout2 := array(
+    "Page 0",
+    "ReSizePic 0 0 3600 250 450",
+    "Text 75 30 2494 0",
+    );
+
+    Var data2 := array(
+    "Select a Skill"
+    );
+
+    Var cfg     := ReadConfigFile( ":combat:modenchantdesc" );
+    Var count	:= 0;
+    Var done	:= 0;
+    Var page	:= 1;
+    Var perpage	:= 17;
+    Var y 	:= 55;
+    Var i;
+
+    layout2.append( "page " + page );
+    If( SKILLID__HIGHEST > perpage )
+    layout2.append( "Button 150 406 5540 5541 0 " + ( page + 1 ) );
+    Endif
+
+    For( i := 1; i <= SKILLID__HIGHEST + 1; i := i + 1 )
+    If( done == perpage )
+    done  := 0;
+    page  := page + 1;
+    y 	  := 55;
+
+    layout2.append( "Page " + page );
+    layout2.append( "Button 80 406 5537 5538 0 " + ( page - 1 ) );
+        If( SKILLID__HIGHEST > ( count + perpage ) )
+        layout2.append( "button 150 406 5540 5541 0 " + ( page + 1 ) );
+        Endif
+    Endif
+
+    layout2.append( "Text 25 " + y + " 2597 " + len( data2 ) );
+    layout2.append( "Button 200 " + ( y + 5 ) + " 2104 2103 1 0 " + i );
+    data2.append( cfg[i-1].Skill );
+
+    y 	:= y + 20;
+    done 	:= done + 1;
+    count 	:= count + 1;
+    Endfor
+
+    Var res := SendDialogGump( Who, layout2, data2 );
+    If( !res[0] )
+    SendSysmessage( Who, "Cancelled.", FONT_NORMAL, 2595 );
+    Return;
+    Elseif( YesNo( Who, "Are you sure?" ) )
+    SetBaseSkillBaseValue( Who, res[0]-1, 0 );
+    Else
+    SendSysmessage( Who, "Cancelled.", FONT_NORMAL, 2595 );
+    Endif
+
+Endprogram

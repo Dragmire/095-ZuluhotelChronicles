@@ -1,0 +1,44 @@
+use uo;
+Use cfgfile;
+
+include "util/bank";
+
+program openbank( who )
+
+	var mobile := Target( who );
+	if( !mobile )
+		return;
+	endif
+	
+	if( mobile.npctemplate )
+		SendSysMessage( who , "You can only use this on players." );
+		return;
+	endif
+
+	var bankbox := FindBankBox( mobile );
+	if( bankbox )
+ 
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("Logging/opened");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Player Name",  mobile.name });
+    elem.append({ "Player Serial",  hex(mobile.serial) });
+
+    AppendConfigFileElem("Logging/opened", "Opened", "Bank", elem);
+    UnloadConfigFile("Logging/opened");
+    EndIf
+
+		SendOpenSpecialContainer( who , bankbox );
+	endif
+
+endprogram
+        

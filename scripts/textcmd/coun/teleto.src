@@ -1,0 +1,13 @@
+use uo;
+
+program teleto(who)
+
+var what:= target(who, TGTOPT_NOCHECK_LOS );
+SendSysmessage(who, "Move where?");
+var where := targetcoordinates(who);
+
+if (where)
+        movecharactertolocation(what, where.x, where.y, where.z, MOVECHAR_FORCELOCATION);
+endif
+
+endprogram

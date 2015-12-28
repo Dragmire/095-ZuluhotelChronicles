@@ -1,0 +1,51 @@
+/*
+   Author: Dark Neo (lokauM@Gmail.com) Dez 31, 2006.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+Use os;
+Use uo;
+
+Include "include/client";
+Include "include/classes";
+
+Program Gate_Crafters( who )
+
+    Var level;
+
+    Foreach classe in GetClasseIds()
+    EraseObjProperty( who , classe );
+    level := IsFromThatClasse( who , GetClasseSkills(classe) );
+    If( level )
+    SetObjProperty( who, classe, level );
+    Endif
+    Endforeach
+
+    Var CLvl := GetLevel( Who );
+
+    If( IsCrafter( who ) && CLvl >= 1 )
+    MoveCharacterToLocation( who, 1264, 1255, 0 );
+    SendSysMessage( who, "Welcome to the Crafters Mine.", FONT_BOLD, 2600 );
+    SendSysMessage( who, "This is a No-PK/Looting Zone!", FONT_BOLD, 2611 );
+    Else
+    SendSysMessage( who, "You must be a Level 1 Crafter to enter.", FONT_BOLD, 2611 );
+    Endif
+
+EndProgram
+
+Function GetLevel( Who )
+
+    Var level;
+
+    Foreach classe in GetClasseIds()
+    EraseObjProperty( who , classe );
+    level := IsFromThatClasse( who , GetClasseSkills(classe) );
+    If( level )
+    SetObjProperty( who, classe, level );
+    Return level;
+    Endif
+    Endforeach
+
+EndFunction

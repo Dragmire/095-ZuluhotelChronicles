@@ -1,0 +1,14 @@
+use uo;
+use os;
+
+include "include/utility";
+include "include/teleporters";
+
+SetGlobalProperty("signs",{"NONE"});
+OpenWorldBank();
+
+find_or_create_storage("Merchant Storage");
+
+CreateTeleporters();
+//start_script("EquipTemplateValidation");
+

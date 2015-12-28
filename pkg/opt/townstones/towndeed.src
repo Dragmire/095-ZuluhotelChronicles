@@ -1,0 +1,85 @@
+// Updated 11 March, 2009
+// Made by Snocks
+
+use uo;
+use os;
+use cfgfile;
+include "/include/math";
+include "playertstone";
+
+const MAX_TOWN_NAME_SIZE:=30;
+
+
+program use_town_deed(who,deed)
+
+if(!ReserveItem(deed)) return; endif
+//if(GetObjProperty(who,"town_id")) SendSysMessage(who,"You are already a citizen of a town."); return; endif
+if(not Accessible(who,deed)) SendSysMessage(who,"You cannot access that item!"); return; endif
+
+
+var pos:=GetStandingHeight(who.x,who.y,who.z);
+var item:=CreateItemAtLocation(who.x,who.y,pos.z,0xa31f,1);
+
+  if(setuptown(who, item) == 0)
+    destroyitem(item);
+  elseif(item)
+    destroyitem(deed);
+    return;
+  endif
+
+endprogram
+
+function setuptown(who, stone)
+  var tname := SendTextEntryGump(who, "What is the town's name?",0,1,MAX_TOWN_NAME_SIZE, "Type the name.");
+  if(!tname)
+    return 0;
+  endif
+  if(len(tname) > MAX_TOWN_NAME_SIZE)
+    SendSysMessage(who, "Towns name can't have more than " + MAX_TOWN_NAME_SIZE + " characters.", 3, 34);
+    return 0;
+  endif
+
+
+/*  var i,dupe:=0,town,alltowns := ListTowns();
+  for(i:=1; i<=alltowns.size(); i:=i+1)
+    if(lower(alltowns[i].getprop("townname")) == lower(tname))
+      dupe := 1;
+    endif
+  endfor
+  if(dupe == 1)
+    PrintTextAbovePrivate(stone, "That town name is already taken.", who);
+    return 0;
+  endif*/
+
+
+
+
+  if(!NameValidation(tname))
+    SendSysMessage(who, "You are using invalid characters", 3, 34);
+    return 0;
+  endif
+ // guild := CreateGuild();
+//  guild_id := guild.guildid;
+//  guild.setprop("townname", tname);
+//  guild.setprop("townicon", 5545);
+//  guild.setprop("mayor", who.serial);
+//  dupe := {"NONE"};
+//  guild.setprop("mayor", dupe);
+  stone.name := "Townstone for " + tname;
+//  setobjproperty(stone, "town_id", town_id);
+//  town.addmember(who);
+//  setobjproperty(who, "town_id", town_id);
+ // setobjproperty(who, "fealty", who.serial);
+  return 1;
+endfunction
+
+function NameValidation(theString)
+  var i, validstr:={"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "$", "*", "&", "#", "@", "!", "?", "+", "-", "^", " ",};
+  theString:=lower(theString);
+  for(i:=1;i<=len(theString);i:=i+1)
+    if(!(theString[i] in validstr))
+      return 0;
+    endif
+  endfor
+  return 1;
+endfunction

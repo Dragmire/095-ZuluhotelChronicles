@@ -1,0 +1,29 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 09, 2004.
+   Version: 1.0
+   Core: 093
+   Syntax: .privs
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Include "include/client";
+
+Program TextCMD_Privs( who, text )
+
+    Var Pact := FindAccount( Text );
+    Var Account := Pact.acct;
+    
+
+    Var NewPass := RequestInput( Who, Who.backpack, "Please enter a new password." );
+    If( !NewPass )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2611 );
+    Endif
+    Var Result := Account.SetPassword( NewPass );
+    If( !Result )
+    SendSysMessage( who, "Something went wrong.", FONT_NORMAL, 2611 );
+    Endif
+
+EndProgram

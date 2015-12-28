@@ -1,0 +1,8 @@
+use uo;
+
+program resetauction( who )
+
+	setGlobalProperty("#aucnpc",0);
+	SendSysMessage( who, "Auction reset!");
+
+endprogram

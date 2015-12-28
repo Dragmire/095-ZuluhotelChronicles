@@ -1,0 +1,99 @@
+// Magic trap and Magic untrap  version .4
+// by Zulu (zulu@zuluhotel.com)   May 5, 2000
+
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program cast_strength( parms )
+
+	var circle := 2;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetThing(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( cast_on.usescript )
+		if( cast_on.usescript == ":traps:traps" )
+			SendSysMessage( caster, "That is already trapped!" );
+			return;
+		else
+			SendSysMessage( caster, "That can't be trapped!" );
+			return;
+		endif
+	endif
+
+	if( !cast_on.isa( POLCLASS_CONTAINER ) )
+		SendSysMessage( caster, "That can't be trapped!" );
+		return;
+	endif
+
+	if( cast_on.isa( POLCLASS_CORPSE ) )
+		if( !GetObjProperty( cast_on, "npctemplate" ) )
+			SendSysMessage( caster, "That can't be trapped!" );
+			return;
+		endif
+	endif
+
+	if( cast_on.multi && GetObjProperty( cast_on.multi, "ownerserial" ) != caster.serial )
+		var co_owners := {};
+		var friends := {};
+		var i;
+		for( i := 1; i <= 5; i := i + 1 )
+			if( GetObjProperty( cast_on.multi, "Co-owner" + i ) )
+				co_owners.append( GetObjProperty( cast_on.multi, "Co-owner" + i ));
+			endif
+		endfor
+	
+		for( i := 1; i <= 20; i := i + 1 )
+			if( GetObjProperty( cast_on.multi, "friend" + i ) )
+				friends.append( GetObjProperty( cast_on.multi, "friend" + i ));
+			endif
+		endfor
+		
+		if( !( caster.serial in co_owners ) && !( caster.serial in friends ) )
+			SendSysMessage( caster, "You can't trap something that isn't in your house!" );
+			return 0;
+		endif
+	endif
+
+	var magery	:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var strength	:= CInt( magery / 30 );
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		strength := CInt( strength * CLASSE_BONUS );
+	endif
+
+	if( strength < 0 )
+		strength := 1;
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_MAGIC_TRAP1 );
+	SetObjProperty( cast_on, "trap_type", CStr( Random(3) + 1 ) );
+	SetObjProperty( cast_on, "trap_strength", strength );
+	SetObjProperty( cast_on, "trapped_by", caster.serial );
+	cast_on.usescript := ":traps:traps";
+	PrintTextAbovePrivate( cast_on, "*Trapped*", caster );
+
+endprogram

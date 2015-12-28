@@ -1,0 +1,69 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING := MOVING_SPELL_FEEBLEMIND;
+const SPELL_EFFECT_ID		 := FX_SPELL_FEEBLEMIND;
+const SPELL_EFFECT_SPEED	 := SPEED_SPELL_FEEBLEMIND;
+const SPELL_EFFECT_LOOP		 := LOOP_SPELL_FEEBLEMIND;
+
+program cast_FEEBLEMIND( parms )
+
+	var circle := 1;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack( cast_on, caster, SPELLID_FEEBLEMIND);
+	else
+		caster := parms;
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	endif
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	if (!CanMod(cast_on, "int"))
+		SendSysMessage( caster, "Already under the influence!" );
+		return;
+	endif
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	PlaySoundEffect(cast_on, SFX_SPELL_FEEBLEMIND);
+	var mod_amount := Resisted( caster, cast_on, circle, GetModAmount( caster ));
+	var duration := GetModDuration( caster );
+	if( immunity == CURSED )
+		SendSysMessage( cast_on, "One of your equipped item increase the effect of the spell!" );
+		mod_amount := mod_amount * 2;
+		duration := duration * 2;
+	endif
+
+	DoTempMod(cast_on, "int", (0-mod_amount), duration);
+
+endprogram

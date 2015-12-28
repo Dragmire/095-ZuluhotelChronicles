@@ -1,0 +1,47 @@
+/*
+   Author(s): MontuZ && Firedancer (MontuZ@Gmail.com) Mar 08, 2006.
+   Version: 1.0
+   Bugs: None.
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use util;
+
+Program TextCMD_Whisper( Who )
+
+FindCity( who );
+ 
+Endprogram
+
+Var CITYID_ALDEMORR := { 1818, 2122, 1956, 2290 };
+
+
+Function FindCity( who )
+
+    If( IsInBox( Who, CITYID_ALDEMORR ) )
+    SendSysMessage( Who, "You're in Aldemorr." );
+    Return 1;
+    Endif
+
+    Return "Unreal Territory";
+
+Endfunction
+
+Function IsInBox( Who, Coords )
+
+    Var MinX := Coords[1];
+    Var MaxX := Coords[2];
+    Var MinY := Coords[3];
+    Var MaxY := Coords[4];
+
+    If( Who.x >= MinX && Who.y >= MinY )
+      If( Who.y >= MaxX && Who.y <= MaxY )
+      Return 1;
+      Endif
+    Endif
+
+    Return 0;
+
+Endfunction

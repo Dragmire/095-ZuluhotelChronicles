@@ -1,0 +1,58 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+include "include/itemutil";
+
+var dont_wipe := {	"IsGMItem",
+			"EnchantColor",
+			"Enchanted",
+			"MagicPenalty",
+			"NormalRange",
+			"DefaultDex" };
+
+program rfreemovement( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_DISENCHANTMENT, HAVE_HP + CAN_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	foreach prop in GetPossiblePropertyNames()
+		if( GetObjProperty( item, prop ) )
+			if( !( prop in dont_wipe ) )
+				EraseObjProperty( item, prop );
+			endif
+		endif
+	endforeach
+
+	if( item.maxhp_mod ) 	item.maxhp_mod 	:= 0; 	endif
+	if( item.ar_mod ) 	item.ar_mod 	:= 0; 	endif
+	if( item.dmg_mod ) 	item.dmg_mod 	:= 0; 	endif
+	if( item.hitscript ) 	item.hitscript 	:= ":combat:mainhit"; 	endif
+	if( item.color ) 	item.color 	:= 0; 	endif
+	if( item.newbie ) 	item.newbie 	:= 0; 	endif
+
+	SendSysMessage( caster, "This " + item.desc + " is now completely disenchanted." );
+	SetNameByEnchant( item );
+
+endprogram

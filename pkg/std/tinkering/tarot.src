@@ -1,0 +1,11 @@
+program tarot( character , item )
+
+    if( item.graphic = 0x12ac )
+	item.graphic := 0x12a6;
+    elseif( item.graphic = 0x12a6 )
+	item.graphic := 0x12a7;
+    elseif( item.graphic = 0x12a7 )
+	item.graphic := 0x12ac;
+    endif
+
+endprogram

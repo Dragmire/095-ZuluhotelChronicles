@@ -1,0 +1,68 @@
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program cast_owlsight( parms )
+
+	var circle := GetCircle( SPELLID_OWL_SIGHT );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_OWL_SIGHT ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+	
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_OWL_SIGHT );
+
+	var magery := GetEffectiveSkill(caster, SKILLID_MAGERY);
+	var duration := magery * 70;
+	var affected := ListMobilesNearLocation( cast_on.x, cast_on.y, cast_on.z, CInt( magery / 10 ) );
+	var proped := array();
+
+	foreach cast_near in affected
+
+		if( !GetObjProperty( cast_near, "#PermNightSight" ) )
+			SetObjProperty( cast_near, "#PermNightSight", 1 );
+			proped.append( cast_near );
+		endif
+		
+		if( GetObjProperty( cast_near, "#Blinded" ) )
+			EraseObjProperty( cast_near, "#Blinded" );
+		endif
+		
+		cast_near.setlightlevel( 0, duration );
+		PlayObjectCenteredEffect( cast_near, FX_SPELL_OWL_SIGHT, SPEED_SPELL_OWL_SIGHT, LOOP_SPELL_OWL_SIGHT );
+	
+	endforeach
+
+	EraseObjProperty( caster, "#Casting" );
+	sleep( CInt( magery ) );
+
+	foreach mobile in proped
+		EraseObjProperty( mobile, "#PermNightSight" );
+	endforeach
+
+endprogram

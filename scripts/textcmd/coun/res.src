@@ -1,0 +1,27 @@
+use uo;
+Use cfgfile;
+program textcmd_res( speaker )
+    var tgt := Target( speaker );
+
+            Resurrect( tgt );
+            
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_healed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  speaker.name });
+    elem.append({ "Staff Serial",  hex(speaker.serial) });
+    elem.append({ "Player Name",  tgt.name });
+    elem.append({ "Player Serial",  hex(tgt.serial) });
+
+    AppendConfigFileElem("logging_healed", "Ressed", "", elem);
+    UnloadConfigFile("logging_healed");
+    EndIf
+
+endprogram

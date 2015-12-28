@@ -1,0 +1,42 @@
+Use os;
+Use uo;
+Use boat;
+Use cfgfile;
+
+Include "include/client";
+Include "include/factions";
+
+Program TextCMD_Jail( who )
+
+    Var Player := Target( who );
+    Var Account:= player.acct;
+
+    if (Player.npctemplate)
+    return;
+    endif
+    
+    Account.setprop( "Release", 0 );
+    SendSysMessage( Player, "You have been freed.");
+    SendSysMessage( who, Player.name + " has been freed." );
+    MoveCharacterToLocation( who, 1475, 1645, 20, 0);
+    
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_jailed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Player Name",  player.name });
+    elem.append({ "Player Serial",  hex(player.serial) });
+
+    AppendConfigFileElem("logging_jailed", "Freed", "", elem);
+    UnloadConfigFile("logging_jailed");
+    EndIf
+
+endprogram

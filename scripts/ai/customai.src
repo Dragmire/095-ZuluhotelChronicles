@@ -1,0 +1,1296 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  chaoscustomkillpcs.src: archer / mage / melee AI
+//
+//	CProps :
+//	MeleeWeapon  i<hex#>	-	npcs melee mode weapon (if any)
+//	MeleeDmgMod  i<1-99>	-	melee weapon damage mod
+//	MeleeWPoison i<1-7>	-	level of poison on melee weapon
+//	ShieldType   i<hex#>	-	shield to use in melee combat
+//	ArchWeapon   i<hex#>	-	npcs arch mode weapon (if any)
+//	ArchDmgMod   i<1-99>    -       arch weapon damage mod
+//	ArchWPoison  i<1-7>	-	level of poison on arching weapon	
+//	ArchWAmmo    i<hex#>	-	arching weapon ammo type
+//	MageWeapon   i<hex#>	-	npcs mage mode weapon (if any)
+//	MageDmgMod   i<1-99>    -	mage weapon damge mod
+//	MageWPoison  i<1-7>     -	level of poison on mage weapon
+//	CanMeditate  i<1-99>	-	if mana less <1-99>% of max, meditate
+//	DispelWalls  i<1/0>	-	wall dispelling on/off
+//	CanEBless    i<value>	-	ebless if ar less than <value>
+//	AntiGMWeap   i<1/0>	-	keep away from GM Weapons on/off
+//	AntiCrowd    i<1/0>	-	keep away from crowds on/off
+//	AntiArcher   i<1/0>	-	melee all players with bows on/off
+//	AntiRanger   s<m/a/s>   -	if vs ranger -	  use <melee/arch/spells>
+//	AntiWarrior  s<m/a/s>   -       if vs warrior -   use <melee/arch/spells>
+//	AntiMage     s<m/a/s>	-	if vs mage -      use <melee/arch/spells>
+//	AntiBard     s<m/a/s>	-	if vs bard - 	  use <melee/arch/spells>
+//	AntiThief    s<m/a/s>   -    	if vs thief - 	  use <melee/arch/spells>
+//	AntiCrafter  s<m/a/s>   -       if vs crafter -   use <melee/arch/spells>
+//	AntiPP	 s<m/a/s>   -       if vs unclassed - use <melee/arch/spells>
+//	CanMerge     i<1/99>	-	merge to form Lord <1-99>% probability
+//	CanSplit     i<1-99>	-	if HP less <1-99>% of max, split Lord
+//	CanHeal	 i<1-99>	-	if HP less <1-99>% of max, heal
+//	Retarget     i<1/0>	-	retarget if no LOS on/off
+//	MeleeClose   i<distance>-	melee target if closer than <distance>
+//	ArmSound     i<1/0>	-	arm / disarm sound on/off
+//	ReanimDead   i<1-99>	-	reanimate dead <1-99>% probability
+//	CrazyArching i<1-99>	-	crazy arching mode <1-99>% probability
+//	CrazyMelee   i<1-99>    -	crazy melee mode <1-99>% probability
+//	CrazyCasting i<1-99>	-	crazy casting mode <1-99>% probability
+//	CrazySpell   s<spell>	-	spell to use when crazy casting
+//	TeleIfStuck  i<1/0>	-	teleport if stuck on/off
+//	FLeader	 i<1/0>	-	act as formation leader on/off
+//	BardSkills	 i<1/0>	-	use bard skills on/off
+/////////////////////////////////////////////////////////////////////////////
+
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/chaoskillpcsloop";
+include "ai/combat/chaosfight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+var runaway := 0;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+       
+	main_AI_loop();
+
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+var weaponone;
+var weapontwo;
+var ppd;
+var tempmana;
+var omfg;
+var sleepdelay := 0;
+
+//Anti-Wall & Lure Code
+var Near;
+if (GetObjProperty(me,"DispelWalls"))
+	Near := ListItemsNearLocation( me.x , me.y , me.z , 5 );
+	var kwall := 0;
+	foreach item in Near
+		if (item.objtype == 0x5f or item.objtype == 0x57 or item.objtype == 0x3946 or item.objtype == 0x3955)
+			if (!CheckLineOfSight( me, opponent) and Random(2) == 1 )
+				if (kwall == 0)
+					if(GetObjProperty(me,"SayWords"))
+						saywords := 1;
+					endif
+					if (GetObjProperty(me,"amethod") != "magic")
+						if (GetObjProperty(me,"MageWeapon"))
+							ReadyStaff(me);
+						endif
+					endif
+					sleep(1);
+					CastSpell(me,me,"dispel_field");
+					kwall := 1;
+					saywords := 0;
+					sleep(1);
+				endif
+			endif
+		endif
+	endforeach
+endif
+//
+//REANIMATE DEAD
+var NearDead;
+var reanim := GetObjProperty(me,"ReanimDead");
+if (reanim)
+NearDead := ListItemsNearLocation( me.x , me.y , me.z , 15 );
+var kdead := 0;
+var servant;
+var npctemplate ;
+foreach item in NearDead
+if (GetObjProperty(item,"npctemplate") and GetObjProperty(item,"Karma") < (-400) )
+if (kdead == 0 and Random (100) < reanim and GetObjProperty(item,"Type") != "Animal" and CheckLineOfSight( me, item))
+			npctemplate := GetObjProperty(item,"npctemplate");
+			if(GetObjProperty(me,"SayWords"))
+				saywords := 1;
+			endif
+			servant := item;
+			if (GetObjProperty(me,"amethod") != "magic")
+				if (GetObjProperty(me,"MageWeapon"))
+					ReadyStaff(me);
+				endif
+			endif
+			while(distance(me,servant) > 2 and kdead == 0)
+				RunToward(servant);
+				if (GetHP(me) < (GetMaxHP(me) / 1.5))
+					kdead := 1;
+					return;
+				endif
+			endwhile
+			sleep(1);
+			PlaySoundEffect(me,0x019e);
+			PrintTextAbove(me, "Corpus Sine Nomine Expergefaceret");
+			PerformAction( me, 0X011 );
+			sleep(1);
+			var thecritter;
+			thecritter := CreateNPCfromTemplate( npctemplate , servant.x , servant.y , servant.z );
+			thecritter.hidden := 1;
+			thecritter.color  := 0x482;
+			thecritter.truecolor := 0x482;
+			SetObjProperty( thecritter , "script" , thecritter.script );
+			SetObjProperty( thecritter , "noloot" , 1 );
+			SetObjProperty( thecritter , "diseased" , 1 );
+			SetObjProperty( thecritter , "master" , me.serial );
+			SetObjProperty( thecritter , "Type" , "Undead" );
+			var truename := ExtractName( servant.desc );
+			thecritter.name   := "a Reanimated " + truename;
+			if ( !thecritter.backpack )
+		var newbackpack := CreateItemAtLocation(thecritter.x , thecritter.y , thecritter.z , 0xe75 , 1 );
+				EquipItem( thecritter , newbackpack );
+			endif
+			foreach item in EnumerateItemsInContainer( servant)
+				MoveItemToContainer( item, thecritter.backpack );
+			endforeach
+			DestroyItem( servant );
+			thecritter.hidden := 0;
+			PlayObjectCenteredEffect(thecritter, 0x37b9,10, 10);
+			PlaySoundEffect(thecritter,0x022b);
+			kdead := 1;
+			RestartScript( thecritter );
+			get_help(opponent);
+		endif
+	endif
+endforeach
+endif
+//
+//SPLIT LORD
+var splitval :=GetObjProperty(me,"CanSplit");
+if (splitval and GethP(me) < (GetMaxHP(me)*splitval / 100) and GetObjProperty(me,"merged") and Random(3) == 1)
+   	while (distance(me, opponent) <= 8)
+		RunAwayFrom(opponent);
+	endwhile	
+	EraseObjProperty(me,"merged");
+	SplitLord(me);
+	return;
+endif
+//
+
+//HEALING
+var healval := GetObjProperty(me,"CanHeal");
+omfg := 0;
+if (healval and GetHP(me) < (GetMaxHP(me)*healval/100))
+   	while (distance(me, opponent) <= 6 and omfg < 15)
+		RunAwayFrom(opponent);
+		omfg := omfg + 1;
+	endwhile	
+	me.hidden := 1;
+	if(GetObjProperty(me,"SayWords"))
+		saywords := 1;
+	endif
+	ShowFlame(me);
+	sleep (4);
+	me.hidden := 0;
+	if (GetObjProperty(me,"amethod") != "magic")
+		if (GetObjProperty(me,"MageWeapon"))
+			ReadyStaff(me);
+		endif
+	endif
+	sleep (1);
+	SetMana( me,  GetMana(me) + 50);
+	CastSpell(me,me,"naturestouch");
+	SetHP(me, GetHP(me) + 50);
+	sleep(1);
+	if (omfg > 14)
+		if (GetObjProperty(me,"MeleeWeapon"))
+			ReadySword ();
+		endif
+		turntoward( opponent );
+	endif		
+endif
+//
+
+//ANTI GANK
+if (GetObjProperty(me,"AntiCrowd"))
+	var gank := 0;
+	omfg := 0;
+	foreach critter in ListMobilesInLineOfSight( me, 3 )
+		if (critter.name != me.name )
+			gank := gank +1;
+		endif
+	endforeach
+	if (gank > 1)
+		me.stamina := me.maxstamina;
+		while (distance(me, opponent) <= 10 and omfg < 30)
+			RunAwayFrom(opponent);
+			omfg := omfg + 1;
+		endwhile
+		if (omfg > 29)
+			if (GetObjProperty(me,"MeleeWeapon"))
+				ReadySword ();
+			endif
+			turntoward( opponent );
+			SetMana( me, GetMana(me) + 30);
+			if (GetObjProperty(me,"TeleIfStuck"))
+				CastSpell(me,opponent,"teleport");
+			endif
+		endif
+	endif
+endif
+//
+//MEDITATION
+var safe := 1;
+var medhp;
+var manaval := GetObjProperty(me,"CanMeditate");
+if (GetMana(me) < GetMaxMana(me) )
+	if (GetObjProperty(me,"oldmana"))
+		SetMana( me, GetObjProperty(me,"oldmana"));	
+	endif
+	if (manaval and GetMana(me) < (GetMaxMana(me) * manaval / 100))	
+		foreach critter in ListMobilesInLineOfSight( me, 4 )
+			if (critter.name != me.name)
+				safe := 0;
+			endif
+		endforeach
+		if (safe == 1)
+			medhp := GetHP(me);
+			if (GetObjProperty(me,"amethod") != "magic")
+				if (GetObjProperty(me,"MeleeWeapon"))
+					ReadyStaff(me);
+				endif
+			endif
+			PlaySoundEffect(me,0x024f);
+			sleep(1);
+			PrintTextAbove( me, "*Meditating*" );
+			PlaySoundEffect( me , 0xfa );
+			while (safe == 1 and (GetHP(me) >= medhp) and (GetMana(me) < GetMaxMana(me)))
+				medhp := GetHP(me);
+				SetMana( me, GetMana(me) + 30);
+				if (GetMana(me) > GetMaxMana(me))
+					SetMana( me, GetMaxMana(me));
+					safe := 0;
+				endif
+				foreach critter in ListMobilesInLineOfSight( me, 4 )
+					safe := 0;
+				endforeach
+				sleep (1);
+			endwhile
+		endif
+	endif
+endif
+//
+			
+//RETARGET IF NO LOS
+if (GetObjProperty(me,"Retarget") and !CheckLineOfSight( me, opponent) )
+	if (GetObjProperty(me,"lastnolos") != opponent.name)
+		if (runrandom(opponent))
+			Sleepms(sleepdelay);
+		endif
+	endif
+	SetObjProperty(me,"lastnolos",opponent.name);
+	RestartScript(me);
+	return;
+endif
+//
+
+//EBLESS
+var eblessval := GetObjProperty(me,"CanEBless");
+safe :=1;
+if (eblessval and me.ar <= eblessval and Random(3) ==1 and GetMana(me) > 20)
+	foreach critter in ListMobilesInLineOfSight( me, 4 )
+		if (critter.name != me.name)
+			safe := 0;
+		endif
+	endforeach
+	if (safe == 1)
+		if (GetObjProperty(me,"amethod") and GetObjProperty(me,"amethod") != "magic")
+			if (GetObjProperty(me,"MageWeapon"))
+				ReadyStaff(me);
+			endif
+		endif
+		if(GetObjProperty(me,"SayWords"))
+			saywords :=1;
+		endif
+		sleep (1);
+		SetMana( me, GetMana(me) + 50);
+		CastSpell(me,me,"earthblessing");
+		saywords := 0;
+		sleep (1);
+		return;
+	endif
+endif
+//	
+
+//MERGE WITH SIMILAR
+var mergeval := GetObjProperty(me,"CanMerge");
+var mergewith;
+var trymerge := 0;
+var circle := 5;
+if (mergeval and !GetObjProperty(me,"merged"))
+	foreach critter in ListMobilesInLineOfSight( me, 15 )
+		if (critter.name == me.name and me != critter)
+			mergewith := critter;
+		endif
+	endforeach
+	if (mergewith and Random (100) < mergeval)
+		while ((distance(me, mergewith) > 2) and trymerge < 10 )
+			RunToward( mergewith );
+		        Sleepms(sleepdelay);
+			trymerge := trymerge + 1;
+		endwhile
+		if (trymerge > 9)
+			return;
+		endif
+		while (circle > 0 )
+			RunToward( mergewith );
+		        Sleepms(sleepdelay);
+			circle := circle -1;
+		endwhile
+		if (!GetObjProperty(me,"follower"))
+			MakeLord(me, mergewith);
+		else
+			me.hidden :=1;
+		endif
+	endif
+endif
+//
+//CRAZY ARCHING
+var targets2 := {};
+var notgts2 := 0;
+var ffs2 := 0;
+var caval := GetObjProperty(me,"CrazyArching" and GetObjProperty(me,"ArchWeapon"));
+if (caval)
+	foreach critter in ListMobilesInLineOfSight( me, 10 )		
+		if (critter)
+			if (!critter.npctemplate or GetObjProperty(me,"killnpcs"))
+				notgts2 := notgts2 + 1;
+				targets2[notgts2] := critter;
+			endif
+		endif
+	endforeach
+	if (notgts2 > 2 and Random (100) < caval )
+		ReadyBow();
+		var loop2 := 0;
+		var ccl2 := 0;
+		var blah;
+		var ok := 1;	
+		while ( (loop2 < notgts2) and (GetHP(me) > (GetMaxHP(me) / 1.5)) and ok )
+			foreach critter in ListMobilesInLineOfSight( me, 2 )		
+				if (critter)
+					ok := 0;
+					if (GetObjProperty(me,"MeleeWeapon"))
+						ReadySword();
+					endif
+				endif
+			endforeach
+			loop2 := loop2 + 1;
+			opponent := targets2[loop2];
+			SetOpponent(opponent);
+			me.warmode := 1;	
+			blah := 0;
+			while (distance(me,opponent) < 5 and blah < 10)
+				RunAwayFrom(opponent);
+				blah := blah + 1;
+			endwhile
+			sleep(1);
+		endwhile
+	endif
+endif	
+//
+
+//CRAZY MELEE
+var targets := {};
+var notgts := 0;
+var ffs := 0;
+var cmval := GetObjProperty(me,"CrazyMelee" and GetObjProperty(me,"MeleeWeapon"));
+if (cmval)
+	foreach critter in ListMobilesInLineOfSight( me, 10 )		
+		if (critter)
+			if (!critter.npctemplate or GetObjProperty(me,"killnpcs"))
+				notgts := notgts + 1;
+				targets[notgts] := critter;
+			endif
+		endif
+	endforeach
+	if (notgts > 2 and Random (100) < cmval )
+		PlaySoundEffect(me,0x027e);
+		ReadySword();
+		var loop := 0;
+		var ccl := 0;
+		while (loop < notgts)
+			loop := loop + 1;
+			opponent := targets[loop];
+			SetOpponent(opponent);
+			me.warmode := 1;
+			ffs := 0;	
+			while (distance(me,opponent) > 1 and ffs < 30)
+				ffs := ffs + 1;
+				RunToward( opponent );
+				if (GetHP(me) < (GetMaxHP(me)/1.5))
+					ffs := 30;
+					loop := notgts;
+				endif
+			endwhile
+			if (ffs == 30)
+				SetMana( me, GetMana(me) + 30);
+				if (GetObjProperty(me,"TeleIfStuck"))
+					CastSpell(me,opponent,"teleport");
+				endif
+			endif
+			ccl := 0;
+			while ((distance(me,opponent) > 0 and distance(me,opponent) < 2) and ccl < 7)
+				ccl := ccl + 1;
+				RunToward( opponent );
+				if (GetHP(me) < (GetMaxHP(me)/1.5))
+					ccl := 7;
+					loop := notgts;
+				endif
+			endwhile
+		endwhile
+	endif
+endif
+//
+//CRAZY CASTING
+var targets3 := {};
+var notgts3 := 0;
+var ffs3 := 0;
+var ccval := GetObjProperty(me,"CrazyCasting");
+var ccspell := GetObjProperty(me,"CrazySpell");
+if (ccval)
+	foreach critter in ListMobilesInLineOfSight( me, 10 )		
+		if (critter)
+			if (!critter.npctemplate or GetObjProperty(me,"killnpcs"))
+				notgts3 := notgts3 + 1;
+				targets3[notgts3] := critter;
+			endif
+		endif
+	endforeach
+	if (notgts3 > 2 and Random (100)  < ccval)
+		if (GetObjProperty(me,"MageWeapon"))
+			ReadyStaff(me);
+		endif
+		PlaySoundEffect(me,0x0176);
+		var loop3 := 0;
+		var ccl3 := 0;
+		var blah3;
+		var ok3 := 1;
+		while ( (loop3 < notgts3) and (GetHP(me) > (GetMaxHP(me) / 1.5)) and ok3 )
+			foreach critter in ListMobilesInLineOfSight( me, 2 )		
+				if (critter)
+					ok3 := 0;
+					if (GetObjProperty(me,"MeleeWeapon"))	
+						ReadySword();
+					endif
+				endif
+			endforeach
+			loop3 := loop3 + 1;
+			opponent := targets3[loop3];
+			SetOpponent(opponent);
+			me.warmode := 1;	
+			blah3 := 0;
+			while (distance(me,opponent) < 5 and blah3 < 10)
+				RunAwayFrom(opponent);
+				blah3 := blah3 + 1;
+			endwhile
+			if(GetObjProperty(me,"SayWords"))
+				saywords := 1;
+			endif
+			if (CheckLineOfSight( me, opponent) )
+				SetMana( me, GetMana(me) + 30);
+				if (!ccspell)
+					ccspell := "mindblast";	
+				endif
+				CastSpell(me, opponent, ccspell);	
+				sleep(1);
+			endif
+		endwhile
+		saywords := 0;
+	endif
+endif
+//
+//DETERMINE CLASS AND ACT ACCORDINGLY
+var omage := GetObjProperty(opponent,"IsMage");
+var owarr := GetObjProperty(opponent,"IsWarrior");
+var ocraf := GetObjProperty(opponent,"IsCrafter");
+var obard := GetObjProperty(opponent,"IsBard");
+var othief:= GetObjProperty(opponent,"IsThief");
+var orang := GetObjProperty(opponent,"IsRanger");
+var antimage := GetObjProperty(me,"AntiMage");
+var antiwarr := GetObjProperty(me,"AntiWarrior");
+var anticraf := GetObjProperty(me,"AntiCrafter");
+var antibard := GetObjProperty(me,"AntiBard");
+var antithief := GetObjProperty(me,"AntiMage");
+var antirang := GetObjProperty(me,"AntiRanger");
+var antipp := GetObjProperty(me,"AntiPP");
+var amethod := 0;
+var ow1;
+var ow2;
+	if (omage and antimage)
+		if (antimage == "a")
+			amethod := "arch";
+		elseif (antimage == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (owarr and antiwarr)
+		if (antiwarr == "a")
+			amethod := "arch";
+		elseif (antiwarr == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (ocraf and anticraf)
+		if (anticraf == "a")
+			amethod := "arch";
+		elseif (anticraf == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (obard and antibard)
+		if (antibard == "a")
+			amethod := "arch";
+		elseif (antibard == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (othief and antithief)
+		if (antithief == "a")
+			amethod := "arch";
+		elseif (antithief == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (orang and antirang)
+		if (antirang == "a")
+			amethod := "arch";
+		elseif (antirang == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	if (!omage and !othief and !obard and !ocraf and !owarr and !omage and antipp)
+		if (antipp == "a")
+			amethod := "arch";
+		elseif (antipp == "m")
+			amethod := "melee";
+		else
+			amethod := "magic";
+		endif
+	endif
+	ppd := distance(me, opponent);
+
+	//ANTI GM WEAPON
+	if (GetObjProperty(me,"AntiGMWeap") and GetObjProperty(me,"MeleeWeapon"))
+		ow1 := GetEquipmentByLayer( opponent,  LAYER_HAND1 );
+		ow2 := GetEquipmentByLayer( opponent,  LAYER_HAND2 );
+		ow1 := GetObjProperty(ow1,"IsGMItem");
+		ow2 := GetObjProperty(ow1,"IsGMItem");
+		var wah := 0;
+		if (ow1 or ow2)
+			if  (ow1 == "Balders Dead" or ow2 == "Balders Dead")
+				amethod := "melee";
+			else
+				amethod := "melee";
+				ReadySword();
+				while (distance(me, opponent) < 5 and wah < 20)
+					RunAwayFrom(opponent);	
+					wah := wah + 1;	
+				endwhile
+				TurnToward(opponent);
+			endif
+		endif
+	endif
+	//
+	
+	//MELEE CLOSE TARGETS	
+	var mctval := GetObjProperty(me,"MeleeClose" and GetObjProperty(me,"MeleeWeapon"));
+	if (mctval and distance(me, opponent) < mctval)
+		amethod := "melee";
+	endif
+	var enc;
+	foreach critter in ListMobilesInLineOfSight( me, 3 )		
+		if (critter and (!critter.npctemplate or GetObjProperty(me,"killnpcs")))
+			enc := critter;
+		endif
+	endforeach
+	if (enc)
+		opponent := enc;
+		SetOpponent(opponent);
+		me.warmode := 1;
+		amethod := "melee";
+	endif
+	//MELEE ARCHERS
+	if (GetObjProperty(me,"AntiArcher") and GetObjProperty(me,"MeleeWeapon"))
+	foreach critter in ListMobilesInLineOfSight( me, 10 )
+		ow1 := GetEquipmentByLayer( critter,  LAYER_HAND1 );
+		ow2 := GetEquipmentByLayer( critter,  LAYER_HAND2 );
+		ow1 := ow1.graphic;
+		ow2 := ow2.graphic;
+		if (ow1 == 0x13b2 or ow2 == 0x13b2 or ow1 == 0x0f4f or ow2 == 0x0f4f or ow1 == 0x13fd or ow2 == 0x13fd)
+if (distance(me, critter) < distance(me, opponent) and (!critter.npctemplate or GetObjProperty(me,"killnpcs")))
+				opponent := critter;
+				SetOpponent(opponent);
+				me.warmode := 1;
+				amethod := "melee";
+			endif
+		endif
+		if (GetObjProperty(ow1,"IsGMItem") == "Balders Dead" or GetObjProperty(ow2,"IsGMItem") == "Balders Dead")
+			opponent := critter;
+			SetOpponent(opponent);
+			me.warmode := 1;
+			amethod := "melee";
+		endif
+	endforeach
+	endif
+	//
+	
+	if (!amethod)
+		if (ppd > 3 and Random(3) == 1)
+			if (GetObJProperty(me,"ArchWeapon"))
+				amethod := "arch";
+			endif
+		else		
+			if (ppd > 3 and GetMana(me) > (GetMaxMana(me)/3))
+				amethod := "magic";
+			else
+				if (GetObJProperty(me,"MeleeWeapon"))
+					amethod := "melee";
+				endif
+			endif
+		endif
+	endif
+	if (GetObjProperty(me,"FLeader") )
+		FormationLead(opponent);
+		sleep(1);
+	endif
+	if (GetObjProperty(me,"BardSkills") and Random (2) == 1)
+		BardSkills(opponent);
+		sleep(1);
+	endif
+	var FailSafe := GetObjProperty(me,"FailSafe");
+	if (FailSafe)
+		if (FailSafe != "magic" and me.int > 200)
+			amethod := "magic";
+			SetObjProperty(me,"FailSafe","magic");
+		else
+			ReadySword();
+			amethod := "melee";
+			SetObjProperty(me,"FailSafe","melee");
+		endif
+	endif
+	if (amethod == "magic")	
+		if(GetObjProperty(me,"SayWords"))
+			saywords :=1;
+		endif
+		if (GetObjProperty(me,"amethod") != amethod)
+			if (GetObjProperty(me,"MageWeapon"))
+				ReadyStaff(me);
+			endif
+			if (GetObjProperty(me,"oldmana"))
+				SetMana( me, GetObjProperty(me,"oldmana"));
+			endif
+			return;
+		endif
+		var d:=distance(me,opponent);
+		if ( d > 15)
+			RunToward( opponent );
+			Sleepms(sleepdelay);
+			return 0;
+		endif	
+		var scram := 0;
+		while (d < 8 and scram < 20)
+			RunAwayFrom( opponent );
+			scram := scram + 1;
+			d:=distance(me,opponent);
+		endwhile
+		if (scram > 19)
+			TurnToward(opponent);
+			return;
+		endif
+	case d
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if ((GetMana(me) > (GetMaxMana(me)/3)))
+				RunAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+			if (runaway == 15)
+				turntoward( opponent );
+			endif
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (GetMana(me) < (GetMaxMana(me)/3))
+			RunToward( opponent );
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			if (runrandom(opponent))
+			Sleepms(sleepdelay);
+				return 2;
+			endif
+		else
+			spellattack(opponent);
+		endif
+		return 1;
+	endcase
+	endif
+	if (amethod == "arch")
+		saywords := 0;
+		if (GetObjProperty(me,"ArchWeapon"))
+			ReadyBow();
+		endif
+		if ( (runaway < 100) or (!theammo) )
+		    	if (distance(me, opponent) <= 6)
+			RunAwayFrom(opponent);
+			return 0;
+    		else
+			runaway := 0;
+			return 1;
+    		endif
+    		else
+		case Distance( me, opponent )
+        		1:
+        		0:
+            			return 1;
+        		default:
+            			RunToward( opponent );
+            			return 0;
+    		endcase
+	    	endif
+	endif
+	if (amethod == "melee")
+		saywords := 0;
+		if (GetObjProperty(me,"MeleeWeapon"))
+		 	ReadySword ();
+		endif
+		case Distance( me, opponent )
+		        1:              // the most likely, so first 
+		        0:
+		            return 1;
+			default:
+				var mofo := 0;
+				while (distance(me, opponent) > 1 and mofo < 40 and GetHP(me) > (GetMaxHP(me)/1.5))
+			        	RunToward( opponent );
+					mofo := mofo + 1;
+			        endwhile   
+				if (mofo > 39 and CheckLineOfSight( me, opponent))
+					SetMana( me, GetMana(me) + 30);
+					if (GetObjProperty(me,"TeleIfStuck"))
+						CastSpell(me,opponent,"teleport");
+					endif
+				endif
+		endcase
+	endif
+endfunction
+
+function ShowFlame( who )
+		var coolflame;
+		coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3728, 1 );
+		PlaySoundEffect(who, 0x209);
+		Sleep(1);
+		DestroyItem(coolflame);
+endfunction
+
+function ReadyStaff (me)
+	var weaponone;
+	var weapontwo;
+	var stafftype := GetObjProperty(me,"MageWeapon");
+	var poisonlvl := GetObjProperty(me,"MageWPoison");
+	if (!stafftype)
+		stafftype := 0x9a16;
+	endif
+	var staffdmgmod := GetObjProperty(me,"MageDmgMod");
+	SetObjProperty(me,"amethod","magic");
+	if (GetObjProperty(me,"ArmSound"))
+		PlaySoundEffect(me,0x0057);
+	endif
+	weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+	weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+	if (weaponone)
+		moveitemtocontainer(weaponone,me.backpack);
+		DestroyItem(weaponone);
+	endif
+	if (weapontwo)
+		moveitemtocontainer(weapontwo,me.backpack);
+		DestroyItem(weaponone);
+	endif	
+	weaponone := CreateItemInInventory(me.backpack,stafftype,1);
+	if (poisonlvl)
+		SetObjProperty( weaponone, "SkillPoisoned" , (poisonlvl*3) );
+	endif
+	if (staffdmgmod)
+		weaponone.dmg_mod := staffdmgmod;
+	endif
+	EquipItem(me,weaponone);		
+endfunction
+
+function MakeLord(me, mergewith)
+	var pmg;
+	var ct;
+	foreach item in EnumerateItemsInContainer( me.backpack )
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+	endforeach
+	foreach item in EnumerateItemsInContainer( mergewith.backpack )
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+	endforeach
+	SetObjProperty(mergewith,"follower",1);
+	me.hidden := 1;
+	mergewith.hidden :=1;
+	ShowFlame2(mergewith);
+	MoveCharacterToLocation( mergewith, 5376, 1081, 0, 0);
+	RevokePrivilege( mergewith, "invul" );
+	setobjproperty( mergewith, "guardkill", 1);
+	ApplyRawDamage( mergewith, Cint((GetHP(mergewith)+3)) );
+	pmg := me.graphic;
+	ct := GetEquipmentByLayer( me,  LAYER_ROBE );
+	ct.color := 1174;
+	me.graphic := 0x005f;
+	PlaySoundEffect( me , 0x020a );	
+	me.hidden := 0;
+	sleep(2);
+	PlaySoundEffect( me , 0x020a );	
+	me.graphic := pmg;
+	me.strength := me.strength *2;
+	me.intelligence := me.intelligence * 2;
+	me.dexterity := me.dexterity * 2;
+	SetHP(me,  GetStrength(me) );
+	SetMana( me, GetIntelligence(me));
+	SetStamina( me,  GetDexterity(me) );
+	me.name := me.name + " Lord";
+	SetObjProperty(me,"merged",1);
+endfunction
+
+function SplitLord(me)
+	var newx := me.x;
+	var newy := me.y;
+	var newz := me.z;
+	var tp;
+	foreach item in EnumerateItemsInContainer( me.backpack )
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+	endforeach
+	me.hidden :=1 ;
+	ShowFlame2(me);
+	me.graphic := 0x005f;
+	me.hidden := 0;
+	PlaySoundEffect( me , 0x020a );	
+	sleep (1);
+	tp := me.npctemplate;
+	var twin1 := CreateNpcFromTemplate( tp, 5376, 1081, 0, 0 );
+	var twin2 := CreateNpcFromTemplate( tp, 5376, 1081, 0, 0 );
+	twin1.hidden := 1;
+	twin2.hidden := 1;
+	sleep(1);
+	MoveCharacterToLocation( me, 5376, 1081, 0, 0);
+	MoveCharacterToLocation( twin1, newx, newy, newz, 0);
+	MoveCharacterToLocation( twin2, newx, newy, newz, 0);
+	twin1.hidden := 0;
+	twin2.hidden := 0;
+	PlaySoundEffect( twin1 , 0x020a );	
+	RevokePrivilege( me, "invul" );
+	setobjproperty( me, "guardkill", 1);
+	ApplyRawDamage( me, Cint(GetHP(me)+3) );
+	return;
+endfunction
+
+function ShowFlame2( who )
+		var coolflame;
+		coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3709, 1 );
+		PlaySoundEffect(who, 0x209);
+		Sleep(1);
+		DestroyItem(coolflame);
+endfunction
+
+function ReadySword ()
+	var weaptype := GetObjProperty(me,"MeleeWeapon");
+	if (!weaptype)
+		weaptype := 0x9a19;
+	endif
+	var shieldtype := GetObjProperty(me,"ShieldType");
+	if (!shieldtype)
+		shieldtype := 0x1bc4;
+	endif
+	var sworddmgmod := GetObjProperty(me,"MeleeDmgMod");
+	var poisonlvl := GetObjProperty(me,"MeleeWPoison");
+	if (GetObjProperty(me,"amethod") != "melee")
+		SetObjProperty(me,"amethod","melee");
+		if (GetObjProperty(me,"ArmSound"))
+			PlaySoundEffect(me,0x0057);
+		endif
+		foreach item in EnumerateItemsInContainer( me.backpack )		
+		if (item.graphic == 0xf3f) 
+			DestroyItem(item);
+		endif
+		endforeach
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,weaptype,1);
+		if (poisonlvl)
+			SetObjProperty( weaponone, "SkillPoisoned" , (poisonlvl*3) );
+		endif
+		EquipItem(me,weaponone);		
+		if (sworddmgmod)
+			weaponone.dmg_mod := sworddmgmod;
+		endif
+		weapontwo := CreateItemInInventory(me.backpack,shieldtype,1);
+		SetObjProperty( weaponone, "noloot" , 1 );
+		SetObjProperty( weapontwo, "noloot" , 1 );
+		EquipItem(me,weapontwo);	
+	endif
+endfunction
+
+function ReadyBow ()
+	var ammo;
+	var bowtype := GetObjProperty(me,"ArchWeapon");
+	var ammotype := GetObjProperty(me,"ArchAmmo");
+	var bowdmgmod := GetObjProperty(me,"ArchDmgMod");
+	var poisonlvl := GetObjProperty(me,"ArchWPoison");
+	if (!bowtype)
+		bowtype := 0x9a1b;
+		ammotype := 0xf3f;
+		bowdmgmod := 10;
+	endif
+	if (GetObjProperty(me,"amethod") != "arch")
+		SetObjProperty(me,"oldmana",(GetMana(me)));
+		SetObjProperty(me,"amethod","arch");
+		if (GetObjProperty(me,"ArmSound"))
+			PlaySoundEffect(me,0x0057);
+		endif
+		var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+		var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+		if (weaponone)
+			moveitemtocontainer(weaponone,me.backpack);
+			DestroyItem(weaponone);
+		endif
+		if (weapontwo)
+			moveitemtocontainer(weapontwo,me.backpack);
+			DestroyItem(weapontwo);
+		endif
+		weaponone := CreateItemInInventory(me.backpack,bowtype,1);
+		EraseObjProperty(weaponone,"IsBlackrock");
+		EquipItem(me,weaponone);	
+		if (poisonlvl)
+			SetObjProperty( weaponone, "SkillPoisoned" , (poisonlvl*3) );
+		endif
+		foreach item in EnumerateItemsInContainer( me.backpack )
+			if (item.graphic == ammotype) 
+				DestroyItem(item);
+			endif
+		endforeach
+		if (bowdmgmod)
+			weaponone.dmg_mod := bowdmgmod;
+		endif
+		ammo := CreateItemInInventory(me.backpack,ammotype,100);
+		SetObjProperty( weaponone, "noloot" , 1 );
+		SetObjProperty( ammo, "noloot" , 1 );
+		return;
+	endif		
+endfunction
+
+function FormationLead( opponent )
+SetObjProperty(me,"myx",me.x);
+SetObjProperty(me,"myy",me.y);
+  var mlvar ;
+  var elem;
+  var configfile := ReadConfigFile("::npcdesc");
+  SetStamina( me, GetMaxstamina(me) );
+  SetMana( me, GetMana(me) + 50);
+  if (GetMana(me) > GetMaxMana(me))
+	SetMana( me, GetMaxMana(me));
+  endif
+  var sleepdelay := 0;
+	var pos := 1;
+	foreach critter in ListMobilesInLineOfSight( me, 20 )	
+		mlvar := GetObjProperty(critter,"myleader");
+if (critter.npctemplate and (GetObjProperty(critter,"Type") == GetObjProperty(me,"Type") or critter.graphic == me.graphic) and critter.script != "formationkillpcs" and critter.script != "formationleader" and critter != me and !GetObjProperty(critter,"FLeader") )
+		elem := FindConfigElem( configfile, critter.npctemplate );
+		if( elem.Privs != "invul" )
+			if (!mlvar)
+				var pa := {};
+				var paloop := 0;
+				SetObjProperty(critter,"myleader",me.serial);
+				foreach critter in ListMobilesInLineOfSight( me, 20 )
+
+				if (GetObjProperty(critter,"myleader") == me.serial)
+					paloop := paloop +1;
+					pa[paloop] := GetObjProperty(critter,"formpos");
+				endif
+				endforeach
+				var floop := 0;
+				while (floop < paloop)
+					floop := floop + 1;
+					if (pa[floop] == pos)
+						pos := pos + 1;
+						if (pos > 24)
+							return;
+						endif
+						floop := 0;
+					endif
+				endwhile
+				SetObjProperty(critter,"formpos",pos);
+				SetObjProperty(critter,"foldscript",critter.script);
+				critter.script := "formationkillpcs";	
+				RestartScript(critter);
+			endif
+		endif
+		endif
+		if (!GetObjProperty(critter,"fkill") and mlvar)
+			SetObjProperty(critter,"fkill",opponent.serial);
+		endif
+		sleepms(50);
+	endforeach
+	var mx := me.x;
+	var my := me.y;
+	if(GetObjProperty(me,"takingdamage") and distance(me,opponent) > 2)
+		if (mx > opponent.x)
+			mx := mx -1;
+		elseif (mx < opponent.x)
+			mx := mx +1;
+		endif
+		if (my > opponent.y)
+			my := my -1;
+		elseif (my < opponent.y)
+			my := my +1;
+		endif
+		SetObjProperty(me,"myx",mx);
+		SetObjProperty(me,"myy",my);
+		sleep(1);
+		MoveCharacterToLocation( me, mx, my, me.z, 0);
+		if (Random(10) == 5)
+			EraseObjProperty(me,"takingdamage");
+		endif
+	endif
+	var runaway := 1;
+	var d:=distance(me,opponent);
+	if ( d > 10 )
+		WalkToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+    case d
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if (GetMana(me) > (GetMaxMana(me)/3))
+				me.stamina := me.maxstamina;
+				RunAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+			if (runaway == 15)
+				turntoward( opponent );
+			endif
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (GetMana(me) < (GetMaxMana(me)/3))
+			me.stamina := me.maxstamina;
+			WalkToward( opponent );
+				if (distance(me,opponent)< 3)
+					PlaySoundEffect(me,0x0057);
+					foreach item in EnumerateItemsInContainer( me.backpack )		
+						if (item.graphic == 0xf3f) 
+							DestroyItem(item);
+						endif
+						endforeach
+					var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+					var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+					if (weaponone)
+						moveitemtocontainer(weaponone,me.backpack);
+						DestroyItem(weaponone);
+					endif
+					if (weapontwo)
+						moveitemtocontainer(weapontwo,me.backpack);
+						DestroyItem(weaponone);
+					endif
+					weaponone := CreateItemInInventory(me.backpack,0x9a19,1);
+					SetObjProperty( weaponone, "SkillPoisoned" , 18 );
+					EquipItem(me,weaponone);	
+				endif
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			me.stamina := me.maxstamina;
+			if (runrandom(opponent))
+			Sleepms(sleepdelay);
+				return 2;
+			endif
+		else
+			spellattack(opponent);
+		endif
+		return 1;
+    endcase
+endfunction
+function BardSkills( opponent )
+	var helper;
+	var provod :=0;
+	var ev := struct;
+	ev.+type;
+	ev.type := EVID_PEACEMADE;
+	foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 15 ) 
+		if (CheckLineOfSight( me, mobile ) and mobile.npctemplate and mobile != opponent and mobile != me)
+			if (mobile.warmode == 0 and (GetObjProperty(mobile,"Karma") < (-500)) )	
+				helper := mobile;
+			endif
+		endif
+	endforeach
+	if (helper and provod == 0 and Random (5) == 1 )
+		while(distance(me,helper) > 2)
+			if ((distance(me,opponent) < 2))
+					RunAwayFrom(opponent);
+			else
+				RunToward(helper);
+			endif
+		endwhile
+		sleep(1);
+		var circle :=0;
+		while (circle < 10)
+			PlaySoundEffect(me,0x039);		
+			PlaySoundEffect(me,0x04d);
+			PlaySoundEffect(me,0x053);
+			RunToward(helper);
+			circle := circle +1;
+		endwhile
+		if (!helper.dead and !opponent.dead)
+			PerformAction( me, 0X020 );
+			if (helper.name and opponent.name)
+				PrintTextAbove(me,me.name+" provokes "+helper.name+" to attack "+opponent.name+"!");
+			endif
+			provod := 1;
+			get_help(opponent);
+			return;
+		endif
+	endif
+	var fwosb := 0;
+	var lasthp := GetObjProperty(me,"lasthp");
+	if (!lasthp)
+		lasthp := GetHP(me);
+	endif
+	var argh;
+	var closest := 10;
+	if (GetHP(me) < lasthp)
+		foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 9)
+			if (CheckLineOfSight( me, mobile ) and mobile.warmode and mobile != me )	
+				if (distance(me,mobile) < closest)
+					argh := mobile;
+					closest := distance(me,mobile);
+				endif
+			endif
+		endforeach
+		if (argh)
+			opponent := argh;
+		endif
+	endif
+	SetObjProperty(me,"lasthp",GetHP(me));
+
+	if (distance(me, opponent) <= 4)
+		if (opponent.warmode == 1 and (GetObjProperty(me,"lastprovod") != opponent.serial) or argh )
+			PlaySoundEffect(me,0x039);		
+			PlaySoundEffect(me,0x04d);
+			PlaySoundEffect(me,0x053);
+			SendEvent( opponent, ev );
+			PrintTextAbove(opponent,opponent.name+" is dazzled by the beautiful music!");
+			opponent.warmode := 0;
+			SetObjProperty(me,"lastprovod",opponent.serial);
+			return 0;
+		endif
+	endif
+	if (argh)
+		runaway := 0;
+		while (runaway < 7)
+			RunAwayFrom(argh);
+			runaway := runaway + 1;
+		endwhile
+	endif
+
+    if ( (runaway < 100) or (!theammo) )
+    	if (distance(me, opponent) <= 6)
+		RunAwayFrom(opponent);
+    	else
+		runaway := 0;
+		return 1;
+    	endif
+    else
+	case Distance( me, opponent )
+        	1:
+        	0:
+            		return 1;
+        	default:
+            		RunToward( opponent );
+            		return 0;
+    	endcase
+    endif
+
+if (!helper)
+		while ((distance(me, opponent) < 4) and (fwosb < 30) and opponent.warmode)
+			RunAwayFrom(opponent);
+			fwosb := fwosb + 1;
+		endwhile	
+		fwosb := 0;
+	endif
+		
+endfunction

@@ -1,0 +1,29 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+
+Include "include/client";
+Include "include/areas";
+
+Program Logon( Who )
+
+    Var Player := Target( who );
+
+    if( !Player)
+    return;
+    endif
+
+    if( Player.npctemplate )
+    return;
+    endif
+
+    DisconnectClient( Player );
+
+Endprogram

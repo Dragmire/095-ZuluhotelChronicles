@@ -1,0 +1,74 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 09, 2004.
+   Version: 1.0
+   Core: 093
+   Syntax: .privs
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Include "grantutils";
+Include "include/client";
+
+Program TextCMD_Privs( who )
+
+    SendSysMessage( who, "Select a player.", FONT_NORMAL, 2611 );
+
+    Var Player      := Target( who, TGTOPT_NOCHECK_LOS );
+
+    // Text X = Left- Right+, Y = Up- Down+, Hue, Rank
+
+    Var mllayout := {
+    "Page 0",
+    "ReSizePic 200 200 3600 350 140",
+
+    "Text 220 220 2494 0",    // Privileges
+    "Text 340 220 2597 1",    // Enable
+    "Text 400 220 2597 2",    // Disable
+    "Text 460 220 2597 3",    // Currently
+
+    "Text 220 240 2597 4",    // Invulnerability
+    "Text 460 240 2494 5",    // Current
+    "Button 340 245 2104 2103 1 0 2", // Invulnerability Enable
+    "Button 400 245 2104 2103 1 0 4", // Invulnerability Disable
+
+    "Text 220 260 2597 6",    // See Hidden
+    "Text 460 260 2494 7",    // Current
+    "Button 340 265 2104 2103 1 0 6", // See Hidden Enable
+    "Button 400 265 2104 2103 1 0 8", // See Hidden Disable
+
+    "Text 220 280 2597 8",    // See Ghosts
+    "Text 460 280 2494 9",    // Current
+    "Button 340 285 2104 2103 1 0 10", // See Ghosts Enable
+    "Button 400 285 2104 2103 1 0 12", // See Ghosts Disable
+
+    "Text 220 300 2597 10",   // Hear Ghosts
+    "Text 460 300 2494 11",   // Current
+    "Button 340 305 2104 2103 1 0 14", // Hear Ghosts Enable
+    "Button 400 305 2104 2103 1 0 16", // Hear Ghosts Disable
+    };
+
+    Var mldata := {
+    "",
+    "",
+    "",
+    "",
+
+    "",
+    "",
+
+    "",
+    "",
+
+    "",
+    "",
+
+    "",
+    ""
+    };
+
+    Var Effect := SendDialogGump( who, mllayout, mldata );
+
+EndProgram

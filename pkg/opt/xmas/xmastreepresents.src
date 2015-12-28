@@ -1,0 +1,45 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated by Zulu (zulu@zuluhotel.com) Dec 23, 1999
+// - hands out presents and marks player as gotten present.
+// - trees will decay in 30 days.
+// updated November 19, 2000
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+use os;
+use uo;
+
+program xmaspresent(who,tree)
+
+    var item;
+
+    if (GetObjProperty(who,"xmas"))
+      SendSysMessage(who,"You search under the tree and find nothing.",3,34);
+    else
+      SendSysMessage(who,"You search under the tree and found some stuff.",3,70);
+      SetObjProperty(who,"xmas",1);
+      item:=CreateItemInBackpack(who,0x1f7d);
+      item.name:="glass of egg nog";
+      item.usescript:=":xmas:xmasdrink";
+      item:=CreateItemInBackpack(who,0x14ef);
+      item.name:="christmas letter";
+      item.usescript:=":xmas:xmasletter";
+      item:=CreateItemInBackpack(who,0xe7a);
+      item.name:="christmas present";
+      item.usescript:=":xmas:xmaspresent";
+    endif
+
+    if (ReadGameClock()>GetObjProperty(tree,"d"))
+    var x:=tree.x,y:=tree.y,z:=tree.z;
+    var zstop:=tree.z+45;
+    PrintTextAbove(tree,"The tree is dead.",3,34);
+    sleep(2);
+    for(z;z<=zstop;z:=z+1)
+    	foreach xmas in ListItemsNearLocation(x,y,z,2)
+		if (GetObjProperty(xmas,"x")) DestroyItem(xmas); endif
+    	endforeach
+    endfor
+    endif
+
+endprogram

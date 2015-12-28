@@ -1,0 +1,12 @@
+use uo;
+
+
+program no_insert_craftbag( who, item )
+	if (!item.graphic==0x19B9)
+	SendSysMessage(who, "You can put only ores in this bag.");
+	return 0;
+	else
+	return 1;
+	endif
+endprogram
+

@@ -1,0 +1,345 @@
+use uo;
+use os;
+
+include "ctf1";
+include "include/eventid";
+include "include/client";
+include "include/random";
+
+const WAIT_FOR_EVENT_TIME := 60 * 60;
+
+var rstart:={6037,275,0},bstart:={6114,275,22},rwait:={6039,407,0},bwait:={6047,223,44};
+
+program SpawnPointManager()
+
+  SetGlobalProperty("#CTFPointManagerPID",getpid());
+  print("[CTF POINT MANAGER] started.  PID = "+getpid());
+
+  var ev;
+  while (1)
+    ev:=wait_for_event(WAIT_FOR_EVENT_TIME);
+    if (ev)
+      case (ev.type)
+	EVID_CTF_MAKE_FLAG:
+	create_flag(ev.source,ev.fcolor);
+
+	EVID_CTF_CAPTURE:
+	ctf_capture(ev.source.serial,ev.mcolor);
+
+	EVID_CTF_START:
+	ctf_start();
+
+	EVID_CTF_END:
+	ctf_end();
+
+     endcase
+
+     continue;
+    endif
+
+  endwhile
+
+endprogram
+
+
+function create_flag(where,fcolor)
+
+var flag,ftype:=0x7111,home:=0;
+
+if (fcolor=="BLUE") ftype:=0x7112; endif
+if (where.size()==3) home:=1; endif
+
+if (home)
+flag:=CreateItemAtLocation(where[1],where[2],where[3],ftype,1);
+CreateItemAtLocation(where[1],where[2],where[3],0x2d13,1);
+else
+flag:=CreateItemAtLocation(where.x,where.y,where.z,ftype,1);
+CreateItemAtLocation(where.x,where.y,where.z,0x2d13,1);
+endif
+
+if (fcolor=="BLUE")
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#bflag"))));
+SetGlobalProperty("#bflag",flag.serial);
+SetObjProperty(flag,"b",1);
+else
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#rflag"))));
+SetGlobalProperty("#rflag",flag.serial);
+SetObjProperty(flag,"r",1);
+endif
+
+endfunction
+
+
+function ctf_capture(plyr,mcolor)
+
+var capsnd:=5,who:=SystemFindObjectBySerial(CInt(plyr));
+
+if (mcolor==33)
+SetGlobalProperty("ctfbluecaps",GetGlobalProperty("ctfbluecaps")+1);
+else
+capsnd:=6;
+SetGlobalProperty("ctfredcaps",GetGlobalProperty("ctfredcaps")+1);
+endif
+
+capturescore(who,mcolor,capsnd);
+
+var rcaps:=GetGlobalProperty("ctfredcaps"),bcaps:=GetGlobalProperty("ctfbluecaps");
+
+sleep(4);
+
+capsnd:=2;
+if (bcaps==rcaps)
+capsnd:=12;
+elseif (bcaps>rcaps)
+capsnd:=1;
+endif
+
+cleanarena();
+
+if ((bcaps>=6) || (rcaps>=6))
+SetGlobalProperty("#ctfgame",0);
+  if (bcaps>rcaps)
+    messagectf("Blue won the game " + bcaps + " to " + rcaps,300,3);
+    ctf_end();
+    return;
+  else
+    messagectf("Red won the game " + rcaps + " to " + bcaps,33,4);
+    ctf_end();
+    return;
+  endif
+else
+
+if ((bcaps==5) && (rcaps==5)) capsnd:=308; endif
+
+messagectf("Current score  Blue: "+bcaps+" Red: "+rcaps,1100,capsnd);
+
+endif
+
+
+var tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech1")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech2")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech3")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech4")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech5")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech6")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech7")));
+EraseObjProperty(tech,"user");
+tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech8")));
+EraseObjProperty(tech,"user");
+
+moveplayers(bstart,rstart);
+eventeam(bstart,rstart);
+
+endfunction
+
+
+function capturescore(capper,msgcolor,capsnd)
+
+  var i,who,ctfplyr:=GetGlobalProperty("#ctfplyr");
+  var ctfloc,ctfsize:=ctfplyr.size(),team:=GetObjProperty(capper,"team");
+
+  if (ctfplyr[1]=="NONE") return; endif
+
+  for(i:=1;i<=ctfsize;i:=i+1)
+    who:=SystemFindObjectBySerial(CInt(ctfplyr[i]));
+    ctfloc:=GetObjProperty(who,"ctfloc");
+    if (ctfloc==1 || ctfloc==2) SendSysMessage(who,capper.name+" captured the flag.",3,msgcolor);
+	PlaySoundEffect(who,capsnd);
+
+	if (GetObjProperty(who,"team")==team)
+	if (who.serial==capper.serial)
+	SetObjProperty(who,"ctfscore",GetObjProperty(who,"ctfscore")+10);
+	scorecheck(who,GetObjProperty(who,"ctfscore"));
+	SetObjProperty(who,"ctfcaps",GetObjProperty(who,"ctfcaps")+1);
+	SetObjProperty(who,"totalctfcaps",GetObjProperty(who,"totalctfcaps")+1);
+	else
+	SetObjProperty(who,"ctfscore",GetObjProperty(who,"ctfscore")+5);
+	scorecheck(who,GetObjProperty(who,"ctfscore"));
+	endif
+	endif
+       start_script(":zuluctf:hud",who);
+    endif
+  endfor
+
+endfunction
+
+
+function scorecheck(who,score)
+
+if (score>GetObjProperty(who,"ctftopscore")) SetObjProperty(who,"ctftopscore",score); endif
+
+if(GetObjProperty(who,"team")=="BLUE")
+if (score>GetGlobalProperty("ctfbluescore")) SetGlobalProperty("ctfbluescore",score); endif
+else
+if (score>GetGlobalProperty("ctfredscore")) SetGlobalProperty("ctfredscore",score); endif
+endif
+
+endfunction
+
+
+function ctf_start()
+SetGlobalProperty("ctfbluescore",0);
+SetGlobalProperty("ctfredscore",0);
+SetGlobalProperty("ctfredcaps",0);
+SetGlobalProperty("ctfbluecaps",0);
+SetGlobalProperty("ctfredloc","home");
+SetGlobalProperty("ctfblueloc","home");
+cleanarena();
+moveplayers(bstart,rstart);
+eventeam(bstart,rstart);
+start_script(":zuluctf:ctf_techs");
+start_script(":zuluctf:ctf_chests");
+endfunction
+
+function ctf_end()
+cleanarena();
+moveplayers(bwait,rwait);
+SetGlobalProperty("#ctfgame",0);
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech1"))));
+EraseGlobalProperty("#tech1");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech2"))));
+EraseGlobalProperty("#tech2");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech3"))));
+EraseGlobalProperty("#tech3");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech4"))));
+EraseGlobalProperty("#tech4");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech5"))));
+EraseGlobalProperty("#tech5");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech6"))));
+EraseGlobalProperty("#tech6");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech7"))));
+EraseGlobalProperty("#tech7");
+DestroyItem(SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech8"))));
+EraseGlobalProperty("#tech8");
+endfunction
+
+
+function cleanarena()
+
+  var rfhome:={6038,358,44},bfhome:={6119,358,-22};
+
+  create_flag(bfhome,"BLUE");
+  create_flag(rfhome,"RED");
+
+endfunction
+
+
+function moveplayers(bloc,rloc)
+
+  var i,who,team,ranum,ctfloc,ctfplyr:=GetGlobalProperty("#ctfplyr"),ctfsize:=ctfplyr.size();
+
+  for(i:=1;i<=ctfsize;i:=i+1)
+    who:=SystemFindObjectBySerial(CInt(ctfplyr[i]));
+
+    team:=GetObjProperty(who,"team");
+    ctfloc:=GetObjProperty(who,"ctfloc");
+
+    if (ctfloc<=3 && ctfloc>=1)
+      DestroyItem(GetEquipmentByLayer(who,LAYER_HAND2));
+      ranum:=Random(6);
+
+// game over stuff
+if (GetGlobalProperty("#ctfgame")==0)
+SetObjProperty(who,"ctfscore",0);
+SetObjProperty(who,"ctfcaps",0);
+SetObjProperty(who,"ctfkills",0);
+SetObjProperty(who,"ctfdeaths",0);
+SetObjProperty(who,"ctfddd",0);
+SetObjProperty(who,"ctfooo",0);
+EraseObjProperty(who,"#ctftech");
+else
+PlaySoundEffect(who,0x135);
+endif
+start_script(":zuluctf:hud",who);
+
+      if (team=="BLUE")
+        MoveCharacterToLocation(who,ranum+bloc[1],ranum+bloc[2],bloc[3]);
+      else
+        MoveCharacterToLocation(who,ranum+rloc[1],ranum+rloc[2],rloc[3]);
+      endif
+
+    endif
+
+  endfor
+
+endfunction
+
+function eventeam(bluemove,redmove)
+
+messagectf("Making teams even...",70);
+
+var rteam:=GetGlobalProperty("ctfredteam");
+var bteam:=GetGlobalProperty("ctfblueteam");
+var ctfplyr:=GetGlobalProperty("#ctfplyr"),csize:=ctfplyr.size();
+var tplayers,noexit,who,i;
+
+if(rteam>bteam)
+tplayers:=CInt((rteam-bteam)/2);
+
+while(tplayers>0)
+noexit:=1;
+
+  while(noexit)
+    who:=SystemFindObjectBySerial(CInt(ctfplyr[Random(csize+1)]));
+
+    if (GetObjProperty(who,"team")=="RED" && GetObjProperty(who,"ctfloc")!=0)
+      SetObjProperty(who,"team","BLUE");
+      SetGlobalProperty("ctfredteam",GetGlobalProperty("ctfredteam")-1);
+      SetGlobalProperty("ctfblueteam",GetGlobalProperty("ctfblueteam")+1);
+      SendSysMessage(who,"You are being moved to the BLUE team.",3,300);
+      PlaySoundEffect(who,309);
+      MoveCharacterToLocation(who,bluemove[1],bluemove[2],bluemove[3]);
+      noexit:=0;
+    endif
+  endwhile
+
+tplayers:=tplayers-1;
+endwhile
+
+endif
+
+if(bteam>rteam)
+tplayers:=CInt((bteam-rteam)/2);
+
+while(tplayers>0)
+
+noexit:=1;
+
+  while (noexit)
+  who:=SystemFindObjectBySerial(CInt(ctfplyr[Random(csize+1)]));
+
+    if (GetObjProperty(who,"team")=="BLUE" && GetObjProperty(who,"ctfloc")!=0)
+      SetObjProperty(who,"team","RED");
+      SetGlobalProperty("ctfblueteam",GetGlobalProperty("ctfblueteam")-1);
+      SetGlobalProperty("ctfredteam",GetGlobalProperty("ctfredteam")+1);
+      SendSysMessage(who,"You are being moved to the RED team.",3,33);
+      PlaySoundEffect(who,309);
+      MoveCharacterToLocation(who,redmove[1],redmove[2],redmove[3]);
+      noexit:=0;
+    endif
+  endwhile
+
+tplayers:=tplayers-1;
+endwhile
+
+endif
+
+  for(i:=1;i<=csize;i:=i+1)
+    who:=SystemFindObjectBySerial(CInt(ctfplyr[i]));
+    if (GetObjProperty(who,"team")=="BLUE")
+      colorstuff(who,4);
+    else
+      colorstuff(who,33);
+    endif
+    EraseObjProperty(who,"Hitlist");
+    topclass(who);
+    topstats(who);
+  endfor
+
+endfunction

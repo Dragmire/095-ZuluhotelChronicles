@@ -1,0 +1,68 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// chargedspellitem - expends a charge from an item to cast a spell.
+//
+// The main weakness of this approach is that if the targetting is canceled
+// or LOS fails or anything else like that, the charge is still used.
+//
+// TODO: consider destroying the item when it runs out of charges.
+//
+// Created: Syzygy 19990609
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+program spellcastingitem( who, item )
+
+	if( !ReserveItem( item ) )
+		return;
+	endif
+
+	if( !GetObjProperty( item, "RequireNoCharges" ) )
+		var charges := CInt(GetObjProperty( item, "charges" ));
+		if( !charges )
+			PrintTextAbovePrivate( item, "That is out of charges", who );
+			return;
+		else
+			charges := charges - 1;
+			SetObjProperty( item, "charges", charges );
+		endif
+	endif
+
+	var spellid	:= CInt( GetObjProperty( item, "SpellId" ) );
+	var anim	:= CInt( GetObjProperty( item, "PlayAnim" ) );
+	var delay	:= CInt( GetObjProperty( item, "SpellDelayMs" ) );
+	var circle	:= CInt( GetObjProperty( item, "CastAsCircle" ) );
+	if( !circle )
+		circle	:= GetCircle( spellid );
+	endif
+
+	if( anim )
+		PerformAction( who, anim );
+	endif
+
+	if( delay );
+		sleepms( delay );
+	endif
+
+	SendSysMessage( who, "Select a target." );
+	var cast_on := Target( who, TGTOPT_CHECK_LOS );
+	if( !cast_on )
+		return;
+	endif
+
+	Detach();
+
+	var spellparms := { };
+	spellparms[1] := "#MOB";
+	spellparms[2] := who;
+	spellparms[3] := cast_on;
+	spellparms[4] := circle;
+	start_script( GetScript( spellid ), spellparms );
+
+endprogram

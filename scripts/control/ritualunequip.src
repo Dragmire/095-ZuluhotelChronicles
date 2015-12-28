@@ -1,0 +1,12 @@
+use uo;
+use os;
+
+program ritualunequip( who, item )
+
+	if( item.objtype == 0xba29 )
+		item.graphic := 0x1f03;
+	endif
+
+	return 1;
+
+endprogram

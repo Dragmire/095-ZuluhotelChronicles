@@ -1,0 +1,355 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/objtype";
+include "include/itemutil";
+include "include/classes";
+include "include/random";
+include "alchemy";
+include "include/autoloop";
+
+const SOUND_EFFECT_SPARKLE	:= 0x1e8;
+const EFFECT_SPARKLE		:= 0x373a;
+const MAX_KEG_VOLUME		:= 100;
+const POINT_MULTIPLIER		:= 15;
+
+//this is used to make sure that all potions presented use the reagent that was originally selected
+var original_reagent_objtype := 0;
+
+program alchemyplus ( character, myburner )
+
+	set_script_option( SCRIPTOPT_NO_RUNAWAY, 1 );
+
+	if( !ReserveItem( myburner ) )
+		return;
+	endif
+
+	var current_potion := SelectWhatToMake( character, myburner );
+	if( !current_potion )
+		return;
+	endif
+
+	//try to find out if they only have bottles or only have a keg, and other variables
+	var found_empty_bottle := FindItemInContainer( character.backpack, UOBJ_EMPTY_BOTTLE );
+	var potion_container;
+
+	//if it doesn't use up a bottle, we can just make it without a container
+	if( !current_potion.consume_bottle )
+		potion_container := "no container needed";
+	
+	//this one doesn't need a container
+	elseif( current_potion.itemtype == 36 )
+		potion_container := "no container needed";
+	
+	//if the potion can't be made in a keg and we found a bottle, automatically select the bottle
+	elseif( found_empty_bottle )
+		potion_container := found_empty_bottle;
+	
+	//if it can't be made in a keg and we didn't find any bottles, ask to select bottles
+	else
+		//choose bottles
+		SendSysMessage( character, "Select an empty bottle to make the potion in." );
+		potion_container := Target( character, TGTOPT_CHECK_LOS );
+	
+		if( !Accessible( character, potion_container ) )
+			SendSysMessage( character, "You can't reach that." );
+			return;
+		endif
+		
+		if (potion_container.objtype != UOBJ_EMPTY_BOTTLE)
+			SendSysMessage(character, "You can't make this potion in that.");
+			return;
+		endif
+	
+		if( !ReserveItem( potion_container ) )
+			return;
+		endif
+
+	endif
+
+	if (potion_container != "no container needed")
+		if (!potion_container)
+			return;
+		elseif (!ReserveItem(potion_container) )
+			SendSysMessage(character, "You cannot make the potion in that.");
+			return;
+		elseif (potion_container.objtype != UOBJ_EMPTY_BOTTLE)
+			SendSysMessage(character, "You cannot make the potion in that.");
+			return;
+		elseif (!potion_container.movable)
+			SendSysMessage(character, "You cannot make the potion in that.");
+			return;
+		endif
+	endif
+
+
+	AutoLoop_init( character );
+	while( AutoLoop_more() && CanMakePotion(character, current_potion) && not character.dead )
+
+		PlaySoundEffect(character, current_potion.worknoise);
+
+		//animate the burner
+		var i;
+		for (i:= 1; i < 4; i := i + 1)
+			PerformAction(character, ANIM_SALUTE );
+			myburner.graphic := myburner.graphic + 1;
+			sleep(1);
+		endfor
+		myburner.graphic := 0x1849;
+
+		destroy_all_reagents(character, current_potion);
+
+		if( ( CheckSkill(character,SKILLID_ALCHEMY, current_potion.skill,(current_potion.skill*POINT_MULTIPLIER))))
+			PlaySoundEffect(character, current_potion.makenoise);
+			var created_potion;
+			//if the container the potion is being made in is a bottle
+			if (current_potion.product)
+				created_potion := CreateItemInContainer(character.backpack, current_potion.product,1);
+				created_potion.name := current_potion.name;
+			else
+				created_potion := CreateItemInContainer(character.backpack,0x7059,1);
+				SetObjProperty(created_potion,"itemtype", current_potion.itemtype);
+				created_potion.graphic := current_potion.graphic;
+				created_potion.color := current_potion.color;
+				created_potion.name := current_potion.name;
+			endif
+
+			//destroy a bottle, if needed
+			if (current_potion.consume_bottle)
+				SubtractAmount(potion_container, 1);
+				if (!potion_container)
+					SendSysMessage(character, "You run out of bottles.");
+					AutoLoop_finish();
+					return;
+				endif
+			endif
+		
+			if( GetObjProperty( character, CLASSEID_MAGE ) )
+				var pstr := GetStrength(current_potion);
+				if( pstr )
+					var r_pstr := CInt( pstr * ClasseBonus( character, CLASSEID_MAGE ) ) - pstr;
+					if( !r_pstr )
+						r_pstr := 1;
+					endif
+					SetObjProperty( created_potion, "ByTrueMage", r_pstr );
+				else
+					SetObjProperty( created_potion, "ByTrueMage", 1 );
+				endif
+                        endif
+		else
+			PlaySoundEffect(character, current_potion.failnoise);
+		endif
+	
+	endwhile
+
+	AutoLoop_finish();
+
+endprogram
+
+
+
+
+///////////////////
+//  evaluates all possible potions, decides which ones its possible for a character to make, and lets them
+//  choose which to make
+///////////////////
+
+function SelectWhatToMake(character, myburner)
+
+	var alchemy_cfg_file := ReadConfigFile( "alchemyplus" );
+	var current_potion;
+	var selectmenu := CreateMenu("Make what?");
+	var number_potions := GetConfigMaxIntKey( alchemy_cfg_file );
+	var array_of_valid_potions := {};
+
+	var original_reagent := Target( character, TGTOPT_CHECK_LOS );
+	if( !original_reagent )
+		return;
+
+	elseif( !Accessible( character, original_reagent ) )
+		SendSysMessage( character, "You can't reach that." );
+		return;
+
+	elseif( !ReserveItem( original_reagent ) )
+		return;
+	
+	elseif( !IsInContainer( character.backpack, original_reagent ) )
+		SendSysMessage( character, "That item has to be in your backpack." );
+		return;
+
+	//if they pick target the burner, make the last made item
+	elseif( original_reagent.serial == myburner.serial )
+		if( GetObjProperty( myburner, "lastmade" ) )
+			current_potion := alchemy_cfg_file[GetObjProperty(myburner, "lastmade")];
+			original_reagent_objtype := "success";
+
+			if( CanMakePotion(character, current_potion) )
+				return current_potion;
+			else
+				SendSysMessage(character, "You can't make that.");
+				return 0;
+			endif
+		else
+			SendSysMessage( character, "There's no recipes stored in the heating stand." );
+			return 0;
+		endif
+	else
+		original_reagent_objtype := original_reagent.objtype;
+	endif
+
+	var potion_counter;
+	for (potion_counter := 1; potion_counter <= number_potions; potion_counter := potion_counter+1)
+        	current_potion := alchemy_cfg_file[ potion_counter ];
+		if ( CanMakePotion(character, current_potion) )
+			AddMenuItem(selectmenu, CInt(current_potion.graphic), current_potion.name);
+			array_of_valid_potions[len(array_of_valid_potions)+1] := current_potion;
+		endif
+	endfor
+
+	if (len(array_of_valid_potions) == 0)
+		PrintTextAbovePrivate(character,"You can't make anything.",character);
+		return 0;
+	elseif (len(array_of_valid_potions) == 1)
+		return array_of_valid_potions[1];
+	endif
+
+	var selection := SelectMenuItem2(character, selectmenu);
+	if (!selection)
+		SendSysMessage(character,"Canceled");
+		return 0;
+	endif
+
+	SetObjProperty(myburner, "lastmade", array_of_valid_potions[selection[3]].itemtype );
+	return array_of_valid_potions[selection.index];
+
+endfunction
+
+
+
+
+///////////////////
+//  this function checks to make sure that everything that the currently selected potion needs in order for it
+//  to be made is available
+///////////////////
+
+function CanMakePotion( character, current_potion )
+
+	if( current_potion.specialist )
+		if( !GetObjProperty( character, CLASSEID_MAGE ) )
+			return 0;
+		endif
+	endif
+
+	//if the potion requires a mortar to make, check to see if the character has a mortar
+	if (current_potion.needmortar)
+		var mortar := FindItemInContainer(character.backpack, 0x0e9b );
+		if (!mortar)
+			return 0;
+		else
+			if(!ReserveItem(mortar)) return 0; endif
+		endif
+	endif
+
+	//check to see if they have the skill needed to make the product
+	if (GetEffectiveSkill(character,SKILLID_ALCHEMY) < (current_potion.skill-10))
+		return 0;
+	endif
+
+	//some setup
+	//load the reagent list from the current potion into an array
+	var reagent_array := GetConfigStringArray( current_potion, "reagent" );
+	var current_reagent;
+	var reagent_counter;
+	var used_selected_reagent := 0;
+
+	//Make sure that there's at least 1 reagent.  If not, something is very, very wrong
+	if ( len(reagent_array) <= 0 )
+		SendSysMessage(character, "There is an error in the recipe for " + current_potion.name );
+		return 0;
+	endif
+
+	//now we cycle through all the reagents in the potion
+	for (reagent_counter := 1; reagent_counter <= len(reagent_array); reagent_counter := reagent_counter + 1)
+
+		//Pick the current reagent out of the array and split it into 2 parts.  The first part, current_reagent[1],
+		//contains the type of reagent that is being called for by the potion.  The second part, current_reagent[2],
+		//is the number of that reagent needed
+		current_reagent := SplitWords(reagent_array[reagent_counter]);
+
+		//Here is where we check to see if the reagent that we just picked out of the reagent
+		//list is the one that actually was originally selected.
+		if ( CInt(current_reagent[1]) == original_reagent_objtype || original_reagent_objtype == "success")
+			used_selected_reagent := 1;
+		endif
+
+		//use the FindObjtypeInContainer function to try to find what we need quickly.  If it
+		//fails, or finds less of the reagent than we need, fail this potion.  Otherwise, reserve
+		//what was found and try the next reagent
+		var found_reagent := FindItemInContainer(character.backpack, CInt(current_reagent[1]));
+		var amount_needed := CInt(current_reagent[2]);
+		if( GetObjProperty( character, CLASSEID_MAGE ) )
+			amount_needed := CInt( amount_needed / ClasseBonus( character, CLASSEID_MAGE ) );
+			if( amount_needed < 1 )
+				amount_needed := 1;
+			endif
+		endif
+
+		if (!found_reagent)
+			return 0;
+		elseif( found_reagent.amount < amount_needed )
+			return 0;
+		elseif(!ReserveItem(found_reagent))
+			return 0;
+		endif
+	endfor
+
+	//It appears we've made it through all of the reagents.  Return success if the originally selected
+	//reagent was used in this potion.  Otherwise, fail.
+	if (used_selected_reagent)
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction
+
+
+
+
+///////////////////
+//  destroys the reagents used in the potion
+///////////////////
+
+function destroy_all_reagents(character, current_potion)
+
+	//Check through the current potion and load all the reagents into an array
+	var reagent_array := GetConfigStringArray( current_potion, "reagent" );
+	var current_reagent;
+	var reagent_counter;
+
+	//now we cycle through all the reagents
+	for (reagent_counter := 1; reagent_counter <= len(reagent_array); reagent_counter := reagent_counter + 1)
+
+		//Pick the current reagent out of the array and split it into 2 parts.  The first part, current_reagent[1],
+		//contains the type of reagent that is being called for by the potion.  The second part, current_reagent[2],
+		//is the number of that ingredien needed
+		current_reagent := SplitWords(reagent_array[reagent_counter]);
+	
+		var the_reagent := FindItemInContainer( character.backpack, CInt(current_reagent[1]) );
+
+		//Then, we subtract what we need from the stack
+		var amount_needed := CInt(current_reagent[2]);
+		if( GetObjProperty( character, CLASSEID_MAGE ) )
+			amount_needed := CInt( amount_needed / ClasseBonus( character, CLASSEID_MAGE ) );
+			if( amount_needed < 1 )
+				amount_needed := 1;
+			endif
+		endif
+	
+		SubtractAmount( the_reagent, amount_needed );
+	endfor
+
+endfunction

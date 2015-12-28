@@ -1,0 +1,253 @@
+
+use uo;
+use os;
+include "include/client";
+
+var layout := {
+"page 0",
+"resizepic 100 10 2600 450 355",
+"resizepic 120 54 5100 110 270",
+"text 180 25 995 0",
+"text 160 330 995 4",
+"button 330 330 247 248 1 0 1",
+"group 0",
+"text 130 59 1152 1",
+"button 207 60 5224 5224 0 1 1",
+"text 130 81 1152 2",
+"button 207 82 5224 5224 0 2 2",
+"text 130 103 1152 3",
+"button 207 104 5224 5224 0 3 3",
+"page 1",
+"text 278 52 1151 5",
+"radio 260 52 210 211 0 1151",
+"text 278 69 1152 6",
+"radio 260 69 210 211 0 1152",
+"text 278 86 1153 7",
+"radio 260 86 210 211 0 1153",
+"text 278 103 1154 8",
+"radio 260 103 210 211 0 1154",
+"text 278 120 1155 9",
+"radio 260 120 210 211 0 1155",
+"text 278 137 1156 10",
+"radio 260 137 210 211 0 1156",
+"text 278 154 1157 11",
+"radio 260 154 210 211 0 1157",
+"text 278 171 1158 12",
+"radio 260 171 210 211 0 1158",
+"text 278 188 1159 13",
+"radio 260 188 210 211 0 1159",
+"text 278 205 1160 14",
+"radio 260 205 210 211 0 1160",
+"text 278 222 1161 15",
+"radio 260 222 210 211 0 1161",
+"text 278 239 1162 16",
+"radio 260 239 210 211 0 1162",
+"text 278 256 1163 17",
+"radio 260 256 210 211 0 1163",
+"text 278 273 1164 18",
+"radio 260 273 210 211 0 1164",
+"text 278 290 1165 19",
+"radio 260 290 210 211 0 1165",
+"text 278 307 1166 20",
+"radio 260 307 210 211 0 1166",
+"text 405 52 1167 21",
+"radio 385 52 210 211 0 1167",
+"text 405 69 1168 22",
+"radio 385 69 210 211 0 1168",
+"text 405 86 1169 23",
+"radio 385 86 210 211 0 1169",
+"text 405 103 1170 24",
+"radio 385 103 210 211 0 1170",
+"text 405 120 1171 25",
+"radio 385 120 210 211 0 1171",
+"text 405 137 1172 26",
+"radio 385 137 210 211 0 1172",
+"text 405 154 1173 27",
+"radio 385 154 210 211 0 1173",
+"text 405 171 1174 28",
+"radio 385 171 210 211 0 1174",
+"text 405 188 1175 29",
+"radio 385 188 210 211 0 1175",
+"text 405 205 1176 30",
+"radio 385 205 210 211 0 1176",
+"page 2",
+"text 278 52 1177 31",
+"radio 260 52 210 211 0 1177",
+"text 278 69 1178 32",
+"radio 260 69 210 211 0 1178",
+"text 278 86 1179 33",
+"radio 260 86 210 211 0 1179",
+"text 278 103 1180 34",
+"radio 260 103 210 211 0 1180",
+"text 278 120 1181 35",
+"radio 260 120 210 211 0 1181",
+"text 278 137 1182 36",
+"radio 260 137 210 211 0 1182",
+"text 278 154 1279 63",
+"radio 260 154 210 211 0 1279",
+"page 3",
+"text 278 52 1280 37",
+"radio 260 52 210 211 0 1280",
+"text 278 69 1281 38",
+"radio 260 69 210 211 0 1281",
+"text 278 86 1282 39",
+"radio 260 86 210 211 0 1282",
+"text 278 103 1283 40",
+"radio 260 103 210 211 0 1283",
+"text 278 120 1284 41",
+"radio 260 120 210 211 0 1284",
+"text 278 137 1285 42",
+"radio 260 137 210 211 0 1285",
+"text 278 154 1286 43",
+"radio 260 154 210 211 0 1286",
+"text 278 171 1287 44",
+"radio 260 171 210 211 0 1287",
+"text 278 188 1288 45",
+"radio 260 188 210 211 0 1288",
+"text 278 205 1289 46",
+"radio 260 205 210 211 0 1289",
+"text 278 222 1290 47",
+"radio 260 222 210 211 0 1290",
+"text 278 239 1291 48",
+"radio 260 239 210 211 0 1291",
+"text 278 256 1292 49",
+"radio 260 256 210 211 0 1292",
+"text 278 273 1293 50",
+"radio 260 273 210 211 0 1293",
+"text 278 290 1294 51",
+"radio 260 290 210 211 0 1294",
+"text 278 307 1295 52",
+"radio 260 307 210 211 0 1295",
+"text 405 52 1296 53",
+"radio 385 52 210 211 0 1296",
+"text 405 69 1297 54",
+"radio 385 69 210 211 0 1297",
+"text 405 86 1298 55",
+"radio 385 86 210 211 0 1298",
+"text 405 103 1299 56",
+"radio 385 103 210 211 0 1299",
+"text 405 120 1300 57",
+"radio 385 120 210 211 0 1300",
+"text 405 137 1301 58",
+"radio 385 137 210 211 0 1301",
+"text 405 154 1302 59",
+"radio 385 154 210 211 0 1302",
+"text 405 171 1303 60",
+"radio 385 171 210 211 0 1303",
+"text 405 188 1304 61",
+"radio 385 188 210 211 0 1304",
+"text 405 205 1305 62",
+"radio 385 205 210 211 0 1305",
+
+};
+
+var data := {
+"Hair Color Selection Menu",
+"1150-1177",
+"1178-1183",
+"1280-1306",
+"Dye my beard this color!",
+"Icerock",
+"Snow",
+"Virginity",
+"Spectral",
+"Snow 2",
+"Black",
+"Lavarock",
+"Wyrm",
+"Zulu",
+"Stardust",
+"Jade",
+"Anra",
+"Pink",
+"Elven",
+"Light Gauntlet",
+"Water Pent.",
+"Old Zulu",
+"Poison",
+"Crystal",
+"Ebony",
+"Dragon",
+"Wind",
+"Liche",
+"Void",
+"Sun",
+"Executor",
+"Frost",
+"Ravens",
+"Peachblue",
+"Heavenly",
+"Dripstone",
+"Doom",
+"Goddess",
+"Necro",
+"Water",
+"Gauntlet",
+"Hardranger",
+"L. Bloodhorse",
+"Bloodhorse",
+"L. Hardranger",
+"D. Peachblue",
+"Dung",
+"Purple",
+"Ancient",
+"Lynx Yellow",
+"Frost Yellow",
+"Tinted Red",
+"Balders",
+"Frost Green",
+"Wonder",
+"Dark Green",
+"Pure Yellow",
+"Sand Yellow",
+"Tainted",
+"Mad Green",
+"Ritual Brown",
+"Mad Red",
+"Mad Blue",
+"Destruction",
+"blank"
+};
+
+program haircolor (who)
+
+
+   var res := SendDialogGump( who, layout, data );             
+   var haircolor := 0;
+
+    foreach key in (res.keys)
+	if (key > 1 )
+         haircolor := key;
+	endif
+    endforeach
+
+   if (haircolor == 0 )
+	var cost := GetObjProperty(who,"dyecost");
+	if (!cost)
+		return;
+	endif
+	SendSysmessage (who, "canceled.");
+	var loop ;
+	var diff;
+	var cg := 1;
+	loop := cost / 60000;
+	diff := cost - (loop * 60000);
+	while (cg <= loop)
+		CreateItemInBackpack( who, 0xeed, 60000);
+		cg := cg + 1;
+	endwhile
+	CreateItemInBackpack( who, 0xeed, diff);
+	EraseObjProperty(who,"dyecost");
+	foreach item in EnumerateItemsInContainer( who.backpack )
+		item.movable := 1;
+	endforeach
+	return;
+   endif
+
+var oldhair := GetEquipmentByLayer(who, LAYER_BEARD);
+   oldhair.color := haircolor +1;
+	EraseObjProperty(who,"dyecost");
+	foreach item in EnumerateItemsInContainer( who.backpack )
+		item.movable := 1;
+	endforeach
+endprogram

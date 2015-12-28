@@ -1,0 +1,82 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_MIND_BLAST;
+const SPELL_EFFECT_ID		:= FX_SPELL_MIND_BLAST;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_MIND_BLAST;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_MIND_BLAST;
+
+program cast_mind_blast( parms )
+
+	var circle := 5;
+	var caster;
+ var element := HOLY;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack(cast_on, caster, SPELLID_MIND_BLAST );
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	var my_int := ModifyWithMagicEfficiency( caster, CInt(GetIntelligence(caster)) );
+	var his_int := CInt(GetIntelligence(cast_on));
+	if( immunity == CURSED )
+		SendSysMessage( cast_on, "Your equipment increase the effect of the spell!" );
+		his_int := CInt(his_int / 2);
+		circle := circle * 2;
+	endif
+
+	if( GetObjProperty( cast_on, CLASSEID_MAGE ) )
+		his_int := CInt( his_int * CLASSE_BONUS );
+	endif
+
+	if (his_int > my_int)
+		PlaySoundEffect( cast_on, SFX_SPELL_MAGIC_REFLECTION );
+		PlayObjectCenteredEffect( cast_on, FX_SPELL_MAGIC_REFLECTION, SPEED_SPELL_MAGIC_REFLECTION, LOOP_SPELL_MAGIC_REFLECTION );
+		cast_on := caster;
+		SendSysMessage(caster, "Their superior intellect reflects the spell!");
+	elseif (his_int == my_int)
+		SendSysMessage(caster, "You are of equal intellect!");
+		return;
+	endif
+
+	PlaySoundEffect(cast_on, SFX_SPELL_MIND_BLAST);
+	PlayObjectCenteredEffect( cast_on, FX_SPELL_MIND_BLAST, SPEED_SPELL_MIND_BLAST, LOOP_SPELL_MIND_BLAST );
+	var dmg := CalcSpellDamage( caster, cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+endprogram

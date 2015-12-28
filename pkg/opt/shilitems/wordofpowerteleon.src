@@ -1,0 +1,69 @@
+// wordofpowergate control script
+//
+// This script controls the operation for "words of power" gates.  The
+// gates remain in place until a player speaks the appropriate words
+
+use os;
+use uo;
+use basic;
+
+include "include/itemutil";
+include "include/eventid";
+include "include/client";
+
+program wordofpowergate( teleporter )
+
+	RegisterForSpeechEvents( teleporter, 0 );
+	EnableEvents( SYSEVENT_SPEECH, 0 );
+	var ev;
+	var text;
+	var words_of_power;
+
+	while( 1 && teleporter )
+        	ev := os::wait_for_event( 5 );
+
+	        if( ev )
+	        	case (ev.type)
+				SYSEVENT_SPEECH:
+					words_of_power := GetObjProperty( teleporter, "WordOfPower" );
+					if( words_of_power )
+						words_of_power := upper(words_of_power);
+						text := upper(ev.text);
+                				if( text[words_of_power] && FitRequirements( ev.source, teleporter ) )
+							TeleportCharacter( ev.source, teleporter );
+						endif
+					endif
+					ClearEvents();
+			endcase
+		endif
+	endwhile
+
+endprogram
+
+
+function TeleportCharacter( who, teleporter )
+
+	var x := CInt( GetObjProperty( teleporter, "GateDestX" ) );
+	var y := CInt( GetObjProperty( teleporter, "GateDestY" ) );
+	var z := CInt( GetObjProperty( teleporter, "GateDestZ" ) );
+
+	if( !x && !y && !z )
+		return;
+	endif
+
+	PlaySoundEffect( who, SFX_SPELL_RECALL1 );
+	Sleepms(250);
+
+	MoveCharacterToLocation( who, x, y, z );
+	PlaySoundEffect( who, SFX_SPELL_RECALL2 );
+
+endfunction
+
+
+function ClearEvents()
+
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+
+endfunction

@@ -1,0 +1,70 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program cast_raise_dead( parms )
+	/*
+	var circle := GetCircle( SPELLID_RAISE_DEAD );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] = "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;	
+		if( TryToCast( caster, SPELLID_RAISE_DEAD ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	var magery := GetSkill( caster , SKILLID_MAGERY );
+	var bonus  := 0;
+	if( GetObjProperty( caster , CLASSEID_MAGE ) )
+		bonus := 1;
+	endif
+	
+	var amount := RandomDiceStr("3d2") + bonus;
+	var npctemplate;
+
+	while( amount > 0 )
+	
+		var creature := RandomDiceStr("1d4") + bonus;
+		case( creature )
+			1:	npctemplate := "skeleton";	break;
+			2:	npctemplate := "zombie";	break;
+			3:	npctemplate := "ghost";		break;
+			4:	npctemplate := "spectre";	break;
+			5:	npctemplate := "mummy";		break;
+		endcase
+
+		var cast_loc := TargetCoordinates( caster );
+		if( !cast_loc )
+			SendSysMessage( caster , "Canceled." );
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		
+		SummonCreature( caster , npctemplate , cast_loc , SFX_SPELL_RAISE_DEAD );
+		amount := amount - 1;
+		
+	endwhile
+	
+	EraseObjProperty( caster , "#Casting" );
+*/
+endprogram

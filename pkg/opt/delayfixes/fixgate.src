@@ -1,0 +1,211 @@
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// created by Jaleem Apr 16, 2001
+// - This will fix the bugged stats caused by massive delay. It's preferable
+//   if a player enters the gate completely naked, and if a GM supervises all
+//   the operations.
+// 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;                                                                     
+
+include "include/dismount";
+include "include/attributes";
+include "include/client";
+include "include/spelldata";
+include "include/classes";
+include "include/random";
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// This is a modified version of WipeMods(). This function runs outside
+// a critical section to be faster. It is assumed that player doesn't make
+// anything in the meanwhile.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+function WipeModsNotCritical( who )
+
+        SendSysMessage(who, "Please wait....");
+        
+        who.paralyzed := 1;
+        
+	var mount := GetEquipmentByLayer( who, 25 );
+	var hair := GetEquipmentByLayer( who, LAYER_HAIR);
+	var beard := GetEquipmentByLayer( who, LAYER_BEARD);
+	foreach worn in ListEquippedItems( who )
+		if ( worn and worn != hair and worn != beard and worn != mount and worn != who.backpack )
+			MoveItemToContainer( worn, who.backpack );
+		endif
+	endforeach
+
+	var had_mods := 0;
+	var modarray := GetObjProperty( who, "#mods" );
+	if( !modarray )
+		modarray := {};
+	else
+		had_mods := 1;
+	endif
+
+	foreach mmod in modarray
+                UndoTheModNotCritical( who, mmod[1], mmod[2] );
+	endforeach
+	EraseObjProperty( who, "#mods" );
+
+
+	var persitedmodarray := GetObjProperty( who, "mods" );
+	var newmods := {};
+	if( !persitedmodarray )
+		persitedmodarray := {};
+	else
+		had_mods := 1;
+	endif
+
+	foreach mmod in persitedmodarray
+		if( mmod[1] != "poison" )
+                        UndoTheModNotCritical( who, mmod[1], mmod[2] );
+		else
+			newmods.append( mmod );
+		endif
+	endforeach
+
+	if( len(newmods) )
+		SetObjProperty( who, "mods", newmods );
+	else
+		EraseObjProperty( who, "mods" );
+	endif
+ 
+    Foreach Attr in GetAttributeIds()
+    AlterAttributeTemporaryMod( who, Attr, Cint( 0 - GetAttributeTemporaryMod( who, Attr ) ) );
+    Endforeach
+
+    RecalcVitals( Who );
+ 
+       who.paralyzed := 0;
+
+	return had_mods;
+
+endfunction
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// This is a modified version of UndoTheMod(). This function try to reset
+// only the str/dex/int/ar modifiers.
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+function UndoTheModNotCritical( who, prop, amt )
+
+	var 	msg,
+		sound;
+	
+	var 	oldvalue := amt;
+
+	case (prop)
+		"cstr":
+		"str" :		SetStrengthMod(who, GetStrengthMod(who) - amt);
+	
+		"cdex":
+		"dex" :		SetDexterityMod(who, GetDexterityMod(who) - amt);
+	
+		"cint":
+		"int" :		SetIntelligenceMod(who, GetIntelligenceMod(who) - amt);
+	
+		"car":
+		"ar"  :		who.ar_mod := who.ar_mod - amt;
+				msg := "Armor is now " + who.ar;
+				sound := 0x01e3;
+			
+                ///"p"   :         who.SetParalyzed( 0 );
+		"call":
+		"all" :		SetStrengthMod(who, GetStrengthMod(who) - amt);
+				SetDexterityMod(who, GetDexterityMod(who) - amt);
+				SetIntelligenceMod(who, GetIntelligenceMod(who) - amt);
+			
+                ///"cpoly":
+                ///"poly":         who.ar_mod := who.ar_mod - cint( amt / 3 );
+                ///                msg := "Armor is now " + who.ar;
+                ///                sound := 0x01E3;
+                ///                who.strength_mod := who.strength_mod - amt; 
+                ///                who.dexterity_mod := who.dexterity_mod - amt;
+                ///                who.intelligence_mod := who.intelligence_mod - amt;
+			
+                ///"name"    :     who.name := oldvalue;
+                ///                msg := "Your name is now " + who.name;
+                ///                sound := 0x01E3;
+			
+                ///"graphic" :     who.graphic := oldvalue;
+               
+                ///"color"   :     who.color := oldvalue;
+	
+                ///"spiritspeak":  if (!amt)
+                ///                        RevokePrivilege( who, "hearghosts" );
+                ///                endif
+			
+                ///"title_prefix": who.title_prefix := oldvalue;
+        
+                ///"title_suffix": who.title_suffix := oldvalue;
+        
+                ///"gender":       who.gender := oldvalue;
+	
+                ///"hair":
+                ///        DestroyItem( GetEquipmentByLayer( who , LAYER_HAIR ));
+                ///        if (oldvalue)
+                ///                var newhair := CreateItemAtLocation(5288 , 1176 , 0, oldvalue, 1);
+                ///                newhair.color := GetObjProperty(who,"haircolor");
+                ///                EquipItem(who,newhair);
+                ///        endif
+                ///"beard":
+                ///        DestroyItem(GetEquipmentByLayer(who,LAYER_BEARD));
+                ///        if (oldvalue)
+                ///                var newhair := CreateItemAtLocation(5288 , 1176 , 0, oldvalue, 1);
+                ///                newhair.color := GetObjProperty(who,"haircolor");
+                ///                EquipItem(who,newhair);
+                ///        endif
+                ///"poison":
+                ///        who.hp_regen_rate := BaseRegenRate(who);
+                ///        who.SetPoisoned( 0 );
+        endcase
+
+	if( sound )
+		PlaySoundEffectPrivate(who, sound, who);
+	endif
+
+	if( msg )
+		PrintTextAbovePrivate(who,msg,who);
+	endif
+
+endfunction
+
+function MakeAnotherCheckToBeSure(who)
+
+        if (GetStrengthMod(who) != 0)
+                SetStrengthMod(who, 0);
+        endif
+        if (GetDexterityMod(who) != 0)
+                SetDexterityMod(who, 0);
+        endif
+        if (GetIntelligenceMod(who) != 0)
+                SetIntelligenceMod(who, 0);
+        endif
+
+endfunction
+
+program fixgate (who)
+
+  if (who.dead)
+    SendSysMessage(who, "You need to be a little more alive...");
+  else
+    if (!WipeModsNotCritical(who))
+      SendSysMessage(who, "You don't need to be fixed.");
+    else      
+      MakeAnotherCheckToBeSure(who);
+      SendSysMessage(who, "Ok, now you are fixed.");
+    endif
+  endif
+
+endprogram
+
+

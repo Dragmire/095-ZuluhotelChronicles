@@ -1,0 +1,58 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+use uo;
+use os;
+
+include "include/starteqp";
+
+program reloadpkg( who )
+
+    Var Bag := Target( Who );
+    
+    If( !Bag )
+    Return 0;
+    Endif
+    
+    If( Bag.IsA( POLCLASS_CONTAINER ) )
+    MakeLoot( Bag, 146, 100, 9 );
+    Endif
+
+endprogram
+
+Function HasProt( Item )
+
+    Var Protections := ListProts();
+
+    Foreach Prt in Protections
+    If( GetObjProperty( Item, "" + Prt ) )
+    Return 1;
+    Else
+    Return 0;
+    Endif
+    Endforeach
+
+Endfunction
+
+Function ListProts()
+
+    Return {
+    "FireProtection",
+    "WaterProtection",
+    "AirProtection",
+    "EarthProtection",
+    "FreeAction",
+    "NecroProtection",
+    "HolyProtection",
+    "HealingIncrease",
+    "PhysicalProtection"
+    };
+    
+    Return 1;
+
+Endfunction

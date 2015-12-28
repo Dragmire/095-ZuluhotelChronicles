@@ -1,0 +1,24 @@
+use uo;
+
+include "include/hitscriptinc";
+include "include/damages";
+
+program reactivearmoronhit( parms )
+
+	var attacker 	:= parms[1];
+	var defender	:= parms[2];
+	var basedamage	:= parms[3];
+	var rawdamage	:= parms[4];
+	var power	:= parms[5];
+	var retaliation := Cint( basedamage * power / 100 );
+
+	if( !attacker.IsA(POLCLASS_NPC) )
+		if( !attacker.cmdlevel )
+			ApplyTheDamage( attacker, defender, Cint(retaliation/5) );
+		endif
+	else
+		ApplyTheDamage( attacker, defender, retaliation );
+	endif
+	
+endprogram
+

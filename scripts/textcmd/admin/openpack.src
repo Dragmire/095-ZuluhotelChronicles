@@ -1,0 +1,50 @@
+use uo;
+Use cfgfile;
+
+include "include/npcbackpacks";
+
+program textcmd_pack( who, template )
+
+	var me := Target( who,TGTOPT_NOCHECK_LOS );
+	if (!me)
+		return;
+	endif
+
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(me.x, me.y, me.z, 0xe75,1);
+		if (!EquipItem(me, newbackpack))
+			return;
+		endif
+	endif
+
+	var mypack := FindMyPack(me.serial);
+
+	foreach item in enumerateitemsincontainer(mypack)
+		if (item.container.serial == mypack.serial)
+			moveitemtocontainer(item, me.backpack);
+		endif
+	endforeach
+
+	SendOpenSpecialContainer( who, me.backpack );
+ 
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_opened");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Player Name",  me.name });
+    elem.append({ "Player Serial",  hex(me.serial) });
+
+    AppendConfigFileElem("logging_opened", "Opened", "Pack", elem);
+    UnloadConfigFile("logging_opened");
+    EndIf
+
+
+endprogram

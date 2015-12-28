@@ -1,0 +1,74 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+include "include/damages";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_HOLY_BOLT;
+const SPELL_EFFECT_ID		:= FX_SPELL_HOLY_BOLT;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_HOLY_BOLT;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_HOLY_BOLT;
+
+program cast_HOLY_BOLT( parms )
+
+	var circle := GetCircle( SPELLID_HOLY_BOLT );
+	var element := HOLY;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on , caster , SPELLID_HOLY_BOLT );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_HOLY_BOLT ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster , circle , TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+	
+	if( !fromhit )
+		EraseObjProperty( caster , "#Casting" );
+		cast_on := Reflected( caster , cast_on , circle );
+	else
+		PlayLightningBoltEffect( cast_on );
+	endif
+	PlayLightningBoltEffect( cast_on );
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+			
+	var immunity := IsProtected( caster , cast_on , circle );
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+	
+	var dmg := (CalcSpellDamage( caster ,cast_on , circle ));
+	if ((!caster.npctemplate and cast_on.npctemplate and GetObjproperty(cast_on,"Type")== "undead") or (caster.npctemplate and !cast_on.npctemplate))
+		
+		ApplyElementalDamage( caster , cast_on , circle , (dmg/1.5) , element );
+	else
+		HealTheDamage( cast_on , dmg);
+	endif
+	EraseObjProperty( caster , "#Casting" );
+
+endprogram

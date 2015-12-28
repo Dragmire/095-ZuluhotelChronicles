@@ -1,0 +1,46 @@
+use uo;
+
+use os;
+
+
+program setgc(who)
+
+
+
+sendsysmessage (who, "Seleziona il primo capo");
+
+
+var clothes1 := target(who);
+
+
+
+sendsysmessage (who, "Seleziona il secondo capo");
+
+
+var clothes2 := target(who);
+
+sendsysmessage (who, "Seleziona la stone di gilda");
+
+
+var stone := target(who);
+
+
+
+setobjproperty (stone, "clothes1obj", clothes1.objtype);
+
+
+setobjproperty (stone, "clothes1col", clothes1.color);
+
+
+setobjproperty (stone, "clothes2obj", clothes2.objtype);
+
+
+setobjproperty (stone, "clothes2col", clothes2.color);
+
+
+
+return;
+
+
+endprogram
+

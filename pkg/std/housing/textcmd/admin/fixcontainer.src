@@ -1,0 +1,27 @@
+use uo;
+use os;
+
+program textcmd_fixcontainer( who )
+
+	var container := Target(who);
+	if( !container )
+		return 0;
+	elseif( !container.IsA(POLCLASS_CONTAINER) )
+		return 0;
+	endif
+
+	var root_items := {};
+	foreach item in EnumerateItemsInContainer(container)
+		if( item.container == container )
+			root_items.append(item);
+			MoveItemToLocation(item, 5492, 1111, 0, MOVEITEM_FORCELOCATION);
+		endif
+	endforeach
+
+	foreach item in root_items
+		MoveItemToContainer(item, container);
+	endforeach
+
+	SendSysMessage( who, "Container fixed." );
+
+endprogram

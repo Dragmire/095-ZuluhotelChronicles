@@ -1,0 +1,16 @@
+use uo;
+
+program enable_npc_looting( who )
+
+	if( !GetGlobalProperty( "NoNpcLooting" ) )
+		SendSysMessage( who, "Npcs can loot already." );
+		return;
+	endif
+	
+	if( EraseGlobalProperty( "NoNpcLooting" ) )
+		SendSysMessage( who, "From now on the npcs will be able to loot again." );
+	else
+		SendSysMessage( who, "Couldn't make the npcs to loot again." );
+	endif
+
+endprogram

@@ -1,0 +1,144 @@
+use uo;
+use cfgfile;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_SHAPESHIFT;
+const SPELL_EFFECT_ID1		:= FX_SPELL_SHAPESHIFT1;
+const SPELL_EFFECT_ID2		:= FX_SPELL_SHAPESHIFT2;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_SHAPESHIFT;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_SHAPESHIFT;
+
+program shapeshift( caster )
+
+	var circle := GetCircle( SPELLID_SHAPESHIFT );
+
+	if( TryToCast( caster, SPELLID_SHAPESHIFT ) != SUCCESS )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if(GetObjProperty( caster, "tg" )) // he wants to change back to a human
+		EraseObjProperty( caster, "#Casting" );
+        	caster.color := GetObjProperty( caster, "tc" );
+        	caster.graphic := GetObjProperty( caster, "tg" );
+		PlayObjectCenteredEffect(caster,
+                                         SPELL_EFFECT_ID1,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+                                        
+		PlayObjectCenteredEffect(caster,
+                                         SPELL_EFFECT_ID2,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+                                        
+                PlaySoundEffect( caster, SFX_SPELL_SHAPESHIFT );
+        	SendSysMessage( caster, "You resume your true form" );
+        	EraseObjProperty( caster, "tn" );
+        	EraseObjProperty( caster, "tc" );
+        	EraseObjProperty( caster, "tg" );
+        	var modarray := GetObjProperty( caster, "#mods" );
+		if( !modarray )
+			modarray := {};
+		endif
+
+		var newmods := {};
+		foreach mmod in modarray
+			if( mmod[1] == "poly" )
+				UndoTheMod( caster, mmod[1], mmod[2] );
+			else
+				newmods.append(mmod);
+			endif
+		endforeach
+		SetObjProperty( caster, "#mods", newmods );
+        	return;
+	endif
+
+	if( !CanMod(caster, "poly") )
+		EraseObjProperty( caster, "#Casting" );
+		SendSysMessage( caster, "You're already polymorphed in something." );
+		return;
+	endif
+
+	var cfg 	:= ReadConfigFile( "shapeshift" );
+	var maxint 	:= GetConfigMaxIntKey( cfg );
+	var i		:= 1;
+	var tmenu 	:= CreateMenu( "What form would you like to assume?" );
+	var texit 	:= 0;
+	var meditation := ModifyWithMagicEfficiency( caster, GetEffectiveSkill( caster, SKILLID_MEDITATION ) );
+
+	while( !texit )
+        	var elem := cfg[i];
+        	if (!elem)
+                	texit := 1;
+        	elseif ( meditation >= elem.Difficulty )
+                        AddMenuItem( tmenu, elem.Menu, elem.Name );
+                else
+                        texit := 1;
+                endif
+                i := i + 1;
+	endwhile
+
+	var sel := SelectMenuItem2( caster, tmenu );
+
+	if (!sel)
+		EraseObjProperty( caster, "#Casting" );
+        	return;
+	endif
+
+	var elem := cfg[sel.index];
+
+	if (!elem)
+		print("Error with shapechanging!");
+		EraseObjProperty( caster, "#Casting" );
+        	return;
+	endif
+
+	if( CheckSkill( caster, SKILLID_MEDITATION, elem.Difficulty, elem.Points ))
+        	SetObjProperty( caster, "tc", caster.color );
+        	SetObjProperty( caster, "tg", caster.graphic );
+        
+		PlayObjectCenteredEffect(caster,
+                                         SPELL_EFFECT_ID1,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+                                        
+		PlayObjectCenteredEffect(caster,
+                                         SPELL_EFFECT_ID2,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+                                        
+                PlaySoundEffect( caster, SFX_SPELL_SHAPESHIFT );
+               
+        	caster.graphic := elem.graphic;
+        	caster.color := 0;
+	else
+	
+        	SendSysMessage(caster, "You fail to transform yourself");
+        	PlayObjectCenteredEffect(caster, FX_SPELL_FIZZLE, SPEED_SPELL_FIZZLE, LOOP_SPELL_FIZZLE );
+		PlaySoundEffect(caster, SFX_SPELL_FIZZLE);
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	EraseObjProperty( caster, "#Casting" );
+
+	var mod_amount := CInt( GetModAmount( caster  ) * 0.75 );
+	var duration := CInt( GetModDuration( caster ) );
+
+	DoTempMod( caster, "poly", mod_amount, duration );
+	sleep( duration );
+
+	set_critical(1);
+        caster.graphic := GetObjProperty( caster, "tg" );
+        caster.color := GetObjProperty( caster, "tc" );
+        EraseObjProperty( caster, "tc" );
+        EraseObjProperty( caster, "tg" );
+        set_critical(0);
+
+endprogram

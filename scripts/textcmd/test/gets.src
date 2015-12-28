@@ -1,0 +1,26 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+include "include/attributes";
+
+
+Program Test( Who )
+
+
+
+    Var Player := Target( Who );
+Var maxlife := GetAttributeBaseValue( Player, ATTRIBUTEID_FENCING );
+	var effective	:= CInt( maxlife / 10 );
+	var decimal	:= CInt( CDbl( (maxlife / 10.0 ) - CInt( CInt(maxlife) / 10 )) * 10 );
+SendSysMessage( Who, "Skill: " + maxlife );
+SendSysMessage( Who, "Skill: " + effective + "." + decimal );
+
+Endprogram

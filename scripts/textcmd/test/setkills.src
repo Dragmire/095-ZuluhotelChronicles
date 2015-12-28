@@ -1,0 +1,24 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program TextCMD_SetRank( Who )
+
+    Var Player := Target( Who );
+    Var Kills := Cint( GetObjProperty( Player, "Kills" ) );
+    
+    SendSysMessage( Player, "Kills Before: " + Kills );
+
+    Kills := SetObjProperty( Player, "Kills", Kills + 1 );
+    
+    Kills := Cint( GetObjProperty( Player, "Kills" ) );
+    
+    SendSysMessage( Player, "Kills After: " + Kills );
+
+Endprogram

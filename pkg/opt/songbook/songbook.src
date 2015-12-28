@@ -1,0 +1,134 @@
+use uo;
+use os;
+use math;
+use basic;
+
+include "include/spelldata";
+
+const BASE_SPELLID := 181;
+
+program BookOfEarth( who, book )
+
+	if( (book.container).IsA(POLCLASS_CORPSE) )
+		SendSysMessage( who, "You can't use this while it is on the corpse." );
+		return 0;
+	endif
+
+////////////////////////////// Edited By: RB //////////////////////////////
+   Var level;
+
+    Foreach classe in GetClasseIds()
+    EraseObjProperty( who , classe );
+    level := IsFromThatClasse( who , GetClasseSkills(classe) );
+    If( level )
+    SetObjProperty( who, classe, level );
+    Endif
+    Endforeach
+    
+    Var CLvl := GetLevel( Who );
+    
+
+
+    If( IsBard( who ) && CLvl >= 2 )
+
+////////////////////////////// Edited By: RB //////////////////////////////
+
+
+	if( !ReserveItem(book) )
+		return 0;
+	endif
+
+	var layout := {
+		"page 0",
+		"nodispose",
+		"gumppic 30 30 2203",
+		"text 70  40 28 0",
+		"text 230 40 28 1"
+	};
+	
+	var data := {
+		"Lesser Songs",
+		"Greater Songs"
+	};
+	
+	var spellnames := {
+		"Song of Light",		// Circle 1
+		"Song of Haste",
+		"Song of Defense",
+		"Song of Glory",
+		"Song of Cloaking",
+		"Song of Remedy",
+		"Song of Life",
+		"Song of Dismissal",
+		"Song of Sirens",		// Circle 2
+		"Song of Earth",
+		"Song of Air",
+		"Song of Fire",
+		"Song of Water",
+		"Song of Beckon",
+		"Song of Fright",
+		"Song of Salvation"
+	};
+	
+	var i;
+	var y1 := 70;
+	var y2 := 70;
+	var bits := { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+	var greater := Cint(GetObjProperty(book,"Greater"));
+	var lesser  := Cint(GetObjProperty(book,"Lesser"));
+
+	for( i := 1; i <= 8; i := i + 1 )
+		if( lesser & bits[i] )
+			layout.append( "button 60 " + y1 + " 2104 2103 1 0 " + i );
+			layout.append( "text 80 " + (y1-5) + " 0 " + len(data) );
+			data.append( spellnames[i] );
+			y1 := y1 + 20;
+		endif
+		
+		if( greater & bits[i] )
+			layout.append( "button 220 " + y2 + " 2104 2103 1 0 " + (i+8) );
+			layout.append( "text 240 " + (y2-5) + " 0 " + len(data) );
+			data.append( spellnames[i+8] );
+			y2 := y2 + 20;
+		endif
+	endfor
+
+	var spellid := SendDialogGump( who, layout, data )[0];
+	if( !spellid )
+		return 0;
+	endif
+
+	var spell := GetScript( BASE_SPELLID+spellid );
+	
+	if( GetObjProperty( book , "CastingOpts" ) )
+		SetObjProperty( who , "CastingOpts" , GetObjProperty( book, "CastingOpts" ) );
+	endif
+	
+	SetObjProperty( who , "#Casting" , 1 );
+	
+	Start_Script( spell , who );
+		
+	while( GetObjProperty( who , "#Casting" ) )
+		Sleepms( 500 );
+	endwhile
+
+    Else
+    SendSysMessage( who, "You must be a Level 2 Bard to Use this Book.", FONT_BOLD, 2611 );
+    Endif
+
+endprogram
+
+Function GetLevel( Who )
+
+    Var level;
+
+    Foreach classe in GetClasseIds()
+    EraseObjProperty( who , classe );
+    level := IsFromThatClasse( who , GetClasseSkills(classe) );
+    If( level )
+    SetObjProperty( who, classe, level );
+    Return level;
+    Endif
+    Endforeach
+ 
+ EndFunction

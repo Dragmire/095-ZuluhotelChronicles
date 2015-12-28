@@ -1,0 +1,501 @@
+use uo;
+use os;
+
+Include "include/gumputil";
+include "include/findcity";
+include "include/yesno";
+include "include/dotempmods";
+include "include/objtype";
+include "include/client";
+
+
+program give_ai(who)
+	if(GetObjProperty(who,"ASGumpOpen"))
+		SendSysMessage(who,"You already have the gump open");
+		return;
+	endif
+	var using := 1;
+	var targ;
+	SetObjProperty(who, "ASGumpOpen",1);
+	if (!SystemFindObjectBySerial(GetGlobalProperty("BBRunning")))
+		targ := CreateNPCfromTemplate("virtualcn",who.x,who.y,who.z);
+		SetObjProperty(targ,"Owner",who.serial);
+		Sleep(5);
+	endif
+	while (using)
+		using := Main(who);
+	endwhile
+	SendSysMessage(who, "Data Saved.");
+	SetObjProperty(targ,"StartUp",1);
+	EraseObjProperty(who,"ASGumpOpen");
+endprogram
+
+function Main(who)
+	var targ := SystemFindObjectBySerial(GetGlobalProperty("BBRunning"));
+	if (!targ)
+		SendSysMessage(who," Staff NPC failure. Try again.");
+		return;
+	endif
+	var CheckingName := GetGlobalProperty("BBChecking");
+	if (!CheckingName)
+		CheckingName := "None";
+	endif
+	var Check := GetGlobalProperty("BBCheck");
+	if (!check)
+		check := "Idle";
+	endif
+	var Position := targ.x+", "+targ.y+", "+targ.z;
+	var Report := GetObjProperty(targ,"RunRaids");
+	if (!Report)
+		Report := "OFF";
+		SetObjProperty(targ,"RunRaids","OFF");
+	elseif (Report != "OFF")
+		Report := Report + " Hour(s)";
+	endif
+	SetObjProperty(targ,"Report","ON");
+	var Page := GetObjProperty(targ,"Page");
+	if (!Page)
+		Page := "ON";
+		SetObjProperty(targ,"Page","ON");
+	endif
+	var Confront := GetObjProperty(targ,"Confront");
+	if (!Confront)
+		Confront := "OFF";
+		SetObjProperty(targ,"Confront","OFF");
+	endif
+	var AnswerPages := GetObjProperty(targ,"AnswerPages");
+	if (!AnswerPages)
+		AnswerPages := "OFF";
+		SetObjProperty(targ,"AnswerPages","OFF");
+	endif
+	var MacroCheck := GetObjProperty(targ,"MacroCheck");
+	if (!MacroCheck)
+		MacroCheck := "OFF";
+		SetObjProperty(targ,"MacroCheck","OFF");
+	endif
+	var NoNPCSparring := GetObjProperty(targ,"NoNPCSparring");
+	if (!NoNPCSparring)
+		NoNPCSparring := "ON";
+		SetObjProperty(targ,"NoNPCSparring","ON");
+	endif
+	var NoTKing := GetObjProperty(targ,"NoTKing");
+	if (!NoTKing)
+		NoTKing := "ON";
+		SetObjProperty(targ,"NoTKing","ON");
+	endif
+	var CleanRubbish := GetObjProperty(targ,"CleanRubbish");
+	if (!CleanRubbish)
+		CleanRubbish := "OFF";
+		SetObjProperty(targ,"CleanRubbish","OFF");
+	endif
+	var Pause := GetObjProperty(targ,"Pause");
+	if (!Pause)
+		Pause := "OFF";
+		SetObjProperty(targ,"Pause","OFF");
+	endif
+
+var data := {
+"",
+"Account",
+"Name",
+"IP Address",
+"", //Location
+"", // 5
+"Counselor HAL Configuration",
+"Player Checking :",
+"Check Type     :",
+"Position        :",
+"",
+"Run Raids :",
+"Page Staff :",
+"Confront Players :",
+"Answer Pages :",
+"Macro Checking :",
+"No NPC Sparring :",
+"No Town Killing :",
+"Clean Garbage :",
+"Pause :",
+"Next Page >>",
+CheckingName,
+Check,
+Position,
+"",
+Report,
+Page,
+Confront,
+AnswerPages,
+MacroCheck,
+NoNPCSparring,
+NoTKing,
+CleanRubbish,
+Pause,
+"",
+"",
+"Right Click to Save & Exit"
+};
+
+var layout2 := {
+"page 0",
+"nodispose",
+"resizepic 50 0 2600 390 405", // background
+"text 148 30 0 6", // title
+"text 95 60 300 7", // go
+"text 95 80 300 8", // summon
+"text 95 100 300 9", // summon cage
+"text 120 120 300 10", // lightning
+"text 120 140 300 11", // jail
+"text 120 160 300 12", // forgive
+"text 120 180 300 13", // notes
+"text 120 200 300 14", // message
+"text 120 220 300 15", // resurrect
+"text 120 240 300 16", // kick 14
+"text 120 260 300 17", // ban 15
+"text 120 280 300 18", // kill 16
+"text 120 300 300 19", // remove race 17
+"text 120 320 300 20", // remove guild 18
+"text 250 60 995 21", // goto 19
+"text 250 80 995 22", // summon 20
+"text 250 100 995 23", // summon cage 21
+"text 274 120 995 24", // lightning 22
+"text 274 140 995 25", // jail 23
+"text 274 160 995 26", // forgive 24
+"text 274 180 995 27", // notes 25
+"text 274 200 995 28", // message 26
+"text 274 220 995 29", // resurrect 27
+"text 274 240 995 30", // kick 28
+"text 274 260 995 31", // ban 29
+"text 274 280 995 32", // kill 30
+"text 274 300 995 33", // remove race 31
+"text 274 320 995 34", // remove guild 32
+"text 274 345 995 5", // player name 33
+"button 95 140 210 211 1 0 5", // jail 38
+"button 95 160 210 211 1 0 6", // forgive 39
+"button 95 180 210 211 1 0 7", // Notes 40
+"button 95 200 210 211 1 0 8", // message 41
+"button 95 220 210 211 1 0 9", // resurrect 42
+"button 95 240 210 211 1 0 10", // kick 43
+"button 95 260 210 211 1 0 11", // ban 44
+"button 95 280 210 211 1 0 12", // kill 45
+"button 95 300 210 211 1 0 13", // remove race 46
+"button 95 320 210 211 1 0 14", // remove guild 47
+"text 145 360 0 36" // title
+};
+	if (GetObjProperty(targ,"Report") == "ON")
+		layout2[34] := "button 95 140 210 211 1 1 5"; // jail 38
+	endif
+	var num;
+	var num2;
+	var whataction := SendDialogGump( who , layout2 , data );
+	var onlinechr, action := whataction[0];
+	var weap;
+	var two;
+	var text;
+	var entered;
+	if (action == 5)
+		if (GetObjProperty(targ,"RunRaids") == "OFF")
+			text := "Time to Next Raid (hours) :";
+			entered := Cint(SendTextEntryGump( who, text, 1 ));
+			if (!entered or entered < 0 or entered > 144)
+				SendSysMessage(who,"Cancelled");
+			else
+				SetObjProperty(targ,"RunRaids",entered);
+				SetObjProperty(targ,"NextRaid",((entered*3600)+ReadGameClock()));
+			endif	
+		else
+			SetObjProperty(targ,"RunRaids","OFF");		
+		endif
+	endif
+	if (action == 6)
+		if (GetObjProperty(targ,"Page") == "ON")
+			SetObjProperty(targ,"Page","OFF");
+		else
+			SetObjProperty(targ,"Page","ON");
+		endif	
+	endif		
+	if (action == 7)
+		if (GetObjProperty(targ,"Confront") == "ON")
+			SetObjProperty(targ,"Confront","OFF");
+		else
+			SetObjProperty(targ,"Confront","ON");
+		endif	
+	endif	
+	if (action == 8)
+		if (GetObjProperty(targ,"AnswerPages") == "ON")
+			SetObjProperty(targ,"AnswerPages","OFF");
+		else
+			SetObjProperty(targ,"AnswerPages","ON");
+		endif	
+	endif	
+	if (action == 9)
+		if (GetObjProperty(targ,"MacroCheck") == "ON")
+			SetObjProperty(targ,"MacroCheck","OFF");
+		else
+			SetObjProperty(targ,"MacroCheck","ON");
+		endif	
+	endif	
+	if (action == 10)
+		if (GetObjProperty(targ,"NoNPCSparring") == "ON")
+			SetObjProperty(targ,"NoNPCSparring","OFF");
+		else
+			SetObjProperty(targ,"NoNPCSparring","ON");
+		endif	
+	endif	
+	if (action == 11)
+		if (GetObjProperty(targ,"NoTKing") == "ON")
+			SetObjProperty(targ,"NoTKing","OFF");
+		else
+			SetObjProperty(targ,"NoTKing","ON");
+		endif	
+	endif	
+	if (action == 12)
+		if (GetObjProperty(targ,"CleanRubbish") == "ON")
+			SetObjProperty(targ,"CleanRubbish","OFF");
+		else
+			SetObjProperty(targ,"CleanRubbish","ON");
+		endif	
+	endif	
+	if (action == 13)
+		if (GetObjProperty(targ,"Pause") == "ON")
+			SetObjProperty(targ,"Pause","OFF");
+		else
+			SetObjProperty(targ,"Pause","ON");
+		endif	
+	endif	
+	if (action == 14)
+		while (action and action != 99)
+			action := Main2(who,targ);
+		endwhile
+	endif
+	return(action);
+endfunction
+
+function Main2(who, targ)
+	if (!targ)
+		SendSysMessage(who," Staff NPC failure. Try again.");
+		return;
+	endif
+	var CheckingName := GetGlobalProperty("BBChecking");
+	if (!CheckingName)
+		CheckingName := "None";
+	endif
+	var Check := GetGlobalProperty("BBCheck");
+	if (!check)
+		check := "Idle";
+	endif
+	var Position := targ.x+", "+targ.y+", "+targ.z;
+	var BPCount := GetObjProperty(targ,"BPCount");
+	if (!BPCount)
+		BPCount := "0";
+		SetObjProperty(targ,"BPCount",0);
+	endif
+	BPCount := "Status : "+BPCount+" items";
+	var FullPack := GetObjProperty(targ,"FullPack");
+	if (FullPack)
+		BPCount := "Status : FULL!";
+	endif
+	var  AutoJail:= GetObjProperty(targ,"AutoJail");
+	if (!AutoJail)
+		AutoJail := "OFF";
+		SetObjProperty(targ,"AutoJail","OFF");
+	endif
+	var NoTownSummons := GetObjProperty(targ,"NoTownSummons");
+	if (!NoTownSummons)
+		NoTownSummons := "ON";
+		SetObjProperty(targ,"NoTownSummons","ON");
+	endif
+	var Support := GetObjProperty(targ,"Support");
+	if (!Support)
+		Support := "OFF";
+	else
+		Support := SystemFindObjectBySerial(Support);
+		Support := Support.name;
+	endif
+	var FixStats := GetObjProperty(targ,"FixStats");
+	if (!FixStats)
+		FixStats := "ON";
+		SetObjProperty(targ,"FixStats","ON");
+	endif
+	var KickJailBirds := GetObjProperty(targ,"KickJailBirds");
+	if (!KickJailBirds)
+		KickJailBirds := "ON";
+		SetObjProperty(targ,"KickJailBirds","ON");
+	endif
+	var Babble := GetObjProperty(targ,"Babble");
+	if (!Babble)
+		Babble := "MEDIUM";
+		SetObjProperty(targ,"Babble","MEDIUM");
+	endif
+	var MoveStuck := GetObjProperty(targ,"MoveStuck");
+	if (!MoveStuck)
+		MoveStuck := "ON";
+		SetObjProperty(targ,"MoveStuck","ON");
+	endif
+	var AnswerPages;
+	var Link := GetObjProperty(targ,"Linked");
+	if (!Link)
+		Link := "ON";
+		SetObjProperty(targ,"Linked","ON");
+	endif
+var data := {
+"",
+"Account",
+"Name",
+"IP Address",
+"", //Location
+"", // 5
+"Counselor HAL Configuration",
+"Player Checking :",
+"Check Type     :",
+"Position        :",
+"",
+"Auto Jailing :",
+"Empty Backpack :",
+"No Town Summons :",
+"Assist Staff :",
+"Fix Stat Bug :",
+"Move Stuck Chars :",
+"Kick Jailed Chars :",
+"Babble Mode :",
+"Link Mode :", //"Pause :",
+"<< Previous Page ",
+CheckingName,
+Check,
+Position,
+"",
+AutoJail,
+BPCount,
+NoTownSummons,
+Support,
+FixStats,
+MoveStuck,
+KickJailBirds,
+Babble,
+Link,
+"", //Pause,
+"",
+"",
+"Right Click to Save & Exit"
+};
+
+var layout2 := {
+"page 0",
+"nodispose",
+"resizepic 50 0 2600 390 405", // background
+"text 148 30 0 6", // title
+"text 95 60 300 7", // go
+"text 95 80 300 8", // summon
+"text 95 100 300 9", // summon cage
+"text 120 120 300 10", // lightning
+"text 120 140 300 11", // jail
+"text 120 160 300 12", // forgive
+"text 120 180 300 13", // notes
+"text 120 200 300 14", // message
+"text 120 220 300 15", // resurrect
+"text 120 240 300 16", // kick 14
+"text 120 260 300 17", // ban 15
+"text 120 280 300 18", // kill 16
+"text 120 300 300 19", // remove race 17
+"text 120 320 300 20", // remove guild 18
+"text 250 60 995 21", // goto 19
+"text 250 80 995 22", // summon 20
+"text 250 100 995 23", // summon cage 21
+"text 274 120 995 24", // lightning 22
+"text 274 140 995 25", // jail 23
+"text 274 160 995 26", // forgive 24
+"text 274 180 995 27", // notes 25
+"text 274 200 995 28", // message 26
+"text 274 220 995 29", // resurrect 27
+"text 274 240 995 30", // kick 28
+"text 274 260 995 31", // ban 29
+"text 274 280 995 32", // kill 30
+"text 274 300 995 33", // remove race 31
+"text 274 320 995 34", // remove guild 32
+"text 274 345 995 5", // player name 33
+"button 95 140 210 211 1 0 5", // jail 38
+"button 95 160 210 211 1 0 6", // forgive 39
+"button 95 180 210 211 1 0 7", // Notes 40
+"button 95 200 210 211 1 0 8", // message 41
+"button 95 220 210 211 1 0 9", // resurrect 42
+"button 95 240 210 211 1 0 10", // kick 43
+"button 95 260 210 211 1 0 11", // ban 44
+"button 95 280 210 211 1 0 12", // kill 45
+"button 95 300 210 211 1 0 13", // remove race 46
+"button 95 320 210 211 1 0 14", // remove guild 47
+"text 145 360 0 36" // title
+};
+	var num;
+	var num2;
+	var whataction := SendDialogGump( who , layout2 , data );
+	var onlinechr, action := whataction[0];
+	var weap;
+	var two;
+	if (action == 5)
+		if (GetObjProperty(targ,"AutoJail") == "ON")
+			SetObjProperty(targ,"AutoJail","OFF");
+		else
+			SetObjProperty(targ,"AutoJail","ON");
+		endif	
+	endif		
+	if (action == 6)
+		SetObjProperty(targ,"EmptyTrash",1);
+		SetObjProperty(targ,"BPCount",0);
+		EraseObjProperty(targ,"FullPack");
+	endif		
+	if (action == 7)
+		if (GetObjProperty(targ,"NoTownSummons") == "ON")
+			SetObjProperty(targ,"NoTownSummons","OFF");
+		else
+			SetObjProperty(targ,"NoTownSummons","ON");
+		endif	
+	endif	
+	if (action == 8)
+		if (GetObjProperty(targ,"Support"))
+			EraseObjProperty(targ,"Support");
+		else
+			SetObjProperty(targ,"Support",who.serial);
+		endif	
+	endif	
+	if (action == 9)
+		if (GetObjProperty(targ,"FixStats") == "ON")
+			SetObjProperty(targ,"FixStats","OFF");
+		else
+			SetObjProperty(targ,"FixStats","ON");
+		endif	
+	endif	
+	if (action == 10)
+		if (GetObjProperty(targ,"MoveStuck") == "ON")
+			SetObjProperty(targ,"MoveStuck","OFF");
+		else
+			SetObjProperty(targ,"MoveStuck","ON");
+		endif	
+	endif	
+	if (action == 11)
+		if (GetObjProperty(targ,"KickJailBirds") == "FAST")
+			SetObjProperty(targ,"KickJailBirds","OFF");
+		elseif(GetObjProperty(targ,"KickJailBirds") == "ON")
+			SetObjProperty(targ,"KickJailBirds","FAST");
+		elseif (GetObjProperty(targ,"KickJailBirds") == "OFF")
+			SetObjProperty(targ,"KickJailBirds","ON");
+		endif	
+	endif	
+	if (action == 12)
+		if (GetObjProperty(targ,"Babble") == "HIGH")
+			SetObjProperty(targ,"Babble","OFF");
+		elseif(GetObjProperty(targ,"Babble") == "MEDIUM")
+			SetObjProperty(targ,"Babble","HIGH");
+		elseif (GetObjProperty(targ,"Babble") == "OFF")
+			SetObjProperty(targ,"Babble","MEDIUM");
+		endif	
+	endif	
+	if (action == 13)
+		if (GetObjProperty(targ,"Linked") == "ON")
+			SetObjProperty(targ,"Linked","OFF");
+		else
+			SetObjProperty(targ,"Linked","ON");
+		endif	
+	endif	
+	if (action == 14)
+		action :=99;
+	endif
+	return(action);
+endfunction

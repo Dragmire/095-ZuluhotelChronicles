@@ -1,0 +1,35 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program rpurification( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_PURIFICATION, CAN_BE_EQUIPPED + CAN_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+	BanishCurse( item );
+	SendSysMessage( caster, "This item is now free from the presence of all curses" );
+
+endprogram

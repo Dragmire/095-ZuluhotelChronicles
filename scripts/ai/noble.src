@@ -1,0 +1,24 @@
+use os;
+use uo;
+include "include/eventid";
+include "include/randname";
+include "include/utility";
+include "include/mrcspawn";
+include "include/speech";
+include "include/client";
+include "include/vetement";
+include "include/npcbackpacks";
+include "ai/setup/modsetup";
+program noble ()
+
+var me := Self();
+if( me.name["<random>"] )
+	if (me.gender = 0)
+		Habille( me , "noblemale" );
+	else
+		Habille( me , "noblefemale" );
+	endif
+	SetName ( me , RandomName( me ) );
+endif
+
+endprogram

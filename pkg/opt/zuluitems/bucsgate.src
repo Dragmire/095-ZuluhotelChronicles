@@ -1,0 +1,13 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+program serpsgate (who)
+
+MoveCharacterToLocation( who, 2667, 2191, 0 );
+SendSysMessage( who, "Welcome to Buc's Den!");
+
+endprogram

@@ -1,0 +1,49 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "ctf1";
+
+var layout := {
+"page 0",
+"nodispose",
+"nomove",
+"page 1",
+"tilepic 542 430 11537",
+"noclose"
+};
+
+var data := { };
+
+program hud(par)
+
+if (par=="") return; endif
+
+var who:=par[1];
+var type:=par[2];
+
+var badgemsg:=who.name+" has been award a defense badge.", badgemsgcolor:=33;
+
+case (type)
+"ooo": layout[5]:="tilepic 591 430 11538";
+       badgemsg:=who.name+" has been award an offense badge.";
+endcase
+
+if (GetObjProperty(who,"team")=="BLUE") badgemsgcolor:=300; endif
+
+messagectf(badgemsg,badgemsgcolor,326);
+
+var pid,i;
+pid:=getpid();
+var proc := getprocess(pid);
+
+start_script(":zuluctf:gkilled",proc);
+
+SendDialogGump(who,layout,data);
+
+endprogram

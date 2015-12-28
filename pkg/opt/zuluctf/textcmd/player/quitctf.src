@@ -1,0 +1,21 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu feb 2, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/client";
+include "../pkg/opt/zuluctf/ctf1";
+
+program ctf_quit(who)
+
+var team:=GetObjProperty(who,"team");
+
+if (!team) return; endif
+
+quitctf(who);
+
+endprogram

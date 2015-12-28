@@ -1,0 +1,1685 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 10, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use cfgfile;
+
+Include "include/client";
+Include "include/spelldata";
+Include "include/itemutil";
+Include "include/time";
+
+Program TextCMD_ItemInfo( who )
+
+    SendSysMessage( who, "Select an Item.", FONT_NORMAL, 2611 );
+    
+    Var What :=  TargetCoordinates( who );
+    
+    If( !What )
+    SendSysmessage( who, "Cancelled.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+
+    Var Item := What.item;
+    
+    If( !Item )
+    SendSysmessage( who, "Invalid selection.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    
+    If( Item.IsA( POLCLASS_MOBILE ) )
+    SendSysMessage( who, "You must select an item.", FONT_NORMAL, 2611 );
+    Return;
+    Elseif( Item.IsA( POLCLASS_NPC ) )
+    SendSysMessage( who, "You must select an item.", FONT_NORMAL, 2611 );
+    Return;
+    Endif
+
+    Var ItemName   := Item.desc;
+    Var ItemLocX   := Item.x;
+    Var ItemLocY   := Item.y;
+    Var ItemLocZ   := Item.z;
+    Var ItemGrph   := Item.graphic;
+    Var ItemHue    := Item.color;
+
+    Var ItemQual   := Item.quality;
+    If( !ItemQual )
+    ItemQual := 0;
+    Endif
+
+    Var ItemHP     := Item.hp;
+    If( !ItemHP )
+    ItemHP := 0;
+    Endif
+
+    Var ItemMaxHP  := Item.maxhp_mod;
+    If( !ItemMaxHP )
+    ItemMaxHP := 0;
+    Endif
+
+    Var ItemARMod  := Item.ar_mod;
+    If( !ItemARMod )
+    ItemARMod := 0;
+    Endif
+    
+    Var ArBonus    := GetObjProperty( item , "ArBonus" );
+    If( !ArBonus )
+    ArBonus := 0;
+    Endif
+
+    Var ItemDmgMod := Item.dmg_mod;
+    If( !ItemDmgMod )
+    ItemDmgMod := 0;
+    Endif
+    
+    Var ItemNewb   := Item.newbie;
+    If( !ItemNewb )
+    ItemNewb := 0;
+    Endif
+
+    /* Page 2 - Protections */
+
+    Var MeleeLvl := GetObjProperty( Item, "PhysicalProtection" );
+    If( !MeleeLvl )
+    MeleeLvl := 0;
+    Endif
+    
+    Var NecroLvl := GetObjProperty( Item, "NecroProtection" );
+    If( !NecroLvl )
+    NecroLvl := 0;
+    Endif
+    
+    Var HolyLvl := GetObjProperty( Item, "HolyProtection" );
+    If( !HolyLvl )
+    HolyLvl := 0;
+    Endif
+    
+    Var AirLvl := GetObjProperty( Item, "AirProtection" );
+    If( !AirLvl )
+    AirLvl := 0;
+    Endif
+    
+    Var FireLvl := GetObjProperty( Item, "FireProtection" );
+    If( !FireLvl )
+    FireLvl := 0;
+    Endif
+    
+    Var EarthLvl := GetObjProperty( Item, "EarthProtection" );
+    If( !EarthLvl )
+    EarthLvl := 0;
+    Endif
+    
+    Var WaterLvl := GetObjProperty( Item, "WaterProtection" );
+    If( !WaterLvl )
+    WaterLvl := 0;
+    Endif
+    
+    Var HealLvl := GetObjProperty( Item, "HealingIncrease" );
+    If( !HealLvl )
+    HealLvl := 0;
+    Endif
+    
+    Var MagicLvl := GetObjProperty( Item, "PermMagicImmunity" );
+    If( !MagicLvl )
+    MagicLvl := 0;
+    Endif
+    
+    Var ReflectLvl := GetObjProperty( Item, "Permmr" );
+    If( !ReflectLvl )
+    ReflectLvl := 0;
+    Endif
+    
+    Var PoisonLvl := GetObjProperty( Item, "PermPoisonImmunity" );
+    If( !PoisonLvl )
+    PoisonLvl := 0;
+    Endif
+    
+    Var FreeAct := GetObjProperty( Item, "FreeAction" );
+    If( !FreeAct )
+    FreeAct := 0;
+    Endif
+    
+    /* Page 3 - Stat Mods */
+
+    Var StrMod := GetObjProperty( Item, "str" );
+    If( !StrMod )
+    StrMod := 0;
+    Endif
+    
+    Var DexMod := GetObjProperty( Item, "dex" );
+    If( !DexMod )
+    DexMod := 0;
+    Endif
+    
+    Var IntMod := GetObjProperty( Item, "int" );
+    If( !IntMod )
+    IntMod := 0;
+    Endif
+    
+    Var SkillId := GetObjProperty( Item, "skilladv" );
+    If( SkillId )
+    SkillId := GetSkillName( SkillId );
+    Else
+    SkillId := "None";
+    Endif
+
+    Var AdvAmt  := GetObjProperty( Item, "skilladvamount" );
+    If( !AdvAmt )
+    AdvAmt := 0;
+    Endif
+    /* Page 4 - Hitscript */
+    
+    Var HitScript  := Item.hitscript;
+    
+    If( Item.ar )
+    HitScript := GetObjProperty( Item, "OnHitScript" );
+    Endif
+
+    If( !HitScript )
+    HitScript := "None";
+    Endif
+    
+    Var CastChance  := GetObjProperty( Item, "ChanceOfEffect" );
+    If( !CastChance )
+    CastChance := 0;
+    Endif
+    
+    Var Circle  := GetObjProperty( Item, "EffectCircle" );
+    If( !Circle )
+    Circle := 0;
+    Endif
+    
+    Var Poison  := GetObjProperty( Item, "Poisonlvl" );
+    If( !Poison )
+    Poison := 0;
+    Endif
+    
+    Var SlayerRace  := GetObjProperty( Item, "SlayType" );
+    If( Item.ar )
+    SlayerRace := GetObjProperty( Item, "ProtectedType" );
+    Else
+    SlayerRace := GetObjProperty( Item, "SlayType" );
+    Endif
+
+    If( !SlayerRace )
+    SlayerRace := "None";
+    Endif
+
+    /* Page 5 - Options */
+
+    Var IDed  := GetObjProperty( Item, "IDed" );
+    If( !IDed )
+    IDed := 0;
+    Endif
+    
+    Var ItemInvis  := Item.invisible;
+    If( !ItemInvis )
+    ItemInvis := 0;
+    Endif
+    
+    Var ItemExcept  := GetObjProperty( Item, "IsExceptional" );
+    If( !ItemExcept )
+    ItemExcept := 0;
+    Endif
+    
+    Var NotInLoot  := GetObjProperty( Item, "noloot" );
+    If( !NotInLoot )
+    NotInLoot := 0;
+    Endif
+    
+    Var Magical  := GetObjProperty( Item, "UnIDedMagicalItem" );
+    If( !Magical )
+    Magical := 0;
+    Endif
+    
+    Var Agile  := Item.movable;
+    If( !Agile )
+    Agile := 0;
+    Endif
+    
+    Var PickaxeBon := GetObjProperty( Item, "MiningBonus" );
+    If( !PickaxeBon )
+    PickaxeBon := 0;
+    Endif
+    
+    Var AxeBon := GetObjProperty( Item, "LumberjackingBonus" );
+    If( !AxeBon )
+    AxeBon := 0;
+    Endif
+
+    // Text X = Left- Right+, Y = Up- Down+, Hue, Rank
+
+    Var mllayout := {
+    "Page 0",
+    "ReSizePic 0 0 3600 600 300",
+    "GumpPic 14 14 2702",
+    "GumpPic 154 14 2702",
+    "GumpPic 315 14 2702",
+    "GumpPic 14 75 2702",
+    "GumpPic 154 75 2702",
+    "GumpPic 315 75 2702",
+//    "ReSizePic 0 0 3600 165 300",
+    "TilePic 50 220 " + ItemGrph,
+    "GumpPic 10 20 2485", // Top
+    "GumpPic 15 30 2486",
+    "GumpPic 15 40 2486",
+    "GumpPic 15 50 2486",
+    "GumpPic 15 60 2486",
+    "GumpPic 15 70 2486",
+    "GumpPic 15 80 2486",
+    "GumpPic 15 90 2486",
+    "GumpPic 15 100 2486",
+    "GumpPic 15 110 2486",
+    "GumpPic 15 120 2486",
+    "GumpPic 15 130 2486",
+    "GumpPic 15 140 2486",
+    "GumpPic 15 150 2486",
+    "GumpPic 10 160 2489",
+    "Text 30 20 2494 0",                // Item Information
+    "Button 30 42 2118 2117 0 1 0",     // Page 1 - Basic
+    "Button 30 62 2118 2117 0 2 0",     // Page 2 - Protections
+    "Button 30 82 2118 2117 0 3 0",     // Page 3 - Stat/Skill Mods
+    "Button 30 102 2118 2117 0 4 0",    // Page 4 - Hitscript
+    "Button 30 122 2118 2117 0 5 0",    // Page 5 - Options
+    "Button 30 142 2118 2117 0 6 0",    // Page 6 - About
+
+    "Text 210 20 2494 1",               // Item Name
+    "Button 190 25 2104 2103 1 0 1",    // Set Item Name
+
+    "Text 50 40 2494 2",                // Basic
+    "Text 50 60 2494 3",                // Protections
+    "Text 50 80 2494 4",                // Stat/Skill Mods
+    "Text 50 100 2494 5",               // Hitscript
+    "Text 50 120 2494 6",               // Options
+    "Text 50 140 2494 7",               // About
+
+    "Page 1",                           // Basic
+
+    "Text 210 40 2597 8",               // Item X
+    "Text 300 40 2494 9",               // Item X Amount
+    "Button 190 45 2104 2103 1 0 2",    // Set Item X
+
+    "Text 210 60 2597 10",              // Item Y
+    "Text 300 60 2494 11",              // Item Y Amount
+    "Button 190 65 2104 2103 1 0 3",    // Set Item Y
+
+    "Text 210 80 2597 12",              // Item Z
+    "Text 300 80 2494 13",              // Item Z Amount
+    "Button 190 85 2104 2103 1 0 4",    // Set Item Z
+
+    "Text 210 100 2597 14",             // Item Graphic
+    "Text 300 100 2494 15",             // Item Graphic Amount
+    "Button 190 105 2104 2103 1 0 5",   // Set Item Graphic
+
+    "Text 210 120 2597 16",             // Item Color
+    "Text 300 120 2494 17",             // Item Color Amount
+    "Button 190 125 2104 2103 1 0 6",   // Set Item Color
+
+    "Text 210 140 2597 18",             // Item Quality
+    "Text 300 140 2494 19",             // Item Quality Amount
+    "Button 190 145 2104 2103 1 0 7",   // Set Item Quality
+
+    "Text 210 160 2597 20",             // Item HP
+    "Text 300 160 2494 21",             // Item HP Amount
+    "Button 190 165 2104 2103 1 0 8",   // Set Item HP
+
+    "Text 210 180 2597 22",             // Item Max HP
+    "Text 300 180 2494 23",             // Item Max HP Amount
+    "Button 190 185 2104 2103 1 0 9",   // Set Item Max HP
+
+    "Text 210 200 2597 24",             // Item AR Mod
+    "Text 300 200 2494 25",             // Item AR Mod Amount
+    "Button 190 205 2104 2103 1 0 10",  // Set Item AR Mod
+
+    "Text 210 220 2597 26",             // Item AR Bonus
+    "Text 300 220 2494 27",             // Item AR Bonus Amount
+    "Button 190 225 2104 2103 1 0 11",  // Set Item AR Bonus
+
+    "Text 210 240 2597 28",             // Item Dmg Mod
+    "Text 300 240 2494 29",             // Item Dmg Mod Amount
+    "Button 190 245 2104 2103 1 0 12",  // Set Item Dmg Mod
+    
+    "Text 210 260 2597 30",             // Item Newbie
+    "Text 300 260 2494 31",             // Item Newbie Amount
+    "Button 190 265 2104 2103 1 0 13",  // Set Item Newbie
+
+    "Page 2",                           // Protections
+    
+    "Text 210 40 2597 32",              // Item Prot Melee
+    "Text 300 40 2494 33",              // Item Prot Melee Lvl Amount
+    "Button 190 45 2104 2103 1 0 14",   // Set Item Prot Melee Lvl
+    
+    "Text 210 60 2597 34",              // Item Prot Necro
+    "Text 300 60 2494 35",              // Item Prot Necro Lvl Amount
+    "Button 190 65 2104 2103 1 0 15",   // Set Item Prot Necro Lvl
+    
+    "Text 210 80 2597 36",              // Item Prot Holy
+    "Text 300 80 2494 37",              // Item Prot Holy Lvl Amount
+    "Button 190 85 2104 2103 1 0 16",   // Set Item Prot Holy Lvl
+    
+    "Text 210 100 2597 38",             // Item Prot Air
+    "Text 300 100 2494 39",             // Item Prot Air Lvl Amount
+    "Button 190 105 2104 2103 1 0 17",  // Set Item Prot Air Lvl
+    
+    "Text 210 120 2597 40",             // Item Prot Fire
+    "Text 300 120 2494 41",             // Item Prot Fire Lvl Amount
+    "Button 190 125 2104 2103 1 0 18",  // Set Item Prot Fire Lvl
+    
+    "Text 210 140 2597 42",             // Item Prot Earth
+    "Text 300 140 2494 43",             // Item Prot Earth Lvl Amount
+    "Button 190 145 2104 2103 1 0 19",  // Set Item Prot Earth Lvl
+    
+    "Text 210 160 2597 44",             // Item Prot Water
+    "Text 300 160 2494 45",             // Item Prot Water Lvl Amount
+    "Button 190 165 2104 2103 1 0 20",  // Set Item Prot Water Lvl
+    
+    "Text 210 180 2597 46",             // Item Prot Healing
+    "Text 300 180 2494 47",             // Item Prot Healing Lvl Amount
+    "Button 190 185 2104 2103 1 0 21",  // Set Item Prot Healing Lvl
+    
+    "Text 210 200 2597 48",             // Item Prot Perm Magic
+    "Text 300 200 2494 49",             // Item Prot Perm Magic Lvl Amount
+    "Button 190 205 2104 2103 1 0 22",  // Set Item Prot Perm Magic Lvl
+    
+    "Text 210 220 2597 50",             // Item Prot Perm Reflect
+    "Text 300 220 2494 51",             // Item Prot Perm Reflect Lvl Amount
+    "Button 190 225 2104 2103 1 0 23",  // Set Item Prot Perm Reflect Lvl
+    
+    "Text 210 240 2597 52",             // Item Prot Perm Poison
+    "Text 300 240 2494 53",             // Item Prot Perm Poison Lvl Amount
+    "Button 190 245 2104 2103 1 0 24",  // Set Item Prot Perm Poison Lvl
+    
+    "Text 210 260 2597 54",             // Item Prot Free Action
+    "Text 300 260 2494 55",             // Item Prot Free Action Amount
+    "Button 190 265 2104 2103 1 0 25",  // Set Item Prot Free Action
+    
+    "Page 3",                           // Stat Mods
+    
+    "Text 210 40 2597 56",              // Item Str Mod
+    "Text 300 40 2494 57",              // Item Str Mod Amount
+    "Button 190 45 2104 2103 1 0 26",   // Set Item Str Mod
+    
+    "Text 210 60 2597 58",              // Item Dex Mod
+    "Text 300 60 2494 59",              // Item Dex Mod Amount
+    "Button 190 65 2104 2103 1 0 27",   // Set Item Dex Mod
+    
+    "Text 210 80 2597 60",              // Item Int Mod
+    "Text 300 80 2494 61",              // Item Int Mod Amount
+    "Button 190 85 2104 2103 1 0 28",   // Set Item Int Mod
+    
+    "Text 210 100 2597 62",             // Item Skill Mod
+    "Text 300 100 2494 63",             // Item Skill Mod Amount
+    "Button 190 105 2104 2103 1 0 29",  // Set Item Skill Mod
+    
+    "Text 210 120 2597 64",             // Item Skill Gain
+    "Text 300 120 2494 65",             // Item Skill Gain Amount
+    "Button 190 125 2104 2103 1 0 30",  // Set Item Skill Gain
+
+    "Page 4",                           // Hitscript
+
+    "Text 190 40 2597 66",              // Item Hitscript
+    "Text 300 40 2494 67",              // Item Hitscript Name
+
+    "Text 210 60 2597 68",              // Item Castrate
+    "Text 300 60 2494 69",              // Item Castrate Amount
+    "Button 190 65 2104 2103 1 0 43",   // Set Item Castrate
+    
+    "Text 210 80 2597 70",              // Item Circle
+    "Text 300 80 2494 71",              // Item Circle Amount
+    "Button 190 85 2104 2103 1 0 44",   // Set Item Circle
+    
+    "Text 210 100 2597 72",              // Item PoisonLvl
+    "Text 300 100 2494 73",              // Item PoisonLvl Amount
+    "Button 190 105 2104 2103 1 0 45",   // Set Item PoisonLvl
+    
+    "Text 210 120 2597 74",              // Item Slay Type
+    "Text 300 120 2494 75",              // Item Slay Type Amount
+    "Button 190 125 2104 2103 1 0 46",   // Set Item Slay Type
+    
+    "Text 190 140 2494 76",              // Set a Hitscript
+    
+    "Text 210 160 2597 77",              // Reset Hitscript
+    "Button 190 165 2104 2103 1 0 47",   // Reset Hitscript
+    
+    "Text 210 180 2597 78",              // Item Hitscript Effect
+    "Button 190 185 2104 2103 1 0 39",   // Set Item Hitscript - Effect
+    
+    "Text 210 200 2597 79",              // Item Hitscript Greater
+    "Button 190 205 2104 2103 1 0 40",   // Set Item Hitscript - Greater
+    
+    "Text 210 220 2597 80",              // Item Hitscript Spellstrike
+    "Button 190 225 2104 2103 1 0 41",   // Set Item Hitscript - Spellstrike
+    
+    "Text 210 240 2597 81",              // Item Hitscript Special
+    "Button 190 245 2104 2103 1 0 42",   // Set Item Hitscript - Special
+
+    "Page 5",                            // Options
+    
+    "Text 210 40 2597 82",               // Item IDed
+    "Text 300 40 2494 83",               // Item IDed Amount
+    "Button 190 45 2104 2103 1 0 31",    // Set Item IDed
+
+    "Text 210 60 2597 84",               // Item Invisable
+    "Text 300 60 2494 85",               // Item Invisable Amount
+    "Button 190 65 2104 2103 1 0 32",    // Set Item Invisable
+
+    "Text 210 80 2597 86",               // Item Exceptional
+    "Text 300 80 2494 87",               // Item Exceptional Amount
+    "Button 190 85 2104 2103 1 0 33",    // Set Item Exceptional
+
+    "Text 210 100 2597 88",              // Item Notinloot
+    "Text 300 100 2494 89",              // Item Notinloot Amount
+    "Button 190 105 2104 2103 1 0 34",   // Set Item Notinloot
+
+    "Text 210 120 2597 90",              // Item Magical
+    "Text 300 120 2494 91",              // Item Magical Amount
+    "Button 190 125 2104 2103 1 0 35",   // Set Item Magical
+
+    "Text 210 140 2597 92",              // Item Movable
+    "Text 300 140 2494 93",              // Item Movable Amount
+    "Button 190 145 2104 2103 1 0 36",   // Set Item Movable
+    
+    "Text 210 160 2597 94",              // Item Pickaxe Bonus
+    "Text 300 160 2494 95",              // Item Pickaxe Bonus Amount
+    "Button 190 165 2104 2103 1 0 48",   // Set Item Pickaxe Bonus
+    
+    "Text 210 180 2597 96",              // Item Axe Bonus
+    "Text 300 180 2494 97",              // Item Axe Bonus Amount
+    "Button 190 185 2104 2103 1 0 49",   // Set Item Axe Bonus
+
+    "Text 210 200 2597 98",              // Item Dupe
+    "Button 190 205 2104 2103 1 0 37",   // Dupe Item
+
+    "Text 210 220 2597 99",              // Item Destroy
+    "Button 190 225 2104 2103 1 0 38",   // Destroy Item
+    
+    "Page 6",                            // About
+
+    "Text 190 40 2597 100",              // Scripted
+    "Text 300 40 2494 101",              // MontuZ
+    "Text 190 60 2597 102",              // Started
+    "Text 300 60 2494 103",              // Started Date
+    "Text 190 80 2597 104",              // Updated
+    "Text 300 80 2494 105",              // Updated Date
+
+    };
+
+    Var mldata := {
+    "Item Information",
+    ItemName,
+    "Basic",
+    "Protections",
+    "Stats/Skills",
+    "Hitscript",
+    "Options",
+    "About",
+    "X",
+    ItemLocX,
+    "Y",
+    ItemLocY,
+    "Z",
+    ItemLocZ,
+    "Graphic",
+    ItemGrph,
+    "Color",
+    ItemHue,
+    "Quality",
+    ItemQual,
+    "Hp",
+    ItemHP,
+    "Max Hp",
+    ItemMaxHP,
+    "Ar Mod",
+    ItemARMod,
+    "Ar Bonus",
+    ArBonus,
+    "Dmg Mod",
+    ItemDmgMod,
+    "Newbie",
+    ItemNewb,
+    /* Page 2 - Protections */
+    "Physical",
+    MeleeLvl,
+    "Necro",
+    NecroLvl,
+    "Holy",
+    HolyLvl,
+    "Air",
+    AirLvl,
+    "Fire",
+    FireLvl,
+    "Earth",
+    EarthLvl,
+    "Water",
+    WaterLvl,
+    "Healing",
+    HealLvl,
+    "Blackrock",
+    MagicLvl,
+    "Moonstone",
+    ReflectLvl,
+    "Poison",
+    PoisonLvl,
+    "Free Action",
+    FreeAct,
+    /* Page 3 - Stat Mods */
+    "Str",
+    StrMod,
+    "Dex",
+    DexMod,
+    "Int",
+    IntMod,
+    "Skill",
+    SkillId,
+    "Gain",
+    AdvAmt,
+    /* Page 4 - Hitscript */
+    "Hitscript",
+    HitScript,
+    "Castrate",
+    CastChance,
+    "Circle",
+    Circle,
+    "PoisonLvl",
+    Poison,
+    "Slay Race",
+    SlayerRace,
+    "Set a Hitscript",
+    "Reset Hitscript",
+    "Effect",
+    "Greater",
+    "Spellstrike",
+    "Slayer",
+    /* Page 5 - Options */
+    "Idable",
+    IDed,
+    "Invisible",
+    ItemInvis,
+    "Exceptional",
+    ItemExcept,
+    "No Loot",
+    NotInLoot,
+    "Magical",
+    Magical,
+    "Movable",
+    Agile,
+    "Mine Bonus",
+    PickaxeBon,
+    "Chop Bonus",
+    AxeBon,
+    "Dupe",
+    "Destroy",
+    /* Page 6 - About */
+    "Scripted",
+    "MontuZ",
+    "Started",
+    "02/10/2004",
+    "Updated",
+    "02/14/2004",
+    };
+
+    Var Effect := SendDialogGump( Who, mllayout, mldata );
+
+    Case( Effect[0] )
+
+    1:
+    Var NewName := RequestInput(  Who, Who.backpack, "What would you like to name this item?" );
+    If( !NewName )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    SetName( Item, NewName );
+    LogEditing( Who, Item, "Renamed", NewName );
+
+    2:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2558 );
+    Var NewX := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items X to?" ) );
+    If( !NewX )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewX == 9999 )
+    NewX := 0;
+    Endif
+    MoveItemToLocation( Item, Item.x := NewX, Item.y, Item.z, MOVECHAR_FORCELOCATION);
+    
+    3:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2558 );
+    Var NewY := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items Y to?" ) );
+    If( !NewY )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewY == 9999 )
+    NewY := 0;
+    Endif
+    MoveItemToLocation( Item, Item.x, Item.y := NewY, Item.z, MOVECHAR_FORCELOCATION);
+    
+    4:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2558 );
+    Var NewZ := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items Z to?" ) );
+    If( !NewZ )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewZ == 9999 )
+    NewZ := 0;
+    Endif
+    MoveItemToLocation( Item, Item.x, Item.y, Item.z := NewZ, MOVECHAR_FORCELOCATION);
+    
+    5:
+    Var NewGrph := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items graphic to?" ) );
+    If( !NewGrph )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    Item.graphic := NewGrph;
+    LogEditing( Who, Item, "Grapnic", NewGrph );
+    
+    6:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewHue := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items color to?" ) );
+    If( !NewHue )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewHue == 9999 )
+    NewHue := 0;
+    Endif
+    Item.color := NewHue;
+    LogEditing( Who, Item, "Color", NewHue );
+    
+    7:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewQual := CDbl( RequestInput(  Who, Who.backpack, "What would you like to set the items quality to?" ) );
+    If( !NewQual )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewQual == 9999 )
+    NewQual := 0;
+    Endif
+    Item.quality := NewQual;
+    LogEditing( Who, Item, "Quality", NewQual );
+    
+    8:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewHP := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items hp to?" ) );
+    If( !NewHP )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewHP == 9999 )
+    NewHP := 0;
+    Endif
+    Item.hp := NewHP;
+    LogEditing( Who, Item, "HPMod", NewHP );
+
+    9:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewMaxHP := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items max hp to?" ) );
+    If( !NewMaxHP )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewMaxHP == 9999 )
+    NewMaxHP := 0;
+    Endif
+    Item.maxhp_mod := NewMaxHP;
+    LogEditing( Who, Item, "MaxHPMod", NewMaxHP );
+
+    10:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewARMod := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items ar mod to?" ) );
+    If( !NewARMod )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewARMod == 9999 )
+    NewARMod := 0;
+    Endif
+    Item.ar_mod := NewARMod;
+    LogEditing( Who, Item, "ArMod", NewARMod );
+    
+    11:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewARBn := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items ar bonus to?" ) );
+    If( !NewARBn )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewARBn == 9999 )
+    EraseObjProperty( Item, "ArBonus" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "ArBonus" );
+    SetObjProperty( Item, "ArBonus", NewARBn );
+    LogEditing( Who, Item, "ArBonus", NewARBn );
+    
+    12:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewDmgMod := CInt( RequestInput(  Who, Who.backpack, "What would you like to set the items dmg mod to?" ) );
+    If( !NewDmgMod )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewDmgMod == 9999 )
+    NewDmgMod := 0;
+    Endif
+    Item.dmg_mod := NewDmgMod;
+    LogEditing( Who, Item, "DamageMod", NewDmgMod );
+    
+    13:
+    If( ItemNewb >= 1 )
+    SendSysMessage( who, "The item is not newbied anymore.", FONT_NORMAL, 2600 );
+    Item.newbie := 0;
+    LogEditing( Who, Item, "Newbied", 0 );
+    Else
+    SendSysMessage( who, "The item is now newbied.", FONT_NORMAL, 2600 );
+    Item.newbie := 1;
+    LogEditing( Who, Item, "Newbied", 1 );
+    Endif
+    
+    14:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewMeleeLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewMeleeLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewMeleeLvl == 9999 )
+    EraseObjProperty( Item, "PhysicalProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "PhysicalProtection" );
+    SetObjProperty( Item, "PhysicalProtection", NewMeleeLvl );
+    LogEditing( Who, Item, "PhysicalProtection", NewMeleeLvl );
+    
+    15:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewNecroLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewNecroLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewNecroLvl == 9999 )
+    EraseObjProperty( Item, "NecroProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "NecroProtection" );
+    SetObjProperty( Item, "NecroProtection", NewNecroLvl );
+    LogEditing( Who, Item, "NecroProtection", NewNecroLvl );
+    
+    16:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewHolyLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewHolyLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewHolyLvl == 9999 )
+    EraseObjProperty( Item, "HolyProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "HolyProtection" );
+    SetObjProperty( Item, "HolyProtection", NewHolyLvl );
+    LogEditing( Who, Item, "HolyProtection", NewHolyLvl );
+    
+    17:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewAirLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewAirLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewAirLvl == 9999 )
+    EraseObjProperty( Item, "AirProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "AirProtection" );
+    SetObjProperty( Item, "AirProtection", NewAirLvl );
+    LogEditing( Who, Item, "AirProtection", NewAirLvl );
+    
+    18:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewFireLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewFireLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewFireLvl == 9999 )
+    EraseObjProperty( Item, "FireProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "FireProtection" );
+    SetObjProperty( Item, "FireProtection", NewFireLvl );
+    LogEditing( Who, Item, "FireProtection", NewFireLvl );
+    
+    19:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewEarthLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewEarthLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewEarthLvl == 9999 )
+    EraseObjProperty( Item, "EarthProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "EarthProtection" );
+    SetObjProperty( Item, "EarthProtection", NewEarthLvl );
+    LogEditing( Who, Item, "EarthProtection", NewEarthLvl );
+    
+    20:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewWaterLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewWaterLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewWaterLvl == 9999 )
+    EraseObjProperty( Item, "WaterProtection" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "WaterProtection" );
+    SetObjProperty( Item, "WaterProtection", NewWaterLvl );
+    LogEditing( Who, Item, "WaterProtection", NewWaterLvl );
+    
+    21:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewHealLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewHealLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewHealLvl == 9999 )
+    EraseObjProperty( Item, "HealingIncrease" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "HealingIncrease" );
+    SetObjProperty( Item, "HealingIncrease", NewHealLvl );
+    LogEditing( Who, Item, "HealingIncrease", NewHealLvl );
+    
+    22:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewMagicLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewMagicLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewMagicLvl == 9999 )
+    EraseObjProperty( Item, "PermMagicImmunity" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "PermMagicImmunity" );
+    SetObjProperty( Item, "PermMagicImmunity", NewMagicLvl );
+    LogEditing( Who, Item, "PermMagicImmunity", NewMagicLvl );
+    
+    23:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewReflectLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewReflectLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewReflectLvl == 9999 )
+    EraseObjProperty( Item, "Permmr" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "Permmr" );
+    SetObjProperty( Item, "Permmr", NewReflectLvl );
+    LogEditing( Who, Item, "Permmr", NewReflectLvl );
+    
+    24:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewPoisonLvl := CInt( RequestInput(  Who, Who.backpack, "Set the level to?" ) );
+    If( !NewPoisonLvl )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewPoisonLvl == 9999 )
+    EraseObjProperty( Item, "PermPoisonImmunity" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "PermPoisonImmunity" );
+    SetObjProperty( Item, "PermPoisonImmunity", NewPoisonLvl );
+    LogEditing( Who, Item, "PermPoisonImmunity", NewPoisonLvl );
+    
+    25:
+    If( FreeAct >= 1 )
+    EraseObjProperty( Item, "FreeAction" );
+    SendSysMessage( who, "Free Action is now disabled.", FONT_NORMAL, 2600 );
+    LogEditing( Who, Item, "FreeAction", 0 );
+    Else
+    SetObjProperty( Item, "FreeAction", 1 );
+    SendSysMessage( who, "Free Action is now enabled.", FONT_NORMAL, 2600 );
+    LogEditing( Who, Item, "FreeAction", 1 );
+    Endif
+    
+    26:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewStrMod := CInt( RequestInput(  Who, Who.backpack, "Set the mod to?" ) );
+    If( !NewStrMod )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewStrMod == 9999 )
+    EraseObjProperty( Item, "str" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "str" );
+    SetObjProperty( Item, "str", NewStrMod );
+    LogEditing( Who, Item, "str", NewStrMod );
+    
+    27:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewDexMod := CInt( RequestInput(  Who, Who.backpack, "Set the mod to?" ) );
+    If( !NewDexMod )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewDexMod == 9999 )
+    EraseObjProperty( Item, "dex" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "dex" );
+    SetObjProperty( Item, "dex", NewDexMod );
+    LogEditing( Who, Item, "dex", NewDexMod );
+    
+    28:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewIntMod := CInt( RequestInput(  Who, Who.backpack, "Set the mod to?" ) );
+    If( !NewIntMod )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewIntMod == 9999 )
+    EraseObjProperty( Item, "int" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "int" );
+    SetObjProperty( Item, "int", NewIntMod );
+    LogEditing( Who, Item, "int", NewIntMod );
+    
+    29:
+    ChangeFromSkillList( who, Item );
+    
+    30:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewAdvAmt := CInt( RequestInput(  Who, Who.backpack, "Set the mod to?" ) );
+    If( !NewAdvAmt )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewAdvAmt == 9999 )
+    EraseObjProperty( Item, "skilladvamount" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "skilladvamount" );
+    SetObjProperty( Item, "skilladvamount", NewAdvAmt );
+    LogEditing( Who, Item, "skilladvamount", NewAdvAmt );
+    
+    31:
+    If( IDed >= 1 )
+    EraseObjProperty( Item, "IDed" );
+    SendSysMessage( who, "This item is now Unidentified.", FONT_NORMAL, 2600 );
+    Else
+    SetObjProperty( Item, "IDed", 1 );
+    SendSysMessage( who, "This item is now Identified.", FONT_NORMAL, 2600 );
+    Endif
+    
+    32:
+    If( ItemInvis >= 1 )
+    Item.invisible := 0;
+    SendSysMessage( who, "This item is now Visable.", FONT_NORMAL, 2600 );
+    Else
+    Item.invisible := 1;
+    SendSysMessage( who, "This item is now Invisable.", FONT_NORMAL, 2600 );
+    Endif
+    
+    33:
+    If( ItemExcept >= 1 )
+    EraseObjProperty( Item, "IsExceptional" );
+    SendSysMessage( who, "Now this item is not Exceptional.", FONT_NORMAL, 2600 );
+    Else
+    SetObjProperty( Item, "IsExceptional", 1 );
+    SendSysMessage( who, "This item is now Exceptional.", FONT_NORMAL, 2600 );
+    Endif
+    
+    34:
+    If( NotInLoot >= 1 )
+    EraseObjProperty( Item, "noloot" );
+    SendSysMessage( who, "Now this item is Lootable.", FONT_NORMAL, 2600 );
+    Else
+    SetObjProperty( Item, "noloot", 1 );
+    SendSysMessage( who, "Now this item is not Lootable.", FONT_NORMAL, 2600 );
+    Endif
+    
+    35:
+    If( Magical >= 1 )
+    EraseObjProperty( Item, "UnIDedMagicalItem" );
+    SendSysMessage( who, Item.desc + " is not Magical.", FONT_NORMAL, 2600 );
+    Else
+    EraseObjProperty( Item, "IDed" );
+    SetObjProperty( Item, "UnIDedMagicalItem", 1 );
+    SendSysMessage( who, Item.desc + " is now Magical.", FONT_NORMAL, 2600 );
+    Endif
+    
+    36:
+    If( Item.movable >= 1 )
+    Item.movable := 0;
+    SendSysMessage( who, Item.desc + " is now unmovable.", FONT_NORMAL, 2600 );
+    Else
+    Item.movable := 1;
+    SendSysMessage( who, Item.desc + " is now movable.", FONT_NORMAL, 2600 );
+    Endif
+    
+    37:
+    Var Dupe := CreateItemInBackpack( who, Item.objtype, Item.amount );
+    If( Item.movable > 0 )
+    DupeItem( Item, Dupe );
+    SendSysMessage( Who, Item.desc + " has been duped.", FONT_NORMAL, 2600 );
+    LogEditing( Who, Item, "Duped", 1 );
+    Else
+    Item.movable := 1;
+    DupeItem( Item, Dupe );
+    Item.movable := 0;
+    SendSysMessage( Who, Item.desc + " has been duped.", FONT_NORMAL, 2600 );
+    LogEditing( Who, Item, "Duped", 1 );
+    Endif
+
+    38:
+    If( Item.movable >= 1 )
+    SendSysMessage( Who, Item.desc + " has been destroyed.", FONT_NORMAL, 2600 );
+    DestroyItem( Item );
+    Else
+    Item.movable := 1;
+    SendSysMessage( Who, Item.desc + " has been destroyed.", FONT_NORMAL, 2600 );
+    DestroyItem( Item );
+    Endif
+    
+    39:
+    SetAnEffectScriptFromList( Who, Item );
+    
+    40:
+    SetAGreaterScriptFromList( Who, Item );
+    
+    41:
+    SetSpellFromList( Who, Item );
+    
+    42:
+    SetCreatureTypeFromList( Who, Item );
+    
+    43:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewCastRate := CInt( RequestInput(  Who, Who.backpack, "Set the Castrate to?" ) );
+    If( !NewCastRate )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewCastRate == 9999 )
+    EraseObjProperty( Item, "ChanceOfEffect" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "ChanceOfEffect" );
+    SetObjProperty( Item, "ChanceOfEffect", NewCastRate );
+    LogEditing( Who, Item, "ChanceOfEffect", NewCastRate );
+
+    44:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewCircle := CInt( RequestInput(  Who, Who.backpack, "Set the circle to?" ) );
+    If( !NewCircle )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewCircle == 9999 )
+    EraseObjProperty( Item, "EffectCircle" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "EffectCircle" );
+    SetObjProperty( Item, "EffectCircle", NewCircle );
+    LogEditing( Who, Item, "EffectCircle", NewCircle );
+
+    45:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewPoison := CInt( RequestInput(  Who, Who.backpack, "Set the poison level to?" ) );
+    If( !NewPoison )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewPoison == 9999 )
+    EraseObjProperty( Item, "Poisonlvl" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "Poisonlvl" );
+    SetObjProperty( Item, "Poisonlvl", NewPoison );
+    LogEditing( Who, Item, "Poisonlvl", NewPoison );
+
+    46:
+    If( Item.ar )
+    SetAnEffectScriptFromList( Who, Item );
+    Else
+    SetCreatureTypeFromList( Who, Item );
+    Endif
+    
+    47:
+    If( Item.ar )
+    SetObjProperty( Item, "OnHitScript", ":combat:mainonhit" );
+    LogEditing( Who, Item, "OnHitScript", ":combat:mainonhit" );
+    Else
+    Item.hitscript := ":combat:mainhit";
+    LogEditing( Who, Item, ":combat:mainhit", 0 );
+    Endif
+    
+    48:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewPickBon := CInt( RequestInput(  Who, Who.backpack, "Set the mining bonus to?" ) );
+    If( !NewPickBon )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewPickBon == 9999 )
+    EraseObjProperty( Item, "MiningBonus" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "MiningBonus" );
+    SetObjProperty( Item, "MiningBonus", NewPickBon );
+    LogEditing( Who, Item, "MiningBonus", NewPickBon );
+    
+    49:
+    SendSysMessage( who, "9999 to Reset.", FONT_NORMAL, 2600 );
+    Var NewAxeBon := CInt( RequestInput(  Who, Who.backpack, "Set the lumberjacking bonus to?" ) );
+    If( !NewAxeBon )
+    SendSysMessage( who, "Cancealed.", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( NewAxeBon == 9999 )
+    EraseObjProperty( Item, "LumberjackingBonus" );
+    Return;
+    Endif
+    EraseObjProperty( Item, "LumberjackingBonus" );
+    SetObjProperty( Item, "LumberjackingBonus", NewAxeBon );
+    Var Result := LogEditing( Who, Item, "LumberjackingBonus", NewAxeBon );
+    If( Result == Error )
+    SendSysMessage( Who, "Result Error " + Result.errortext );
+    Return 0;
+    Endif
+    
+    EndCase
+    
+EndProgram
+
+Function LogEditing( Who, Item, Edited, EditAmt )
+
+    Var datafile := ReadConfigFile("logging_EditedRecords");
+    SetObjProperty( item, "STAFFEDITEDITEM" + Item.serial, { Who.serial, Who.name } );
+    
+    If( datafile == error )
+    SendSysMessage( Who, "File Error " + datafile.errortext );
+    Return 0;
+    Endif
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  Who.name });
+    elem.append({ "Staff Serial",  Hex( Who.serial) });
+    elem.append({ "Item Name", Item.desc });
+    elem.append({ "Item Serial",    Hex( Item.serial ) });
+    elem.append({ "EditedProp",  Edited });
+    elem.append({ "PropAmount",  EditAmt });
+    elem.append({ "TimeOfEdit", GetDateString( polcore().systime ) });
+
+    AppendConfigFileElem( "logging_EditedRecords", "ItemEdited", "" , elem );
+    UnloadConfigFile( "logging_EditedRecords" );
+    EndIf
+
+Endfunction
+
+Function GetSkillName( SkillId )
+
+    Var cfg := ReadConfigFile( ":combat:modenchantdesc" );
+    Return cfg[skillid].Skill;
+
+EndFunction
+
+Function ChangeFromSkillList( who, Item )
+
+    Var layout2 := array(
+    "Page 0",
+    "ReSizePic 0 0 3600 250 450",
+    "Text 75 30 2494 0",
+    );
+
+    Var data2 := array(
+    "Select a Skill"
+    );
+
+    Var cfg := ReadConfigFile( ":combat:modenchantdesc" );
+    Var count	:= 0;
+    Var done	:= 0;
+    Var page	:= 1;
+    Var perpage	:= 17;
+    Var y 	:= 55;
+    Var i;
+
+    layout2.append( "page " + page );
+    If( SKILLID__HIGHEST > perpage )
+    layout2.append( "Button 150 406 5540 5541 0 " + ( page + 1 ) );
+    Endif
+
+    For( i := 1; i <= SKILLID__HIGHEST + 1; i := i + 1 )
+    If( done == perpage )
+    done  := 0;
+    page  := page + 1;
+    y 	  := 55;
+
+    layout2.append( "Page " + page );
+    layout2.append( "Button 80 406 5537 5538 0 " + ( page - 1 ) );
+        If( SKILLID__HIGHEST > ( count + perpage ) )
+        layout2.append( "button 150 406 5540 5541 0 " + ( page + 1 ) );
+        Endif
+    Endif
+
+    layout2.append( "Text 25 " + y + " 2597 " + len( data2 ) );
+    layout2.append( "Button 200 " + ( y + 5 ) + " 2104 2103 1 0 " + i );
+    data2.append( cfg[i-1].Skill );
+
+    y 	:= y + 20;
+    done 	:= done + 1;
+    count 	:= count + 1;
+    Endfor
+
+    Var res := SendDialogGump( who, layout2, data2 );
+    //print( res[0] );
+    If( !res[0] )
+    SendSysmessage( who, "Canceled", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+
+    SendSysmessage( who, "9999 to Reset", FONT_NORMAL, 2600 );
+    
+    Var val := CInt( RequestInput( who, who.backpack, "Increase skill by what?" ) );
+    If( !val )
+    SendSysmessage( who, "Canceled", FONT_NORMAL, 2595 );
+    Return;
+    Endif
+    If( val == 9999 )
+    EraseObjProperty( Item, "skilladv" );
+    EraseObjProperty( Item, "skilladvamount" );
+    Return;
+    Endif
+    SetObjProperty( Item, "skilladv" , res[0]-1 );
+    SetObjProperty( Item, "skilladvamount" , val );
+    LogEditing( Who, Item, "skilladv" + res[0]-1, "skilladvamount" + val );
+
+EndFunction
+
+Function SetAnEffectScriptFromList( Who, Item )
+
+    Var layout2 := array(
+    "page 0",
+    "resizepic 0 0 3600 250 300",
+    "text 65 30 2494 0"
+    );
+
+    var data2 := array(
+    "Select an Effect"
+    );
+
+    var cfg;
+    if( item.ar )
+    cfg	:= ReadConfigFile( ":combat:onhitscriptdesc" );
+    else
+    cfg	:= ReadConfigFile( ":combat:hitscriptdesc" );
+    endif
+
+    var amount	:= cfg["data"].NbEffect;
+    var start	:= cfg["data"].NbSpell + cfg["data"].NbSlayer + 1;
+    var last	:= start + amount;
+    var count	:= 0;
+    var done	:= 0;
+    var page	:= 1;
+    var perpage	:= 9;
+    var y 	:= 60;
+    var i;
+
+    layout2[len(layout2)+1] := "page " + page;
+    if( amount > perpage )
+    layout2[len(layout2)+1] := "button 140 256 5540 5541 0 " + (page + 1);
+    endif
+
+    for( i := start ; i < last ; i := i + 1 )
+    if( done == perpage )
+    done 	:= 0;
+    page 	:= page + 1;
+    y 	:= 60;
+
+    layout2.append( "page " + page );
+    layout2.append( "button 75 256 5537 5538 0 " + (page - 1) );
+    if( amount > (count + perpage) )
+    layout2.append( "button 150 256 5540 5541 0 " + (page + 1) );
+    endif
+    endif
+
+    layout2.append( "text 35 " + y + " 2597 " + len(data2) );
+    layout2.append( "button 200 " + (y + 5) + " 2118 2117 1 0 " + i );
+    data2.append( cfg[i].Name );
+
+    y 	:= y + 20;
+    done 	:= done + 1;
+    count 	:= count + 1;
+    endfor
+
+    var result := SendDialogGump( who , layout2 , data2 );
+    if( !result[0] )
+    return 0;
+    endif
+
+    if( item.ar )
+    SetObjProperty( item, "OnHitScript", cfg[result[0]].OnHitscript );
+    SetObjProperty( item, "OnHitscriptNumber", result[0] );
+    SetObjProperty( item, "ProtectedType", cfg[result[0]].Type );
+    LogEditing( Who, Item, "OnHitScript", "OnHitscriptNumber" + result[0] + " " + cfg[result[0]].Type );
+    else
+    item.hitscript := cfg[result[0]].Hitscript;
+    SetObjProperty( item, "HitscriptNumber", result[0] );
+    LogEditing( Who, Item, item.hitscript, "HitscriptNumber" + result[0] );
+    endif
+
+    var CProp := cfg[result[0]].CProp;
+    if( CProp )
+    var CPropVal := cfg[result[0]].CPropVal;
+        if( !CPropVal )
+        SendSysmessage( who, "What is the value of " + CProp + "?", FONT_NORMAL, 2611 );
+        CPropVal := Cint(RequestInput( who, who.backpack, "Enter the value."));
+            if( !CPropVal )
+            CPropVal := 0;
+            endif
+        endif
+    ResetAllHitscriptPropsExcep( item , CProp );
+    SetObjProperty( item , CProp , CPropVal );
+    endif
+
+    return 1;
+
+endfunction
+
+Function SetSpellFromList( who, Item )
+
+    Var layout2 := array(
+    "Page 0",
+    "ReSizePic 0  0   3600 250 300",
+    "Text 75 30 2494 0"
+    );
+
+    Var data2 := array(
+    "Select a Spell"
+    );
+
+    Var spellcfg := ReadConfigFile( "::spells" );
+    Var count	 := 0;
+    Var done	 := 0;
+    Var page	 := 1;
+    Var perpage	 := 8;
+    Var y 	 := 80;
+    Var i;
+
+    layout2.append( "Page " + page );
+    layout2.append( "Text 90 50 2494 " + len(data2) );
+    data2.append( "1st Circle" );
+
+    If( SPELLID_HIGHEST > perpage )
+    layout2.append( "Button 150 256 5540 5541 0 " + (page + 1) );
+    Endif
+
+    For( i := 1 ; i <= SPELLID_HIGHEST ; i := i + 1 )
+
+    If( done == perpage )
+    done := 0;
+    page := page + 1;
+    y 	 := 80;
+
+    layout2.append( "Page " + page );
+    layout2.append( "Button 75 256 5537 5538 0 " + (page - 1) );
+
+    Case( page )
+    2:	layout2.append( "Text 85 50 2494 " + len(data2) );
+    data2.append( "2nd Circle" );
+
+    3:	layout2.append( "Text 85 50 2494 " + len(data2) );
+    data2.append( "3rd Circle" );
+
+    4:
+    5:
+    6:
+    7:
+
+    8:	layout2.append( "Text 85 50 2494 " + len(data2) );
+    data2.append( page + "th Circle" );
+
+    9:	layout2.append( "Text 72 50 2494 " + len(data2) );
+    data2.append( "Lesser Chants" );
+
+    10:	layout2.append( "Text 70 50 2494 " + len(data2) );
+    data2.append( "Greater Chants" );
+
+    11:	layout2.append( "Text 66 50 2494 " + len(data2) );
+    data2.append( "1st Earth Circle" );
+
+    12:	layout2.append( "Text 64 50 2494 " + len(data2) );
+    data2.append( "2nd Earth Circle" );
+    Endcase
+
+        If( SPELLID_HIGHEST > (count + perpage) )
+        layout2.append( "Button 150 256 5540 5541 0 " + (page + 1) );
+        Endif
+    Endif
+
+    layout2.append( "Text 35 " + y + " 2597 " + len(data2) );
+    data2.append( spellcfg[i].Name );
+    layout2.append( "Button 200 " + (y + 5) + " 2104 2103 1 0 " + i );
+
+    y 	  := y + 20;
+    done  := done + 1;
+    count := count + 1;
+    Endfor
+
+    Var result := SendDialogGump( who , layout2 , data2 );
+    If( !result[0] )
+    SendSysmessage( who, "Canceled", FONT_NORMAL, 2595 );
+    Return 0;
+    Endif
+    item.hitscript := ":combat:spellstrikescript";
+    SetObjProperty( item, "HitWithSpell", result[0] );
+    ResetAllHitscriptPropsExcep( item , "HitWithSpell" );
+    SetObjProperty( item, "HitscriptNumber", result[0] );
+    AskForIntPropVal( who , item , "ChanceOfEffect" , "What is the chance of effect?" , "Enter a value." );
+    AskForIntPropVal( who , item , "EffectCircle" , "Use with which circle efficiency?" , "Enter a value." );
+    Return 1;
+
+EndFunction
+
+function AskForIntPropVal( who , item , prop , msg1 , msg2 )
+
+    SendSysmessage( who , msg1, FONT_NORMAL, 2611 );
+    var val := Cint(RequestInput( who , who.backpack , msg2 ));
+    if( val )
+    SetObjProperty( item , prop , val );
+    LogEditing( Who, Item, prop, val );
+    else
+    Return 0;
+    endif
+
+endfunction
+
+Function SetAGreaterScriptFromList( who, item )
+
+    var layout2 := array(
+    "page 0",
+    "resizepic 0  0   3600 250 300",
+    "text 65 30 2494 0"
+    );
+
+    var data2 := array(
+    "Select a Greater Effect"
+    );
+
+    var cfg;
+    if( item.ar )
+    cfg	:= ReadConfigFile( ":combat:onhitscriptdesc" );
+    else
+    cfg	:= ReadConfigFile( ":combat:hitscriptdesc" );
+    endif
+
+    var amount	:= cfg["data"].NbGreater;
+    var start	:= cfg["data"].NbSpell + cfg["data"].NbSlayer + cfg["data"].NbEffect + 1;
+    var last	:= start + amount;
+    var count	:= 0;
+    var done	:= 0;
+    var page	:= 1;
+    var perpage	:= 9;
+    var y 	:= 60;
+    var i;
+
+    layout2[len(layout2)+1] := "page " + page;
+    if( amount > perpage )
+    layout2[len(layout2)+1] := "button 140 256 5540 5541 0 " + (page + 1);
+    endif
+
+    for( i := start ; i < last ; i := i + 1 )
+    if( done == perpage )
+    done 	:= 0;
+    page 	:= page + 1;
+    y 	:= 60;
+
+    layout2.append( "page " + page );
+    layout2.append( "button 75 256 5537 5538 0 " + (page - 1) );
+        if( amount > (count + perpage) )
+        layout2.append( "button 150 256 5540 5541 0 " + (page + 1) );
+        endif
+    endif
+
+    layout2.append( "text 35 " + y + " 2597 " + len(data2) );
+    layout2.append( "button 200 " + (y + 5) + " 2118 2117 1 0 " + i );
+    data2.append( cfg[i].Name );
+
+    y 	:= y + 20;
+    done 	:= done + 1;
+    count 	:= count + 1;
+    endfor
+
+    var result := SendDialogGump( who , layout2 , data2 );
+    if( !result[0] )
+    return 0;
+    endif
+
+    if( item.ar )
+    SetObjProperty( item , "OnHitScript" , cfg[result[0]].OnHitscript );
+    SetObjProperty( item, "OnHitscriptNumber", result[0] );
+    else
+    item.hitscript := cfg[result[0]].Hitscript;
+    SetObjProperty( item, "HitscriptNumber", result[0] );
+    endif
+
+    var CProp := cfg[result[0]].CProp;
+    if( CProp )
+    var CPropVal := cfg[result[0]].CPropVal;
+        if( !CPropVal )
+        SendSysmessage( who, "What is the value of " + CProp + "?", FONT_NORMAL, 2611 );
+        CPropVal := Cint(RequestInput( who, who.backpack, "Enter the value."));
+            if( !CPropVal )
+            CPropVal := 0;
+            endif
+        endif
+    SetObjProperty( item , CProp , CPropVal );
+    LogEditing( Who, Item, CProp, CPropVal );
+    endif
+
+    return 1;
+
+EndFunction
+
+function SetCreatureTypeFromList( who , item )
+
+	var layout2 := array(
+				"page 0",
+				"resizepic 0  0   3600 250 300",
+				"text 49 30 2494 0"
+							);
+
+	var data2 := array(
+				"Select a Race"
+							);
+
+	var cfg;
+	if( item.ar )
+		cfg := ReadConfigFile( ":combat:onhitscriptdesc" );
+	else
+		cfg := ReadConfigFile( ":combat:hitscriptdesc" );
+	endif
+
+	var amount	:= cfg["data"].NbSlayer;
+	var start	:= cfg["data"].NbSpell + 1;
+	var last	:= start + amount;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 9;
+	var y 	:= 60;
+	var i;
+
+	layout2[len(layout2)+1] := "page " + page;
+	if( amount > perpage )
+		layout2[len(layout2)+1] := "button 140 256 5540 5541 0 " + (page + 1);
+	endif
+
+	for( i := start ; i < last ; i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 60;
+
+			layout2.append( "page " + page );
+			layout2.append( "button 75 256 5537 5538 0 " + (page - 1) );
+			if( amount > (count + perpage) )
+				layout2.append( "button 150 256 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+
+		layout2.append( "text 35 " + y + " 2597 " + len(data2) );
+		layout2.append( "button 200 " + (y + 5) + " 2118 2117 1 0 " + i );
+		data2.append( cfg[i].Type );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+
+	var result := SendDialogGump( who , layout2 , data2 );
+	if( !result[0] )
+		SendSysmessage( who , "Canceled" );
+		return 0;
+	endif
+
+	if( item.ar )
+		SetObjProperty( item , "ProtectedType" , cfg[result[0]].Type );
+  SetObjProperty( item, "OnHitscriptNumber", result[0] );
+  LogEditing( Who, Item, "ProtectedType" + cfg[result[0]].Type, "OnHitscriptNumber" + result[0] );
+	else
+ item.hitscript := ":combat:slayerscript";
+		SetObjProperty( item , "SlayType" , cfg[result[0]].Type );
+  SetObjProperty( item, "HitscriptNumber", result[0] );
+  LogEditing( Who, Item, "SlayType" + cfg[result[0]].Type, "HitscriptNumber" + result[0] );
+	endif
+
+	return 1;
+
+endfunction

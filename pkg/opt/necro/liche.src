@@ -1,0 +1,146 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_LICHE;
+const SPELL_EFFECT_ID		:= FX_SPELL_LICHE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_LICHE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_LICHE;
+
+program cast_liche( parms )
+
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+	var circle := GetCircle( SPELLID_LICHE );
+	var plane := NECRO;
+	var caster;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+		if( GetObjProperty( caster, "IsLiche" ) )
+			return;
+		endif
+
+	else
+		caster := parms;
+		if( GetObjProperty( caster, "IsLiche" ) )
+			SendSysMessage( caster, "You're already a liche." );
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	
+		var result := TryToCast( caster, SPELLID_LICHE );
+		if( result != SUCCESS )
+			if( result == NO_SKILL )
+				BurnSelf( caster, circle );
+				PlayObjectCenteredEffect( caster, FX_SPELL_LICHE, SPEED_SPELL_LICHE, LOOP_SPELL_LICHE );
+				PlaySoundEffect( caster, LICHE_KILL_SOUND );
+			endif
+		
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !CanMod(caster, "poly") )
+		EraseObjProperty( caster, "#Casting" );
+		SendSysMessage( caster, "You're already polymorphed in something." );
+		return;
+	endif
+
+	var casterskill	:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var duration		:= casterskill * 5;
+
+	var oldchargraphic	:= caster.graphic;
+	SetObjProperty(caster,"origform",oldchargraphic);
+	var str_modulation	:= 0 - CInt( GetStrength(caster) / 2 );
+	var dex_modulation	:= 0 - CInt( GetDexterity(caster) / 2 );
+	var int_modulation	:= GetIntelligence(caster);
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		duration	:= CInt( duration * ClasseBonus( caster, CLASSEID_MAGE ) );
+		str_modulation	:= CInt( str_modulation / ClasseBonus( caster, CLASSEID_MAGE ) );
+		dex_modulation	:= CInt( dex_modulation / ClasseBonus( caster, CLASSEID_MAGE ) );
+		int_modulation	:= CInt( int_modulation * ClasseBonus( caster, CLASSEID_MAGE ) );
+	endif
+
+	PlayObjectCenteredEffect( caster, FX_SPELL_LICHE, SPEED_SPELL_LICHE, LOOP_SPELL_LICHE );
+	PlaySoundEffect( caster, LICHE_MORPH_SOUND );
+	SetStrengthMod(caster, GetStrengthMod(caster) + str_modulation);
+	SetDexterityMod(caster, GetDexterityMod(caster) + dex_modulation);
+	SetIntelligenceMod(caster, GetIntelligenceMod(caster) + int_modulation);
+
+	SetObjProperty( caster, "strmod", str_modulation );
+	SetObjProperty( caster, "dexmod", dex_modulation );
+	SetObjProperty( caster, "intmod", int_modulation );
+
+	caster.graphic 	:= 0x18;
+	caster.color	:= 0;
+
+	EraseObjProperty( caster, "#Casting" );
+	SetObjProperty( caster, "IsLiche", 1 );
+	if( !caster.isA(POLCLASS_NPC) )
+		SetObjProperty( caster, "Type", "Undead" );
+	endif
+
+	Detach();
+	sleep( duration );
+
+	if (GetObjProperty( caster, "IsLiche")==1) then
+	PlayObjectCenteredEffect( caster, FX_SPELL_LICHE, SPEED_SPELL_LICHE, LOOP_SPELL_LICHE );
+	PlaySoundEffect( caster, LICHE_MORPH_SOUND );
+	SetStrengthMod(caster, GetStrengthMod(caster) - str_modulation);
+	SetDexterityMod(caster, GetDexterityMod(caster) - dex_modulation);
+	SetIntelligenceMod(caster, GetIntelligenceMod(caster) - int_modulation);
+	caster.graphic 	:= oldchargraphic;
+	fixcolor(caster);
+	EraseObjProperty( caster, "IsLiche" );
+	if( !caster.isA(POLCLASS_NPC) )
+		EraseObjProperty( caster, "Type" );
+		EraseObjProperty( caster, "origform");
+		EraseObjProperty( caster, "strmod");
+		EraseObjProperty( caster, "dexmod");
+		EraseObjProperty( caster, "intmod");
+	endif
+
+	if( caster.dead )
+		caster.graphic := caster.graphic + 2;
+	endif
+	endif
+
+endprogram
+
+function fixcolor(who)
+
+	var newcolor, racepicked := who.title_race;
+
+	if (racepicked=="Elf")
+		newcolor := 770;
+	elseif (racepicked=="Dark-Elf")
+		newcolor := 33877;
+	elseif (racepicked=="Goblin")
+		newcolor := 34186;
+	elseif (racepicked=="Barbarian")
+		newcolor := 33804;
+	elseif (racepicked=="Dwarf")
+		newcolor := 33888;
+	else
+		newcolor := who.truecolor;
+	endif
+
+	who.color := newcolor;
+
+endfunction

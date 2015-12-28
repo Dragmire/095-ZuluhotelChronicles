@@ -1,0 +1,63 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// Created by Zulu (zuluhotel@home.com) Dec 8, 1999
+// - Updated Jan 10, 2000
+// - Players buy this from the Architect.
+// - dclick on the deed to create.
+// - Once the vendor is created the deed is detroyed.
+// - Vendors now can't be placed close to other vendors
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+use os;
+use uo;
+const SEARCH_RANGE := 10;
+
+program makevendor( who, deed )
+
+if(!ReserveItem(deed)) return; endif
+
+    SendSysMessage( who, "Where would you like your vendor");
+
+    var where := TargetCoordinates( who );
+    var place;
+
+    if ( !where )
+      SendSysMessage( who, "canceled");
+      return;
+    else
+      if (!checkfornpcs(where))
+      place := CreateNpcFromTemplate( "playervendor", where.x, where.y, where.z );
+	else
+	      SendSysMessage( who, "You cannot place your vendor here");
+	      return;
+      endif
+
+   endif
+
+    if (!place)
+      SendSysMessage( who, "Your vendor has not been created");
+      return;
+    else
+      SendSysMessage( who, "You have successfully created a vendor");
+      var next_pay := ReadGameClock() + 86400;
+      SetObjProperty(place, "p", next_pay);
+      SetObjProperty(place, "master", who.serial);
+      SetObjProperty(place, "mn", who.name);
+      DestroyItem(deed);
+    endif
+
+endprogram
+
+function checkfornpcs(place)
+    var mobiles := ListMobilesNearLocation( place.x, place.y,place.z,SEARCH_RANGE);
+
+    foreach npc in mobiles
+	if(GetObjProperty(npc, "MerchantType"));
+		return 1;
+	endif
+    endforeach
+
+    return 0;
+
+endfunction

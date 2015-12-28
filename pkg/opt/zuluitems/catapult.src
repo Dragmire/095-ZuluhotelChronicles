@@ -1,0 +1,78 @@
+use os;
+use uo;
+include "include/client";
+include "include/random";
+include "include/damages";
+program shotcatapult(who, rock)
+
+SendSysMessage( who, "Select Catapult.");
+var handle := Target( who, TGTOPT_CHECK_LOS);
+
+if (handle.objtype!=0x1663 && handle.objtype!=0x168d && handle.objtype!=0x16b1 && handle.objtype!=0x16d6)
+SendSysMessage( who, "Canceled.");
+return;
+endif
+
+if( Distance( who, handle ) > 2 )
+	SendSysMessage( who, "This is too far." );
+	return 0;
+endif
+
+SendSysMessage( who, "Select Target");
+var location := TargetCoordinates( who );
+
+if (!location) SendSysMessage( who, "Canceled."); return; endif
+
+DestroyItem(rock);
+
+var item := handle.graphic;
+
+handle.graphic:=item+2;
+PlaySoundEffect(handle, 0x221);
+sleepms(500);
+
+handle.graphic:=item+3;
+sleepms(500);
+fireworks(who, handle, location);
+sleep(1);
+
+handle.graphic:=item+2;
+sleepms(500);
+
+handle.graphic:=item;
+
+endprogram
+
+function fireworks(who, catapult, location)
+
+   var locationx, locationy;
+  
+   if (location.x > (catapult.x+10))
+   locationx := catapult.x +10;
+   else
+   locationx := location.x;
+   endif
+
+   if (location.y > (catapult.y+10))
+   locationy := catapult.y+10;
+   else
+   locationy := location.y;
+   endif
+
+   var dmg := RandomDiceRoll("10d5+40"),
+       range := 2,
+       coolflame := CreateItemAtLocation( catapult.x, catapult.y, catapult.z+2, 0x3728, 1 );
+
+   var explode1 := CreateItemAtLocation( locationx, locationy, location.z, 0x3728, 1 );
+   PlaySoundEffect( location, SFX_220 );
+
+   foreach mobile in ListMobilesNearLocation( locationx, locationy, location.z, range );
+	PlayObjectCenteredEffect( mobile, 0x36b0, 7, 7);
+	ApplyTheDamage( mobile, who, dmg );
+   endforeach
+
+    sleep(2);
+    DestroyItem(coolflame);
+    DestroyItem(explode1);
+
+endfunction

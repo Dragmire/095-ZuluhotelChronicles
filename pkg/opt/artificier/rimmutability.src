@@ -1,0 +1,47 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+
+program rattunement( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual(   caster,
+					SPELLID_RITUAL_OF_IMMUTABILITY, CAN_BE_EQUIPPED + CANNOT_BE_CURSED,
+					"",
+					KEEP_CIRCLE );
+				
+	if( !result )
+		return;
+	endif
+
+	var northrune;
+	var otherrunes := {};
+	foreach item in ListItemsNearLocation( caster.x, caster.y+5, caster.z, 6 )
+		if( item.objtype == NORTH_RUNE )
+			SetObjProperty( item, "PermMagicCircle", caster.serial );
+			northrune := item;
+		elseif( item.objtype >= 0xba25 && item.objtype <= 0xba27 )
+			otherrunes.append( item.serial );
+		endif
+	endforeach
+
+	if( len(otherrunes) == 3 && northrune )
+		SetObjProperty( northrune, "RunesSerials", otherrunes );
+		SendSysMessage( caster, "You will be able to call upon this circle everything you need now." );
+	endif
+
+endprogram

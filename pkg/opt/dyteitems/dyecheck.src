@@ -1,0 +1,73 @@
+/////////////////////////////////////////////////////////////////////////////
+//  Dye System - version .4
+// Created by Zulu (zulu@cadvision.com) Jan 10, 2000
+// - Updated April 5, 2000
+//
+// to add items, load dyeitems.cfg
+//
+// item <object type>
+// {
+// player <cmd level>
+// }
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use os;
+use uo;
+use cfgfile;
+
+var ALLOWED := 0;
+var cmdlvl := 0;
+var dye_cfg :=ReadConfigFile( "dyeitems" );
+
+program dyecheck( who, dyetub )
+
+    ReserveItem(dyetub);
+
+    var element, allowdye :=0;
+   
+    SendSysMessage(who, "Select something to dye");
+   
+    var item := Target( who, TGTOPT_NOCHECK_LOS );
+
+    ReserveItem(item);
+
+    if (!item)
+      SendSysMessage(who, "Canceled");
+      ReleaseItem(dyetub);
+      ReleaseItem(item);
+      return;
+    endif
+
+    if (not Accessible(who, item))
+    SendSysMessage( who, "You cannot reach that!" );
+    ReleaseItem(dyetub);
+    ReleaseItem(item);
+    return;
+    endif
+  
+    if( GetObjProperty( item, "Undyeable" ) )
+    	SendSysMessage(who, item.desc + " cannot be colored");
+    	return;
+    endif
+
+    if (!dye_cfg)
+    SendSysMessage(who, "Could not open dyeitems.cfg");
+    syslog( "Unable to open dyeitems.cfg" );
+    ReleaseItem(dyetub);
+    ReleaseItem(item);
+    return;
+    endif
+   
+    element :=FindConfigElem(dye_cfg, item.objtype);
+
+    if (!element)
+	SendSysMessage(who, item.desc + " cannot be colored");
+    	return;
+    endif
+
+    item.color :=dyetub.color;
+    ReleaseItem(dyetub);
+    ReleaseItem(item);
+
+endprogram

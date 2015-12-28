@@ -1,0 +1,40 @@
+use uo;
+
+include "include/client";
+
+program use_burin(who, burin)
+
+	SendSysMessage(who, "Select item.");
+	var targetobj := Target(who);
+
+	if (!targetobj)
+		SendSysMessage(who, "Aborted.");
+		return;
+	endif
+
+	if ( (targetobj.objtype == 0xc003) || (targetobj.objtype == 0xc004) )
+		SendSysMessage(who, "You cannot write on that!");
+		return;
+	endif
+
+	if (!targetobj.str)
+
+		var desc := RequestInput(who, targetobj, "What do you wish to inscribe?");
+		if ( (!desc) || (desc == "") )
+			SendSysMessage(who, "Aborted.");
+			return;
+		endif
+
+		PlaySoundEffect(who, 0x247);
+
+		if ( CheckSkill(who, SKILLID_INSCRIPTION, 30, 0) )
+			SetObjProperty(targetobj, "burin", CStr(desc) );
+			SendSysMessage(who, "You sucessfully inscribe the sigils.");
+		else
+			SendSysMessage(who, "You can't seem to inscribe the sigils.");
+		endif
+	else
+		SendSysMessage(who, "You cannot write on that!");
+		return;
+	endif
+endprogram

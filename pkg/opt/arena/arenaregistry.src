@@ -1,0 +1,91 @@
+use uo;
+use os;
+use cfgfile;
+use basic;
+
+var MainLayout := {
+    "page 0",
+    "resizepic 30 30 83 280 200",
+    "button 50 70 2104 2103 1 0 1001",
+    "button 50 90 2104 2103 1 0 1002",
+    "button 50 110 2104 2103 1 0 1003",
+    "text 50 42 35 0",
+    "text 70 65 35 1",
+    "text 70 85 35 2",
+    "text 70 105 35 3",
+    "button 141 195 2119 2120 1 0 1"
+};
+
+var MainData := {
+    "Select match type:",
+    "One opponent",
+    "Many opponents",
+    "PvM Challenge"
+};
+
+var DiffLayout := {
+    "page 0",
+    "resizepic 30 30 83 280 200",
+    "button 50 70 2104 2103 1 0 2001",
+    "button 50 90 2104 2103 1 0 2002",
+    "button 50 110 2104 2103 1 0 2003",
+    "button 50 130 2104 2103 1 0 2004",
+    "button 50 150 2104 2103 1 0 2005",
+    "text 50 42 35 0",
+    "text 70 65 35 1",
+    "text 70 85 35 2",
+    "text 70 105 35 3",
+    "text 70 125 35 4",
+    "text 70 145 35 5",
+    "button 141 195 2119 2120 1 0 1"
+};
+
+var DiffData := {
+	"Select Dificulty:",
+	"Weak",
+	"Medium",
+	"Advanced",
+	"Dangerous",
+	"Oh my God, run... RUNNN!!"
+};
+
+
+program usearenaregistry(who)
+	Detach();
+	var i, x, y, temp;
+	var QueueLen;
+	var Selection, Difficulty;
+	var TargOpp;
+	if (GetGlobalProperty("PvMArenaInUse"))
+		SendSysMessage(who,"Cancelled. Arena is in Use");		
+		return;
+	endif	
+	var res := SendDialogGump( who, MainLayout, MainData );
+	if ( (res[0]=0) or (res[0]=1) )
+		SendSysMessage(who, "canceled.");
+		return;
+	endif
+	Selection := res[0] - 1000;
+	
+	
+	if     (Selection = 1 or Selection = 2)
+		res := SendDialogGump( who, DiffLayout, DiffData );
+		if ( (res[0]=0) or (res[0]=1) )
+			SendSysMessage(who, "Aborted.");
+			return;
+		endif
+		Difficulty := res[0] - 2000;
+		SetGlobalProperty("PvMDifficulty",Difficulty);
+		if (Selection = 2)
+			SetGlobalProperty("PvMNumber",3);
+		else
+			SetGlobalProperty("PvMNumber",1);	
+		endif
+		SetGlobalProperty("PvMType","many");
+		start_script(":arena:pvm", who);		
+		return;
+	else
+		SetGlobalProperty("PvMType","challenge");	
+		start_script(":arena:pvm", who);		
+	endif
+Endprogram

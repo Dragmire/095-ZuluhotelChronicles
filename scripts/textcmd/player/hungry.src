@@ -1,0 +1,39 @@
+// command .hungry, 
+// GM Omero 
+// ZuluHotel Italia
+// Fear is your only God
+
+use uo;
+
+program textcmd_hungry( who )
+
+var fame := "azzo!!!";
+var hunger := GetObjProperty( who, "hunger" );
+
+	if     (hunger == 0)
+		fame := "You are absolutely stuffed!";
+	elseif (hunger == 1)
+		fame := "You are stuffed";
+	elseif (hunger == 2)
+		fame := "You aren't hungry at all";
+	elseif (hunger == 3)
+		fame := "You are a little hungry";
+	elseif (hunger == 4)
+		fame := "You are somewhat hungry";
+	elseif (hunger == 5)
+		fame := "You are REALLY hungry";
+	elseif (hunger == 6)
+		fame := "Your stomach hurts";
+	elseif (hunger == 7)
+		fame := "Your stomach hurts and you feel dizzy";
+	elseif (hunger == 8)
+		fame := "You are starving";
+	elseif (hunger == 9)
+		fame := "You are almost dying of hunger";
+	elseif (hunger > 9)
+		fame := "You are DYING of hunger...";
+	endif
+ 
+SendSysMessage( who, fame );
+
+endprogram

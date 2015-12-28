@@ -1,0 +1,95 @@
+/*
+   Author(s): MontuZ && Firedancer (MontuZ@Gmail.com) Mar 08, 2006.
+   Version: 1.0
+   Bugs: None.
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use util;
+
+Include "util/bank";
+Include "include/client";
+Include "include/factions";
+Include "include/ranksystem";
+
+Program TextCMD_Whisper( Who )
+
+    Var i := 0;
+    Var Chr, acct;
+    Var starttime := PolCore().systime;
+    Var Chaos := 0;
+    Var Order := 0;
+    Var Other := 0;
+    Var Chaos_Kills := 0;
+    Var Order_Kills := 0;
+    Var Other_Kills := 0;
+    Var Chaos_Deaths := 0;
+    Var Order_Deaths := 0;
+    Var Other_Deaths := 0;
+    Var Characters := 0;
+
+    SendSysMessage( Who, "Please wait... this will take a few minites." );
+    Detach();
+    Print( "Server wipe cleanup started." );
+
+    Set_Critical( 1 );
+
+    Set_Script_Option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+    Foreach Accnt in ListAccounts()
+    acct := FindAccount( Accnt );
+      i := 1;
+      For( i; i <= 5; i := i + 1 )
+      Chr := acct.GetCharacter( i );
+        If( Chr )
+			Var Fact_ID := GetFaction( Chr );
+			Case( Fact_ID )
+				FACTID_CHAOS:
+					Chaos := Chaos + 1;
+					Chaos_Kills := Chaos_Kills + GetFrags( Chr );
+					Chaos_Deaths := Chaos_Deaths + GetDeaths( Chr );
+				FACTID_ORDER:
+					Order := Order + 1;
+					Order_Kills := Order_Kills + GetFrags( Chr );
+					Order_Deaths := Order_Deaths + GetDeaths( Chr );
+				Default:
+					Other := Other + 1;
+					Other_Kills := Other_Kills + GetFrags( Chr );
+					Other_Deaths := Other_Deaths + GetDeaths( Chr );
+			Endcase
+			Characters := Characters + 1;
+        Endif
+      SleepMS( 5 );
+      Endfor
+    SleepMS( 5 );
+    Endforeach
+
+    Var endtime := PolCore().systime;
+    
+    Var HowLong := endtime - starttime;
+    
+    SendSysMessage( Who, "Fresh Start Complete, took " + HowLong + " seconds." );
+
+    Print( "Server wipe cleanup finished, took " + HowLong + " seconds." );
+
+    Print( "Characters: " + Characters );
+
+    Print( "Chaos Members: " + Chaos );
+    Print( "Chaos Frags: " + Chaos_Kills );
+    Print( "Chaos Deaths: " + Chaos_Deaths );
+
+    Print( "Order Members: " + Order );
+    Print( "Order Frags: " + Order_Kills );
+    Print( "Order Deaths: " + Order_Deaths );
+
+    Print( "Neutral Members: " + Other );
+    Print( "Neutral Frags: " + Other_Kills );
+    Print( "Neutral Deaths: " + Other_Deaths );
+
+
+    Set_Critical( 0 );
+
+Endprogram
+

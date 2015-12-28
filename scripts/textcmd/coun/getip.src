@@ -1,0 +1,17 @@
+Use uo;
+Use os;
+
+Program TextCMD_GetIP( who )
+
+    Var Player := target( Who );
+    
+    If( !Player )
+    SendSysMessage( Who, "Canceled." );
+    Return 0;
+    EndIf
+    
+    Var AIP := Player.ip;
+    
+    SendSysMessage( Who, "This players IP is: " + AIP );
+    
+Endprogram

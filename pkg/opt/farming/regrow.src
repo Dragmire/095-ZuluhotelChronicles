@@ -1,0 +1,46 @@
+use os;
+use uo;
+use cfgfile;
+
+program regrow(parms)
+
+	var plant := parms[1];
+	var wait := CInt(parms[2]);
+	sleep(wait);
+	if (!plant)
+		return;
+	endif
+	var amt := CInt(GetObjProperty(plant, "#amt"));
+	amt := amt - 1;
+	SetObjProperty(plant, "#amt", amt);
+
+	if (CountPlants(plant) > 5)
+		var cfg := ReadConfigFile("plants");
+		var restype := 0;
+		foreach item in ListItemsNearLocation(plant.x, plant.y, plant.z, 1);
+			if (item.serial != plant.serial)
+				restype := cfg[item.objtype].product;
+				if (restype)
+        				DestroyItem(item);
+				endif
+			endif
+		endforeach
+	endif
+
+endprogram
+
+function CountPlants(plant)
+
+	var plantcount := 0;
+	var cfg := ReadConfigFile("plants");
+	var restype := 0;
+	foreach item in ListItemsNearLocation(plant.x, plant.y, plant.z, 1);
+		restype := cfg[item.objtype].product;
+		if (restype)
+       			plantcount := plantcount +1;
+		endif
+	endforeach
+
+	return plantcount;
+
+endfunction

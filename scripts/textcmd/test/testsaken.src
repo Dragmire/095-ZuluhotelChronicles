@@ -1,0 +1,18 @@
+Use uo;
+
+Include "include/client";
+
+Program Ttest( who )
+
+   	SendSysMessage( who, "Select a player.", FONT_NORMAL, 2611 );
+
+  	Var tgt     := Target( who, TGTOPT_NOCHECK_LOS );
+	var sak;
+    	for i := 0 to SKILLID__HIGHEST
+		sak := GetBaseSkill(tgt, i);
+		if( sak > 130)
+			SetBaseskill(tgt, i, 130);
+		endif
+	endfor
+
+EndProgram

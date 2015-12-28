@@ -1,0 +1,102 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use http;
+Use uo;
+Use os;
+
+Include "include/classes";
+Include "include/ranksystem";
+
+Program players()
+
+    Var HTML_Page := "";
+/*
+    HTML_Page := HTML_Page +
+    "<html><head><title>Baroca Shard</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    ;
+*/
+    Var MostOnline := GetGlobalProperty( "MostOnline" );
+    Var players := EnumerateOnlineCharacters();
+    Var totalplayers :=len(players);
+    Var many;
+    
+    If( totalplayers >= MostOnline )
+    SetGlobalProperty( "MostOnline", totalplayers );
+    Endif
+    
+    If( totalplayers > 1 )
+    many := "s";
+    Else
+    many := "";
+    Endif
+    
+    HTML_Page := HTML_Page +
+    "<table class='custabletop' width=60% border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td class='custable' width=200><div align=center><strong><font class='custext'>Name</font></strong></div></td>"
+    +"<td class='custable' width=75><div align=center><strong><font class='custext'>Classe</font></strong></div></td>"
+    +"<td class='custable' width=50><div align=center><strong><font class='custext'>Kills</font></strong></div></td>"
+    +"<td class='custable' width=50><div align=center><strong><font class='custext'>Deaths</font></strong></div></td>"
+    +"</tr>"
+    ;
+    
+    Foreach chr in players
+    If( !chr.cmdlevel )
+
+    Var cls := GetObjProperty( chr, "Classe" );
+    If( !cls )
+    cls := "None";
+    Endif
+
+    Var color;
+    If( chr.murderer )
+    color := "FF0000";
+    Elseif( chr.criminal )
+    color := "666666";
+    Else
+    color := "00CCFF";
+    Endif
+
+    Var rnkimg := GetObjProperty( chr, RANKID_IMAGE );
+    If( !rnkimg )
+    rnkimg := "blank";
+    Endif
+
+    HTML_Page := HTML_Page +
+    "<tr>"
+    +"<td nowrap='nowrap' class='custable'><img style='vertical-align: middle;' src=http://www.montuz.com/images/" + rnkimg + ".gif width=18 height=18>&nbsp;<strong><font color='" + color + "' class='custext'>" + chr.name + "</font></strong></td>"
+    +"<td class='custable'><div align=center><font class='custext'>" + cls + "</font></div></td>"
+    +"<td class='custable'><div align=center><font class='custext'>" + GetFrags( chr ) + "</font></div></td>"
+    +"<td class='custable'><div align=center><font class='custext'>" + GetDeaths( chr ) + "</font></div></td>"
+    +"</tr>"
+    ;
+    
+    Else
+    totalplayers := totalplayers - 1;
+    Endif
+/*
+    SleepMS( 10 );
+*/
+    Endforeach
+    
+    HTML_Page := HTML_Page +
+    "</table>"
+    +"<br><br><center><font class='custext'>" + totalplayers + " player" + many + " online.<br>"
+    +"Most users online at once was " + MostOnline + ".</font></center>"
+    +"</body></html>"
+    ;
+    
+    WriteHtml( HTML_Page );
+    
+EndProgram

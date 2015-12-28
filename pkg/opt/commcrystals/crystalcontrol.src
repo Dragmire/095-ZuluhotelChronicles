@@ -1,0 +1,48 @@
+use uo;
+use os;
+use basic;
+
+include "include/eventid";
+
+program receivercontrol(crystal);
+
+var i, j, placeholder, evwaiting, receiver, links, linklist, linkcount, charges;
+
+RegisterForSpeechEvents(crystal, 1);
+EnableEvents(SYSEVENT_SPEECH,1);
+var ev;
+
+while( 1 && crystal )
+ev := os::wait_for_event( 3 );
+if(ev)
+	var ison := GetObjProperty(crystal, "Status");
+	ison := CStr(ison);
+
+	if (ison == "ON")
+		if (ev.type==SYSEVENT_SPEECH)
+
+			linklist := GetObjProperty(crystal, "Links");
+			charges := CInt(GetObjProperty(crystal, "Charges"));
+			links := SplitWords(linklist);
+			linkcount := len(links);
+			linkcount := linkcount + 1;
+			i := 1;
+			var expenditure := -1;
+
+			while (i < linkcount)
+				if (charges > 0)
+					placeholder := CInt(links[i]);
+					receiver := SystemFindObjectBySerial(placeholder);
+					PrintTextAbove(receiver, "Message from "+ev.source.name+": " + ev.text);
+					expenditure := expenditure + 1;
+				endif
+				i := i + 1;
+			endwhile
+			charges := charges - expenditure;
+			SetObjProperty(crystal, "Charges", CInt(charges) );
+			SendSysMessage(ev.source, "Message sent: " + expenditure + " charges used, " + charges + "remain.");
+		endif
+	endif
+endif
+endwhile
+endprogram

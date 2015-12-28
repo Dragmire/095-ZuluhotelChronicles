@@ -1,0 +1,12 @@
+// Author: MontuZ (MontuZ@aol.com) Nov 29, 2003.
+
+Use os;
+Use uo;
+
+Include "include/client";
+
+Program textcmd_say( who, text )
+
+    PrintTextAbove( who, text, FONT_BOLD, 2611  );
+
+EndProgram

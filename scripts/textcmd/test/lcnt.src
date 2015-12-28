@@ -1,0 +1,48 @@
+//
+// .createrect command - create items in a targetted rectangle
+//
+// usage: .createrect [objtype]
+// Items created with this command will not decay.
+//
+
+use uo;
+
+program textcmd_create( who, text )
+    var zheight;
+    
+    var template := text;
+
+
+    SendSysMessage( who, "Target the top-left corner" );
+    var topleft := TargetCoordinates( who );
+    if (!topleft)
+        return;
+    endif
+    SendSysMessage( who, "Target the bottom-left corner" );
+    var botright := TargetCoordinates( who );
+    if (!botright)
+        return;
+    endif
+    
+    Var count := 0;
+        Var spawned := 0;
+    
+    if (topleft.x <= botright.x and topleft.y <= botright.y)
+        var x, y, z;
+        for( x := topleft.x; x <= botright.x; x := x + 1 )
+            for( y := topleft.y; y <= botright.y; y := y + 1 )
+                z := GetMapInfo( x,y ).z;
+                If( Count == 20 )
+                //CreateNpcFromTemplate( template, x, y, who.z, 1 );
+                spawned := spawned + 1;
+                count := 0;
+                Endif
+            count := count + 1;
+            endfor
+        endfor
+    endif
+    
+    SendSysMessage( Who, "Spawned: " + spawned );
+
+       
+endprogram

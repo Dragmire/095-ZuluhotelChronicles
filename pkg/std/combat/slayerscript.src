@@ -1,0 +1,33 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+
+
+program slayerscript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var slaytype := GetObjProperty( weapon , "SlayType" );
+	var type := GetObjProperty( defender , "Type" );
+	var targ;
+	if (GetObjProperty( weapon , "Cursed"))
+		targ := attacker;
+	else
+		targ := defender;
+	endif
+
+	if(slaytype = type)
+		rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage * 2 , 1 );
+		DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+	elseif((slaytype = "Human") and !defender.npctemplate )
+		rawdamage := RecalcDmg( attacker , defender , weapon , armor , Cint(basedamage * 1.5) , 1 );
+		DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+	else
+		rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage );
+		DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+	endif
+
+endprogram
+

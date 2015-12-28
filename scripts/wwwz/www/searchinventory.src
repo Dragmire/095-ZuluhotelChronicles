@@ -1,0 +1,102 @@
+use os;
+use uo;
+use http;
+
+include "include/myutil";
+
+WriteHtml("<html><head><title>Unreal Legends</title>
+<style>
+table, tr, td {
+	background-color: #000000;
+	border: 1px solid #000066;
+}
+
+font {
+    font-family: tahoma;
+    font-size: 11px;
+}
+
+</style>
+" );
+WriteHtml("<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=#000066 vlink=#000066 alink=#000066>" );
+
+var searchparms := QueryParam ("keywords");
+if (!searchparms)
+	WriteHTML ("<div align=center><font size=2>You must enter a keyword to search for.</div></body></html>");
+	return;
+endif
+
+var keywords := SplitWords (searchparms);
+if (!len (keywords) )
+	WriteHTML ("<div align=center><font size=2>You must enter a keyword to search for.</div></body></html>");
+	return;
+elseif (len (keywords) > 3)
+	WriteHTML ("<div align=center><font size=2>Too many search parameters!</div></body></html>");
+	return;
+endif
+
+var playermerchantlist := ListMobilesNearLocation( 5388 , 1257 , 0 , 100 );
+if (!playermerchantlist)
+	WriteHTML ("<div align=center><font size=2>Unable to find any merchants.</div></body></html>");
+	return;
+endif
+
+var storage := FindStorageArea( "Merchant Storage" );
+if (!storage)
+	WriteHTML ("<div align=center><font size=2>Error opening merchant storage!</div></body></html>");
+	return;
+endif
+
+var itemdesc, addedthisguy, founditem, total_found := 0;
+foreach merchantserial in playermerchantlist
+    If( merchantserial.npctemplate == "playervendor" )
+    merchantserial := merchantserial.serial;
+	addedthisguy := 0;
+	var inv_fs := FindRootItemInStorageArea (storage, merchantserial + " 1C");
+	if (inv_fs)
+		foreach item in EnumerateItemsInContainer (inv_fs)
+			if (item.container == inv_fs)
+				founditem := 1;
+				itemdesc := Lower (item.desc);
+				foreach keyword in keywords
+					if (!itemdesc[keyword])
+						founditem := 0;
+					endif
+				endforeach
+
+				if (founditem)
+					total_found := total_found + 1;
+					if (!addedthisguy)
+						var merchant := SystemFindObjectBySerial (merchantserial);
+						if (merchant)
+							WriteHTML ("<table><div align=center><font size=2><a href=http://www.montuz.com/viewmerchant.php?vs=" + merchantserial + ">" + merchant.name + "</a></font></div></table>");
+							//Writehtml("<br>");
+							Writehtml("<table width=400 border=1 align=center cellpadding=0 cellspacing=0>");
+							Writehtml("<tr>");
+							Writehtml("<td width=200><div align=center><strong><font size=2>Item</font></strong></div></td>");
+							Writehtml("<td width=200><div align=center><strong><font size=2>Price</font></strong></div></td>");
+							Writehtml("</tr>");
+							Writehtml("<tr>");
+						endif
+						addedthisguy := 1;
+					endif
+					if ( item.amount > 1 )
+						WriteHTML ("<tr><td><div align=center><font size=2>" + item.desc + "</font></td><td><div align=center><font size=2>" + item.sellprice + " each</font></td></tr>");
+					else
+						WriteHTML ("<tr><td><div align=center><font size=2>" + item.desc + "</font></td><td><div align=center><font size=2>" + item.sellprice + "</font></td></tr>");
+					endif
+				endif
+			endif
+		endforeach
+	endif
+  endif
+  WriteHTML ("</table>");
+endforeach
+
+if (!total_found)
+	WriteHTML ("<div align=center><font size=2>No matching items found.</font></div>");
+else
+	WriteHTML ("<br><div align=center><font size=2>Found " + total_found + " matching items</font></div>");
+endif
+
+WriteHTML ("</center></body></html>");

@@ -1,0 +1,103 @@
+use uo;
+use os;
+
+include "include/namingbyenchant";
+
+const DELAY_BETWEEN_USE	:= 2;
+
+program wand_of_id( who, item )
+
+	if( !ReserveItem( item ) )
+		return;
+	endif
+	
+	var last_use := CInt(GetObjProperty( item, "#last_use" ));
+	if( last_use && last_use > CInt(ReadGameClock() - DELAY_BETWEEN_USE) )
+		SendSysMessage( who, "You must wait before using it again." );
+		return;
+	endif
+
+	SetObjProperty( item, "#last_use", CInt(ReadGameClock()) );
+
+	if( !GetObjProperty( item, "RequireNoCharges" ) )
+		var charges := CInt(GetObjProperty( item, "charges" ));
+		if( !charges )
+			PrintTextAbovePrivate( item, "That is out of charges", who );
+			return;
+		else
+			charges := charges - 1;
+			SetObjProperty( item, "charges", charges );
+		endif
+	endif
+
+	SendSysMessage( who, "Select an object to identify." );
+	var the_item := Target(who, TGTOPT_CHECK_LOS);
+	if( !the_item )
+		return;
+	endif
+	
+	if( !Accessible( who, the_item ) )
+		SendSysMessage( who, "You can't reach that." );
+		return;
+	endif
+	
+	if(the_item.isA(POLCLASS_MOBILE) )
+		SendSysMessage( who, "That's not an item!" );
+		return;
+	endif
+
+	var ided := GetObjProperty( the_item, "IDed" );
+	var ncharges   := GetObjProperty( the_item, "charges" );
+	var manastored := GetObjProperty( the_item, "ManaLevel" );
+	if( ncharges )
+
+		var staticname := GetObjProperty( the_item, "StaticName" );
+			var true_name := GetObjProperty( the_item, "tname" );
+			
+			if( staticname )
+			SetName( the_item, staticname );	
+			elseif( true_name )
+			SetName( the_item, true_name );
+		endif
+	
+		SendSysMessage( who, "It appears to be a " + the_item.desc + "," );
+		SendSysMessage( who, "and there's " + ncharges + " charges left in that item." );
+	
+	elseif( manastored )
+
+		var staticname := GetObjProperty( the_item, "StaticName" );
+			var true_name := GetObjProperty( the_item, "tname" );
+			
+			if( staticname )
+			SetName( the_item, staticname );	
+			elseif( true_name )
+			SetName( the_item, true_name );
+		endif
+	
+		SendSysMessage( who, "It appears to be a " + the_item.desc + "," );
+		SendSysMessage( who, "and there's " + manastored + " mana stored in it." );
+
+
+	elseif( GetObjProperty( the_item, "UnIDedMagicalItem" ) ||
+		GetObjProperty( the_item, "Enchanted" ) ||
+		GetObjProperty( the_item, "IsGMItem" ) ||
+		GetObjProperty( the_item, "EnchantColor" ) ||
+		GetObjProperty( the_item, "StaticName" ) )
+		
+		if( !ided )
+			SetNameByEnchant( the_item );
+		endif
+		SendSysMessage( who, "It appears to be a " + the_item.desc );
+			
+	else
+		SendSysMessage( who, "This is a normal item." );
+	endif
+
+	SetObjProperty( the_item, "IDed", 1 );
+
+	Detach();
+
+	sleep( DELAY_BETWEEN_USE );
+	EraseObjProperty( item, "#last_use" );
+		
+endprogram

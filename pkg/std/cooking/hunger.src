@@ -1,0 +1,193 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/dismount";
+include "include/random";
+
+program Hunger( chr )
+
+	EraseObjProperty(chr, "hungrylevel");
+
+	if (chr.cmdlevel>0 || TypeOf(getobjproperty(chr,"ctfloc"))=="Integer") return; endif
+
+	var starttime := GetObjProperty(chr, "#logontime");
+
+	set_critical(0);
+
+	var hunger;
+
+	while ( chr )
+
+		hunger := Cint(GetObjProperty(chr, "hunger"));
+
+		if (hunger >= 9)
+			hunger := 9;
+		elseif (!hunger)
+     			hunger :=0;
+		endif
+
+		hunger := hunger +1;
+		SetObjProperty(chr, "hunger", hunger);
+
+		case (hunger)
+		4 :
+			SendSysMessage(chr, "You could use a bite to eat...");
+
+		8 :
+			SendSysMessage(chr, "You're getting pretty hungry...");
+
+		10 : 
+			SendSysMessage(chr, "You're absolutely famished!");
+			if (!CanEat( chr ) )
+				HungerDamage( chr );
+			endif
+		endcase
+
+		sleep( 60 * 60 );
+		if (chr)
+			if ( starttime != GetObjProperty(chr, "#logontime") )
+				return;
+			else
+				checkmount(chr);
+			endif
+		else
+			return;
+		endif
+
+	endwhile    
+
+endprogram
+
+function CheckMount(me)
+
+	var mount := GetEquipmentByLayer( me, 25 );
+	if (!mount)
+		return;
+	else
+		poop(me, mount);
+	endif
+
+	var freetime := getobjproperty(mount,"freetime");
+	if ( (ReadGameClock() < freetime ) or (Random(3)!=1) )
+		return;
+	endif
+
+	if ( CanFeed(me,mount) )
+		return;
+	endif
+
+	var it := Dismount(me,mount);
+	if (it)
+		it.script := "barker";
+		EraseObjProperty (it, "master");
+		it.setmaster( 0 );
+		RestartScript(it);
+		printtextabove(it,it.name + " has decided it is better off without a master!");
+	endif
+	set_critical(0);
+
+endfunction
+
+function poop(me, mount)
+
+	if (Random(50)==1)
+		var poopoo := 0;
+		case (mount.graphic)
+		0x3ea2:
+		0x3e9f:
+		0x3ea0:
+		0x3ea1:
+			poopoo := CreateItemAtLocation(me.x,me.y,me.z,0x0f3c,1);
+		default: return;
+		endcase
+		if (poopoo)
+			poopoo.decayat := ReadGameClock() + 300;
+			poopoo.movable := 0;
+		endif
+	endif
+
+endfunction
+
+function HungerDamage( chr )
+
+	var hunger := GetObjProperty(chr, "hunger");
+	while ( (chr) and (hunger > 9) )
+
+		if ( chr.dead )
+			SetObjProperty(chr, "hunger",0);
+			return;
+		else
+			if (chr.hp > 1)
+				chr.hp := chr.hp - 1;
+			endif
+			if (chr.stamina > 1)
+				chr.stamina := chr.stamina -1;
+			endif
+		endif
+		sleep(6);
+		if (!chr)
+			return;
+		else
+			hunger := GetObjProperty(chr, "hunger");
+		endif
+	endwhile
+
+	SendSysMessage(chr, "You're no longer starving.");
+
+endfunction
+
+function CanFeed(me, mount)
+
+	var foodtype := "veggie";
+	case (mount.graphic)
+		0x3ea4:	foodtype := "meat";//forest ostard
+		0x3ea5:	foodtype := "meat";//frenzied ostard
+	endcase
+	if (mount.color == 1108)
+		foodtype := "meat";//nightmare
+	endif
+
+	var cfg := readconfigfile("::food");
+	var elem := findconfigelem(cfg,foodtype);
+	var foodarray := GetConfigStringArray(elem,"food");
+	foreach item in enumerateitemsincontainer(me.backpack)
+		if ( cstr(item.objtype) in foodarray )
+			PlaySoundEffect(me,cint(0x3b) + Random(3));
+			SubtractAmount(item,1);
+			PrintTextAbovePrivate(me,"*You feed your mount*",me);
+			SetObjProperty(mount,"freetime", cint(ReadGameClock() + 14400));
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function CanEat(me)
+
+	var cfg := readconfigfile("::food");
+	var elem := findconfigelem(cfg,"cooked");
+	var foodarray := GetConfigStringArray(elem,"food");
+
+	var hunger := Cint(GetObjProperty(me, "hunger"));
+
+	foreach item in enumerateitemsincontainer(me.backpack)
+		if ( cstr(item.objtype) in foodarray )
+			PlaySoundEffect(me,cint(0x3b) + Random(3));
+			PrintTextAbovePrivate(me,"*Yummy!*",me);
+			var foodvalue := cint(GetObjProperty(item,"foodvalue"));
+			if (!foodvalue)
+				foodvalue := 1;
+			endif
+			hunger := hunger - foodvalue;
+			SetObjProperty(me,"hunger",hunger);
+			SubtractAmount(item,1);
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction

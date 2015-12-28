@@ -1,0 +1,21 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+
+Program textcmd_mount( Who, Hue )
+
+    Hue := CInt( Hue );
+    
+    SendSysMessage( Who, "This is what the text color will look like, " + Hue, FONT_NORMAL, Hue );
+    SendSysMessage( Who, "This is what the text color will look like, " + Hue, FONT_NORMAL );
+    
+Endprogram

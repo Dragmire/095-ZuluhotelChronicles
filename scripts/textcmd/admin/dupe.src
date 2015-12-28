@@ -1,0 +1,30 @@
+use uo;
+
+include "include/itemutil";
+
+
+program textcmd_dupe( who )
+
+	SendSysmessage( who , "What item do you want to make a copy of?" );
+	var item := Target( who );
+	if (item.objtype)
+	var acc := who.acct;
+    		var dupe := CreateItemInBackpack( who, item.objtype , item.amount );
+		
+		DupeItem( item , dupe );
+	
+		setobjproperty(item , "StaffDupeFROM" , 1);
+		setobjproperty(dupe , "StaffDupedFAccountName" , acc.name);
+			setobjproperty(dupe , "StaffDupedFName" , who.name);
+			setobjproperty(dupe , "StaffDupedFSerial" , who.serial);
+		if( item.usescript )
+			dupe.usescript := item.usescript;
+		endif
+		
+			
+			
+	endif
+
+endprogram
+
+

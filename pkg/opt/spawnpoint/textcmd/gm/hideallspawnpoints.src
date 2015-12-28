@@ -1,0 +1,19 @@
+use uo;
+
+include "include/constants/objtypes";
+include "include/managers";
+
+program textcmd_hidespawnpoints( who )
+ 
+	var points := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+ 
+	var counter :=0;
+	
+	foreach spawnpoint in points
+			spawnpoint.invisible := 2;
+			counter	:= counter + 1;
+	endforeach
+
+	SendSysMessage( who,"A total of " + counter + " spawnpoints have been hidden." );
+	
+endprogram

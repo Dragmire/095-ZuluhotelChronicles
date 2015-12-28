@@ -1,0 +1,192 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+use uo;
+
+include "include/client";
+
+program textcmd_resist( who )
+
+    ShowProtsDialog( who );
+
+endprogram
+
+Function ShowProtsDialog( who )
+
+    If ( CInt(GetObjProperty( who, "#prots_view" ) ) > ReadGameClock( ) )
+    SendSysMessage( who, "Protection List is already open.", FONT_NORMAL, 2611 );
+    Return;
+    Else
+    SetObjProperty( who, "#prots_view", ReadGameClock( ) + 600 );
+    Endif
+    
+    var air := 0;
+    var fire := 0;
+    var water := 0;
+    var earth := 0;
+    var necro := 0;
+    var holy :=0;
+    var physical :=0;
+    var heal :=0;
+
+    var permpoison :=0;
+    var permmagic :=0;
+    var permreflect :=0;
+    var freeaction :=0;
+
+    var castpenalt := 0;
+    var item;
+    var layer;
+
+    foreach item in ListEquippedItems( who )
+
+    if ( GetObjProperty( item , "MagicPenalty" ) )
+    castpenalt := CINT( GetObjProperty( item , "MagicPenalty" ) ) + CINT(castpenalt);
+    endif
+
+    endforeach
+
+    if ( GetObjProperty( who , "AirProtection" ) )
+    if ( CINT(GetObjProperty( who, "AirProtection" ) ) > CINT(air) )
+    air := CINT( GetObjProperty( who, "AirProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "FireProtection" ) )
+    if ( CINT(GetObjProperty( who, "FireProtection" ) ) > CINT(fire) )
+    fire := CINT( GetObjProperty( who, "FireProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "WaterProtection" ) )
+    if ( CINT(GetObjProperty( who, "WaterProtection" ) ) > CINT(water) )
+    water := CINT( GetObjProperty( who, "WaterProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "EarthProtection" ) )
+    if ( CINT(GetObjProperty( who, "EarthProtection" ) ) > CINT(earth) )
+    earth := CINT( GetObjProperty( who, "EarthProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "NecroProtection" ) )
+    if ( CINT(GetObjProperty( who, "NecroProtection" ) ) > CINT(necro) )
+    necro := CINT( GetObjProperty( who, "NecroProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "HolyProtection" ) )
+    if ( CINT(GetObjProperty( who, "HolyProtection" ) ) > CINT(holy) )
+    holy := CINT( GetObjProperty( who, "HolyProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "PhysicalProtection" ) )
+    if ( CINT(GetObjProperty( who, "PhysicalProtection" ) ) > CINT(physical) )
+    physical := CINT( GetObjProperty( who, "PhysicalProtection" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "PermPoisonImmunity" ) )
+    if ( CINT(GetObjProperty( who, "PermPoisonImmunity" ) ) > CINT(permpoison) )
+    permpoison := CINT( GetObjProperty( who, "PermPoisonImmunity" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "PermMagicImmunity" ) )
+    if ( CINT(GetObjProperty( who, "PermMagicImmunity" ) ) > CINT(permmagic) )
+    permmagic := CINT( GetObjProperty( who, "PermMagicImmunity" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "Permmr" ) )
+    if ( CINT(GetObjProperty( who, "Permmr" ) ) > CINT(permreflect) )
+    permreflect := CINT( GetObjProperty( who, "Permmr" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "FreeAction" ) )
+    if ( CINT(GetObjProperty( who, "FreeAction" ) ) > CINT(freeaction) )
+    freeaction := CINT( GetObjProperty( who, "FreeAction" ) );
+    endif
+    endif
+
+    if ( GetObjProperty( who, "HealingIncrease" ) )
+    if ( CINT(GetObjProperty( who, "HealingIncrease" ) ) > CINT(heal) )
+    heal := CINT( GetObjProperty( who, "HealingIncrease" ) );
+    endif
+    endif
+
+    Var layout := {
+    "page 0",
+    "resizepic 0 0 3600 205 315",
+    "text 25 15 2597 0",
+    "text 50 35 2597 1",
+    "text 50 55 2597 2",
+    "text 50 75 2597 3",
+    "text 50 95 2597 4",
+    "text 50 115 2597 5",
+    "text 50 135 2597 6",
+    "text 50 155 2597 7",
+    "text 50 175 2597 8",
+    "text 50 195 2597 9",
+    "text 50 215 2597 10",
+    "text 50 235 2597 11",
+    "text 50 255 2597 12",
+    "text 50 275 2597 13",
+    "text 25 35 2494 14",
+    "text 25 55 2494 15",
+    "text 25 75 2494 16",
+    "text 25 95 2494 17",
+    "text 25 115 2494 18",
+    "text 25 135 2494 19",
+    "text 25 155 2494 20",
+    "text 25 175 2494 21",
+    "text 25 195 2494 22",
+    "text 25 215 2494 23",
+    "text 25 235 2494 24",
+    "text 25 255 2494 25",
+    "text 25 275 2494 26",
+    };
+
+    Var data := {
+    "Protections",
+    "Air",
+    "Fire",
+    "Water",
+    "Earth",
+    "Necro",
+    "Holy",
+    "Poison",
+    "Physical",
+    "Magic Reflect",
+    "Magic Immune",
+    "Free Action",
+    "Healing",
+    "Magic Penalty",
+    air,
+    fire,
+    water,
+    earth,
+    necro,
+    holy,
+    permpoison,
+    physical,
+    permreflect,
+    permmagic,
+    freeaction,
+    heal,
+    castpenalt,
+    };
+
+    Var result := SendDialogGump( who, layout, data );
+
+    EraseObjProperty( who, "#prots_view" );
+
+EndFunction

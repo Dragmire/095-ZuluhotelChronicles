@@ -1,0 +1,129 @@
+use uo;
+use os;
+
+include "include/constants/propids";
+include "include/managers";
+
+program goto_spawnpoint( who, text )
+
+	if( !text )
+		SendSysMessage( who, "Usage is .gotospawnpoint <template>" );
+		return 0;
+	endif
+
+	var spawnpoints := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+	if( !spawnpoints )
+		SendSysMessage( who, "There's no runes in the world yet..." );
+		return 0;
+	endif
+
+	text := SplitWords(text);
+	var wanted := text[1];
+	if( !wanted )
+		SendSysMessage( who, "Bug in the command" );
+		return 0;
+	endif
+
+	var pt_data;
+	var found := {};
+	foreach point in spawnpoints
+		if( point )
+			pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+			if( !pt_data )
+				pt_data	    := {};
+				pt_data[1]  := "NPC";	// Type
+				pt_data[2]  := "nil";	// Template
+				pt_data[3]  := 0;	// Max appear
+				pt_data[4]  := 0;	// Appear Range
+				pt_data[5]  := 4;	// Wander Range
+				pt_data[6]  := 0;	// Frequency
+				pt_data[7]  := 0;	// Disabled
+				pt_data[8]  := 0;	// Spawn in group.
+				pt_data[9]  := 0;	// Despawn on destroy
+				pt_data[10] := 0;	// Expire time
+				pt_data[11] := 0;	// Expire number
+				pt_data[12] := 0;	// Start spawning hours
+				pt_data[13] := 0;	// End spawning hours
+				pt_data[14] := "";	// Notes
+				SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+			endif
+		
+			if( pt_data[2] == wanted )
+				found.append(point);
+			endif
+			sleepms(2);
+		endif
+	endforeach
+
+	if( !found.Size() )
+		SendSysMessage( who, "There's no rune spawning this template." );
+		return 0;
+	endif
+
+	var res := MakeAndProcessGump( who, found );
+	if( res )
+		MoveCharacterToLocation( who, res.x, res.y, res.z, MOVECHAR_FORCELOCATION );
+	endif
+
+endprogram
+
+
+function MakeAndProcessGump( who, found )
+
+	var layout	:= array( "page 0",
+				  "resizepic 50  0   2600 370 525",
+				  "resizepic 135 480 5100 200  25",
+				  "text 182 30 5 0" );
+			
+	var data	:= array( "Found Runes" );
+
+
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 20;
+	var y 	:= 70;
+	var i;
+	var j;
+
+	layout.append( "page " + page );
+	if( len(found) > perpage )
+		layout.append( "button 285 481 5540 5541 0 " + (page + 1) );
+	endif
+
+	for( i := start; i <= len(found); i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 70;
+		
+			layout.append( "page " + page );
+			layout.append( "button 160 481 5537 5538 0 " + (page - 1) );
+			if( len(found) > (count + perpage) )
+				layout.append( "button 285 481 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+	
+		layout.append( "text 85 " + y + " 0 " + len(data) );
+		layout.append( "button 350 " + (y+3) + " 2118 2117 1 0 " + i );
+		data.append( "Rune #" + i );
+	
+		layout.append( "text 175 " + y + " 0 " + len(data) );
+		data.append( "( " + found[i].x + ", " + found[i].y + ", " + found[i].z + " )" );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+		
+	var result := SendDialogGump( who, layout, data );
+	if( !result[0] )
+		return;
+	endif
+
+	result := CInt( result[0] );
+
+	return found[result];
+
+endfunction

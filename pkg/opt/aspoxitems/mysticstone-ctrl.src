@@ -1,0 +1,29 @@
+use os;
+use uo;
+
+include "include/sysevent";
+
+const HEARING_RADIUS := 2;
+const EVENT_TIMEOUT  := 10*60;
+
+program MysticStoneControl( stone )
+
+	RegisterForSpeechEvents( stone, HEARING_RADIUS );
+	EnableEvents( SYSEVENT_SPEECH, HEARING_RADIUS );
+
+	var ev, tgt := SystemFindObjectBySerial( GetObjProperty( stone, "target" ) );
+	while( stone )
+		// handle events
+		ev := os::wait_for_event( EVENT_TIMEOUT );
+		if( ev )
+			if( ev.type == SYSEVENT_SPEECH )
+				//ev.source; ev.text;
+				tgt := SystemFindObjectBySerial( GetObjProperty( stone, "target" ) );
+				if( tgt )
+					PrintTextAbove( tgt, ev.text );
+				endif
+			endif
+		endif
+	endwhile
+
+endprogram

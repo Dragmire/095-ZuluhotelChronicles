@@ -1,0 +1,810 @@
+use os;
+use uo;
+
+include "include/time";
+include "include/constants/propids";
+include "include/yesno";
+
+program pvp (who)
+	var ref;
+	var lkarma;
+	var sel;
+	var lfame;
+	var pvpcrim;
+	var pvpmurd;
+	var ranswer;
+	Detach();
+	EraseObjProperty(who,"pvptype");
+	if (who.cmdlevel and GetGlobalProperty("ArenaInUse"))
+		if (!RestartArena(who));
+			return;
+		endif
+	endif
+	if (who.x < 5267 or who.x > 5299 or who.y < 400 or who.y > 432)
+		SendSysMessage( who, "Cancelled, you are not in the arena." );
+		return;
+	endif
+	if (GetGlobalProperty("ArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+		return;
+	endif
+	while (sel != 999 and sel !=998 and sel != 1 and sel !=2)
+		sel := PvPMenu(who);
+	endwhile
+	if (sel == 998)
+		return;
+	endif
+	var player;
+	var player2;
+	var who2;
+	var answer;
+	if (GetObjProperty(who,"pvptype")== "1")
+		UpdateTrophy(who);
+		SendSysMessage( who, "1 vs 1 PvP Selected." );
+		SendSysMessage( who, "Select your opponent." );
+		player:=target(who, TGTOPT_NOCHECK_LOS);
+		if (player.npctemplate) 
+			SendSysMessage( who, "Cancelled" );
+			return; 
+		endif
+		if(!player or !player.strength or player.dead or player.name == who.name )
+			SendSysmessage( who, "Invalid selection." ); 
+			return;
+ 		endif
+		if (player.x < 5267 or player.x > 5299 or player.y < 400 or player.y > 432 )
+			SendSysMessage( who, "Cancelled, they are not in the arena." );
+			return;
+		endif
+		UpdateTrophy(player);
+		SendSysmessage( player, who.name + " is challenging you to PvP - accept?" ); 
+		answer:=YesNo(player,"Accept PvP?");	
+		if (!answer)
+			SendSysMessage(player,"You have refused the challenge.");
+			SendSysMessage(who,player.name + " has not accepted.");
+			return;
+		endif
+		SendSysMessage(player,"You have accepted the challenge.");
+		SendSysMessage(who,player.name + " has accepted.");
+	endif
+	if (GetObjProperty(who,"pvptype")== "2")
+		UpdateTrophy(who);
+		SendSysMessage( who, "2 vs 2 PvP Selected." );
+		//TEAM MATE
+		SendSysMessage( who, "Select your team mate." );
+		SendSysMessage( who, "(Click yourself for 1 vs 2 PvP)");
+		who2:=target(who, TGTOPT_NOCHECK_LOS);
+		if (who2.npctemplate) 
+			SendSysMessage( who, "Cancelled" );
+			return; 
+		endif
+		if(!who2 or !who2.strength or who2.dead )
+			SendSysmessage( who, "Invalid selection." ); 
+			return;
+ 		endif
+		if (who2.x < 5267 or who2.x > 5299 or who2.y < 400 or who2.y > 432)
+			SendSysMessage( who, "Cancelled, they are not in the arena." );
+			return;
+		endif
+		UpdateTrophy(who2);
+		if (who2.name != who.name)
+			SendSysmessage( who, who2.name + " selected. Waiting for response.." ); 
+			SendSysmessage( who2, who.name + " asks you to join their PvP team." ); 
+			answer:=YesNo(who2,"Join Team?");	
+			if (!answer)
+				SendSysMessage(who2,"You have refused the challenge.");
+				SendSysMessage(who,who2.name + " has not accepted.");
+				return;
+			endif
+			SendSysMessage(who2,"You have joined the team of : "+who.name);
+			SendSysMessage(who,who2.name + " has accepted.");
+		endif
+		if (who2.name == who.name)
+			SendSysMessage(who2,"1 vs 2 PvP Selected.");
+		endif
+		//OPPONENT #1
+		SendSysMessage( who, "Select opponent #1:" );
+		player:=target(who, TGTOPT_NOCHECK_LOS);
+		if (player.npctemplate) 
+			SendSysMessage( who, "Cancelled" );
+			return; 
+		endif
+		if(player == who2)
+			SendSysMessage(who,"Player already selected. Cancelled");
+			return;
+		endif
+		if(!player or !player.strength or player.dead or player.name == who.name )
+			SendSysmessage( who, "Invalid selection." ); 
+			return;
+ 		endif
+		if (player.x < 5267 or player.x > 5299 or player.y < 400 or player.y > 432)
+			SendSysMessage( who, "Cancelled, they are not in the arena." );
+			return;
+		endif
+		SendSysmessage( who, player.name + " selected. Waiting for response.." ); 
+		UpdateTrophy(player);
+		if (who.name != who2.name)
+			SendSysmessage( player, who.name + " is challenging you to 2 vs 2 PvP - accept?" ); 
+			SendSysmessage( player, who.name + " Opponents : "+who.name+" & "+who2.name ); 
+		else
+			SendSysmessage( player, who.name + " is challenging you to 1 vs 2 PvP - accept?" ); 
+			SendSysmessage( player, who.name + " Opponent : "+who.name); 
+		endif
+		answer:=YesNo(player,"Accept PvP?");	
+		if (!answer)
+			SendSysMessage(player,"You have refused the challenge.");
+			SendSysMessage(who,player.name + " has not accepted.");
+			return;
+		endif
+		SendSysMessage(player,"You have accepted the challenge.");
+		SendSysMessage(who,player.name + " has accepted.");
+		//OPPONENT #2
+		SendSysMessage( who, "Select opponent #2:" );
+		player2:=target(who, TGTOPT_NOCHECK_LOS);
+		if (player2.npctemplate) 
+			SendSysMessage( who, "Cancelled" );
+			return; 
+		endif
+		if(player2 == who2 or player2 == player)
+			SendSysMessage(who,"Player already selected. Cancelled");
+			return;
+		endif
+		if(!player2 or !player2.strength or player2.dead or player2.name == who2.name )
+			SendSysmessage( who, "Invalid selection." ); 
+			return;
+ 		endif
+		if (player2.x < 5267 or player2.x > 5299 or player2.y < 400 or player2.y > 432)
+			SendSysMessage( who, "Cancelled, they are not in the arena." );
+			return;
+		endif
+		UpdateTrophy(player2);
+		SendSysmessage( who, player2.name + " selected. Waiting for response.." ); 
+		if (who.name != who2.name)
+			SendSysmessage( player2, who.name + " is challenging you to 2 vs 2 PvP - accept?" ); 
+			SendSysmessage( player2, "Opponents : "+who.name+" & "+who2.name ); 
+			SendSysmessage( player2, "Team Mate : "+player.name ); 
+		else
+			SendSysmessage( player2, who.name + " is challenging you to 1 vs 2 PvP - accept?" ); 
+			SendSysmessage( player2, "Opponent : "+who.name ); 
+			SendSysmessage( player2, "Team Mate : "+player.name ); 
+		endif
+		answer:=YesNo(player2,"Accept PvP?");	
+		if (!answer)
+			SendSysMessage(player2,"You have refused the challenge.");
+			SendSysMessage(who,player2.name + " has not accepted.");
+			return;
+		endif
+		SendSysMessage(player2,"You have accepted the challenge.");
+		SendSysMessage(who,player2.name + " has accepted.");
+	endif
+	if (GetGlobalProperty("ArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+	return;
+	endif
+	SetGlobalProperty("ArenaInUse", 1 );
+	var champ;
+	var Near_Items := ListItemsNearLocation(who.x, who.y, who.z,50);
+	foreach thing in Near_Items
+		if (GetObjProperty(thing, "Champion") and GetObjProperty(thing,"PvPTrophy"))
+			champ := GetObjProperty(thing, "Champion");
+		endif
+	endforeach
+	if (champ)
+		champ := SystemFindObjectBySerial(champ);
+		if (champ == who)
+			WelcomeChamp(champ);
+		endif
+	endif
+	MakeFence ();
+	MoveCharacterToLocation( who, 5291, 407, 15, 0);
+	MoveCharacterToLocation( player, 5274, 424, 15, 0);
+	if(GetObjProperty(who,"pvptype")=="2")
+		MoveCharacterToLocation( who2, 5291, 407, 15, 0);
+		MoveCharacterToLocation( player2, 5274, 424, 15, 0);
+	endif
+	lkarma := GetObjProperty(player, "Karma");
+	lfame := GetObjProperty(player, "Fame");
+	SetObjProperty(player, "lkarma", lkarma);
+	SetObjProperty(player, "lfame", lfame);
+	lkarma := GetObjProperty(who, "Karma");
+	lfame := GetObjProperty(who, "Fame");
+	SetObjProperty(who, "lkarma", lkarma);
+	SetObjProperty(who, "lfame", lfame);
+	SetObjProperty(player, "pvping", 1);
+	SetObjProperty(who, "pvping", 1);
+	SetObjProperty(who,"pvpcrim",who.criminal);
+	SetObjProperty(who,"pvpmurd",who.murderer);
+	SetObjProperty(player,"pvpcrim",player.criminal);
+	SetObjProperty(player,"pvpmurd",player.murderer);
+	if(GetObjProperty(who,"pvptype")=="2")
+		lkarma := GetObjProperty(player2, "Karma");
+		lfame := GetObjProperty(player2, "Fame");
+		SetObjProperty(player2, "lkarma", lkarma);
+		SetObjProperty(player2, "lfame", lfame);
+		lkarma := GetObjProperty(who2, "Karma");
+		lfame := GetObjProperty(who2, "Fame");
+		SetObjProperty(who2, "lkarma", lkarma);
+		SetObjProperty(who2, "lfame", lfame);
+		SetObjProperty(player2, "pvping", 1);
+		SetObjProperty(who2, "pvping", 1);
+		SetObjProperty(player2,"pvpcrim",player2.criminal);
+		SetObjProperty(player2,"pvpmurd",player2.murderer);
+		SetObjProperty(who2,"pvpcrim",who2.criminal);
+		SetObjProperty(who2,"pvpmurd",who2.murderer);
+	endif
+	var IsRef;
+	foreach mobile in ListMobilesNearLocation( who.x, who.y, who.z, 25 )
+		IsRef:= GetObjProperty( mobile, "referee");
+		if (IsRef)
+			ref := mobile;
+		endif
+	endforeach
+	Sleep(5);
+	PrintTextAbove( ref, "Get ready - PvP will start in 10 seconds." );
+	sleep(5);
+	PrintTextAbove( ref, "5 seconds..." );
+	sleep(5);
+	PrintTextAbove( ref, "FIGHT!!!! :)" );
+	DeleteFence(ref);
+	var tme := ReadGameClock() ;
+	var ponline := 0;
+	var wonline := 0;
+	var p2online := 0;
+	var w2online := 0;
+	var running := 1;
+	var booted;
+	var toolong := 0;
+	var leftarena ;
+	var pded;
+	var wded;
+	var p2ded;
+	var w2ded;
+	while (running)
+		sleep(1);
+		toolong := toolong + 1;
+		if (toolong > 600 )
+			running := 0;
+		endif
+		if (toolong > 3)
+			ref.hidden := 1;
+		endif
+		pded := GetObjProperty(player, "pvping");
+		wded := GetObjProperty(who, "pvping");
+		if (GetObjProperty(who,"pvptype")=="1")
+			if (!pded or !wded)
+				running := 0;
+			endif
+		endif
+		if (GetObjProperty(who,"pvptype")=="2")
+			p2ded := GetObjProperty(player2, "pvping");
+			w2ded := GetObjProperty(who2, "pvping");
+			if ((!pded and !p2ded) or (!wded and !w2ded))
+				running := 0;
+			endif
+			if (!pded)
+				MoveCharacterToLocation( player, 5267, 412, 37, 0);
+			endif
+			if (!p2ded)
+				MoveCharacterToLocation( player2, 5267, 411, 37, 0);
+			endif
+			if (!wded)
+				MoveCharacterToLocation( who, 5267, 420, 37, 0);
+			endif
+			if (!w2ded)
+				MoveCharacterToLocation( who2, 5267, 419, 37, 0);
+			endif
+		endif
+		foreach char in EnumerateOnlineCharacters()
+			if (char == player  )
+				ponline := 1;
+			endif
+			if (char == who )
+				wonline := 1;
+			endif
+		endforeach
+		if (!ponline or !wonline)
+			if (ponline)
+				if (GetObjProperty(who,"pvping"))
+					booted := who.name;
+					running := 0;
+				endif
+			else
+				if (GetObjProperty(player,"pvping"))
+					booted := player.name;
+					running := 0;
+				endif
+			endif
+		endif
+		if (GetObjProperty(who,"pvptype")=="2")
+			foreach char in EnumerateOnlineCharacters()
+				if (char == player2 )
+					p2online := 1;
+				endif
+				if (char == who2)
+					w2online := 1;
+				endif
+			endforeach
+			if (!p2online or !w2online)
+				running := 0;
+				if (p2online)
+					if (GetObjProperty(who2,"pvping"))
+						booted := who2.name;
+						running := 0;
+					endif
+				else
+					if (GetObjProperty(player2,"pvping"))
+						booted := player2.name;
+						running := 0;
+					endif
+				endif
+			endif
+		endif
+		ponline := 0;
+		wonline := 0;
+		p2online := 0;
+		w2online := 0;
+if ((who.x < 5273 or who.x > 5292 or who.y > 425 or who.y < 406 or who.z != 15) and GetObjProperty(who,"pvping"))
+			leftarena := who.name;
+			running := 0;
+		endif
+if ((player.x < 5273 or player.x > 5292 or player.y > 425 or player.y < 406 or player.z != 15) and GetObjProperty(player,"pvping"))
+			leftarena := player.name;
+			running := 0;
+		endif
+		if(GetObjProperty(who,"pvptype")=="2")
+if ((who2.x < 5273 or who2.x > 5292 or who2.y > 425 or who2.y < 406 or who2.z != 15) and GetObjProperty(who2,"pvping"))
+				leftarena := who2.name;
+				running := 0;
+			endif
+if ((player2.x < 5273 or player2.x > 5292 or player2.y > 425 or player2.y < 406 or player2.z != 15) and GetObjProperty(player2,"pvping"))
+				leftarena := player2.name;
+				running := 0;
+			endif
+		endif
+	endwhile	
+	player.frozen := 1;
+	who.frozen := 1;
+	if(GetObjProperty(who,"pvptype")=="2")
+		player2.frozen := 1;
+		who2.frozen := 1;
+	endif
+	var tmenow := ReadGameClock() ;
+	var length := tmenow - tme;
+	var cont;
+	var serial;	
+	var score ;
+	sleep (2);
+	ref.hidden := 0;
+	if (GetObjProperty(who,"pvptype")=="1")
+		if (!pded and !wded)
+			PrintTextAbove( ref, "It was a draw!" );
+			foreach character in EnumerateOnlineCharacters()
+		SendSysMessage( character,who.name+" & "+player.name+" both died in the PvP arena, in "+length+"secs." );	
+			endforeach
+		endif
+	endif
+	if (GetObjProperty(who,"pvptype")=="2")
+		if (!pded and !wded and !p2ded and !w2ded)
+			PrintTextAbove( ref, "It was a draw!" );
+			foreach character in EnumerateOnlineCharacters()
+if (who.name != who2.name)
+SendSysMessage( character,who.name+","+who2.name+","+player.name+"&"+player2.name+" all died in the PvP arena, match length : "+length+"secs." );	
+else
+SendSysMessage( character,who.name+","+player.name+"&"+player2.name+" all died in the PvP arena, match length : "+length+"secs." );	
+endif
+			endforeach
+		endif
+	endif
+	if (GetObjProperty(who,"pvptype")=="1")
+	if (!pded and wded)
+		PrintTextAbove( ref, who.name + " is the winner!" );
+		score := GetObjProperty (who, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (who, "pvpwins",score);
+		ShowScore(who);
+		score := GetObjProperty(player,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(player,"pvplosses",score);
+		ShowScore(player);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,who.name+" defeated "+player.name+" in the PvP arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (!wded and pded)
+		PrintTextAbove( ref, player.name + " is the winner!" );
+		score := GetObjProperty (player, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (player, "pvpwins",score);
+		ShowScore(player);
+		score := GetObjProperty(who,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(who,"pvplosses",score);
+		ShowScore(who);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,player.name+" defeated "+who.name+" in the PvP arena, in "+length+" secs." );	
+		endforeach
+	endif
+	endif
+	if (GetObjProperty(who,"pvptype")=="2")
+	if (!pded and !p2ded and (wded or w2ded))
+		if (who.name != who2.name)
+			PrintTextAbove( ref, who.name + " & " + who2.name+" are the winners!" );
+		else
+			PrintTextAbove( ref, who.name +" is the winner!" );
+		endif
+		score := GetObjProperty (who, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (who, "pvpwins",score);
+		ShowScore(who);
+		score := GetObjProperty(player,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(player,"pvplosses",score);
+		ShowScore(player);		
+		score := GetObjProperty (who2, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (who2, "pvpwins",score);
+		ShowScore(who2);
+		score := GetObjProperty(player2,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(player2,"pvplosses",score);
+		ShowScore(player2);
+		foreach character in EnumerateOnlineCharacters()
+if (who.name != who2.name)
+SendSysMessage( character,who.name+"/"+who2.name+" defeated "+player.name+"/"+player2.name+" in the PvP arena, in "+length+" secs." );	
+else
+SendSysMessage( character,who.name+" defeated "+player.name+" & "+player2.name+" in the PvP arena, in "+length+" secs." );	
+endif
+		endforeach
+	endif
+	if (!wded and !w2ded and (pded or p2ded))
+		PrintTextAbove( ref, player.name+" & "+player2.name+ " are the winners!" );
+		score := GetObjProperty (who, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (player, "pvpwins",score);
+		ShowScore(who);
+		score := GetObjProperty(who,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(who,"pvplosses",score);
+		ShowScore(player);
+		score := GetObjProperty (player2, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (player2, "pvpwins",score);
+		ShowScore(player2);
+		score := GetObjProperty(who2,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(who2,"pvplosses",score);
+		ShowScore(who2);
+		foreach character in EnumerateOnlineCharacters()
+if (who.name != who2.name)
+SendSysMessage( character,player.name+"/"+player2.name+" defeated "+who.name+"/"+who2.name+" in the PvP arena, in "+length+" secs." );	
+else
+SendSysMessage( character,player.name+" & "+player2.name+" defeated "+who.name+" in the PvP arena, in "+length+" secs." );	
+endif
+		endforeach
+	endif
+	endif
+	if (booted)
+		PrintTextAbove( ref, booted + " disconnected. PvP is cancelled." );	
+	endif
+	if (leftarena)
+		PrintTextAbove( ref, leftarena + " has left the arena. PvP is cancelled." );	
+	endif
+	if (toolong > 600)
+		PrintTextAbove( ref, "10 minutes is up. PvP is cancelled." );	
+	endif
+	MakeFence();
+	if(GetObjProperty(who,"pvping"))
+		MoveCharacterToLocation( who, 5291, 407, 15, 0);
+	endif
+	if(GetObjProperty(player,"pvping"))
+		MoveCharacterToLocation( player, 5274, 424, 15, 0);
+	endif
+	if (GetObjProperty(who,"pvptype")=="2")
+		if(GetObjProperty(who2,"pvping"))
+			MoveCharacterToLocation( who2, 5291, 407, 15, 0);
+		endif
+		if(GetObjProperty(player2,"pvping"))
+			MoveCharacterToLocation( player2, 5274, 424, 15, 0);
+		endif
+	endif
+	player.frozen := 0;
+	who.frozen := 0;
+	if (GetObjProperty(who,"pvptype")=="2")
+		player2.frozen := 0;	
+		who2.frozen := 0;
+	endif
+	sleep (4);	
+	lkarma := GetObjProperty(player, "lkarma");
+	lfame := GetObjProperty(player, "lfame");
+	SetObjProperty(player, "Karma", lkarma);
+	SetObjProperty(player, "Fame", lfame);
+	lkarma := GetObjProperty(who, "lkarma");
+	lfame := GetObjProperty(who, "lfame");
+	SetObjProperty(who, "Karma", lkarma);
+	SetObjProperty(who, "Fame", lfame);
+	who.setmurderer(GetObjProperty(who,"pvpmurd"));
+	who.setcriminal(GetObjProperty(who,"pvpcrim"));
+	player.setmurderer(GetObjProperty(player,"pvpmurd"));
+	player.setcriminal(GetObjProperty(player,"pvpcrim"));
+	if (GetObjProperty(who,"pvptype")=="2")
+		lkarma := GetObjProperty(player2, "lkarma");
+		lfame := GetObjProperty(player2, "lfame");
+		SetObjProperty(player2, "Karma", lkarma);
+		SetObjProperty(player2, "Fame", lfame);
+		lkarma := GetObjProperty(who2, "lkarma");
+		lfame := GetObjProperty(who2, "lfame");
+		SetObjProperty(who2, "Karma", lkarma);
+		SetObjProperty(who2, "Fame", lfame);
+		who2.setmurderer(GetObjProperty(who2,"pvpmurd"));
+		who2.setcriminal(GetObjProperty(who2,"pvpcrim"));
+		player2.setmurderer(GetObjProperty(player2,"pvpmurd"));
+		player2.setcriminal(GetObjProperty(player2,"pvpcrim"));
+	endif
+	Sleep (3);
+	PrintTextAbove( ref, "Teleporting you out.." );	
+	sleep (5);
+	MoveCharacterToLocation( who, 5267, 420, 37, 0);
+	MoveCharacterToLocation( player, 5267, 412, 37, 0);
+	if (GetObjProperty(who,"pvptype")=="2")
+		MoveCharacterToLocation( who2, 5267, 419, 37, 0);
+		MoveCharacterToLocation( player2, 5267, 411, 37, 0);
+	endif
+	EraseObjProperty( player, "pvping" );
+	EraseObjProperty( who, "pvping" );
+	if (GetObjProperty(who,"pvptype")=="2")
+		EraseObjProperty( player2, "pvping" );
+		EraseObjProperty( who2, "pvping" );
+	endif
+	DeleteFence(ref);
+	EraseGlobalProperty("ArenaInUse");
+	EraseObjProperty( who, "lkarma" );
+	EraseObjProperty( who, "lfame" );
+	EraseObjProperty( player, "lkarma" );
+	EraseObjProperty( player, "lfame" );
+	if (GetObjProperty(who,"pvptype")=="2")
+		EraseObjProperty( who2, "lkarma" );
+		EraseObjProperty( who2, "lfame" );
+		EraseObjProperty( player2, "lkarma" );
+		EraseObjProperty( player2, "lfame" );
+	endif
+endprogram
+
+function MakeFence ()
+	var fnc;
+	fnc := CreateItemAtLocation(5290,408, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5291,408, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);	
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5292, 408, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5289,408, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5289,407, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5289,406, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5275,425, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5275,424, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5275,423, 15, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5275,422, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5274,422, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+	fnc := CreateItemAtLocation(5273,422, 15, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1183;
+
+endfunction
+
+function DeleteFence ( lee )
+	var Near;
+	var ispvpfence;
+	Near := ListItemsNearLocation( lee.x , lee.y , lee.z , 25 );
+	foreach item in Near
+		ispvpfence := GetObjProperty( item, "pvpfence");
+		if (ispvpfence)
+			DestroyItem(item);
+		endif
+	endforeach
+endfunction
+
+function PvPMenu (player)
+	var tstring;
+	var type := GetObjProperty(player,"pvptype");
+	if (!type)
+		SetObjProperty(player,"pvptype","1");
+		type := "1";
+	endif
+	case(type)
+		"1" : tstring := "1 vs 1 PvP";
+		"2" : tstring := "2 vs 2 PvP";
+	endcase
+	var DiffLayout := {
+	"page 0",
+	"resizepic 30 30 83 165 135",
+	"button 50 90 2104 2103 1 0 2001",
+	"button 50 110 2104 2103 1 0 2002",
+	//"button 50 130 2104 2103 1 0 2003",
+	//"button 50 150 2104 2103 1 0 2004",
+	//"button 50 170 2104 2103 1 0 2005",
+	//"button 50 190 2104 2103 1 0 2006",
+	//"button 50 210 2104 2103 1 0 2007",
+	//"button 50 230 2104 2103 1 0 2008",
+	"text 75 42 35 0",
+	"text 60 60 35 1",
+	"text 75 85 35 2",
+	"text 75 105 35 3",
+	//"text 70 125 35 4",
+	//"text 70 145 35 5",
+	//"text 70 165 35 6",
+	//"text 70 185 35 7",
+	//"text 70 205 35 8",
+	//"text 70 225 35 9",
+	//"button 95 155 2128 2129 1 0 1"
+	};
+
+	var DiffData := {
+	"",
+	"Select Option :",
+	"1 vs 1 PvP",
+	"2 vs 2 PvP",
+	"",
+	"",
+	"",
+	"",
+	"",
+	""
+	};
+	var Difficulty;
+	var number;
+	var res := SendDialogGump( player, DiffLayout, DiffData );
+	var text;
+	var entered;
+	if (res[0]==0)
+		SendSysMessage(player, "Aborted.");
+		return 998;
+	endif
+	if (res[0]==1)
+		return 999;
+	endif
+	Difficulty := res[0] - 2000;
+
+	if (Difficulty == 1)
+		SetObjProperty(player,"pvptype","1");
+	elseif (Difficulty == 2)
+		SetObjProperty(player,"pvptype","2");
+	else 
+		Difficulty := 999;
+	endif
+	return Difficulty;
+endfunction
+
+function UpdateTrophy(player)
+	var high;
+	var total;
+	var wins := GetObjProperty(player,"pvpwins");
+	var losses := GetObjProperty(player,"pvplosses");
+	var statue;
+	if (!wins)
+		wins := 0;
+	endif
+	if (!losses or losses == 0)
+		losses := 1;
+	endif
+	total := wins / losses;
+	if (total < 1 or !total)
+		total := 1;
+	endif
+	var Near_Items := ListItemsNearLocation(player.x, player.y, player.z,50);
+	foreach thing in Near_Items
+		if (GetObjProperty(thing,"PvPTrophy"))
+			statue := thing;
+		endif
+	endforeach
+	high := GetObjProperty(statue,"HighScore");
+	if (!high)
+		high := 0;
+	endif
+	if (total > high)
+		SetObjProperty(statue,"HighScore",total);	
+		SetObjProperty(statue,"Champion",player.serial);	
+		statue.name := "PvP Champion : "+player.name+" - "+total+" points";
+		SendSysMessage(player,"You are the new PvP Champion.");
+	endif
+endfunction	
+
+function WelcomeChamp(player)
+	SendSysMessage(player,"Welcome back, champ.");
+endfunction
+	
+function ShowScore(player)
+	var total;
+	var wins := GetObjProperty(player,"pvpwins");
+	var losses := GetObjProperty(player,"pvplosses");
+	if (!wins)
+		wins := 0;
+	endif
+	if (!losses)
+		losses := 0;
+	endif
+	total := wins / losses;
+	SendSysMessage(player, "Your PvP Rating : "+total);
+	SendSysMessage(player, "Wins / Losses  	: "+wins+" wins / "+losses+" losses.");
+endfunction
+
+function RestartArena(who)
+	var player ;
+	var inuse;
+	foreach guy in EnumerateOnlineCharacters()
+           if  (GetObjProperty(guy,"pvping") )
+		player := guy;
+		if (player and (player.x > 5272 and player.x < 5293 and player.y < 426 and player.y > 405 and player.z == 15))
+			inuse := 1;
+		else
+			EraseObjProperty(player,"pvping");
+		endif
+	   endif
+	endforeach
+	if (inuse != 1)
+		SendSysMessage(who,"It appears the arena is bugged.");
+		SendSysMessage(who,"Restart arena?");
+		SendSysMessage(who,"Make sure it is not in use!");
+		var ranswer:=YesNo(who,"Restart Arena?");	
+		if (!ranswer)
+			SendSysMessage(who,"Cancelled.");	
+		else
+			SendSysMessage(who,"Arena Restarted.");
+			EraseGlobalProperty("ArenaInUse");
+		endif	
+	endif
+	return inuse;
+endfunction

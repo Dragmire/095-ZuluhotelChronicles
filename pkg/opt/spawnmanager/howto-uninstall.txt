@@ -1,0 +1,5 @@
+How to uninstall:
+- Remove the lines which where added during installation;
+- Use .removemanagers;
+- Delete data\ds\spawnmanager directory (optional - you may want to keep the region entries as a reference);
+- Delete the pkg.

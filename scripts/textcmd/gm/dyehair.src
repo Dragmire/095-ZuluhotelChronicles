@@ -1,0 +1,79 @@
+//////////////////////////////////////////////////////////////////////////////////
+//                                                                              //
+// Author: MontuZ (MontuZ@aol.com) Nov 29, 2003.                                //
+// Version: 1.0                                                                 //
+// Core: 093                                                                    //
+// Bugs: None. Atleast none that I know of..                                    //
+// Syntax: .dyehair (the rest is self-explanitory)                              //
+//                                                                              //
+//////////////////////////////////////////////////////////////////////////////////
+
+Use uo;
+Use os;
+
+Include "include/client";
+Include "include/itemutil";
+
+Program TextCMD_DyeHair( Who, Text )
+
+    // Asks what color the hair should be.
+    Var Colors := SplitWords( Text );
+    
+    Var HairDye  := Cint( Colors[1] );
+
+    If( !HairDye )
+    SendSysMessage( Who, "Canceled." );
+      Return 0;
+    EndIf
+
+    If( HairDye > 3000 )
+    SendSysMessage( Who, "Must be a number between 1 and 3000." );
+      Return 0;
+    EndIf
+
+    // Asks what color the beard should be.
+    Var BeardDye := Cint( Colors[2] );
+
+    If( !BeardDye )
+    SendSysMessage( Who, "Canceled." );
+      Return 0;
+    EndIf
+
+    If( BeardDye > 3000 )
+    SendSysMessage( Who, "Must be a number between 1 and 3000." );
+      Return 0;
+    EndIf
+
+    // Asks how much gold the player should give.
+
+
+    SendSysMessage( Who, "Select a player." );
+
+    Var Player   := Target( Who );
+    Var Beard    := GetEquipmentByLayer( Player, LAYER_BEARD );
+    Var Hair     := GetEquipmentByLayer( Player, LAYER_HAIR );
+
+    If( !Player )
+    SendSysMessage( Who, "Canceled." );
+      Return 0;
+    EndIf
+
+    // Check if the staffer selected an item.
+    If( !Player.IsA(POLCLASS_MOBILE) )
+    SendSysMessage( Who, "You must target a player!" );
+      Return 0;
+    EndIf
+
+    Hair.color  := HairDye;
+    Beard.color := BeardDye;
+
+    // Tells the player what hue there hair/beard is.
+    SendSysMessage( Player, "Your hair color is now " + HairDye + "." );
+    SendSysMessage( Player, "Your beard color is now " + BeardDye + "." );
+
+    // Tells the staffer what their hair/beard hue is. And gives the gold to the staffer.
+    SendSysMessage( Who, Player.name + "'s hair color is now " + HairDye + "." );
+    SendSysMessage( Who, Player.name + "'s beard color is now " + BeardDye + "." );
+                                                                                                     // -MontuZ
+EndProgram
+

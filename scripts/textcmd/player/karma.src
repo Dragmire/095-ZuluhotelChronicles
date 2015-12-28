@@ -1,0 +1,15 @@
+use os;
+use uo;
+
+program showkf( who )
+	//var f := GetObjProperty(who,"Fame");
+	var k := GetObjProperty(who,"Karma");
+	//if (!f)
+	//	f := 0;
+	//endif
+	if (!k) 
+		k := 0;
+	endif
+	//SendSysmessage( who , "Fame : "+f );
+	SendSysmessage( who , "Karma :"+k );
+endprogram

@@ -1,0 +1,26 @@
+##
+## ecompile.cfg: must be in the same directory as ecompile.exe
+##
+
+#
+# ModuleDirectory: Location of *.em files
+#
+ModuleDirectory C:\Dark\AL\UnrealUO\scripts
+
+#
+# IncludeDirectory: Location of *.inc files, if not found relative
+#                   or with a specified package
+#
+IncludeDirectoryC:\Dark\AL\UnrealUO\scripts
+
+#
+# PolScriptRoot: Location of "::file" includes
+#
+PolScriptRootC:\Dark\AL\UnrealUO\scripts
+
+#
+# PackageRoot: root directories where packages are stored
+#              This can be specified multiple times.
+#
+PackageRoot C:\Dark\AL\UnrealUO\scripts/devpkg
+PackageRoot C:\Dark\AL\UnrealUO\scripts/pkg

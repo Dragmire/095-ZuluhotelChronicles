@@ -1,0 +1,143 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+
+include "ai/main/defaultnoncombatevent";
+include "ai/combat/explosioncombatevent";
+include "ai/setup/archersetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+include "include/client";
+include "include/npcbackpacks";
+include "ai/setup/modsetup";
+
+const HALT_THRESHOLD := 10; // how close before he attacks?
+
+var runaway := 0;
+
+program KillPlayers()
+
+	SetWarMode( 0 );
+    	main_AI_loop();
+        
+endprogram
+
+function CloseDistance( opponent )
+	var helper;
+	var provod :=0;
+	var ev := struct;
+	ev.+type;
+	ev.type := EVID_PEACEMADE;
+	foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 15 ) 
+		if (CheckLineOfSight( me, mobile ) and mobile.npctemplate and mobile != opponent and mobile != me)
+			if (mobile.warmode = 0 and (GetObjProperty(mobile,"Karma") < (-500)) )	
+				helper := mobile;
+			endif
+		endif
+	endforeach
+	if (helper and provod = 0 and Random (5) = 1 )
+		while(distance(me,helper) > 2)
+			if ((distance(me,opponent) < 2))
+					RunAwayFrom(opponent);
+			else
+				RunToward(helper);
+			endif
+		endwhile
+		sleep(1);
+		var circle :=0;
+		while (circle < 10)
+			PlaySoundEffect(me,0x039);		
+			PlaySoundEffect(me,0x04d);
+			PlaySoundEffect(me,0x053);
+			RunToward(helper);
+			circle := circle +1;
+		endwhile
+		if (!helper.dead and !opponent.dead)
+			PerformAction( me, 0X020 );
+			if (helper.name and opponent.name)
+				PrintTextAbove(me,me.name+" provokes "+helper.name+" to attack "+opponent.name+"!");
+			endif
+			provod := 1;
+			get_help(opponent);
+			return;
+		endif
+	endif
+	var fwosb := 0;
+	var lasthp := GetObjProperty(me,"lasthp");
+	if (!lasthp)
+		lasthp := GetHP(me);
+	endif
+	var argh;
+	var closest := 10;
+	if (GetHP(me) < lasthp)
+		foreach mobile in ListMobilesNearLocation( me.x, me.y, me.z, 9)
+			if (CheckLineOfSight( me, mobile ) and mobile.warmode and mobile != me )	
+				if (distance(me,mobile) < closest)
+					argh := mobile;
+					closest := distance(me,mobile);
+				endif
+			endif
+		endforeach
+		if (argh)
+			opponent := argh;
+		endif
+	endif
+	SetObjProperty(me,"lasthp",GetHP(me));
+
+	if (distance(me, opponent) <= 4)
+		if (opponent.warmode = 1 and (GetObjProperty(me,"lastprovod") != opponent.serial) or argh )
+			PlaySoundEffect(me,0x039);		
+			PlaySoundEffect(me,0x04d);
+			PlaySoundEffect(me,0x053);
+			SendEvent( opponent, ev );
+			PrintTextAbove(opponent,opponent.name+" is dazzled by the beautiful music!");
+			opponent.warmode := 0;
+			SetObjProperty(me,"lastprovod",opponent.serial);
+			return 0;
+		endif
+	endif
+	if (argh)
+		runaway := 0;
+		while (runaway < 7)
+			RunAwayFrom(argh);
+			runaway := runaway + 1;
+		endwhile
+	endif
+
+    if ( (runaway < 100) or (!theammo) )
+    	if (distance(me, opponent) <= 6)
+		RunAwayFrom(opponent);
+    	else
+		runaway := 0;
+		return 1;
+    	endif
+    else
+	case Distance( me, opponent )
+        	1:
+        	0:
+            		return 1;
+        	default:
+            		RunToward( opponent );
+            		return 0;
+    	endcase
+    endif
+
+if (!helper)
+		while ((distance(me, opponent) < 4) and (fwosb < 30) and opponent.warmode)
+			RunAwayFrom(opponent);
+			fwosb := fwosb + 1;
+		endwhile	
+		fwosb := 0;
+	endif
+		
+endfunction

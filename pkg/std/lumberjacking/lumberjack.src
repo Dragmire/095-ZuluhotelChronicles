@@ -1,0 +1,332 @@
+///////////////////////////////////
+// 20010324	Jaleem Added autolooping
+///////////////////////////////////
+
+use uo;
+use cfgfile;
+use os;
+
+include "include/client";
+include "include/classes";
+include "include/objtype";
+include "include/dist";
+include "include/itemutil";
+include "include/random";
+include "include/autoloop";
+
+const UACTION_CHOP	:= 0x0D;
+const DEFAULT_POINTS	:= 100;
+const POINTS_MULTIPLIER	:= 15;
+const NUM_PERFORM	:= 4;
+const MAX_CHANCE	:= 100;
+
+program use_axe( character , axe )
+
+	if( !ReserveItem( axe ) )
+		return;
+	endif
+
+	if( !IsEquipped( character , axe ) )
+		SendSysmessage( character, "You have to equip that to lumberjack!" );
+		return;
+	endif
+
+
+	SendSysmessage( character , "Select a tree to chop." );
+
+	var use_on := TargetCoordinates( character );
+	if (!use_on)
+		return;
+	endif
+
+	var distt := CoorDist( character.x , character.y , use_on.x , use_on.y );
+	if( distt > 2 )
+		SendSysmessage( character , "That is too far away." );
+		return;
+	endif
+
+
+	Autoloop_init (character);
+
+	while (Autoloop_more ())
+
+        	var info := GetMapInfo( use_on.x , use_on.y );
+		var result;
+	
+		/*
+		    result > 0  - Success	- autoloop goes on
+		    result = 0  - Failure	- autoloop goes on
+		    result < 0  - Nomore logs	- autoloop stops
+		*/
+	
+		if( IsTree( use_on.objtype ) )
+			SendSysmessage( character , "You start lumberjacking..." );
+			result := ChopTree( character , use_on , info , axe );
+
+			if (!axe) //Tool broken
+				SendSysMessage( character , "You stop lumberjacking." );			
+			        Autoloop_finish ();
+				return;
+			endif
+		else
+			SendSysmessage( character , "You can't get any wood from that." );
+		        Autoloop_finish ();
+			return;
+		endif
+
+		Sleep( 1 );
+	
+		if( result > 0)
+			DoSomething( character , axe );
+			if (!axe) //Tool broken
+				SendSysMessage( character , "You stop lumberjacking." );			
+			        Autoloop_finish ();
+				return;
+			endif
+		elseif (result < 0)
+			SendSysMessage( character , "You stop lumberjacking." );			
+			Autoloop_finish ();
+			return;
+		endif
+	endwhile
+
+	Autoloop_finish ();
+
+	SendSysMessage( character , "You stop lumberjacking." );
+
+endprogram
+
+
+function ChopTree( character , use_on , info , tool )
+	
+	var initial_x	:= character.x;
+	var initial_y	:= character.y;
+	
+	var logamount	:= HarvestResource( "wood" , use_on.x , use_on.y , 1 , Cint( GetEffectiveSkill( character , SKILLID_LUMBERJACKING ) / 15 )+1 );
+	if( !logamount )
+		SendSysmessage( character , "There's no wood left there.");
+		return -1; //was 0. Modified by Jaleem
+	endif
+
+	var i;
+	for( i := 1 ; i <= NUM_PERFORM ; i := i + 1 )
+		Performaction( character , UACTION_CHOP );
+		PlaySoundEffect( character , SFX_SKILL_LUMBERJACK );
+		Sleep(1);
+		if( character.x != initial_x or character.y != initial_y )
+			return 0;
+		endif
+	endfor
+	
+	if( CheckSkill( character , SKILLID_LUMBERJACKING , -1 , DEFAULT_POINTS ) )
+		GetStuff( character , logamount , tool ); 
+	else
+		SendSysmessage( character , "You fail to find any usable wood." );
+		return 0;
+	endif
+	
+	return 1;
+
+endfunction
+
+
+function GetStuff( character , logamount , tool )
+
+	var to_make_colored := Cint( GetEffectiveSkill( character , SKILLID_LUMBERJACKING ) / 5 ) + 35;
+	var crafter := GetObjProperty( character , CLASSEID_CRAFTER );
+	
+	var tool_bon	:= GetObjProperty( tool , "LumberjackingBonus" );
+	if( tool_bon )
+		to_make_colored := to_make_colored + (10 * tool_bon );
+		logamount	:= logamount * tool_bon;
+	endif
+
+	if( to_make_colored > 75 )
+		to_make_colored := 75;
+	endif
+	
+	if( crafter )
+		to_make_colored := Cint( to_make_colored * ClasseBonus( character , CLASSEID_CRAFTER ) );
+		if( to_make_colored > 90 )
+			to_make_colored := 90;
+		endif
+	endif
+	
+	if( Random(100) <= to_make_colored )
+		MakeColoredLog( character , logamount , tool );
+	else
+		if( crafter )
+			logamount := Cint( logamount * ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+		
+		CreateItemInBackpack( character , UOBJ_LOGS , logamount );
+		SendSysMessage( character , "You put " + logamount + " logs in your backpack." );
+	endif
+   
+endfunction
+
+
+function MakeColoredLog( character , logamount , tool )
+
+	var skill	:= GetEffectiveSkill( character , SKILLID_LUMBERJACKING );
+	var maxamount := Cint( skill / 30 );
+		
+	var tool_bon	:= GetObjProperty( tool , "LumberjackingBonus" );
+	if( tool_bon )
+		maxamount	:= maxamount * tool_bon;
+	endif
+
+	if( logamount > maxamount )
+		logamount := maxamount;
+	endif
+	
+	if( logamount < 1 )
+		logamount := 1;
+	endif
+	
+	var chance	:= Random( MAX_CHANCE ) + 1;
+	
+	
+	var cfg	:= ReadConfigFile( "itemdesc" );
+	var thekeys	:= GetConfigStringKeys( cfg );
+	var possibles	:= {};
+	var min_chance:= MAX_CHANCE * 2;
+	var the_log;
+	
+	if( Random(2) )
+		var bonus	:= Cint( skill / 5 );
+		var to_mod	:= 50;
+		if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			bonus		:= Cint( bonus * ClasseBonus( character , CLASSEID_CRAFTER ) );
+			logamount	:= Cint( logamount * ClasseBonus( character , CLASSEID_CRAFTER ) );
+			to_mod		:= Cint( to_mod / ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+
+		if( tool_bon )
+			bonus  := bonus + (6 * tool_bon);
+			to_mod := to_mod - (5 * tool_bon);
+		endif
+
+		if( chance > to_mod )
+			chance := chance - bonus;
+		endif
+	endif
+	
+	foreach key in thekeys
+		var the_chance := cfg[key].HarvestChance;
+		if( chance <= the_chance )
+			if( CheckSkill( character , SKILLID_LUMBERJACKING , cfg[key].HarvestDiff , 0 ) )
+				possibles.append( key );
+			endif
+		endif
+	endforeach
+
+	if( len( possibles ) )
+		foreach key in possibles
+			var hchance := cfg[key].HarvestChance;
+			if( hchance < min_chance )
+				the_log := key;
+				min_chance := hchance;
+			endif
+		endforeach
+		
+		var logs := CreateItemInBackpack( character , Cint(the_log) , logamount );
+		SendSysMessage( character , "You put " + logamount + " " + GetRessourceName( logs ) + " in your backpack." );
+	else
+		Sendsysmessage( character, "You fail to find any coloured logs." );
+	endif
+
+endfunction
+
+
+function DoSomething( character , tool )
+
+	var tnum := Random(100)+1;
+	var bonus := Cint( GetEffectiveSkill( character , SKILLID_LUMBERJACKING ) / 30 );
+	if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+		bonus := Cint( bonus * ClasseBonus( character , CLASSEID_CRAFTER ) ) + 1;
+	endif
+
+	tnum := tnum + bonus;
+	
+	var tool_bon	:= GetObjProperty( tool , "LumberjackingBonus" );
+	if( tool_bon )
+		tnum := tnum + (2 * tool_bon);
+	endif
+
+	case( tnum )
+
+		1:
+		2:  	
+		3:	
+		4:	Sendsysmessage( character , "Oh no your tool breaks!" );
+			DestroyTheItem( character , tool );
+			break;
+	
+		96:
+		97:	
+		98:	
+		99:	
+		100:	CreateItemInBackpack( character , 0x0F90 , 1 );
+			Sendsysmessage( character , "You find some dead wood!" );
+			break;
+			
+		101:	
+		102:	
+		103:	
+		104:	CreateItemInBackpack( character , 0xBA2A , 1 );
+			Sendsysmessage( character , "You find some young oak wood!" );
+			break;
+		
+		105:
+		106:	
+		107:	
+		108:	CreateItemInBackpack( character , 0x0F90 , 2 );
+			Sendsysmessage( character , "You find some dead wood!" );
+			break;
+		
+		109:	
+		110:	CreateItemInBackpack( character , 0xBA2A , 2 );
+			Sendsysmessage( character , "You find some young oak wood!" );
+			break;
+			
+		111:
+		112:	CreateItemInBackpack( character , 0x0F90 , 3 );
+			Sendsysmessage( character , "You find some dead wood!" );
+			break;	
+	
+		113:	
+		114:	CreateItemInBackpack( character , 0xBA2A , 3 );
+			Sendsysmessage( character , "You find some young oak wood!" );
+			break;	
+	
+		115:	CreateItemInBackpack( character , 0xBA2A , 4 );
+			Sendsysmessage( character , "You find some young oak wood!" );
+			break;	
+	
+		default:
+
+	endcase
+
+endfunction
+
+
+function GetRessourceName( ressource )
+
+	var t_name := ressource.desc;
+	
+	if( ressource.amount > 1 )
+		var i := len( t_name );
+		var amt := ressource.amount;
+		var count := 2;
+		while( Cint(amt / 10) )
+			count := count + 1;
+			amt := Cint( amt / 10 );
+		endwhile
+		
+		t_name := t_name[count+1 , i - count];
+	endif
+	
+	return t_name;
+	
+endfunction

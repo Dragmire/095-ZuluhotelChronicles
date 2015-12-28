@@ -1,0 +1,78 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program cast_summonmammals( parms )
+
+	var circle := GetCircle( SPELLID_SUMMON_MAMMALS );
+	var caster;
+	var cast_loc;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_loc := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_SUMMON_MAMMALS ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	var count := RandomDiceStr( "1d2" );
+
+	var bonus := 0;
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		bonus := 1;
+		count := count + 1;
+	endif
+
+	var npctemplate;
+
+	while( count )
+		var creature := RandomDiceStr("1d8") + bonus;
+		case (creature)
+			1:
+			2:	npctemplate := "wolf";		break;
+		
+			3:
+			4:	npctemplate := "horse";		break;
+		
+			5:
+			6:	npctemplate := "panther";	break;
+		
+			7:	npctemplate := "bear";		break;
+		
+			8:	npctemplate := "grizzly";	break;
+		
+			9:	npctemplate := "forestostard";	break;
+
+			default: npctemplate := "wolf";
+		endcase
+
+		if( !cast_loc )
+			var loc := CanTargetArea( caster, circle );
+			if( !loc )
+				EraseObjProperty( caster, "#Casting" );
+				return;
+			endif
+		
+			EraseObjProperty( caster, "#Casting" );
+			SummonCreature( caster, npctemplate, loc );
+		else
+			EraseObjProperty( caster, "#Casting" );
+			SummonCreature( caster, npctemplate, cast_loc );
+		endif
+	
+		count := count - 1;
+	endwhile
+
+endprogram

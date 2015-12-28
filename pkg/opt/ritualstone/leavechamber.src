@@ -1,0 +1,12 @@
+use os;
+use uo;
+
+program leavechamber (who)
+
+	
+Sendsysmessage(who, "I am teleporting you, please wait...",3,1300);
+sleep(5);
+MoveCharacterToLocation( who, 5605, 1206, 0, 0);
+EraseGlobalProperty("RitualInUse");
+
+endprogram

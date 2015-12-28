@@ -1,0 +1,91 @@
+// coded by zulu   zulu@zuluhotel.com
+//   http://www.zuluhotel.com/uo
+use os;
+use uo;
+include "include/client";
+include "include/random";
+include "include/damages";
+program shootcannon(who, item)
+
+if (GetObjProperty(item, "working")!=1) return; endif
+
+if (GetObjProperty(item, "#inuse")==1) SendSysMessage( who, "Cannon is use."); return; endif
+
+var powder, location, cannonball;
+
+if (GetObjProperty(item, "#powder")!=1)
+SendSysMessage( who, "Select a power keg.");
+powder := Target( who, TGTOPT_CHECK_LOS);
+if (powder.objtype!=0xe7f) SendSysMessage( who, "Canceled."); return; endif
+if( Distance( who, powder ) > 2 )
+	SendSysMessage( who, "This is too far." );
+	return 0;
+endif
+DestroyItem(powder);
+SetObjProperty(item, "#powder", 1);
+PrintTextAbove(item,"*powder loaded*");
+endif
+
+if (GetObjProperty(item, "#cannonball")!=1)
+SendSysMessage( who, "Select a cannon ball.");
+cannonball := Target( who, TGTOPT_CHECK_LOS);
+if (cannonball.objtype!=0xe73) SendSysMessage( who, "Canceled."); return; endif
+if( Distance( who, cannonball ) > 2 )
+	SendSysMessage( who, "This is too far." );
+	return 0;
+endif
+DestroyItem(cannonball);
+PrintTextAbove(item,"*cannonball loaded*");
+SetObjProperty(item, "#cannonball", 1);
+endif
+
+SetObjProperty(item, "#inuse", 1);
+SendSysMessage( who, "Select Target");
+location := TargetCoordinates( who );
+
+if (!location) SendSysMessage( who, "Canceled."); EraseObjProperty(item, "#inuse"); return; endif
+
+fireworks(who, item, location);
+
+EraseObjProperty(item, "#powder");
+EraseObjProperty(item, "#cannonball");
+EraseObjProperty(item, "#inuse");
+
+endprogram
+
+function fireworks(who, cannon, location)
+
+   var locationx, locationy;
+  
+   if (location.x > (cannon.x+10))
+   locationx := cannon.x +10;
+   else
+   locationx := location.x;
+   endif
+
+   if (location.y > (cannon.y+10))
+   locationy := cannon.y+10;
+   else
+   locationy := location.y;
+   endif
+
+   var dmg := RandomDiceRoll("10d10+40"),
+       range := 1,
+       coolflame := CreateItemAtLocation( cannon.x, cannon.y, cannon.z, 0x3728, 1 );
+   PlaySoundEffect(cannon, 0x11c);
+
+   var explode1 := CreateItemAtLocation( locationx, locationy, location.z, 0x36b0, 1 );
+   var explode2 := CreateItemAtLocation( locationx, locationy, location.z, 0x36bd, 1 );
+   PlaySoundEffect( location, SFX_220 );
+
+   foreach mobile in ListMobilesNearLocation( locationx, locationy, location.z, range );
+	PlayObjectCenteredEffect( mobile, 0x36b0, 7, 7);
+	ApplyTheDamage( mobile, who, dmg );
+   endforeach
+
+    sleep(2);
+    DestroyItem(coolflame);
+    DestroyItem(explode1);
+    DestroyItem(explode2);
+
+endfunction

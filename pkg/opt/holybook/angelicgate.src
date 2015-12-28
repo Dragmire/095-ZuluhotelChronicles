@@ -1,0 +1,32 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/recalling";
+include "include/objtype";
+include "include/client";
+
+
+program cast_earth_portal( caster )
+
+	var circle := GetCircle( SPELLID_ANGELIC_GATE );
+	var duration := Cint(GetAttribute( caster , ATTRIBUTEID_MAGERY ) );
+
+ 	if( TryToCast( caster, SPELLID_ANGELIC_GATE ) != SUCCESS )
+		Detach();
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+
+	var gate1 := CreateItemAtLocation( caster.x , caster.y , caster.z , "moongatea" , 1 );
+
+	PlaySoundEffect( caster, SFX_SPELL_ANGELIC_GATE );
+	EraseObjProperty( caster , "#Casting" );
+
+	Sleep( duration );
+    
+	gate1.movable := 1;
+	MoveItemToContainer(gate1, caster.backpack);
+	DestroyItem( gate1 );
+	
+endprogram

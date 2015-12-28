@@ -1,0 +1,34 @@
+
+use uo;
+
+program change_cmdlevel( who, level )
+
+	SendSysMessage( who, "Change whose CmdLevel?" );
+	var player := Target( who, TGTOPT_NOCHECK_LOS );
+	var lvl;
+	
+	if( !player.npctemplate and !player.amount )
+		case( level )
+			"test":		lvl := 6;	break;
+			"admin":	lvl := 5;	break;
+			"gm":		lvl := 4;	break;
+			"seer":		lvl := 3;	break;
+			"coun":		lvl := 2;	break;
+			"donator":	lvl := 1;	break;
+			"player":	lvl := 0;	break;
+			default: 	SendSysmessage( who , "Not a valid CmdLevel." );		
+		endcase
+		
+		if( lvl > who.cmdlevel )
+			SendSysMessage( who , "You cannot set someone higher than your current cmd level." );
+		elseif( player.cmdlevel >= who.cmdlevel and who.cmdlevel < 5 )
+			SendSysMessage( player , who.name + " tried to set your cmd level to " + level );
+		else
+			player.cmdlevel := lvl;
+		endif
+	else
+		SendSysmessage( who , "Not a player" );
+	endif
+
+endprogram
+

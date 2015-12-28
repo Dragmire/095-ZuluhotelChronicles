@@ -1,0 +1,71 @@
+use uo;
+use os;
+use util;
+use basic;
+use cfgfile;
+
+include "include/all";
+include "include/starteqp";
+include "include/time";
+
+program spawndeath( params )
+
+	set_critical(1);
+	
+	var point := params[1];
+	var mobile_serial  := params[2];
+	if( !point )
+		return 0;
+	endif
+	
+	var serials := GetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS );
+	if( !serials )
+		serials := {};
+	endif
+	
+	var new_serials := {};
+	
+	if( serials )
+		foreach serial in serials
+			if( serial )
+				if( serial != mobile_serial )
+					new_serials.append(serial);
+				endif
+			endif
+		endforeach
+	endif
+	
+	SetObjProperty( point, PROPID_SPAWNPOINT_SPAWNED_OBJECTS, new_serials );
+	var pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+		pt_data	    := {};
+		pt_data[1]  := "NPC";	// Type
+		pt_data[2]  := "nil";	// Template
+		pt_data[3]  := 0;	// Max appear
+		pt_data[4]  := 0;	// Appear Range
+		pt_data[5]  := 0;	// Wander Range
+		pt_data[6]  := 0;	// Frequency
+		pt_data[7]  := 0;	// Disabled
+		pt_data[8]  := 0;	// Spawn in group.
+		pt_data[9]  := 0;	// Despawn on destroy
+		pt_data[10] := 0;	// Expire time
+		pt_data[11] := 0;	// Expire number
+		pt_data[12] := 0;	// Start spawning hours
+		pt_data[13] := 0;	// End spawning hours
+		pt_data[14] := "";	// Notes
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+	
+	if( pt_data[3] == 1 )
+		SetObjProperty( point, PROPID_SPAWNPOINT_NEXT_SPAWNING, ReadGameClock()+(Cint(pt_data[6]) * 60) );
+	endif
+	
+	set_critical(0);
+	
+	if( point )
+		return Start_Script( ":spawnpoint:defaultdelay", point );
+	else
+		return 0;
+	endif
+	
+endprogram

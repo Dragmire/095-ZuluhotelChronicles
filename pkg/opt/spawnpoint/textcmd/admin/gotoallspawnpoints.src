@@ -1,0 +1,98 @@
+use uo;
+use os;
+
+include "include/managers";
+
+program goto_all_spawnpoints( who )
+
+	var points := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+	if( !points )
+		SendSysMessage( who, "No points returned. Errortext = " + points.errortext );
+		return 0;
+	endif
+
+	var point := MakeAndProcessGump( who, points );
+	if( point )
+		MoveCharacterToLocation( who, point.x, point.y, point.z, MOVECHAR_FORCELOCATION );
+	endif
+
+endprogram
+
+
+function MakeAndProcessGump( byref who, byref runes )
+
+	var layout	:= array( "page 0",
+				  "nodispose",
+				  "resizepic 50  0   2600 525 525",
+				  "resizepic 185 480 5100 250  25",
+				  "text 90  40 5 0",
+				  "text 210 40 5 1",
+				  "text 310 40 5 2",
+				  "text 490 40 5 3");
+			
+	var data	:= array( "Spawnpoint",
+				  "Template",
+				  "Coordinates",
+				  "Goto" );
+
+
+	var timer	:= 0;
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 20;
+	var y		:= 70;
+	var i;
+	var j;
+
+	layout.append( "page " + page );
+	if( len(runes) > perpage )
+		layout.append( "button 385 480 5540 5541 0 " + (page + 1) );
+	endif
+
+	for( i := start; i <= len(runes); i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 70;
+		
+			layout.append( "page " + page );
+			layout.append( "button 210 480 5537 5538 0 " + (page - 1) );
+			if( len(runes) > (count + perpage) )
+				layout.append( "button 385 480 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+	
+		layout.append( "text 90 " + y + " 0 " + len(data) );
+		data.append( "Rune #" + i );
+	
+		layout.append( "text 210 " + y + " 0 " + len(data) );
+		data.append( CStr(GetObjProperty(runes[i],PROPID_SPAWNPOINT_SETTING)[2]) );
+
+		layout.append( "text 310 " + y + " 0 " + len(data) );
+		data.append( "( " + runes[i].x + ", " + runes[i].y + ", " + runes[i].z + " )" );
+	
+		layout.append( "button 490 " + (y+3) + " 2118 2117 1 0 " + i );
+	
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+		sleepms( 2 );
+		timer := timer + 2;
+		if( timer >= 30000 )
+			timer := timer - 30000;
+			SendSysMessage( who, "Building gump, processing rune number " + i + ", please wait..." );
+		endif
+	endfor
+		
+	var result := SendDialogGump( who, layout, data );
+	if( !result[0] )
+		return;
+	endif
+
+	result := CInt(result[0]);
+
+	return runes[result];
+
+endfunction

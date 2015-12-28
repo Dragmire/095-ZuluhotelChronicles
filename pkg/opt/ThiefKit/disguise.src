@@ -1,0 +1,125 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/random";
+
+const DIFFICULTY:=50;
+const POINTS:=250;
+
+program disguise_kit( thief, kit )
+
+	if(GetObjProperty( thief, "realname"))
+		SetName( thief, GetObjProperty( thief, "realname" ) );
+		EraseObjProperty( thief, "realname" );
+		PrintTextAbovePrivate(thief,"You wash off the disguise...", thief);
+		sleep(2);
+		PrintTextAbovePrivate(thief,"You are now " + thief.name + ", again.", thief);
+		return;
+	endif
+
+	foreach npc in ListMobilesNearLocation( thief.x, thief.y, thief.z, 15 )
+		if( npc.serial != thief.serial )
+			PrintTextAbovePrivate(thief,"You can't disguise with people around you!", thief);
+			sleep(2);
+			PrintTextAbovePrivate(thief,"Find a safe place to disguise yourself...", thief);
+			return;
+		endif
+	endforeach
+
+	PrintTextAbovePrivate(thief,"You start to disguise yourself...", thief);
+	sleep( 15 - CInt(GetEffectiveSkill( thief, SKILLID_HIDING )/10 ) );
+
+	foreach npc in ListMobilesNearLocation( thief.x, thief.y, thief.z, 15 )
+		if( npc.serial != thief.serial )
+
+			PrintTextAbovePrivate(thief,"Someone interrupted you!", thief);
+			sleep(2);
+			PrintTextAbovePrivate(thief,"He may have noticed you...", thief);
+
+			if(!npc.isA(POLCLASS_NPC))
+				SendSysMessage( npc, "You notice " + thief.name + " trying to disguise..." );
+			endif
+			return;
+		endif
+	endforeach
+
+	if(!CheckSkill(thief, SKILLID_HIDING, DIFFICULTY, POINTS))
+		PrintTextAbovePrivate(thief,"You fail the disguise attempt and waste the kit...", thief);
+		DestroyItem(kit);
+		return;
+	endif
+	
+	DestroyItem(kit);
+	SetObjProperty( thief, "realname", thief.name );
+
+	var newname := AssignName(thief);
+	SetName( thief, newname );
+
+	PrintTextAbovePrivate(thief,"You have disguised yourself well", thief);
+	sleep(2);
+	PrintTextAbovePrivate(thief,"You are now " + newname, thief);
+
+	Detach();
+	set_critical(1);
+	sleep( 120 * CInt(GetEffectiveSkill( thief, SKILLID_HIDING )/10 ) );
+
+	SetName( thief, GetObjProperty( thief, "realname" ) );
+	PrintTextAbovePrivate(thief,"Your disguise has worn out...", thief);
+	sleep(2);
+	PrintTextAbovePrivate(thief,"You are now " + thief.name + ", again.", thief);
+
+endprogram
+
+function AssignName( me )
+
+	var index := "MALE";
+	if (me.graphic == 401)
+		index := "FEMALE";
+	endif
+
+    var cfg := ReadConfigFile( "::incognito" );
+
+	if (!cfg)
+		SendSysMessage(me,"Unable to read incognito.cfg");
+		return;
+	endif
+
+    var elem := FindConfigElem( cfg, index );
+    var number := GetConfigInt( elem, "Count" );
+
+    var dice_str := "1d" + CStr(number);
+
+    var choice := RandomDiceStr( dice_str );
+    var entry := "Name" + choice;
+
+    var str := GetConfigString( elem, entry );
+    var title := PreserveTitle( me );
+  
+    str := str + title;
+
+    return( str );
+
+endfunction
+
+
+function PreserveTitle( me )
+
+  var myname := me.name;
+  var start := find( myname, ">", 1 );
+
+if( !start )
+  return;
+endif
+
+  var title := myname[ start+1, (len( myname ) - 8) ];
+
+if( !title )
+  return("");
+endif
+
+  return( title );
+
+endfunction

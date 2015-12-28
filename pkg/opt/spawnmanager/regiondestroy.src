@@ -1,0 +1,55 @@
+use uo;
+use datafile;
+use os;
+
+const DIST_INC := 100;
+
+program DestroyRegion(manager)
+	
+	if(GetObjProperty(manager, "destroyed"))
+		return 1;
+	endif
+	
+	local regionnum := Cint(GetObjProperty(manager,"RegionNum"));
+	EraseGlobalProperty("#regiondefs"+regionnum);
+	
+	Syslog("[Region Manager #"+regionnum+"] Destroyed at time "+ReadGameClock());
+	
+	local regionfile := Opendatafile("regions");
+	if(!regionfile)
+		return 1;
+	endif
+	
+	local regionentry := regionfile.FindElement(regionnum);
+	local fromx, fromy, tox, toy;
+	fromx := regionentry.GetProp("FromX");
+	fromy := regionentry.GetProp("FromY");
+	tox := regionentry.GetProp("ToX");
+	toy := regionentry.GetProp("ToY");
+
+	local center := struct;
+	center.+x;
+	center.+y;
+	center.+z;
+	
+	center.x := Cint((fromx + tox)/2);
+	center.y := Cint((fromy + toy)/2);
+	center.z := GetWorldHeight(center.x, center.y);
+	
+	local maxdist := tox - fromx;
+	if(maxdist < (toy-fromy))
+		maxdist := toy - fromy;
+	endif
+	maxdist := maxdist + DIST_INC;
+	
+	foreach npc in ListMobilesNearLocationEx(center.x, center.y, center.z, maxdist, 0x3)
+		if(GetObjProperty(npc,"regionnum") = regionnum)
+			EraseObjProperty(npc,"regionnum");
+			SetObjProperty(npc, "guardkill", 1);
+			ApplyRawDamage(npc, npc.maxhp+3);
+		endif
+	endforeach
+	
+	return 1;
+
+endprogram

@@ -1,0 +1,1018 @@
+use uo;
+use cfgfile;
+use os;
+use math;
+
+
+include "util/repair";
+include "include/yesno";
+include "include/client";
+include "include/objtype";
+include "include/dotempmods";
+include "include/drinkpotion";
+include "include/itemutil";
+include "include/classes";
+include "include/random";
+include "util/key";
+include "include/autoloop";
+
+
+const CARPENTER_SOUND	:= 0x23e;
+const UOBJECT_CHEST	:= 0x0e42;
+const UOBJECT_POISON_POTION := 0x0f0a;
+const UOBJECT_PURPLE_POTION := 0x0f0d;
+const EXPLOSION_SOUND	:= 0x208;
+const EXPLOSION_ANIM	:= 0x36b0;
+const POISON_SOUND 	:= 0x247;
+const HIT_ACTION	:= 0x148b;
+
+const DIVIDER		:= 4;
+const APPEAR_AT		:= -10;
+const POINTS_MULTIPLIER	:= 8;
+const GOLD_COLOR	:= 0x0033;
+const TINKER_LOCKABLE	:= 90;
+const FAME_BONUS	:= 100;
+
+const WOOD_ID	:= 1;
+const METAL_ID	:= 2;
+const GLASS_ID	:= 3;
+const CLAY_ID	:= 4;
+
+var tinker_cfg	:= ReadConfigFile( "tinker" );
+var ressource_diff := 0;
+var ressource_name;
+var ressource_qual := 1;
+
+program MakeTinkerItems( character , tool )
+
+	var use_on;
+	var item_to_make;
+	var skill;
+	var material;
+	var points;
+	var itemname;
+	var sound;
+
+	if( !ReserveItem( tool ) )
+		return;
+	endif
+
+	SendSysmessage( character, "Select your material." );
+
+	use_on := Target( character , TGTOPT_CHECK_LOS );
+	if( !use_on )
+		return;
+	endif
+
+	if( !Accessible( character , use_on ) or !use_on.movable )
+		SendSysmessage( character , "You can't reach that!" );
+		return;
+	endif
+
+	if( !ReserveItem( use_on ) )
+		return;
+	endif
+
+	if( !IsInContainer( character.backpack , use_on ) )
+		SendSysmessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( (use_on.objtype ==  UOBJ_LOGS      ) or
+	   ((use_on.objtype >= UOBJ_LOGS_START) and (use_on.objtype <= UOBJ_LOGS_END)) )
+	   	var cfg := ReadConfigFile( ":carpentry:carpentry" );
+		ressource_diff := cfg[use_on.objtype].Difficulty;
+		ressource_name := cfg[use_on.objtype].Name;
+		ressource_qual := cfg[use_on.objtype].Quality;
+	   	item_to_make := MakeAndProcessMenu( character , use_on , WOOD_ID );
+	   	sound := CARPENTER_SOUND;
+
+	elseif((use_on.objtype ==  UOBJ_GOLD_INGOT   ) or
+	      ((use_on.objtype >= UOBJ_INGOTS_START ) and (use_on.objtype <= UOBJ_INGOTS_END )) or
+	      ((use_on.objtype >= UOBJ_INGOTS2_START) and (use_on.objtype <= UOBJ_INGOTS2_END)) )
+		var cfg := ReadConfigFile( ":blacksmithy:blacksmithy" );
+		ressource_diff := cfg[use_on.objtype].Difficulty;
+		ressource_name := cfg[use_on.objtype].Name;
+		ressource_qual := cfg[use_on.objtype].Quality;
+		item_to_make := MakeAndProcessMenu( character , use_on , METAL_ID );
+		sound := SFX_ANVIL;
+
+	else
+		case( use_on.objtype )
+
+			UOBJ_AXLE:		TryToMakeComplex( character , use_on , UOBJ_AXLE_AND_GEARS , UOBJ_GEARS , CARPENTER_SOUND );
+						break;
+
+			UOBJ_GEARS:		TryToMakeComplex( character , use_on , UOBJ_AXLE_AND_GEARS , UOBJ_AXLE , CARPENTER_SOUND );
+						break;
+
+			UOBJ_CLOCK_FRAME:	TryToMakeComplex( character , use_on , UOBJ_CLOCK , UOBJ_CLOCK_PARTS , SFX_ANVIL );
+						break;
+
+			UOBJ_CLOCK_PARTS:	TryToMakeComplex( character , use_on , UOBJ_CLOCK , UOBJ_CLOCK_FRAME , SFX_ANVIL );
+						break;
+
+			UOBJ_SPRINGS:		TryToMakeComplex( character , use_on , UOBJ_CLOCK_PARTS , UOBJ_AXLE_AND_GEARS , SFX_ANVIL );
+						break;
+
+
+			UOBJ_KEG:
+			UOBJ_BARREL_TAP:
+			UOBJ_BARREL_LID:
+			UOBJ_EMPTY_BOTTLE:	TryToMakePotionKeg( character , use_on );
+						break;
+
+			UOBJ_AXLE_AND_GEARS:	SendSysMessage( character , "Select either some springs or a hinge." );
+						var thing := Target( character , TGTOPT_CHECK_LOS );
+						if( !thing )
+							break;
+						endif
+
+						if( !Accessible( character , thing ) or !thing.movable )
+							SendSysmessage( character , "You can't reach that!" );
+							break;
+						endif
+
+						if( !ReserveItem( thing ) )
+							break;
+						endif
+
+						case( thing.objtype )
+							UOBJ_SPRINGS:	TryToMakeComplex( character , use_on , UOBJ_CLOCK_PARTS , UOBJ_SPRINGS , SFX_ANVIL );
+									break;
+
+							UOBJ_HINGE:	TryToMakeComplex( character , use_on , UOBJ_SEXTANT_PARTS , UOBJ_HINGE , SFX_ANVIL );
+									break;
+
+							default:	SendSysMessage( character , "You must select either a hinge or springs." );
+
+						endcase
+
+
+			UOBJ_HINGE:		TryToMakeComplex( character , use_on , UOBJ_SEXTANT_PARTS , UOBJ_AXLE_AND_GEARS , SFX_ANVIL );
+						break;
+
+			UOBJ_SEXTANT_PARTS:	TryToMakeComplex( character , use_on , UOBJ_SEXTANT , 0 , SFX_ANVIL );
+						break;
+
+
+			UOBJ_OBSIDIAN:		MakeTotem( character , use_on );
+						break;
+
+
+			UOBJ_GLASS:		item_to_make := MakeAndProcessMenu( character , use_on , GLASS_ID );
+						sound := SFX_GLASSBREAK4;
+						break;
+
+
+			UOBJ_CLAY:		item_to_make := MakeAndProcessMenu( character , use_on , CLAY_ID );
+						sound := SFX_HAMMER;
+						break;
+
+
+			UOBJ_COPPER_KEY:
+			UOBJ_GOLD_KEY:
+			UOBJ_IRON_KEY:
+			UOBJ_RUSTY_IRON_KEY:	TryToMakeAContainerLockable( character , use_on );
+
+
+			default:		if( use_on.isa( POLCLASS_CONTAINER ) and !use_on.isa( POLCLASS_CORPSE ) )
+							SetTrap( character , use_on );
+						else
+							SendSysMessage( character , "You don't know how to use those items together." );
+						endif
+		endcase
+	endif
+
+	item_to_make := item_to_make.objtype;
+	if( !item_to_make )
+		return;
+	endif
+
+	TryToMakeItem( character , use_on , item_to_make , sound );
+
+endprogram
+
+
+function TryToMakeComplex( character , use_on , to_be_done_objtype , needed_objtype , sfx );
+
+	var itemname;
+	var points;
+	var skill;
+	var have_it;
+	var have_it_qual := 1;
+
+	if( needed_objtype )
+		have_it := FindObjtypeInContainer( character.backpack , needed_objtype );
+		if( !have_it )
+			return;
+		endif
+		have_it_qual := have_it.qual;
+	endif
+
+	var element := FindConfigElem( tinker_cfg , to_be_done_objtype );
+	if( element )
+	   	itemname := element.Name;
+		skill 	 := element.Skill;
+	else
+		return;
+	endif
+
+	points	:= Cint( skill * POINTS_MULTIPLIER );
+
+	PlaySound( character , sfx );
+
+	if( CheckSkill( character , SKILLID_TINKERING , skill , points ) )
+
+		var theitem := CreateItemInBackpack( character , to_be_done_objtype );
+		if( !theitem )
+			SendSysMessage( character , "Error in creation process please report this bug on the msg board." );
+			DestroyItem( use_on );
+			if( have_it )
+				DestroyItem( have_it );
+			endif
+			return;
+		endif
+
+		theitem.movable := 1;
+		var item_cfg	:= ReadConfigFile( ":*:itemdesc" );
+		// Not Needed since price calculated in vendor AI based on quality
+		// var sell_price := item_cfg[to_be_done_objtype].VendorBuysFor;
+
+		var result_qual := Cint( ( use_on.quality + have_it_qual ) / 2 );
+		if( theitem.quality )
+			if( result_qual )
+				theitem.quality := result_qual;
+			endif
+		endif
+
+		var excep_ch	:= 10;
+	  	if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			excep_ch := Cint( excep_ch * ClasseBonus( character , CLASSEID_CRAFTER ) );
+		else
+			skill := skill + 20;
+		endif
+
+		if( skill < 90 )
+			skill := 90;
+		endif
+
+		if( element.Exceptional and (Random(100) < excep_ch) and CheckSkill( character , SKILLID_TINKERING , skill , 0 ) )
+			if( theitem.quality )
+				//Made something Exceptional
+				var armslore := GetEffectiveSkill( character , SKILLID_ARMSLORE );
+				var multiplier := 5 + Cint( armslore / 10 );
+
+				if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+					multiplier := Cint( multiplier * ClasseBonus( character , CLASSEID_CRAFTER ) );
+				endif
+
+				multiplier	:= 100 + multiplier;
+				var newquality := Cint(theitem.quality * multiplier);
+				newquality := Cdbl(newquality);
+				newquality := newquality / 100;
+				theitem.quality := newquality;
+			endif
+
+			itemname := "Exceptional " + itemname;
+
+			if ((getobjproperty (character,"buildermark")) == 1)
+
+						if( YesNo( character , "Add Builder Mark?" ) )
+							itemname := itemname + " [Crafted by " + character.name + "]";
+						endif
+
+					elseif ((getobjproperty (character,"buildermark")) == 2)
+							itemname := itemname + " [Crafted by " + character.name + "]";
+					endif
+
+			
+
+			/* Not needed since SellPrice calculated on quality now in vendor AI
+			if( sell_price )
+				theitem.buyprice := Cint( sell_price * 2 );
+			endif
+			*/
+			SendSysmessage( character , "You make an exceptional item and put it in your pack" );
+			SetObjProperty( theitem , "IsExceptional" , 1 );
+			if( skill >= 130 )
+				SendSysmessage( character , "This masterpiece will make you famous around the world." );
+				AwardFame( character , FAME_BONUS );
+			elseif( GetObjProperty( character , CLASSEID_CRAFTER ) and skill >= 110 )
+				SendSysmessage( character , "This masterpiece will make you famous around the world." );
+				AwardFame( character , FAME_BONUS );
+			endif
+		else
+
+			SendSysmessage( character , "You create the item and place it in your pack." );
+		endif
+
+		if( use_on.objtype == UOBJ_GOLD_INGOT )
+			theitem.color := GOLD_COLOR;
+		else
+			theitem.color := use_on.color;
+		endif
+
+		/* Not needed since SellPrice calculated on quality now in vendor AI
+		if( sell_price )
+			if( theitem.quality )
+				theitem.buyprice := Cint( Pow( sell_price , theitem.quality ) );
+			elseif( ressource_qual )
+				theitem.buyprice := Cint( Pow( sell_price , result_qual ) );
+			endif
+		endif
+		*/
+
+		SetObjProperty( theitem , "BaseName" , itemname );
+		SetName( theitem , itemname );
+
+	else
+		SendSysmessage( character , "You fail to create the item and destroy the material." );
+
+	endif
+
+	DestroyItem( use_on );
+	if( have_it )
+		DestroyItem( have_it );
+	endif
+
+endfunction
+
+
+function PlaySound( who , sfx )
+
+	PlaySoundEffect( who , sfx );
+	Sleep (2);
+	PlaySoundEffect( who , sfx );
+	Sleep (2);
+	PlaySoundEffect( who , sfx );
+	Sleep (2);
+
+endfunction
+
+
+function MakeAndProcessMenu( who , ressource , id )
+
+	var skill := GetEffectiveSkill( who , SKILLID_TINKERING );
+
+	if( skill < ressource_diff )
+		SendSysmessage( who, "You aren't skilled enough to make anything with this yet." );
+		return;
+	endif
+
+	var elemkeys := GetConfigStringKeys( tinker_cfg );
+	var can_make;
+	var choice;
+
+	var menu := CreateMenu( "What would you like to make?" );
+
+	case( id )
+
+		WOOD_ID:	AddMenuItem( menu , 0x1032 , "Tools" );
+				AddMenuItem( menu , 0x0e34 , "Paper items" );
+				AddMenuItem( menu , 0x14F3 , "Miscellaneous" );
+				break;
+
+		METAL_ID:	AddMenuItem( menu , 0x1EBB , "Tools" );
+				AddMenuItem( menu , 0x1059 , "Parts" );
+				AddMenuItem( menu , 0x097f , "Kitchenware" );
+				AddMenuItem( menu , 0x0e85 , "Deadly Tools" );
+				AddMenuItem( menu , 0x0a22 , "Lights" );
+				AddMenuItem( menu , 0x1089 , "Jewelry" );
+				AddMenuItem( menu , 0x1640 , "Miscellaneous" );
+				break;
+
+		GLASS_ID:	AddMenuItem( menu , 0x185b , "Alchemical Tools" );
+				AddMenuItem( menu , 0x0e2d , "Miscellaneous" );
+				break;
+
+		CLAY_ID:	AddMenuItem( menu , 0x181d , "Foci" );
+				AddMenuItem( menu , 0x12ca , "Statues" );
+				AddMenuItem( menu , 0x0b46 , "Miscellaneous" );
+				break;
+
+	endcase
+
+	choice := SelectMenuItem2( who , menu ).index;
+	if( !choice )
+		return;
+	endif
+
+	choice := (id * 10) + choice;
+
+	menu := CreateMenu( "What would you like to make?" );
+
+	foreach key in elemkeys
+		if( tinker_cfg[key].Type == choice )
+			if( CanMake( who , key , ressource ) )
+				AddMenuItem( menu , Cint(key) , tinker_cfg[key].Name );
+				can_make := 1;
+			endif
+		endif
+	endforeach
+
+	if( can_make )
+		return SelectMenuItem2( who , menu );
+	else
+		SendSysmessage( who , "You can't make anything of this category." );
+		return;
+	endif
+
+endfunction
+
+
+function CanMake( who , key , ressource )
+
+	var diff := tinker_cfg[key].Skill + Cint( ressource_diff / DIVIDER );
+	if( diff < 1 )
+		diff := 1;
+	elseif( diff > 130 )
+		diff := 130;
+	endif
+
+	if( GetEffectiveSkill( who , SKILLID_TINKERING ) >= ( diff + APPEAR_AT ) )
+		if( ressource.amount >= tinker_cfg[key].Material )
+			return 1;
+		endif
+	endif
+
+	return 0;
+
+endfunction
+
+
+function TryToMakeItem( character , ressource , to_make_objtype , sfx )
+
+	var skill;
+	var element;
+	var material;
+	var points;
+	var itemname;
+	var undyeable;
+	var excep_ch;
+
+
+	element := FindConfigElem( tinker_cfg , to_make_objtype );
+
+	if( element )
+		material	:= element.Material;
+		undyeable	:= element.Undyeable;
+	else
+		return;
+	endif
+
+	AutoLoop_init( character );
+	while( AutoLoop_more() && ressource.amount >= material && NOT character.dead)
+
+	//refreshing some stuff ;)
+	itemname := element.Name;
+	material := element.Material;
+	skill 	 := element.Skill;
+	excep_ch := 0;
+
+	if( to_make_objtype in { 0x1085 , 0x1086 , 0x1087 , 0x1088 , 0x1089 , 0x108a , 0x1535 } )
+		SendSysmessage( character , "Select a gem for this item." );
+		var thegem := Target( character , TGTOPT_CHECK_LOS );
+		if( !thegem )
+			return;
+		endif
+
+		if( (thegem.objtype > 0xf30) or (thegem.objtype < 0xf0f) )
+			SendSysmessage( character , "That is not a gem!" );
+			return;
+		endif
+
+		if( !Accessible( character , thegem ) )
+			SendSysmessage( character , "You can't reach that!" );
+			return;
+		endif
+
+		var item_cfg := ReadConfigFile( ":*:itemdesc" );
+		itemname := item_cfg[thegem.objtype].Name + " " + itemname;
+		SubtractAmount( thegem , 1 );
+	endif
+
+	PlaySound( character , sfx );
+
+	skill := skill + Cint( ressource_diff / DIVIDER );
+
+	if( skill < 1 )
+		skill := 1;
+	elseif( skill > 130 )
+		skill := 130;
+	endif
+
+	points	:= Cint( (skill + Cint(material / 3)) * POINTS_MULTIPLIER );
+
+	if( CheckSkill( character , SKILLID_TINKERING , skill , points ) )
+
+		var theitem := CreateItemInBackpack( character , to_make_objtype );
+		if( theitem )
+
+			theitem.movable := 1;
+			excep_ch := 10;
+
+			if( ressource_name )
+				itemname := ressource_name + " " + itemname;
+			endif
+
+			if( theitem.quality and ressource_qual )
+				theitem.quality := ressource_qual;
+			endif
+
+  			if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+				excep_ch	:= Cint( excep_ch * ClasseBonus( character , CLASSEID_CRAFTER ) );
+			else
+				skill		:= skill + 10;
+			endif
+
+			if( skill < 90 )
+				skill := 90;
+			endif
+
+			if( element.Exceptional and (Random(100) < excep_ch) and CheckSkill( character , SKILLID_TINKERING , skill , 0 ) )
+
+				if( theitem.quality )
+					//Made something Exceptional
+					var armslore := GetEffectiveSkill( character , SKILLID_ARMSLORE );
+					var multiplier := 5 + Cint( armslore / 10 );
+
+					if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+						multiplier := Cint( multiplier * ClasseBonus( character , CLASSEID_CRAFTER ) );
+					endif
+
+					multiplier	:= 100 + multiplier;
+					var newquality := Cint(theitem.quality * multiplier);
+					newquality := Cdbl(newquality);
+					newquality := newquality / 100;
+					theitem.quality := newquality;
+				endif
+
+				itemname := "Exceptional " + itemname;
+
+					if ((getobjproperty (character,"buildermark")) == 1)
+
+						if( YesNo( character , "Add Builder Mark?" ) )
+							itemname := itemname + " [Crafted by " + character.name + "]";
+						endif
+
+					elseif ((getobjproperty (character,"buildermark")) == 2)
+							itemname := itemname + " [Crafted by " + character.name + "]";
+					endif
+
+
+				/* Not Needed since price calculated in vendor AI based on quality
+				if( theitem.sellprice )
+					theitem.sellprice := Cint( theitem.sellprice * 2 );
+				endif
+				*/
+
+				SendSysmessage( character , "You make an exceptional item and put it in your pack" );
+				SetObjProperty( theitem , "IsExceptional" , 1 );
+				if( skill >= 130 )
+					SendSysmessage( character , "This masterpiece will make you famous around the world." );
+					AwardFame( character , FAME_BONUS );
+				elseif( GetObjProperty( character , CLASSEID_CRAFTER ) and skill >= 110 )
+					SendSysmessage( character , "This masterpiece will make you famous around the world." );
+					AwardFame( character , FAME_BONUS );
+				endif
+			else
+
+				//Made a normal item
+				SendSysmessage( character , "You create the item and place it in your pack." );
+			endif
+
+			if( ressource.objtype != UOBJ_GLASS and ressource.objtype != UOBJ_CLAY )
+				if( ressource.objtype == UOBJ_GOLD_INGOT and !undyeable )
+					theitem.color := GOLD_COLOR;
+				elseif( !undyeable )
+					theitem.color := ressource.color;
+				endif
+			endif
+
+			/* Not Needed since price calculated in vendor AI based on quality
+			if( theitem.sellprice )
+				if( theitem.quality )
+					theitem.sellprice := Cint( Pow( theitem.sellprice , theitem.quality ) );
+				elseif( ressource_qual )
+					theitem.sellprice := Cint( Pow( theitem.sellprice , ressource_qual ) );
+				endif
+			endif
+			*/
+
+			theitem.hp := theitem.maxhp;
+			SetObjProperty( theitem , "BaseName" , itemname );
+			SetName( theitem , itemname );
+
+			if( theitem.isa(POLCLASS_LOCKABLE) )
+			  if( theitem.objtype <> 0x0EFA )
+				if( CheckSkill( character , SKILLID_TINKERING , TINKER_LOCKABLE , 0 ) )
+					SetObjProperty(theitem, "lockable", 1);
+					var lockid := AllocLockId();
+					theitem.locked := 1;
+					var thekey := CreateItemInBackpack( character, UOBJ_COPPER_KEY );
+					SetObjProperty( thekey ,  "lockid" , lockid );
+					SetObjProperty( theitem , "lockid" , lockid );
+					var tinkering := GetEffectiveSkill( character , SKILLID_TINKERING ) + 20;
+					if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+						tinkering := Cint( tinkering * ClasseBonus( character , CLASSEID_CRAFTER ) );
+					endif
+					Setobjproperty( theitem , "LockDifficulty", tinkering );
+					SendSysmessage( character , "You will find the key in your backpack.");
+				endif
+			  endif
+			endif
+		endif
+
+		SubtractAmount( ressource , material );
+
+	else
+		var tink := GetEffectiveSkill( character , SKILLID_TINKERING );
+		var destroy := 75 - Cint( tink / 2 );
+		if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			destroy := Cint( destroy / ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+
+		if( destroy > 50 )
+			destroy	:= 50;
+		endif
+
+		destroy	:= Cint( material * destroy / 100 );
+		if( destroy < 1 )
+			destroy	:= 1;
+		endif
+
+		SubtractAmount( ressource , destroy );
+		SendSysmessage( character , "You destroyed " + destroy + " " + GetRessourceName( ressource ) + "." );
+	endif
+
+	endwhile
+	AutoLoop_finish();
+
+endfunction
+
+
+function SetTrap( character , chest )
+
+	var cfg_id;
+	var skill;
+	var strength;
+	var trap_type;
+	var retval;
+	var poison_level;
+	var trap_item;
+
+	if (!GetObjProperty( chest , "lockable" )) // || chest.Lockable<>1 )
+		SendSysMessage( character, "You can trap only lockable containers." );
+		return;
+	endif
+	
+	if (chest.objtype == 0x6100 or chest.objtype == 0xefa)
+		SendSysMessage(character, "That cannot be trapped!");
+		return;
+	endif 
+
+	if( chest.usescript )
+		if( chest.usescript == ":traps:traps" )
+			SendSysMessage( character , "This is already trapped." );
+			return;
+		else
+			SendsysMessage( character , "You can trap this." );
+			return;
+		endif
+	endif
+
+	SendSysMessage( character, "Trap with what?" );
+	trap_item := Target( character , TGTOPT_CHECK_LOS );
+
+	if( !trap_item )
+		SendSysmessage( character , "Canceled." );
+		return;
+	endif
+
+	if( !Accessible( character , trap_item ) )
+		SendSysmessage( character , "You can't reach that!" );
+		return;
+	endif
+
+	if( !ReserveItem( trap_item ) )
+		return;
+	endif
+
+	if (trap_item.graphic == UOBJECT_POISON_POTION)
+		cfg_id := 0xffff;
+		strength := GetPotionStrength( trap_item );
+		trap_type := 2;
+
+	elseif(trap_item.graphic == UOBJECT_PURPLE_POTION )
+		strength := GetPotionStrength( trap_item );
+		cfg_id := 0xfffe;
+		trap_type := 3;
+
+	elseif( trap_item.objtype == 0x1bfb )
+		cfg_id := 0xfffd;
+		strength := 1;
+		trap_type := 1;
+
+	else
+		SendSysmessage (character, "I don't know how to use these items together");
+		return;
+	endif
+
+	var element := FindConfigElem( tinker_cfg , cfg_id );
+
+	if( element )
+		skill := element.Skill;
+	else
+		return;
+	endif
+
+	var points := Cint( skill * POINTS_MULTIPLIER );
+	SubtractAmount( trap_item , 1 );
+
+	if( CheckSkill( character , SKILLID_TINKERING , skill , points ) )
+		var permanent;
+		var tinkering := GetEffectiveSkill( character , SKILLID_TINKERING );
+		if( tinkering < 40 )
+			strength := strength - 1;
+		elseif( tinkering < 80 )
+			strength := strength;
+		elseif( tinkering < 120 )
+			strength := strength + 1;
+		else
+			strength := strength + 2;
+		endif
+
+		if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			strength := strength + 1;
+			if( Random(200) < tinkering )
+				SetObjProperty( chest , "keep" , 1 );
+				permanent := 1;
+			endif
+
+		elseif( strength <= 0 )
+			strength := 1;
+		endif
+
+		SubtractAmount( trap_item , 1 );
+		SetObjProperty( chest , "trap_type" , cstr( trap_type ) );
+		SetObjProperty( chest , "trap_strength" , strength );
+		SetObjProperty( chest , "trapped_by" , character.serial );
+		if( permanent )
+			SendSysmessage( character , "You made the trap permanent!" );
+		else
+			SendSysmessage( character , "The trap is set successfully" );
+		endif
+		chest.usescript := ":traps:traps";
+	else
+		var results := Random(5) + 1;
+		if (results == 1)
+			var the_damage := (Random(30) + 1) * strength;
+
+			if (trap_type == 1)
+				SendSysmessage( character , "You fail and harm yourself!");
+				ApplyDamage( character , the_damage );
+				DestroyItem( chest );
+
+			elseif (trap_type == 2)
+				SetPoison( character , strength , "You fail, and poison yourself!" );
+				DestroyItem( chest );
+			else
+				SendSysmessage( character , "You fail, and set off the explosion!" );
+				PlayObjectCenteredEffect( character ,  EXPLOSION_ANIM , 5 , 0 );
+				PlaySoundEffect( character, EXPLOSION_SOUND );
+				ApplyDamage( character , the_damage );
+				DestroyItem( chest );
+			endif
+		else
+			SendSysmessage(character, "You failed to place the trap");
+		endif
+	endif
+
+endfunction
+
+
+function MakeTotem( me , it )
+
+	if( it.amount < 100 )
+		sendsysmessage( me , "You don't have enough obsidian to make anything." );
+		return;
+	endif
+
+	if( GetEffectiveSkill( me , SKILLID_MAGERY ) < 70 )
+		SendSysMessage( me , "You're not a skilled enough mage to work with that." );
+		return;
+	endif
+
+	if (GetEffectiveSkill( me , SKILLID_TINKERING ) < 70 )
+		SendSysMessage( me , "You're not a skilled enough tinker to work with that." );
+		return;
+	endif
+
+	PlaySound( me , SFX_GLASSBREAK4 );
+	SubtractAmount( it , 100 );
+
+	if( !CheckSkill( me , SKILLID_MAGERY , 90 , 0 ) or !CheckSkill( me , SKILLID_MAGERY , 90 , 0 ) )
+		SendSysMessage( me , "You fail to make anything useful." );
+		return;
+	endif
+
+	var totem := CreateItemInContainer( me.backpack , 0x20d7 );
+	if( !totem )
+		SendSysMessage( me , "Your backpack is full!" );
+		return;
+	endif
+
+	totem.name := "an obsidian golem";
+	totem.color := 906;
+
+	SetObjProperty( totem , "critter" ,"earthelementallord" );
+	SetObjProperty( totem , "critcolor" , 1109 );
+	SetObjProperty( totem , "totemhp" , 170 );
+	totem.usescript := ":dundee:totem";
+	totem.decay := 0;
+	totem.movable := 1;
+
+endfunction
+
+
+function TryToMakePotionKeg( character , use_on )
+
+	var needed_parts := { UOBJ_KEG	,
+				UOBJ_BARREL_TAP ,
+				UOBJ_BARREL_LID ,
+				UOBJ_EMPTY_BOTTLE };
+
+
+	var parts := { use_on };
+	var needed_bottles := 10;
+	var itemname;
+	var points;
+	var skill;
+
+	if( use_on.objtype == UOBJ_EMPTY_BOTTLE )
+		if( use_on.amount < needed_bottles )
+			SendSysMessage( character , "You need at least 10 empty bottles." );
+			return;
+		endif
+
+	elseif( use_on.objtype == UOBJ_KEG )
+		if( len( EnumerateItemsInContainer( use_on ) ) )
+			SendSysMessage( character , "The keg must be empty" );
+			return;
+		endif
+	endif
+
+	foreach objtype in needed_parts
+		if( objtype != use_on.objtype )
+			var have_it := FindObjtypeInContainer( character.backpack , objtype );
+			if( !have_it )
+				SendSysMessage( character , "You miss some parts to make the potion keg." );
+				return;
+
+			elseif( have_it.objtype == UOBJ_EMPTY_BOTTLE and have_it.amount < needed_bottles )
+				SendSysMessage( character , "You need at least 10 empty bottles." );
+				return;
+
+			else
+				if( ReserveItem( have_it ) )
+					parts.append( have_it );
+				else
+					return;
+				endif
+			endif
+		endif
+	endforeach
+
+	//Integrity check
+	if( len( parts ) != len( needed_parts ) )
+		SendSysMessage( character , "You miss some parts to make the potion keg." );
+		return;
+	endif
+
+	var element := FindConfigElem( tinker_cfg , UOBJ_POTION_KEG );
+	if( element )
+	   	itemname := element.Name;
+		skill 	 := element.Skill;
+	else
+		return;
+	endif
+
+	points	:= Cint( skill * POINTS_MULTIPLIER );
+
+	PlaySound( character , CARPENTER_SOUND );
+
+	var result_color;
+	foreach item in parts
+		if( item.color != 0 )
+			result_color := item.color;
+		endif
+
+		if( item.objtype == UOBJ_EMPTY_BOTTLE )
+			SubtractAmount( item , needed_bottles );
+		else
+			DestroyItem( item );
+		endif
+	endforeach
+
+	if( CheckSkill( character , SKILLID_TINKERING , skill , points ) )
+
+		var theitem := CreateItemInBackpack( character , UOBJ_POTION_KEG );
+		if( !theitem )
+			SendSysMessage( character , "Error in creation process please report this bug on the msg board." );
+			return;
+		endif
+
+		theitem.movable := 1;
+		if( result_color )
+			theitem.color := result_color;
+		endif
+		SetName( theitem , itemname );
+		SendSysmessage( character , "You create the potion keg and place it in your pack." );
+
+	else
+		SendSysmessage( character , "You fail to create the item and destroy the material." );
+	endif
+
+endfunction
+
+
+function GetRessourceName( ressource )
+
+	var t_name := ressource.desc;
+
+	if( ressource.amount > 1 )
+		var i := len( t_name );
+		var amt := ressource.amount;
+		var count := 2;
+		while( Cint(amt / 10) )
+			count := count + 1;
+			amt := Cint( amt / 10 );
+		endwhile
+
+		t_name := t_name[count+1 , i - count];
+	endif
+
+	return t_name;
+
+endfunction
+
+
+function TryToMakeAContainerLockable( character , key )
+
+	var lock_id := GetObjProperty( key , "lockid" );
+	if( lock_id )
+		SendSysMessage( character , "That key already unlock another lock." );
+		return;
+	endif
+
+	var the_chest := Target( character , TGTOPT_CHECK_LOS );
+	if( !the_chest )
+		return;
+	endif
+
+	if( !Accessible( character , the_chest ) )
+		SendSysmessage( character , "You can't reach that!" );
+		return;
+	endif
+	if (the_chest.objtype == 0x6100 or the_chest.objtype == 0xefa)
+		SendSysMessage(character, "You can't make this lockable");
+		return;
+	endif 
+	if( !the_chest.isa( POLCLASS_LOCKABLE ) )
+		SendSysMessage( character , "You can't make this lockable" );
+		return;
+	endif
+
+	if( !ReserveItem( the_chest ) )
+		return;
+	endif
+
+	if( !IsInContainer( character.backpack , the_chest ) )
+		SendSysmessage( character, "The chest have to be in your backpack." );
+		return;
+	endif
+
+	if( GetObjProperty( the_chest , "lockid" ) or GetObjProperty( the_chest , "lockable" ) )
+		SendSysmessage( character, "This is already lockable." );
+		return;
+	endif
+
+	if( CheckSkill( character , SKILLID_TINKERING , TINKER_LOCKABLE , TINKER_LOCKABLE * POINTS_MULTIPLIER ) )
+		SetObjProperty( the_chest , "lockable" , 1 );
+		var lockid := AllocLockId();
+		the_chest .locked := 1;
+		SetObjProperty( key ,  "lockid" , lockid );
+		SetObjProperty( the_chest , "lockid" , lockid );
+		var tinkering := GetEffectiveSkill( character , SKILLID_TINKERING ) + 20;
+		if( GetObjProperty( character , CLASSEID_CRAFTER ) )
+			tinkering := Cint( tinkering * ClasseBonus( character , CLASSEID_CRAFTER ) );
+		endif
+		Setobjproperty( the_chest , "LockDifficulty", tinkering );
+		SendSysmessage( character , "You successfully made the item lockable with your key" );
+	else
+		SendSysMessage( character , "You failed to make the item lockable and destroyed your key." );
+		DestroyItem( key );
+	endif
+
+endfunction

@@ -1,0 +1,60 @@
+use uo;
+include "include/attributes";
+
+program textcmd_showmods (who, text)
+
+  SendSysMessage(who, "Select a target");
+
+  var mark := Target(who);
+
+  if (!mark)
+        SendSysMessage(who, "Please target something!");
+        return;
+  endif
+
+	var had_mods := 0;
+	var modarray := GetObjProperty( who, "#mods" );
+	if( !modarray )
+		modarray := {};
+	else
+		had_mods := 1;
+	endif
+
+        SendSysMessage(who, "*** MMods ***");
+	foreach mmod in modarray
+                //UndoTheMod( who , mmod[1] , mmod[2] );
+                SendSysMessage(who, ">> " + mmod[1] + " - " + mmod[2]);
+	endforeach
+        //EraseObjProperty( who , "#mods" );
+
+
+	var persitedmodarray := GetObjProperty( who, "mods" );
+	var newmods := {};
+	if( !persitedmodarray )
+		persitedmodarray := {};
+	else
+		had_mods := 1;
+	endif
+
+        SendSysMessage(who, "*** Persisted Mods ***");
+	foreach mmod in persitedmodarray
+                SendSysMessage(who, "-> " + mmod[1] + " - " + mmod[2]);
+                //if( mmod[1] != "poison" )
+                //        UndoTheMod( who , mmod[1] , mmod[2] );
+                // else
+                //        newmods.append( mmod );
+                //endif
+	endforeach
+
+        //if( len(newmods) )
+        //        SetObjProperty( who , "mods" , newmods );
+        //else
+        //        EraseObjProperty( who , "mods" );
+        // endif
+
+  SendSysMessage(who, " ");
+  SendSysMessage(who, "Str Mod: " + GetStrengthMod(mark));
+  SendSysMessage(who, "Dex Mod: " + GetDexterityMod(mark));
+  SendSysMessage(who, "Int Mod: " + GetIntelligenceMod(mark));
+
+endprogram

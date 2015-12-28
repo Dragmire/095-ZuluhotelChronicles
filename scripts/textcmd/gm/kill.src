@@ -1,0 +1,50 @@
+Use uo;
+Use os;
+Use file;
+
+Include "include/time";
+Include "include/client";
+Include "include/damages";
+
+Program TextCMD_Kill( who )
+
+    Var tgt := TargetCoordinates( who );
+    If( tgt.mobile )
+      Var mob := tgt.mobile;
+      If( !mob.dead )
+      LogEditing( Who, mob );
+      RevokePrivilege( mob, "invul" );
+      SetObjProperty( mob, "guardkill", 1 );
+      ApplyRawDamage( mob, GetHp( mob ) );
+      Else
+      SendSysMessage( who, "Failed." );
+      Endif
+    Endif
+
+Endprogram
+
+Function LogEditing( Who, Thing )
+
+    If( !Who || !Thing )
+    Return 0;
+    Endif
+
+    Var TEXT_Logged := Array;
+    Var Seconds := PolCore().SysTime;
+    Var Date := GetDateString( Seconds ) + " :: " + GetTimeString( Seconds );
+
+    TEXT_Logged.Append( "Character Killed " + Date );
+    TEXT_Logged.Append( "Staff     " + Who.name + " [" + Hex( Who.serial ) + "] - [" + Who.ip + "]" );
+    TEXT_Logged.Append( "Object    " + Thing.name + " [" + Hex( Thing.serial ) + "]" );
+    TEXT_Logged.Append( "Location  " + Thing.z + " " + Thing.y + " " + Thing.z );
+    TEXT_Logged.Append( "" );
+    TEXT_Logged.Append( "" );
+
+    If( Thing.ip )
+    AppendToFile( "data/logging/Destroyed_Chars.txt", TEXT_Logged );
+    Elseif( Thing.IsA( POLCLASS_MOBILE ) )
+    AppendToFile( "data/logging/Destroyed_NPCs.txt", TEXT_Logged );
+    Return 1;
+    Endif
+
+Endfunction

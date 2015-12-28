@@ -1,0 +1,65 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+include "include/random";
+
+program rracialtheurgy( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_RACIAL_THEURGY, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= CInt(result[2]*2.5);
+	var cfg;
+
+	if( item.ar )
+		cfg := ReadConfigFile( ":combat:onhitscriptdesc" );
+	else
+		cfg := ReadConfigFile( ":combat:hitscriptdesc" );
+	endif
+
+	ApplyRaceScript( caster, item, power, cfg );
+	SetNameByEnchant( item );
+
+endprogram
+
+
+function ApplyRaceScript( caster, item, power, cfg )
+
+	var availelem 	:= FindConfigElem( cfg, "data" );
+	var availspells 	:= GetConfigInt( availelem, "NbSpell" );
+
+	var n := power + Random(3) + availspells;
+	var type := cfg[n].Type;
+
+	if( item.ar )
+		SetObjProperty( item, "ProtectedType", type );
+		SetObjProperty( item, "OnHitScript", cfg[n].OnHitscript );
+		SetObjProperty( item, "OnHitscriptNumber", n );
+		SendSysMessage( caster, "This item will now protect you against " + type );
+	else
+		item.hitscript := cfg[n].hitscript;
+		SetObjProperty( item, "SlayType", type );
+		SetObjProperty( item, "HitscriptNumber", n );
+		SendSysMessage( caster, "This weapon will be more effective against " + type + " from now on." );
+	endif
+
+endfunction

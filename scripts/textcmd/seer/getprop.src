@@ -1,0 +1,132 @@
+/////////////////////////////////////////////////////////////
+// GETPROP.SRC					           //
+//							   //
+// Author: DC					           //
+// Date: 2/14/99					   //
+//							   //
+// Description: An GM text command that prints the value   //
+//		of the given inherent property. Note that  //
+//		mobiles have more props than items.	   //
+//							   //
+// Syntax: .getprop <propname>			           //
+// program textcmd_getprop: params: character using	   //
+//				    property name	   //
+//			    passes the given prop text to  //
+//			    GetObjctProp and prints the    //
+//			    result.			   //
+//							   //
+// function GetObjctProp: Matches the given text to one of //
+//			  the known properties of the      // 
+//			  targetted object. If the prop    //
+//			  name could not be matched, it    //
+//			  throws an uninitialized error    //
+//			  which the main program catches.  //
+//							   //
+// TODO: Give access to props accessable only with	   //
+//	 "GetObjectProperty" function.		           //
+/////////////////////////////////////////////////////////////
+
+use uo;
+use basic;
+use os;
+
+//set_debug(1);
+
+program textcmd_getprop( who, propname )
+
+    SendSysMessage( who, "Select an object" );
+
+    var obj := Target( who );
+    if (obj)
+	var value;
+
+	    value := GetObjctProp( obj , propname );
+	    if(value == "<uninitialized object>")
+		SendSysmessage( who , "Invalid prop name!" );
+	    elseif(value)
+		SendSysmessage( who , propname + ": " + value );
+	    else
+		SendSysmessage( who , "Invalid prop name!" );
+	    endif
+    else
+	SendSysMessage(who, "canceled.");
+    endif
+
+endprogram
+
+
+function GetObjctProp( obj , propname )
+
+    var retstr := 0;
+    case (propname)
+	"x": 		retstr := obj.x;	break;
+	"y": 		retstr := obj.y;	break;
+	"z": 		retstr := obj.z;	break;
+	"objtype": 	retstr := hex(obj.objtype);	break;
+	"color": 	retstr := obj.color;	break;
+	"serial": 	retstr := hex(obj.serial);	break;
+	"height": 	retstr := obj.height;	break;
+	"facing": 	retstr := obj.facing;	break;
+	"name":		retstr := obj.name;	break;
+	"desc":		retstr := obj.desc;	break;
+	"warmode":	retstr := obj.warmode;	break;
+	"gender":	retstr := obj.gender;	break;
+	"truecolor":	retstr := obj.truecolor;	break;
+	"hp":		retstr := obj.hp;	break;
+	"maxhp":	retstr := obj.maxhp;	break;
+	"mana":		retstr := obj.mana;	break;
+	"maxmana":	retstr := obj.maxmana;	break;
+	"stamina":	retstr := obj.stamina;	break;
+	"maxstamina":	retstr := obj.maxstamina;	break;
+	"strength":	retstr := obj.strength;	break;
+	"dexterity":	retstr := obj.dexterity;	break;
+	"intelligence":	retstr := obj.intelligence;	break;
+	"dead":		retstr := obj.dead;	break;
+	"ar":		retstr := obj.ar;	break;
+	"strength_mod":	retstr := obj.strength_mod;	break;
+	"intelligence_mod": retstr := obj.intelligence_mod;	break;
+	"dexterity_mod": retstr := obj.dexterity_mod;	break;
+	"ar_mod":	retstr := obj.ar_mod;	break;
+	"graphic":	retstr := obj.graphic;	break;
+	"usescript":	retstr := obj.usescript;	break;
+	"equipscript":	retstr := obj.equipscript;	break;
+	"unequipscript": retstr := obj.unequipscript;	break;
+	"newbie":	retstr := obj.newbie;	break;
+	"movable":	retstr := obj.movable;	break;
+	"decayat":	retstr := obj.decayat;	break;
+	"maxhp_mod":	retstr := obj.maxhp_mod;	break;
+	"quality":	retstr := obj.quality;	break;
+	"ar_base":	retstr := obj.ar_base;	break;
+	"hitscript":	retstr := obj.hitscript;	break;
+	"dmg_mod":	retstr := obj.dmg_mod;	break;
+	"skillid":	retstr := obj.skillid;	break;
+	"locked":	retstr := obj.locked;	break;
+	"trueobjtype":	retstr := obj.trueobjtype;	break;
+	"poisoned":	retstr := obj.poisoned;	break;
+	"paralyzed":	retstr := obj.paralyzed;	break;
+	"hidden":	retstr := obj.hidden;	break;
+	"concealed":	retstr := obj.concealed;	break;
+	"frozen":	retstr := obj.frozen;	break;
+	"stealthsteps":	retstr := obj.stealthsteps;	break;
+	"squelched":	retstr := obj.squelched;	break;
+	"npctemplate":	retstr := obj.npctemplate;	break;
+	"script":	retstr := obj.script;	break;
+	"controlscript": retstr := obj.controlscript;	break;
+	"walkonscript":	retstr := obj.walkonscript;	break;
+	"invisible":	retstr := obj.invisible;	break;
+	"title_prefix":	retstr := obj.title_prefix;	break;
+	"title_suffix":	retstr := obj.title_suffix;	break;
+	"title_race":	retstr := obj.title_race;	break;
+	"buyprice":	retstr := obj.buyprice;	break;
+	"criminal":	retstr := obj.criminal;	break;
+	"murderer":	retstr := obj.murderer;	break;
+	"base_hp_regen":	retstr := obj.base_hp_regen;	break;
+	"base_mana_regen":	retstr := obj.base_mana_regen;	break;
+	"base_stamina_regen":	retstr := obj.base_stamina_regen;	break;
+	default:
+    endcase
+
+    return Cstr(retstr);
+    
+endfunction
+

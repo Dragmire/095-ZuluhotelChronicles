@@ -1,0 +1,47 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/rituals";
+
+
+program rregeneration( parms )
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_RESILIENCE, HAVE_HP + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	//Apply the enchantment if there wasn't one more powerful already
+	var previous := item.maxhp_mod;
+	if( !previous )
+		item.maxhp_mod := power * 10;
+		item.hp := item.maxhp;
+		SendSysMessage( caster, "This " + item.desc + " is now more resistant than ever." );
+		SetNameByEnchant( item );
+	else
+		SendSysMessage( caster, "There's already a stronger enchantment on this item." );
+	endif
+
+
+endprogram

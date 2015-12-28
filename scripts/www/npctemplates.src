@@ -1,0 +1,146 @@
+Use http;
+Use uo;
+Use os;
+
+Include "include/classes";
+Include "include/ranksystem";
+
+Program players()
+
+    Var npccfg := ReadConfigFile(":*:npcdesc");
+    
+    WriteHtml( "<html><head><title>Chaotic Realm Second Age</title>" );
+    WriteHtml( "
+<style>
+table, tr, td {
+	background-color: #000000;
+	border: 1px solid #000066;
+}
+
+font {
+    font-family: tahoma;
+    font-size: 11px;
+}
+
+</style>
+</head>
+    " );
+    WriteHtml("<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=666666 vlink=666666 alink=666666>" );
+
+    Var NPC_Cfg := ReadConfigFile(":*:npcdesc");
+    Var Templates := GetConfigStringKeys( NPC_Cfg );
+
+    Foreach NPC in Templates
+    
+    Var NPC_Name := NPC_Cfg[NPC].Name;
+    Var NPC_Script := NPC_Cfg[NPC].Script;
+    Var NPC_Type := GetTypeByScript( NPC_Script );
+    
+
+    If( NPC_Name["<random>"] || !NPC_Name )
+    NPC_Name := NPC_Cfg[NPC].Type;
+    Endif
+    
+    Var NPC_STR := NPC_Cfg[NPC].STR;
+    Var NPC_INT := NPC_Cfg[NPC].INT;
+    Var NPC_DEX := NPC_Cfg[NPC].DEX;
+    
+    Var NPC_LVL := NPC_Cfg[NPC].Magicitemlevel;
+    If( !NPC_LVL )
+    NPC_LVL := 0;
+    Endif
+    Var NPC_MC  := NPC_Cfg[NPC].magicitemchance;
+    If( !NPC_MC )
+    NPC_MC := 0;
+    Endif
+    Var Stats := GetStats( NPC );
+    Var NPC_HITS := NPC_STR + Stats[1];
+    Var NPC_MANA := NPC_INT + Stats[2];
+    Var NPC_STAM := NPC_DEX + Stats[3];
+    
+    Writehtml("<table width=450 border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td width=75><div align=center><strong><font size=2>Name</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ NPC_Name +"</center></font></td>"
+    +"<td width=75><div align=center><strong><font size=2>Type</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ NPC_Type +"</center></font></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=75><div align=center><strong><font size=2>Str</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_STR + Stats[1] ) * 0.75 ) +"/"+ ( ( NPC_STR + Stats[1] ) * 1.25 ) +"</center></font></td>"
+    +"<td width=75><div align=center><strong><font size=2>Hits</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_HITS * 3 ) * 0.75 ) +"/"+ ( ( NPC_HITS * 3 ) * 1.25 ) +"</center></font></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=75><div align=center><strong><font size=2>Int</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_INT + Stats[2] ) * 0.75 ) +"/"+ ( ( NPC_INT + Stats[2] ) * 1.25 ) +"</center></font></td>"
+    +"<td width=75><div align=center><strong><font size=2>Mana</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_MANA * 3 ) * 0.75 ) +"/"+ ( ( NPC_MANA * 3 ) * 1.25 ) +"</center></font></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td width=75><div align=center><strong><font size=2>Dex</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_DEX + Stats[3] ) * 0.75 ) +"/"+ ( ( NPC_DEX + Stats[3] ) * 1.25 ) +"</center></font></td>"
+    +"<td width=75><div align=center><strong><font size=2>Stam</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ ( ( NPC_STAM * 3 ) * 0.75 ) +"/"+ ( ( NPC_STAM * 3 ) * 1.25 ) +"</center></font></td>"
+    +"</tr>"
+/*
+    +"<tr>"
+    +"<td width=75><div align=center><strong><font size=2>Level</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ NPC_LVL +"</center></font></td>"
+    +"<td width=75><div align=center><strong><font size=2>Magic Chance</font></strong></div></td>"
+    +"<td width=100><font size=2><center>"+ NPC_MC +"%</center></font></td>"
+    +"</tr>"
+*/
+    +"</table>" );
+    
+    Writehtml("<br>");
+
+    Endforeach
+
+
+    WriteHtml( "</body></html>" );
+    
+EndProgram
+
+Function GetTypeByScript( ScriptId )
+
+    Case( ScriptId )
+    "killpcs": Return ( "Melee" );
+    "postman": Return ( "Merchant" );
+    "merchant": Return ( "Merchant" );
+    "spellkillpcs": Return ( "Caster" );
+    "daves_healer": Return ( "Healer" );
+    "slime": Return ( "Melee" );
+    "rockthrower": Return ( "Melee/Ranged" );
+    "firebreather": Return ( "Melee/Chaos" );
+    "critterhealer": Return ( "Healer" );
+    "chaosspellkillpcs": Return ( "Caster" );
+    "virtuebanker": Return ( "Merchant" );
+    "goodcaster": Return ( "Caster" );
+    "explosionkillpcs": Return ( "Melee/Chaos" );
+    "chaoskillpcs": Return ( "Melee/Chaos" );
+    "barker": Return ( "Animal" );
+    "poisonkillpcs": Return ( "Melee/Poisoned" );
+    "vortexai": Return ( "Melee" );
+    default: Return ( "Unknown" );
+    Endcase
+
+Endfunction
+
+Function GetStats( Template )
+
+    Var CFG := ReadConfigFile( "npcdescdata" );
+    Var NPC := FindConfigElem( CFG, Template );
+    Var Strmod := GetConfigString( NPC, "BaseStrmod" );
+    Var Intmod := GetConfigString( NPC, "BaseIntmod" );
+    Var Dexmod := GetConfigString( NPC, "BaseDexmod" );
+
+    Var data := array;
+    
+    data.append( CInt( Strmod ) );
+    data.append( CInt( Intmod ) );
+    data.append( CInt( Dexmod ) );
+    
+    Return data;
+    
+Endfunction

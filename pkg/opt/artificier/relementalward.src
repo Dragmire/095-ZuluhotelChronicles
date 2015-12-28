@@ -1,0 +1,114 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+
+program relementalward( parms )
+
+
+	var layout := array(
+				"page 0",
+				"resizepic 50  0   2600 250 150",
+				"resizepic 100 255 5100 150 25",
+				"text 99 30 5 0",
+			
+				"page 1",
+				"text 85 60 0 1",
+				"text 85 80 0 2",
+				"text 85 100 0 3",
+				"text 85 120 0 4",
+				"button 250 65 2118 2117 1 0 2",
+				"button 250 85 2118 2117 1 0 3",
+				"button 250 105 2118 2117 1 0 1",
+				"button 250 125 2118 2117 1 0 4" );
+			
+	var data := array(
+				"Select an element",
+				"Air",
+				"Earth",
+				"Fire",
+				"Water"  );
+			
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_ELEMENTAL_WARD, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	//Ask for the regeneration type
+	SendSysMessage( caster, "Select an element." );
+	var element := SendDialogGump( caster, layout, data );
+	if( !element[0] )
+		SendSysMessage( caster, "The ritual is aborted" );
+		return;
+	endif
+
+
+	//Apply the enchantment
+	case( element )
+		FIRE:
+			var previous := GetObjProperty( item, "FireProtection" );
+			if( !previous )
+				SetObjProperty( item, "FireProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against fire" );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's a stronger enchantment already on this item" );
+			endif
+			break;
+		
+		AIR:
+			var previous := GetObjProperty( item, "AirProtection" );
+			if( !previous )
+				SetObjProperty( item, "AirProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against air" );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+	
+		EARTH:
+			var previous := GetObjProperty( item, "EarthProtection" );
+			if( !previous )
+				SetObjProperty( item, "EarthProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against earth" );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+		
+		WATER:
+			var previous := GetObjProperty( item, "WaterProtection" );
+			if( !previous )
+				SetObjProperty( item, "WaterProtection", power );
+				SendSysMessage( caster, "The wearer of this " + item.desc + " will now be protected against water" );
+				SetNameByEnchant( item );
+			else
+				SendSysMessage( caster, "There's already a stronger enchantment on this item" );
+			endif
+			break;
+		
+	endcase
+
+
+endprogram

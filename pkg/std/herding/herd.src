@@ -1,0 +1,47 @@
+// herd.src was created by Maximilian Scherr
+use uo;
+use cfgfile;
+
+include "include/client";
+
+program herd(who)
+  SendSysMessage(who, "What do you want to herd?");
+  var npc := Target(who);
+  if (!npc)
+    SendSysMessage(who, "Cancelled!");
+    return;
+  endif
+  if (!CheckLineOfSight(who, npc))
+    SendSysMessage(who, "You can't see that!");
+  endif
+  var conf := ReadConfigFile("::npcdesc");
+  var elem := FindConfigElem(conf, npc.npctemplate);
+  var tameskill := CInt(GetConfigInt(elem, "tameskill"));
+  if (!tameskill)
+    SendSysMessage(who, "You can't herd that!");
+    return;
+  endif
+  if ((npc.script == "tamed") || (npc.script == "herdedai") || (npc.script == "totem"))
+    SendSysMessage(who, "You can't herd that!");
+    return;
+  endif
+  var difficulty := CInt(tameskill);
+  var points := CInt(difficulty) * 5;
+  if (CheckSkill(who, SKILLID_HERDING, CInt(difficulty), CInt(points)))
+    SendSysMessage(who, "Where do you want to make "+ npc.name +" run to?");
+    var location := TargetCoordinates(who);
+    if (!CheckLosAt(npc, location.x, location.y, location.z))
+      SendSysMessage(who, npc.name +" can't see that location!");
+      return;
+    endif
+    SetObjProperty(npc, "locationx", location.x);
+    SetObjProperty(npc, "locationy", location.y);
+    SetObjProperty(npc, "originalscript", npc.script);
+    npc.script := ":herding:herdedai";
+    RestartScript(npc);
+    PrintTextAbove(npc, "*"+ npc.name +" is herded by "+ who.name +"*");
+  else
+    SendSysMessage(who, "You have to improve your herding skill to herd that!");
+    return;
+  endif
+endprogram

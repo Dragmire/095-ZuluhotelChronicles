@@ -1,0 +1,35 @@
+use uo;
+use os;
+use cfgfile;
+
+var itemdesc := ReadConfigFile (":*:itemdesc");
+
+program export_statics (character)
+	Set_Script_Option (SCRIPTOPT_NO_RUNAWAY, 1);
+
+	var staticscfg := ReadConfigFile (":static:statics");
+	var keys := GetConfigStringKeys (staticscfg);
+	if (!len (keys))
+		SendSysMessage (character, "But there are no items in statics.cfg!");
+		return;
+	endif
+	
+	SendSysMessage (character, "Importing " + len (keys) + " items.  This may take a while...");
+	var counter := 0;
+	var elem, item;
+	foreach key in keys
+		elem := staticscfg[key];
+		item := CreateItemAtLocation (elem.x, elem.y, elem.z, elem.id, 1);
+		if (!item)
+			SendSysMessage (character, "Failed to import item " + key);
+		else
+			item.movable := 0;
+			item.decayat := 0;
+			item.color := elem.color;
+		endif
+	
+	endforeach
+	UnloadConfigFile(":static:statics");
+	SendSysMessage (character, "Finished! " + counter + " items imported!");
+	SendSysMessage (character, "Remember to clean out statics.cfg!");
+endprogram

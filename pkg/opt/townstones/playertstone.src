@@ -1,0 +1,360 @@
+use uo;
+use os;
+use cfgfile;
+include "/include/math";
+include "tstone";
+
+var layout :={
+	"page 0",
+	"resizepic 160 50 5100 300 390",
+	"text 220 55 0 0",
+	"text 165 90 0 1",
+	"text 300 90 500 2",
+	"text 165 110 0 3",
+	"text 300 110 500 4",
+};
+
+var data := {
+	"Town Stone of ",
+	"Mayor's name",
+	"",
+	"Population",
+	"",
+};
+
+
+var layout2 :={
+	"text 165 140 90 5",
+	"text 185 160 0 6",
+	"text 185 185 0 7",
+	"button 225 160 2474 2473 1 0 1000",
+	"button 225 185 2152 2151 1 0 0",
+
+};
+
+var data2 := {
+
+	"Do want to be citizen of ",
+	"Yes",
+	"No",
+};
+
+
+var layoutx := {
+	"button 325 265 243 242 1 0 0",
+	"button 235 265 248 247 1 0 0",
+
+};
+
+var layout3 := {
+	"text 165 140 0 5",
+	"text 165 170 0 6",
+	"button 330 135 2474 2473 1 0 2001",
+	"button 330 165 2152 2151 1 0 2002",
+	"text 165 195 0 7",
+	"text 165 213 0 8",
+	"text 320 195 80 9",
+	"text 320 213 80 10",
+};
+
+var data3 := {
+	"Call new poll",
+	"Summon elections",
+	"",
+	"",
+	"",
+	"",
+};
+
+
+var layout4 :={
+	"text 165 135 90 5",
+	"text 165 160 0 6",
+	"text 165 185 0 7",
+	"button 205 155 2474 2473 1 0 3000",
+	"button 205 180 2152 2151 1 0 0",
+	"text 165 210 0 8",
+	"text 165 230 0 9",
+};
+
+var data4 := {
+	"Do you want to give up your citizenship?",
+	"Yes",
+	"No",
+	"",
+	"",
+};
+
+
+var eleicaolayout := {
+	"text 165 210 0 10",
+	"text 165 230 0 11",
+	"text 320 210 80 12",
+	"text 320 230 80 13",
+
+	"text 165 250 0 14",
+	"text 165 273 0 15",
+
+	"button 255 245 2474 2473 0 2 0",
+	"button 255 270 2152 2151 1 0 4000",
+	"page 1",
+};
+
+var eleicaodata := {
+	"Number of candidates",
+	"How many have voted",
+	"",
+	"",
+	"Vote",
+	"Candidature",
+	"Choose your candidate",
+
+};
+
+
+var pleibicitolayout := {
+	"text 165 230 0 10",
+	"text 165 250 0 11",
+	"button 210 245 2152 2151 0 2 0",
+	"text 165 210 0 12",
+	"text 320 210 80 13",
+	"page 1",
+
+};
+
+var pleibicitodata := {
+	"Poll",
+	"Vote",
+	"How many have voted",
+	"",
+
+};
+var user;
+var stone;
+var citizen;
+var city;
+var mayor;
+var mayorserial;
+var populacao;
+var eleicoes;
+var pleibicito;
+var candidatos;
+var votepercent;
+var votos;
+var timer;
+var pleibicito_result;
+
+program townstone(who,item)
+
+if(!ReserveItem(item)) return; endif
+
+user := GetObjProperty(who, "town");
+if(!user)
+	user := 0;
+endif
+
+stone := GetObjProperty(item, "town");
+if(!stone)
+	syslog("bad townstone");
+	return 0;
+endif
+
+stone := CInt(stone);
+user := CInt(user);
+
+if((user != 0) && (user != stone))
+	user := 99;
+endif
+
+city := GetTownName(stone);
+mayor := GetObjProperty(item, "mayor");
+mayorserial :=CInt(GetObjProperty(item, "mayorserial"));
+populacao := CInt(GetObjProperty(item, "populacao"));
+eleicoes := CInt(GetObjProperty(item, "eleicao"));
+pleibicito := GetObjProperty(item, "pleibicito");
+candidatos := GetObjProperty(item, "candidatos");
+votepercent := CInt(GetObjProperty(item, "votepercent"));
+votos := CInt(GetObjProperty(item, "votos"));
+timer := CInt(GetObjProperty(item, "timer"));
+pleibicito_result := GetObjProperty(item, "Pleibicito_Result");
+citizen := GetObjProperty(item, "citizen");
+
+if (!citizen)
+	citizen := { };
+endif
+
+if(!candidatos)
+	candidatos := { };
+endif
+
+if(!populacao)
+	populacao := 0;
+endif
+if(!votos)
+	votos :=0;
+endif
+if(!votepercent)
+	votepercent := 0;
+endif
+if(!mayor || !mayorserial)
+	mayor := "No mayor";
+	mayorserial := 0;
+endif
+
+if(!timer)
+	timer := 0;
+endif
+
+if(len(pleibicito) < 2 || !pleibicito)
+	pleibicito := 0;
+endif
+
+data[1] := data[1] + city;
+data[3] := mayor;
+data[5] := CStr(populacao);
+
+if(!user)
+	layout := Append_data(layout, layout2);
+	data := Append_data(data, data2);
+	data[6] := data[6] + city +"?";
+elseif (user == 99)
+	layout := Append_data(layout, layoutx);
+//nothing for now
+elseif ( mayorserial == who.serial)
+	SendSysMessage(who, "Welcome mayor");
+	layout := Append_data(layout, layout3);
+	data := Append_data(data, data3);
+		if(eleicoes)
+		data[8] := "Running election";
+		data[10] := votepercent + "% have voted";
+	else
+		data[8] := "No elections running";
+	endif
+	if(pleibicito)
+		data[9] := "Poll running";
+		data[11] := votepercent + "% have voted";
+	else
+		data[9] := "No poll runing";
+	endif
+else
+	SendSysMessage(who, "Welcome citizen of "+ city);
+	layout := Append_data(layout, layout4);
+	data := Append_data(data, data4);
+	if(eleicoes)
+		EleicoesMenu(who, item);
+	elseif(pleibicito)
+		PleibicitoMenu(who, item);
+	elseif(pleibicito_result)
+		data[9] := "Last poll: " + pleibicito_result[1];
+		data[10] := pleibicito_result[2];
+	else
+		data[9] := "No elections running";
+		data[10] := "No poll runing";
+
+	endif
+
+endif
+
+
+var res := SendDialogGump(who, layout, data);
+
+case (res[0])
+	1000: Citizenship(who, item);
+
+	2001: ConvocarPleibicito(who, item);
+
+	2002: ConvocarEleicoes(who, item);
+
+	3000: CanselCityzenship(who, item);
+
+	4000: candidato(who, item);
+
+	default: if( res[0] <= (candidatos.size()/2) && res[0] > 0 )
+			voteto(who, item, res[0]);
+		 else
+			SendSysMessage(who, "cya");
+		 endif
+endcase
+
+
+endprogram
+
+
+
+function CanselCityzenship(who, item)
+
+var i;
+
+if(eleicoes || pleibicito)
+	foreach serial in candidatos
+		if (serial == who.serial)
+			SendSysMessage(who, "You can't give up citizenship while being a candidade during elections");
+			return;
+		endif
+	endforeach
+
+	foreach runa in EnumerateItemsInContainer( item )
+		if (runa.objtype == 0xa321)
+			if (GetObjProperty(runa, "serial") == who.serial)
+				DestroyItem(runa);
+				votos := votos -1;
+				SetObjProperty(item, "votos", votos);
+				SetVotepercentage(item);
+				break;
+			endif
+		endif
+	endforeach
+endif
+
+var result := find(who.name, "of "+city, 1);
+var name := who.name;
+result := result-2;
+name := name[1,result];
+who.name := name;
+
+set_critical(1);
+
+for(i:=1; i<=citizen.size(); i:=i+1)
+	if(citizen[i] == who.acctname)
+		citizen.erase(i);
+		break;
+	endif
+endfor
+	
+populacao := populacao -1;
+SetObjProperty(item, "populacao", populacao);
+SetObjProperty(item, "citizen", citizen);
+EraseObjProperty(who, "town");
+SendSysMessage(who, "You are no longer citizen of " +city);
+
+endfunction
+
+
+function Citizenship(who, item)
+
+set_critical(1);
+
+foreach dude in citizen
+	if (dude == who.acctname)
+		SendSysMessage(who, "You can't join more than once");
+		return;
+	endif
+endforeach
+
+citizen.append(who.acctname);
+SetObjProperty(item, "citizen", citizen);
+SetObjProperty(who, "town", CInt(stone));
+populacao := populacao +1;
+SetObjProperty(item, "populacao", populacao);
+
+set_critical(0);
+
+who.name := who.name + " of " + city;
+
+SendSysMessage(who, "Now you are citizen of " + city);
+
+if(eleicoes || pleibicito)
+	SetVotepercentage(item);
+endif
+
+endfunction

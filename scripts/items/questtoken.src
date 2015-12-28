@@ -1,0 +1,208 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+
+Include "include/client";
+Include "include/gumps";
+Include "include/starteqp";
+Include "include/yesno";
+
+Program Prize_Token( Who, Token )
+
+    Var X := 75;
+    Var Y := 75;
+
+    Var Page := 1;
+
+    GFInitGump();
+    GFResizePic( 50, 50, 5054, 300, 325 );
+    GFTextLine( ( X - 15 ), ( Y - 20 ), 2480, "Quest Token Prize Selection" ) ;
+
+    GFPage( Page );
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 3 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 3 Loot / 15 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 4 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 4 Loot / 30 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 5 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 5 Loot / 45 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 6 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 6 Loot / 60 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 7 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 7 Loot / 75 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 8 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 8 Loot / 90 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 9 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 9 Loot / 105 Tokens" );
+    Y := Y + 20;
+    
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 10 );
+    GFTextLine( ( X + 25 ), Y, 2601, "Level 10 Loot / 120 Tokens" );
+    Y := Y + 20;
+    
+    GFTextLine( ( X - 15 ), Y, 2480, "Just select what level loot you want." );
+    Y := Y + 20;
+    GFTextLine( ( X - 15 ), Y, 2480, "If you have enough tokens a bag of" );
+    Y := Y + 20;
+    GFTextLine( ( X - 15 ), Y, 2480, "randomly generated loot will be created" );
+    Y := Y + 20;
+    GFTextLine( ( X - 15 ), Y, 2480, "for you in your backpack." );
+    Y := Y + 20;
+    
+    Var Change := GFSendGump( Who );
+
+    If( !Change )
+    Return 0;
+    Endif
+    
+    Case( Change[0] )
+    3:
+    If( SpendTokens( Who, Token, 15 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 15 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 3 );
+    Return 1;
+    Endif
+    Endif
+    
+    4:
+    If( SpendTokens( Who, Token, 30 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 30 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 4 );
+    Return 1;
+    Endif
+    Endif
+    
+    5:
+    If( SpendTokens( Who, Token, 45 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 45 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 5 );
+    Return 1;
+    Endif
+    Endif
+    
+    6:
+    If( SpendTokens( Who, Token, 60 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 60 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 6 );
+    Return 1;
+    Endif
+    Endif
+    
+    7:
+    If( SpendTokens( Who, Token, 75 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 75 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 7 );
+    Return 1;
+    Endif
+    Endif
+    
+    8:
+    If( SpendTokens( Who, Token, 90 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 90 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 8 );
+    Return 1;
+    Endif
+    Endif
+    
+    9:
+    If( SpendTokens( Who, Token, 105 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 105 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 9 );
+    Return 1;
+    Endif
+    Endif
+    
+    10:
+    If( SpendTokens( Who, Token, 120 ) )
+    Var xBag := CreateItemInBackpack( Who, 0x0E76, 1 );
+    If( !xBag )
+    CreateItemInBackpack( Who, 0xa396, 120 );
+    Return 0;
+    Endif
+    If( xBag.IsA( POLCLASS_CONTAINER ) )
+    MakePrizeLoot( xBag, 146, 75, 10 );
+    Return 1;
+    Endif
+    Endif
+    
+    Endcase
+
+Endprogram
+
+Function SpendTokens( Who, Token, Cost )
+
+    If( !Token || !Cost )
+    Return 0;
+    Endif
+
+    If( Token.amount < Cost )
+    SendSysMessage( Who, "You don't have enough tokens for that." );
+    Return 0;
+    Endif
+    
+    If( Token.amount >= Cost )
+      If( YesNo( Who, "Are you sure?" ) )
+      SubtractAmount( Token, Cost );
+      Return 1;
+      Else
+      Return 0;
+      Endif
+    Endif
+    
+    Return 0;
+
+Endfunction

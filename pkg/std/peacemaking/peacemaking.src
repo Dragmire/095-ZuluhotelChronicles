@@ -1,0 +1,123 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/client";
+include "include/objtype";
+include "include/skillpoints";
+include "include/attributes";
+include "include/bard";
+include "include/eventid";
+include "include/classes";
+
+
+program bard_peacemake( character )
+
+	var instrument := findinstrument( character );
+	if( !instrument )
+		SendSysmessage( character, "You don't have an instrument to play!" );
+		return;
+	endif
+
+	var configfile := ReadConfigFile("::npcdesc");
+	var theobj ;
+        var elem;
+	var difficulty;
+	var range := Cint(GetEffectiveSkill(character,SKILLID_PEACEMAKING)/10);
+	range := Cint( range * ClasseBonus( character, CLASSEID_BARD ) );
+
+	var affected	:= array;
+	var max_diff	:= 0;
+
+	foreach mobile in ListMobilesNearLocation( character.x, character.y, character.z, range )
+		if( mobile.warmode and mobile != character )
+			elem := FindConfigElem( configfile, mobile.npctemplate );
+			if( !mobile.npctemplate and !mobile.cmdlevel )
+				difficulty := Cint( GetIntelligence( mobile) );
+			elseif( elem and !(elem.Privs == "invul") )
+				difficulty := Cint( elem.provoke );
+			else
+				continue;
+			endif
+
+			if( !difficulty )
+				difficulty := 100;
+			elseif( difficulty > 150 )
+				difficulty := 150;
+			endif
+			
+			if( difficulty > max_diff )
+				max_diff := difficulty;
+			endif
+			
+			affected.append( { mobile, difficulty } );
+		endif
+	endforeach
+	
+	if( len(affected) )
+		var sfx_success;
+		var sfx_failure;
+		case( instrument.graphic )
+			UOBJ_HARP:	sfx_success := SFX_HARP_SUCC;
+					sfx_failure := SFX_HARP_FAIL;
+					break;
+					
+			UOBJ_LUTE:	sfx_success := SFX_LUTE_SUCC;
+					sfx_failure := SFX_LUTE_FAIL;
+					break;
+					
+			UOBJ_DRUM:	sfx_success := SFX_DRUM_SUCC;
+					sfx_failure := SFX_DRUM_FAIL;
+					break;
+					
+			UOBJ_TAMB:	sfx_success := SFX_TAMB_SUCC;
+					sfx_failure := SFX_TAMB_FAIL;
+					break;
+					
+			default:	PrintTextAbovePrivate( character, "That's not something you can play", character );
+					return;
+		endcase
+		
+		var ev := struct;
+		ev.+type;
+		ev.type := EVID_PEACEMADE;
+		
+		var succeeded	:= 0;
+		var points_given := 0;
+		var the_diff;
+		var mobile;
+		var points;
+		
+		foreach element in affected
+			mobile	 := element[1];
+			the_diff := Cint( element[2] );
+			if( the_diff == max_diff and !points_given )
+				points := Cint( the_diff * 10 );
+				points_given := 1;
+			else
+				points := 0;
+			endif
+		
+			if( CheckSkill( character, SKILLID_PEACEMAKING, difficulty, points ) )
+				if( CheckSkill( character, SKILLID_MUSICIANSHIP, difficulty, Cint(points / 3) ) )
+					succeeded := succeeded + 1;
+					SendEvent( mobile, ev );
+					PrintTextAbove( mobile, mobile.name + " is dazzled by the beautiful music!" );
+					mobile.warmode := 0;
+				endif
+			endif
+		endforeach
+		
+		
+		if( succeeded > 0 )
+			PlaySoundEffect( character, sfx_success );
+		else
+			PlaySoundEffect( character, sfx_failure );
+			PrintTextAbove( character, "*"+ character.name + " plays a musical instrument... poorly*" );
+		endif
+	else
+		SendSysmessage( character, "There's nothing to calm down in range." );
+		return;
+	endif
+
+endprogram 

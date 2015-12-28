@@ -1,0 +1,38 @@
+use uo;
+use os;
+
+include "include/skillpoints";
+include "include/client";
+include "include/random";
+
+var points := get_default_points(SKILLID_MAGICRESISTANCE );
+const EFFECT_SPARKLE := 0x373a;
+const SOUND_EFFECT_RES := 0x215;
+
+program firefield(mobile,item)
+        set_priority(1);
+        var creater := GetObjProperty(item, "creater");
+        var boss := SystemFindObjectBySerial(CInt(creater));
+        if (boss)
+                SetScriptController(boss);
+        endif
+        var tdamage := Random(10) * 4;
+        if (CheckSkill(mobile, SKILLID_MAGICRESISTANCE,80, 0 ) )
+                ApplyDamage(mobile, tdamage/2);
+        else
+                ApplyDamage(mobile, tdamage );
+        endif
+
+        sleepms(750);
+       
+        while ((mobile.x == item.x) && (mobile.y == item.y))
+                var tdamage := Random(10) * 4;
+                if (CheckSkill(mobile, SKILLID_MAGICRESISTANCE,80, 0 ) )
+                        ApplyDamage(mobile, tdamage/2);
+                else
+                        ApplyDamage(mobile, tdamage );
+                endif
+
+                sleepms(750);
+        endwhile
+endprogram

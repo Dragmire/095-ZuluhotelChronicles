@@ -1,0 +1,47 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/rituals";
+
+
+program rattunement( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_ATTUNEMENT, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+
+	SendSysMessage( caster, "Who will be the owner of this item from now on?" );
+	var owner;
+	while( !owner || !GetIntelligence(owner) || owner.npctemplate )
+		owner := Target( caster, TGTOPT_CHECK_LOS );
+		if( !owner )
+			SendSysMessage( caster, "Who will be the owner of this item from now on?" );
+		elseif( GetIntelligence(owner) )
+			SendSysMessage( caster, "Who must select someone." );
+		elseif( owner.npctemplate )
+			SendSysMessage( caster, "Who must select a character." );
+		endif
+	endwhile
+
+	SetObjProperty( item, "ownerserial", owner.serial );
+	SetObjProperty( item, "ownername", owner.name );
+	SendSysMessage( caster, "From now on, only " + owner.name + " will be able to equip this item." );
+
+endprogram

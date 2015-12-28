@@ -1,0 +1,16 @@
+use os;
+use uo;
+include "include/client";
+program textcmd_savenow()
+    Broadcast( "SYSTEM: Saving World State", FONT_BOLD, 2595 );
+    Broadcast( "REPEAT: Saving World State", FONT_BOLD, 2595 );
+    sleep(1);
+    Var Res := SaveWorldState();
+
+    If( Res == error )
+        Broadcast( "SYSTEM: Error saving world state!  Oh, the humanity!", FONT_BOLD, 33  );
+        Print( "SYSTEM: Error saving world state: " + res.errortext );
+    endif
+    
+    Broadcast( "SYSTEM: World Saved", FONT_BOLD, 2595 );
+endprogram

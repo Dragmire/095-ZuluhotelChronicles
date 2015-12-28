@@ -1,0 +1,56 @@
+// Regrow...
+// the one that has to be fixed and upgraded the most.
+// it makes fruits regrow, and chech if too many trees are around, and in this case
+// esecutes treedeath ;)
+// Maybe you can put this check at the creation, so that it blocks grow too ;)
+// yo!
+
+use os;
+use uo;
+use cfgfile;
+
+include "botanik";
+
+program regrow (parms)
+
+  var leaves:=parms[1],wait:=CInt(parms[2]),i,restype,death;
+  if (!leaves) return; endif
+
+  var amt:=GetObjProperty(leaves,"amt"),cfg:=ReadConfigFile("tree");
+  SetObjProperty(leaves,"#regrow",1);
+
+  for(i:=amt;i>0;i:=i-1)
+
+    if (counttree(leaves)>3)
+      restype:=0;
+      death:=0;
+
+      foreach item in ListItemsNearLocation(CInt(leaves.x),CInt(leaves.y),CInt(leaves.z),3)
+
+	if (item.serial!=leaves.serial)
+          restype:=cfg[item.objtype].product;
+          death:=GetObjProperty(leaves,"death");
+             
+	  if ((restype) && (!death))
+            SetObjProperty(leaves,"death",1);
+            start_script("treedeath",{leaves,cfg[leaves.objtype].treetype});
+            EraseObjProperty(leaves,"#regrow");
+            return;
+          endif
+
+        endif
+
+      endforeach
+
+    endif
+
+    sleep(wait);
+    amt:=amt-1;
+    SetObjProperty(leaves,"amt",amt);
+    PrintTextAbove(leaves,"*grows*");
+
+  endfor
+
+EraseObjProperty(leaves,"#regrow");
+
+endprogram

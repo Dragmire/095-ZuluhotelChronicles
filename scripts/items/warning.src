@@ -1,0 +1,13 @@
+use uo;
+
+program warning_bell(player, bell)
+
+var town := GetObjProperty(bell, "town");
+
+if (!town)
+        return;
+endif
+
+Broadcast(town + "is under attack!");
+
+endprogram

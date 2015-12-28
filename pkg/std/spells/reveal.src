@@ -1,0 +1,77 @@
+use uo;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+
+program reveal_hider ( parms )
+
+	var circle := 6;
+	var caster;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if (!can_cast(caster, circle))
+        		return;
+		endif
+	endif
+
+	var magery := GetEffectiveSkill( caster, SKILLID_MAGERY  );
+	var range := ModifyWithMagicEfficiency( caster, CInt(( magery / 10 ) - 5) );
+	if (range < 1)
+		range := 1;
+	endif
+
+	var hiders := ListMobilesNearLocationEx( caster.x, caster.y, caster.z, range, LISTEX_FLAG_HIDDEN );
+	var numfound := 0;
+
+	if(len(hiders) > 0)
+		foreach mobile in hiders
+			var immunity := IsProtected( caster, mobile, circle );
+			if( immunity == IMMUNED )
+				continue;
+			endif
+
+			if( immunity == CURSED )
+				magery := magery * 2;
+				circle := circle * 2;
+			endif
+		
+			if( Found( caster,  mobile, circle, magery ) )
+				numfound := 1;
+				mobile.hidden := 0;
+				PrintTextAbovePrivate( mobile, "You have been revealed!", mobile );
+				PrintTextAbovePrivate( mobile, "Ah ha!!", caster );
+				PlaySoundEffect(mobile, SFX_SPELL_REVEAL);
+			endif
+		endforeach
+	endif
+	if (!numfound)
+    		PrintTextAbovePrivate( caster, "You didn't find anyone.", caster );
+ 	endif
+
+endprogram
+
+
+function Found( finder, hider, circle, magery )
+
+	var magic_skill := Resisted( finder, hider, circle, magery);
+	var resist := (GetEffectiveSkill( finder, SKILLID_MAGICRESISTANCE)/1.5);
+
+	if ( magic_skill > resist )
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction

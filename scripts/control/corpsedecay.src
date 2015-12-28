@@ -1,0 +1,76 @@
+use uo;
+use os;
+use util;
+use basic;
+use cfgfile;
+
+include "include/constants/propids";
+
+const DECAY_TIME_NPC_CORPSE		:= 10;		// In minutes.
+const DECAY_TIME_PLAYER_CORPSE		:= 20;		// In minutes.
+
+
+program corpse_decay( corpse )
+
+	corpse.decayAt := 0;
+	sleep(5);
+	if( GetObjProperty( corpse, "npctemplate" ) )
+		ProcessNpcCorpseDecaying(corpse);
+	else
+		ProcessHumanCorpseDecaying(corpse);
+	endif
+
+endprogram
+
+
+function ProcessHumanCorpseDecaying( corpse )
+
+	sleep( CInt(DECAY_TIME_PLAYER_CORPSE * 60 / 2) );
+
+	var name;
+	var usescript;
+	if( !GetObjProperty( corpse, "NoDecay" ) )
+		corpse.color	:= 0;
+		corpse.graphic	:= 0xeca + RandomInt(9);
+		name := corpse.name;
+		name["A corpse"] := "Remains";
+		SetName( corpse, name );
+		EraseObjProperty( corpse, PROPID_CORPSE_IS_BLUE );
+		sleep( CInt(DECAY_TIME_PLAYER_CORPSE * 60 / 2) );
+		if( !GetObjProperty( corpse, "NoDecay" ) )
+			foreach item in EnumerateItemsInContainer(corpse)
+				if( item.container == corpse )
+					MoveItemToLocation( item, corpse.x, corpse.y, corpse.z, MOVEITEM_NORMAL );
+				endif
+				usescript:=GetObjProperty( item, "old_us");
+   				if(usescript)
+   					EraseObjProperty( item, "old_us");
+   					item.usescript := CStr(usescript);
+   				else
+   					item.usescript := "";
+   				endif
+			endforeach
+
+			DestroyItem(corpse);
+		endif
+	else
+		foreach item in EnumerateItemsInContainer(corpse)
+			usescript:=GetObjProperty( item, "old_us");
+			if(usescript)
+				EraseObjProperty( item, "old_us");
+   				item.usescript := CStr(usescript);
+   			else
+   				item.usescript := "";
+   			endif
+		endforeach
+	endif
+
+endfunction
+
+
+function ProcessNpcCorpseDecaying( corpse )
+
+	sleep( CInt(DECAY_TIME_NPC_CORPSE*60) );
+	DestroyItem(corpse);
+
+endfunction

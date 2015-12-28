@@ -1,0 +1,142 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+include "include/random";
+
+program score()
+
+//setGlobalProperty("#ctfgame",1);
+
+var tech1,tech2,tech3,tech4,tech5,tech6,tech7,tech8;
+
+while(GetGlobalProperty("#ctfgame")==1)
+tech1:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech1")));
+
+if (not GetObjProperty(tech1,"o"))
+maketech("#tech1",0x2d00);
+endif
+
+tech2:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech2")));
+
+if (not GetObjProperty(tech2,"o"))
+maketech("#tech2",0x2d01);
+endif
+
+tech3:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech3")));
+
+if (not GetObjProperty(tech3,"o"))
+maketech("#tech3",0x2d02);
+endif
+
+tech4:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech4")));
+
+if (not GetObjProperty(tech4,"o"))
+maketech("#tech4",0x2d03);
+endif
+
+tech5:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech5")));
+
+if (not GetObjProperty(tech5,"o"))
+maketech("#tech5",0x2d04);
+endif
+
+tech6:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech6")));
+
+if (not GetObjProperty(tech6,"o"))
+maketech("#tech6",0x2d05);
+endif
+
+tech7:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech7")));
+
+if (not GetObjProperty(tech7,"o"))
+maketech("#tech7",0x2d06);
+endif
+
+tech8:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech8")));
+
+if (not GetObjProperty(tech8,"o"))
+maketech("#tech8",0x2d07);
+endif
+
+sleep(20);
+
+endwhile
+
+endprogram
+
+
+
+function maketech(techname,tech)
+
+var i, test,xloc,yloc,zloc;
+
+randomlocation(xloc, yloc, zloc);
+
+var stay:=1;
+
+while (stay>=1)
+
+stay:=1;
+
+foreach item in ListItemsNearLocation( xloc,yloc,zloc, 3 );
+
+if (item.objtype>=0x2d00 && item.objtype<=0x2d07)
+randomlocation(xloc, yloc, zloc);
+stay:=2;
+break;
+endif
+
+endforeach
+
+if (stay==1) stay:=0; endif
+
+endwhile
+
+test:=CreateItemAtLocation( xloc, yloc, zloc, tech, 1 );
+SetGlobalProperty(techname,test.serial);
+SetObjProperty(test,"o",1);
+
+PlaySoundEffect(test,13);
+sleepms(500);
+test.invisible :=1;
+sleepms(500);
+test.invisible :=0;
+
+endfunction
+
+function randomlocation(byref xloc, byref yloc, byref zloc)
+
+case (Random(6))
+0:
+xloc:=Random(10)+6091;
+yloc:=Random(12)+273;
+zloc:=44;
+1:
+xloc:=Random(11)+6057;
+yloc:=Random(9)+275;
+zloc:=-22;
+2:
+xloc:=Random(18)+6089;
+yloc:=Random(4)+321;
+zloc:=0;
+3:
+xloc:=Random(11)+6041;
+yloc:=Random(19)+321;
+zloc:=22;
+4:
+xloc:=Random(4)+6089;
+yloc:=Random(32)+328;
+zloc:=0;
+5:
+xloc:=Random(5)+6064;
+yloc:=Random(36)+321;
+zloc:=22;
+
+endcase
+
+endfunction

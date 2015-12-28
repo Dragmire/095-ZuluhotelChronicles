@@ -1,0 +1,10 @@
+use uo;
+use os;
+
+include "include/managers";
+
+program respawn_all_points( who )
+
+	SendSpawnPointEvent(EVID_SPAWNPOINT_SPAWN_ALL);
+
+endprogram

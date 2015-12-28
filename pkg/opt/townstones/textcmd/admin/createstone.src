@@ -1,0 +1,29 @@
+use uo;
+use os;
+
+program textcmd_create_townstone(who)
+
+var townnames := GetGlobalProperty("townlist");
+
+if(!townnames || !len(townnames))
+	townnames := { };
+endif
+
+var name := SendTextEntryGump( who, "What's the Town name?", 50);
+
+if(!name)
+	SendSysMessage(who, "Canceled");
+	return;
+endif
+
+townnames.append(name);
+
+var insertpoint := townnames.size();
+
+SetGlobalProperty("townlist", townnames);
+
+var item := CreateItemAtLocation(who.x,who.y,who.z, 0xa320, 1);
+
+SetObjProperty(item, "town", insertpoint);
+SetObjProperty(item, "eleicao", 1);
+endprogram

@@ -1,0 +1,42 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+
+program totem(who, totem)
+
+	if(!ReserveItem(totem)) return; endif
+
+	var npctemplate := GetObjProperty(totem,"critter");
+
+	var parms := {};
+	parms .+ script := "tamed";
+	Detach();
+
+	var it := CreateNpcFromTemplate(npctemplate, who.x -1, who.y+1, who.z, parms);
+	if (!it)
+		it := CreateNpcFromTemplate(npctemplate, who.x +1, who.y-1, who.z, parms);
+		if (!it)
+			SendSysMessage(who,"Canceled");
+			return;
+		endif
+	endif
+	SetObjProperty( it, "totem", totem.objtype );
+	SetObjProperty( it, "totemcolor", totem.color );
+	SetObjProperty( it, "master", who.serial );
+	SetObjProperty( it, "script", it.script );
+	it.setmaster( who );
+	it.script := "tamed";
+	it.name := totem.name;
+	it.color := CInt(GetObjProperty( totem, "critcolor" ));
+	if ( GetObjProperty(totem,"totemhp") )
+		SetHp(it, CInt(GetObjProperty(totem,"totemhp")));
+	endif
+
+	PlaySoundEffect( who, SFX_SPELL_DISPEL );
+	PlayStationaryEffect( it.x, it.y, it.z, FX_SMOKE, 0xa, 0xa );
+	DestroyItem(totem);
+	RestartScript(it);
+
+endprogram

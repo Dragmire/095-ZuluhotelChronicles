@@ -1,0 +1,14 @@
+use uo;
+use os;
+
+include "include/constants/propids";
+
+program launch_spawnpoint_manager()
+	var pid := start_script(":spawnpoint:spawnpointmanager").pid;
+	if( pid )
+		SetGlobalProperty( PROPID_GLOBAL_SPAWNPOINTS_MANAGER, pid );
+		Print( "Spawnpoints manager started. PID = " + pid );
+	else
+		SysLog( "COULDN'T START SPAWNPOINTS MANAGER!!!" );
+	endif
+endprogram

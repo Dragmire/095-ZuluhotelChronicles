@@ -1,0 +1,173 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+
+program rregeneration( parms )
+
+	var layout := array(
+				"page 0",
+				"resizepic 50  0   2600 250 300",
+				"text 99 30 5 0",
+			
+				"page 1",
+				"text 85 60 0 1",
+				"text 85 80 0 2",
+				"text 85 100 0 3",
+				"text 85 120 0 4",
+				"text 85 140 0 5",
+				"text 85 160 0 6",
+				"text 85 180 0 7",
+				"text 85 200 0 8",
+				"button 250 65 2118 2117 1 1 1",
+				"button 250 85 2118 2117 1 2 2",
+				"button 250 105 2118 2117 1 3 3",
+				"button 250 125 2118 2117 1 4 4",
+				"button 250 145 2118 2117 1 5 5",
+				"button 250 165 2118 2117 1 6 6",
+				"button 250 185 2118 2117 1 7 7",
+				"button 250 205 2118 2117 1 8 8" );
+			
+	var data := array(
+				"Select a colouration type",
+				"Dripstone",
+				"Ice Rock",
+				"True Black",
+				"Mad Blue",
+				"Wonder",
+				"Blue Pink",
+				"Crystal",
+				"Liche" );
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_REGENERATION, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+
+
+
+
+	//Ask for the regeneration type
+	SendSysMessage( caster, "Select a type of colouration.");
+	var regen := SendDialogGump( caster, layout, data );
+	if( !regen[0] )
+		SendSysMessage( caster, "The ritual is aborted" );
+		return;
+	endif
+
+	var choice:= regen[0];
+
+	SendSysMessage(caster, "choice = "+choice);
+
+	//Apply the enchantment
+	case( choice )
+		1:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured dripstone" );
+				item.color := 1182;
+			endif
+			return;
+		
+		2:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured icerock" );
+				item.color := 1152;
+		
+			endif
+			return;
+	
+		3:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured true black" );
+				item.color := 1;
+		
+			endif
+			return;
+		4:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured mad blue" );
+				item.color := 1306;
+		
+			endif
+			return;
+		5:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured wonder" );
+				item.color := 1298;
+		
+			endif
+			return;
+		6:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured blue pink" );
+				item.color := 1179;
+		
+			endif
+			return;
+		7:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured crystal" );
+				item.color := 1170;
+		
+			endif
+			return;
+		8:
+			if (GetObjProperty( item, "ritcolour" ));
+			SendSysMessage( caster, "This item has already been coloured in a ritual" );
+			else
+				SetObjProperty( item,"ritcolour",1 );
+				SendSysMessage( caster, "This " + item.desc + " is now coloured liche" );
+				item.color := 1174;
+			
+			endif
+			return;
+
+		
+	endcase
+
+endprogram

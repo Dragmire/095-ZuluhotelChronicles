@@ -1,0 +1,54 @@
+//////////////
+//treasurechest.src
+//
+// Spawns monsters around the chest according to
+// its difficulty level. Makes the chest a normal
+// container after the spawns are complete.
+//
+// TODO: something about locking/trapping the chest.
+//
+// Author: Racalac 4/24/99
+/////////////
+
+
+use uo;
+use cfgfile;
+include "include/random";
+program treasurechest( character ,  chest )
+    var lvl := GetObjProperty( chest , "level" );
+    var cfgfile := ReadConfigFile( "guardians" );
+    if(!cfgfile) return; endif
+    var elem := FindConfigElem( cfgfile , lvl );
+    if(!elem) return; endif
+    var total := GetConfigString( elem , "total" );
+    var num := GetConfigInt( elem , "num" );
+    var limit := RandomDiceStr( total );
+    var rand;
+    var template;
+    var i;
+
+    for( i := 1 ; i <= limit ; i := i + 1 )
+        rand := Random( num ) + 1;
+        template := GetConfigString( elem , ("creature" + rand) );
+        CreateGuardian( chest , template );
+    endfor
+
+    SendSysmessage( character , "You unleash the treasure's guardians!" );
+
+    chest.usescript := "";
+
+endprogram
+
+
+
+function CreateGuardian( chest , template )
+
+    var dx := Random( 8 ) - 4;
+    var dy := Random( 8 ) - 4;
+
+    var nasty := CreateNpcFromTemplate( template , chest.x+dx , chest.y+dy , chest.z , 0 );
+
+    if( nasty = "<error>" )
+       CreateGuardian( chest , template );
+    endif
+endfunction

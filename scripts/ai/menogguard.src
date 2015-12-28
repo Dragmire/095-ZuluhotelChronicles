@@ -1,0 +1,256 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Castle Guards wait around, hoping someone will say "attention"
+//  so they can salute.  If attacked, or if someone says 
+//  "fight", then they fight until someone says "hold" or
+//  their attacker disengages.
+//
+//  When someone walks to within 5 squares, they say "Halt! Who goes here?"
+//    This seems to cause a moment of lag at the client - not sure why, yet
+//    If I comment out the body of the SYSEVENT_ENTEREDAREA section, that goes away,
+//    So I suspect that may be related to screen redraw.
+//
+//  Castle guards don't use much system resources when they're guarding,
+//  and need to be fast when they're fighting, so they always run critical.
+//
+//  Author: ENS
+//
+//  Created: 12/98
+//
+//  Newest Modifications:
+//    19990123 ENS Uses events for detecting nearby movement
+//    19990530 DCT Made town guards attack critters not defined as "guardignore 1" in npcdesc.cfg. 
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+include "include/speech";
+include "include/eventid";
+include "include/randname";
+include "ai/setup/modsetup";
+
+
+
+var configfile := ReadConfigFile("npcdesc");
+var wpncfg := readconfigfile(":combat:itemdesc");
+
+// TODO: move these to include/client.inc
+const UACTION_LOOK_AROUND   := 0x05;
+const UACTION_SALUTE        := 0x21;
+// const EVID_PEACEMADE := 0x90000000;
+
+const HALT_THRESHOLD := 10; // how close before he barks?
+var speech;
+var me := Self();
+if( me.name["<random>"] )
+   SetName ( me , RandomName( me ) );
+   EquipFromTemplate( me , "menogguard" );
+endif
+
+program CastleGuard()
+SetAnchor(me.x, me.y, 10, 20);
+
+        var npccfg := readconfigfile("npcdesc");
+        var speechelem := npccfg[me.npctemplate];
+        speech := getconfigstring(speechelem, "speech") ;
+    EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED );
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_OPPONENT_MOVED );
+    EnableEvents( SYSEVENT_ITEM_GIVEN );
+
+    SetWarMode( 0 );
+    set_priority(100);
+
+    var ev;
+    while (1)
+        ev := os::wait_for_event(1);
+        // print( "event type: " + ev.type );
+        case (ev.type)
+            SYSEVENT_SPEECH:
+                break;
+            SYSEVENT_ENGAGED:
+		    EraseObjProperty(ev.source,"#quest");
+		    EraseObjProperty(ev.source,"#ignoreit");
+		    Fight( ev.source );
+
+            SYSEVENT_DAMAGED:
+
+                if (ev.source)
+		    EraseObjProperty(ev.source,"#quest");
+		    EraseObjProperty(ev.source,"#ignoreit");
+                    Fight( ev.source );
+                endif
+            EVID_PEACEMADE:
+                        break;
+            SYSEVENT_ENTEREDAREA:
+
+            var theobj:= ev.source.npctemplate;
+            var elem := FindConfigElem(configfile, theobj);
+            if (elem)  
+                  if (elem.guardignore  = 1)  
+
+                  else
+                        Fight(ev.src );
+                  endif
+            else
+                if (!ev.source.npctemplate)
+                                checkhim(ev.source);
+                endif
+
+            endif
+            SYSEVENT_ITEM_GIVEN:
+                Say( "Bah!  I have no need for " + ev.item.desc );
+                Say( "Art thou trying to bribe me?" );
+                MoveItemToLocation( ev.item, me.x, me.y, me.z+MOVEITEM_FORCELOCATION,0 );
+                if (ev.source)
+                    Fight( ev.source );
+                endif
+        endcase
+   
+        wander();
+    endwhile
+endprogram
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  To Salute, a guard will turn toward the salutee,
+//  salute, then turn to his original facing.
+//
+/////////////////////////////////////////////////////////////////////////////
+function Salute( who )
+    var save_facing := me.facing;
+
+    TurnToward( who );
+    PerformAction( me, UACTION_SALUTE );
+    PlaySoundEffect( me, 0x15D ); // a death sound
+    sleep(2);
+
+    if (save_facing != me.facing)
+        Move( save_facing );
+    endif
+endfunction
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  A guard fights singlemindedly, until his quarry is dead.
+//  The only way out is to say "hold", or to disengage.
+//  Before commencing fighting, a guard will salute his opponent.
+//
+/////////////////////////////////////////////////////////////////////////////
+function Fight( opponent )
+
+    var oldprio := set_priority(50);
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA );
+    SetOpponent( opponent );
+    setobjproperty(opponent,"guardkill",1);
+    var waittime;
+
+    while (opponent and not (opponent.dead or opponent.hidden or opponent.concealed or opponent.cmdlevel) and (Distance(me,opponent) < 25))
+        waittime := CloseDistance( opponent ) * 15;
+
+        var ev := wait_for_event( waittime );
+        
+        // print( "event type: " + ev.type );
+        repeat
+            case (ev.type)
+                SYSEVENT_SPEECH:
+                    if (speech > "")
+                        say(process_text(ev.text, "default",speech));
+                    endif
+            
+                SYSEVENT_DISENGAGED:
+                    // too bad, we don't break off.
+                    break;
+
+                SYSEVENT_ENGAGED:
+                SYSEVENT_DAMAGED:
+                         // if not our opponent, we should add to our "Pity List"
+                    break;
+
+                SYSEVENT_OPPONENT_MOVED:
+                    break; // just waking up is enough
+                EVID_PEACEMADE:
+                        opponent := 0;
+                        break;
+                SYSEVENT_ENTEREDAREA:
+                SYSEVENT_LEFTAREA:
+                    // ignore both of these
+            endcase
+        until (! (ev := wait_for_event(0)) );
+    endwhile
+
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD );
+    SetWarMode( 0 );
+    set_priority( oldprio );
+endfunction
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        
+        2:
+            WalkToward( opponent );
+            return 0;
+
+        default:
+            RunToward( opponent );
+            return 0;
+    endcase
+endfunction
+
+
+function checkhim(who)
+
+if (getobjproperty(who, "mg"))
+      
+        return;
+endif
+
+if (who.npctemplate)
+        return;
+endif       
+foreach thing in listequippeditems(who)
+        var elem:= wpncfg[thing.objtype];
+                if (elem )
+                     if (elem.blockcircle != "9")
+                        if (getobjproperty(who, "#warned"))
+                                if ( cint(getobjproperty(who, "#warned")) > (readgameclock() + 30))
+                                        if (distance(me, who) <=10 )
+                                                fight(who);
+                                        endif
+                                endif
+                        else
+                                say("You are not welcome here if you bear arms or wear armor.");
+                                sleep(1);
+                                say ("You have 30 seconds to disarm or leave the area");
+                                setobjproperty(who, "#warned", readgameclock());
+                                var tarray := {};
+                                tarray[1] := who;
+                                tarray[2] := "#warned";
+                                tarray[3] := 120;
+                                start_script("misc/eraser",tarray);
+
+                        endif
+                     endif
+
+                endif
+endforeach
+
+endfunction
+                        

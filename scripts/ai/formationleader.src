@@ -1,0 +1,172 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/chaoskillpcsloop";
+include "ai/combat/chaosfight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+
+program KillPlayers()
+
+	if (GetObjProperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+SetObjProperty(me,"myx",me.x);
+SetObjProperty(me,"myy",me.y);
+  var mlvar ;
+  var elem;
+  var configfile := ReadConfigFile("::npcdesc");
+  me.stamina := me.maxstamina;
+  me.mana := me.mana + 50;
+  if (me.mana > me.maxmana)
+	me.mana := me.maxmana;
+  endif
+  var sleepdelay := 0;
+	var pos := 1;
+	foreach critter in ListMobilesInLineOfSight( me, 20 )	
+		mlvar := GetObjProperty(critter,"myleader");
+		if (critter.npctemplate and GetObjProperty(critter,"Type") = GetObjProperty(me,"Type") or critter.graphic = me.graphic)
+		elem := FindConfigElem( configfile, critter.npctemplate );
+		if( elem.Privs != "invul" )
+			if (!mlvar)
+				var pa := {};
+				var paloop := 0;
+				SetObjProperty(critter,"myleader",me.serial);
+				foreach critter in ListMobilesInLineOfSight( me, 20 )
+				if (GetObjProperty(critter,"myleader") = me.serial)
+					paloop := paloop +1;
+					pa[paloop] := GetObjProperty(critter,"formpos");
+				endif
+				endforeach
+				var floop := 0;
+				while (floop < paloop)
+					floop := floop + 1;
+					if (pa[floop] = pos)
+						pos := pos + 1;
+						if (pos > 24)
+							return;
+						endif
+						floop := 0;
+					endif
+				endwhile
+				SetObjProperty(critter,"formpos",pos);
+				SetObjProperty(critter,"foldscript",critter.script);
+				critter.script := "formationkillpcs";	
+				RestartScript(critter);
+			endif
+		endif
+		endif
+		if (!GetObjProperty(critter,"fkill") and mlvar)
+			SetObjProperty(critter,"fkill",opponent.serial);
+		endif
+	endforeach
+	var mx := me.x;
+	var my := me.y;
+	if(GetObjProperty(me,"takingdamage") and distance(me,opponent) > 2)
+		if (mx > opponent.x)
+			mx := mx -1;
+		elseif (mx < opponent.x)
+			mx := mx +1;
+		endif
+		if (my > opponent.y)
+			my := my -1;
+		elseif (my < opponent.y)
+			my := my +1;
+		endif
+		SetObjProperty(me,"myx",mx);
+		SetObjProperty(me,"myy",my);
+		sleep(1);
+		MoveCharacterToLocation( me, mx, my, me.z, 0);
+		if (Random(10) = 5)
+			EraseObjProperty(me,"takingdamage");
+		endif
+	endif
+	var runaway := 1;
+	var d:=distance(me,opponent);
+	if ( d > 10 )
+		WalkToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+    case d
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if (me.mana > (me.maxmana/3))
+				me.stamina := me.maxstamina;
+				RunAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+			if (runaway = 15)
+				turntoward( opponent );
+			endif
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (me.mana < (me.maxmana/3))
+			me.stamina := me.maxstamina;
+			WalkToward( opponent );
+				if (distance(me,opponent)< 3)
+					PlaySoundEffect(me,0x0057);
+					foreach item in EnumerateItemsInContainer( me.backpack )		
+						if (item.graphic = 0xf3f) 
+							DestroyItem(item);
+						endif
+						endforeach
+					var weaponone := GetEquipmentByLayer( me,  LAYER_HAND1 );
+					var weapontwo := GetEquipmentByLayer( me,  LAYER_HAND2 );
+					if (weaponone)
+						moveitemtocontainer(weaponone,me.backpack);
+						DestroyItem(weaponone);
+					endif
+					if (weapontwo)
+						moveitemtocontainer(weapontwo,me.backpack);
+						DestroyItem(weaponone);
+					endif
+					weaponone := CreateItemInInventory(me.backpack,0x9a19,1);
+					SetObjProperty( weaponone, "SkillPoisoned" , 18 );
+					EquipItem(me,weaponone);	
+				endif
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			me.stamina := me.maxstamina;
+			if (runrandom(opponent))
+			Sleepms(sleepdelay);
+				return 2;
+			endif
+		else
+			spellattack(opponent);
+		endif
+		return 1;
+    endcase
+endfunction
+

@@ -1,0 +1,55 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/dotempmods";
+
+program polymorphing( parms )
+
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+	var cast_on	:= parms[1];
+	var new_form	:= CInt( parms[2] );
+	var new_color	:= CInt( parms[3] );
+	var duration	:= CInt( parms[4] );
+	var mod;
+	if( parms[5] )
+		mod := parms[5];
+	endif
+
+	if( !CanMod( cast_on, "poly" ) )
+		SendSysMessage( cast_on, "You're already polymorphed in something." );
+		return;
+	endif
+
+	var old_graphic := cast_on.graphic;
+	var old_color	:= cast_on.color;
+	var serial := cast_on.serial;
+
+	cast_on.graphic := new_form;
+	if( new_color )
+		cast_on.color := new_color;
+	else
+		cast_on.color := 0;
+	endif
+
+	if( mod )
+		DoTempMod( cast_on, "poly", mod, duration );
+	endif
+
+	sleep( duration );
+
+	if( !cast_on )
+		SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+	endif
+
+	SendSysMessage( cast_on, "You resume to your true form." );
+	cast_on.graphic := cast_on.trueobjtype;
+	cast_on.color	:= old_color;
+
+	if( cast_on.dead )
+		cast_on.graphic := cast_on.graphic + 2;
+	endif
+
+endprogram

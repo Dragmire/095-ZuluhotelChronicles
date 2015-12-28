@@ -1,0 +1,36 @@
+use http;
+use uo;
+use os;
+
+Program DoAccount()
+
+	var username := QueryParam( "login" );
+	var userpassword := QueryParam( "senha" );
+	var useremail := QueryParam( "email" );
+	var account;
+
+
+	var ret := CreateAccount( username , userpassword , 1 );
+
+	WriteHtml( "<html><head><title>Baroca Shard Account Creation</title><style type=text/css><!--    A:link {text-decoration: none} A:visited {text-decoroation: none} A:active {text-decoration: none}  --></style>" );
+	WriteHtml( "<style>.yellow {background:yellow} .blue {background:blue}</style></head>" );
+	WriteHtml( "<body bgcolor='#FFFFFF' text='#000000' link='#0000FF' vlink='#800080' alink='#FF0000'>" );
+	WriteHtml( "<p>Welcome <b>"+username+"</b> !</p>");
+
+	If( ret == error )
+    		WriteHtml("<b>Sorry, account creation failed.</b><P>");
+    		WriteHtml("<b>Error: " + ret.errortext/<b> );
+	Else
+
+		account := FindAccount(username);
+		account.setprop( "Email" , useremail );
+		//account.setprop( "Release" , 0 );
+
+		WriteHtml( "<p>New user account has been created.<p>Their account information will be emailed to <strong>"+useremail+"</strong><br>");
+		WriteHtml( "Their username is: <strong><b>"+username+"</b>!</strong><br>");
+		WriteHtml( "Their password is: <strong><b>"+userpassword+"</b>!</strong><p>");
+		WriteHtml( "You can play now, the login is <b>LoginServer=barocas.servegame.com,5003</b></strong><p>");
+		WriteHtml( "Good Game - The <b>Baroca Staff Team</b></strong><p>");
+	EndIf
+
+EndProgram

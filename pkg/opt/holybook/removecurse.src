@@ -1,0 +1,75 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_REMOVE_CURSE;
+const SPELL_EFFECT_ID		:= FX_SPELL_REMOVE_CURSE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_REMOVE_CURSE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_REMOVE_CURSE;
+
+program cast_earth_blessing( parms )
+
+	var circle := GetCircle( SPELLID_REMOVE_CURSE );
+	var caster;
+	var fromhit;
+
+ 	if (parms[1] == "#MOB")
+		caster := parms[2];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_REMOVE_CURSE ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+	
+	SendSysMessage( caster , "Select item to remove curse from." );
+	var what :=  TargetCoordinates( caster );
+	if( !what )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+	
+	var item := what.item;
+	if( !item )
+		SendSysmessage( caster , "Invalid selection." );
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+	PlayLightningBoltEffect( caster );
+	PlaySoundEffect( caster , SFX_SPELL_HOLY_BOLT );
+	var null := 0;
+	if( item.isa( POLCLASS_ARMOR ) )
+		null := 0;
+	elseif( item.isa( POLCLASS_WEAPON ) )
+		null := 0;
+	else
+		SendSysMessage( caster , "You can only uncurse weapons or armor!" );
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+	var chance := ((GetAttribute( caster, ATTRIBUTEID_ITEMID ))/2);
+	if (GetObjProperty(item,"Cursed"))
+		if (Random (100)+1 < chance)
+			SendSysMessage( caster, "You successfully remove the curse." );
+			EraseObjProperty(item,"Cursed");
+		else
+			SendSysMessage( caster, "You fail at removing the curse!" );
+		endif
+	else
+		SendSysMessage( caster, "That is not cursed!" );	
+	endif
+	EraseObjProperty( caster , "#Casting" );
+endprogram
+
+                                                

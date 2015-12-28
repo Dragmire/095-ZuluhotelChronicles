@@ -1,0 +1,65 @@
+//look way down at the bottom and change:
+//	dolly.usescript := ":dundee:shrunknpcs";
+//to whatever package you place shrunknpcs in.
+//
+
+use uo;
+
+include "include/itemutil";
+
+program textcmd_shrinkarea( who )
+
+	SendSysMessage( who, "Select the starting point" );
+	var start := TargetCoordinates( who );
+	if( !start )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+	
+	SendSysMessage( who , "Select the finishing point" );
+	var ending := TargetCoordinates( who );
+	if( !ending )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+		
+	SendSysmessage( who, "What is the z amplitude? Integer only." );
+        var amplitude := Cint(RequestInput( who, who.backpack, "Enter the amplitude value."));
+	
+	var x1 := start.x;
+	var y1 := start.y;
+	var z1 := start.z - amplitude;
+	
+	var x2 := ending.x;
+	var y2 := ending.y;
+	var z2 := ending.z + amplitude;
+	
+	var dolly := CreateItemInContainer( who.backpack , 0xba32 , 1 );
+	if (!dolly)
+		SendSysMessage(who,"No dolly!");
+		return;
+	endif
+
+	foreach item in ListObjectsInBox( x1 , y1 , z1 , x2 , y2 , z2 )
+		
+		var newitem := CreateItemInContainer( dolly , item.objtype , cint(item.amount) );
+		var x_mod := item.x - x1;
+		var y_mod := item.y - y1;
+		var z_mod := item.z - start.z;
+		DupeItem( item , newitem );
+		if( item.usescript )
+			newitem.usescript := item.usescript;
+		endif
+		
+		SetObjProperty( newitem , "x_mod" , x_mod );
+		SetObjProperty( newitem , "y_mod" , y_mod );
+		SetObjProperty( newitem , "z_mod" , z_mod );
+
+	endforeach
+
+	dolly.graphic := 0x1f28;
+	dolly.usescript := ":shrunk:shrunkarea";
+	SetName( dolly , "Shrunk Area" );
+	SendSysMessage(who,"Done!");
+
+endprogram

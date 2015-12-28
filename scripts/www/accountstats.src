@@ -1,0 +1,92 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use http;
+Use uo;
+
+Include "include/time";
+Include "include/ulregister";
+
+Program account_add()
+
+
+    WriteHtml(
+    "<html><head><title>Chaotic Realm Second Age</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000  text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+    Var Banned := 0;
+    Var NotBanned := 0;
+    Foreach Accnt in ListAccounts()
+    Accnt := FindAccount( Accnt );
+    If( Accnt.banned )
+    Banned := Banned + 1;
+    Else
+    NotBanned := NotBanned + 1;
+    Endif
+    Endforeach
+    
+    WriteHtml(
+    +"Accounts Banned: " + Banned + "<br>"
+    +"Accounts Not Banned: " + NotBanned + "<br>"
+    );
+    
+    WriteHtml(
+    +"</body></html>"
+    );
+/*
+    WriteHtml(
+    "<html><head><title>Chaotic Realm Second Age</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000  text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+
+    WriteHtml(
+    "<form action='http://chaoticrealmsecondage.no-ip.org,5003/newacct.ecl' method='GET' name='form' id='form'>"
+    +"<table width='215' border='none'>"
+    +"<tr>"
+    +"<input type='hidden'/>"
+    +"<td width='61'><div align='center'><font color='#FFFFFF' size='2' face='Arial'>Username</font></div></td>"
+    +"<td width='144'><input name='acctname' type='text' maxlength='16'></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td><div align='center'><font color='#FFFFFF' size='2' face='Arial'>Password</font>"
+    +"</div></td>"
+    +"<td><input name='acctpass' type='password' maxlength='16'></td>"
+    +"</tr>"
+    +"<tr>"
+    +"<td><div align='center'><font color='#FFFFFF' size='2' face='Arial'>Email</font>"
+    +"</div></td>"
+    +"<td><div align='center'>"
+    +"<input name='acctemail' type='email' maxlength='24'>"
+    +"</div></td>"
+    +"</tr>"
+    +"</table>"
+    +"<table width='215' border='none'>"
+    +"<tr>"
+    +"<td><div align='center'>"
+    +"<input name='Clear' type='reset' value='Clear'>"
+    +"<input type='submit' name='submit' value='Create'>"
+    +"</div></td>"
+    +"</tr>"
+    +"</table>"
+    +"</form>"
+    );
+    
+    WriteHtml(
+    +"</body></html>"
+    );
+*/
+Endprogram

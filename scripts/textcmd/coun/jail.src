@@ -1,0 +1,72 @@
+Use os;
+Use uo;
+Use boat;
+Use cfgfile;
+
+Include "include/client";
+
+Program TextCMD_Jail( who )
+
+    Var Player := Target( who );
+    
+    if ( !Player)
+    return;
+    endif
+
+    if ( Player.npctemplate )
+    return;
+    endif
+    
+    Var account := Player.acct;
+
+    var val := cint(SendTextEntryGump( who, "How many days will this account remain jailed? (Max 14)", 40 ));
+    var time:=0;
+
+    case(val)
+    1: time := 86400;
+    2: time := 172800;
+    3: time := 259200;
+    4: time := 345600;
+    5: time := 432000;
+    6: time := 518400;
+    7: time := 604800;
+    8: time := 691200;
+    9: time := 777600;
+    10: time := 864000;
+    11: time := 950400;
+    12: time := 1036800;
+    13: time := 1123200;
+    14: time := 1209600;
+    endcase
+
+    if (time==0)
+    SendSysMessage( who, "Canceled.");
+    return;
+    endif
+
+    account.setprop( "Release", ( ReadGameClock() + time ) );
+    MoveCharacterToLocation( Player, 5304, 1184, 0, 0);
+
+    SendSysMessage( Player, "You have been jailed");
+    SendSysMessage( who, Player.name + " has been jailed." );
+    
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("Logging/jailed");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Player Name",  player.name });
+    elem.append({ "Player Serial",  hex(player.serial) });
+
+    AppendConfigFileElem("Logging/jailed", "Jailed", "", elem);
+    UnloadConfigFile("Logging/jailed");
+    EndIf
+
+endprogram

@@ -1,0 +1,64 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+
+program cast_owlsight( parms )
+
+	var circle := GetCircle( SPELLID_LIGHT_OF_DAY );
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;	
+		if( TryToCast( caster, SPELLID_LIGHT_OF_DAY ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster , circle , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+		
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	PlaySoundEffect( caster , SFX_SPELL_LIGHT_OF_DAY );
+
+	var magery := GetAttribute(caster, ATTRIBUTEID_MAGERY);
+	var duration := magery * 70;
+	var proped := array();
+
+	
+		if( !GetObjProperty( cast_on , "#PermNightSight" ) )
+			SetObjProperty( cast_on , "#PermNightSight" , 1 );
+			proped.append( cast_on );
+		endif
+			
+		if( GetObjProperty( cast_on , "#Blinded" ) )
+			EraseObjProperty( cast_on , "#Blinded" );
+		endif
+			
+		cast_on.setlightlevel( 0 , duration );
+		PlayObjectCenteredEffect( cast_on, FX_SPELL_LIGHT_OF_DAY , SPEED_SPELL_LIGHT_OF_DAY , LOOP_SPELL_LIGHT_OF_DAY );
+		
+	//SetVital( cast_on, "life", GetVital( cast_on, "life" ) );
+	EraseObjProperty( caster , "#Casting" );
+	Sleep( Cint( magery ) );
+	
+	foreach mobile in proped
+		EraseObjProperty( mobile , "#PermNightSight" );
+	endforeach
+	
+endprogram

@@ -1,0 +1,18 @@
+use uo;
+
+program txtcmd_eraseobjproperty( who , propname )
+
+	SendSysMessage( who , "Erase " + propname + " cprop from what?" );
+	var object := Target( who );
+	if( !object )
+		return;
+	endif
+
+	var result := EraseObjProperty( object , propname );
+	if( result )
+		SendSysMessage( who , "Property " + propname + " was successfully erased." );
+	else
+		SendSysMessage( who , "Error erasing property: " + result.errortext );
+	endif
+
+endprogram

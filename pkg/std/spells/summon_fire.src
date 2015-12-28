@@ -1,0 +1,33 @@
+
+include "include/spelldata";
+include "include/client";
+
+program summon_fire( parms )
+
+	var circle := 8;
+	var caster;
+	var cast_loc;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_loc := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_loc := CanTargetArea(caster, circle);
+		if (!cast_loc)
+			return;
+		endif
+	endif
+
+
+	SummonCreature( caster, "fireelemental", cast_loc );
+
+endprogram

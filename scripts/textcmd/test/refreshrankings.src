@@ -1,0 +1,55 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+Use cfgfile;
+
+Include "include/ranksystem";
+
+Program Test( Who )
+
+    Var Count := 0;
+    
+    Var datafile := ReadConfigFile( "RankingList" );
+    UnloadConfigFile( datafile );
+
+    Foreach Player in EnumerateOnlineCharacters()
+    Var Frags := GetFrags( Player );
+    Var Deaths := GetDeaths( Player );
+    Var TotalScore := Frags - Deaths;
+
+    If( ( !Player.cmdlevel ) && ( TotalScore > 0 ) )
+        If( AddToList( Player ) )
+        Count := Count + 1;
+        Endif
+    Endif
+    Endforeach
+    
+    Print( Count + " total players added to the Ranking List." );
+
+Endprogram
+
+Function AddToList( Who )
+
+    Var datafile := ReadConfigFile( "RankingList" );
+    Var Serial := FindConfigElem( datafile, Who.serial );
+    Var Count := 0;
+
+    If( Serial )
+    Return 0;
+    Else
+    Var elem;
+    elem:={ };
+    elem.append({ "Name", Who.name });
+
+    AppendConfigFileElem( "RankingList", "Player", Who.serial, elem );
+    UnloadConfigFile( "RankingList" );
+    Endif
+
+Endfunction

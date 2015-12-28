@@ -1,0 +1,305 @@
+use os;
+use uo;
+use cfgfile;
+use util;
+
+include "include/client";
+include "include/eventid";
+include "include/classes";
+include "include/random";
+include "include/managers";
+
+const MAX_DISTANCE	:= 20;
+const POINT_MULTIPLIER	:= 15;
+const PREV_TAMED_MINUS	:= 20;
+const BETWEEN_SPEECHS	:= 3;
+const UNRESPONSIVE_TIME	:= 300;
+
+/*
+Changed difficulty mod(ln 80), and half'd the chance to anger(ln 97),
+-Link
+*/
+
+
+program tame( character )
+
+	var conf := ReadConfigFile( ":*:npcdesc" );
+	var elem;
+
+	SendSysMessage( character, "What do you want to tame?" );
+
+	var the_creature  := Target( character , TGTOPT_CHECK_LOS );
+	if( !the_creature )
+		return;
+	endif
+
+	if(Distance( character , the_creature) > MAX_DISTANCE )
+		SendSysmessage( character , "You're too far away to tame that!" );
+		return;
+	endif
+
+	if( GetObjProperty( the_creature , "diseased" ) )
+		SendSysmessage( character , "That creature is diseased!");
+		return;
+	endif
+
+	elem := FindConfigElem( conf , the_creature.npctemplate );
+	if( !elem )
+		SendSysmessage( character , "You cannot tame this!" );
+		return;
+	endif
+
+	
+
+	var difficulty;
+	if( !GetObjProperty( the_creature , "untamable" ) )
+		difficulty := GetObjProperty( the_creature , "tamableAt" );
+		if( !difficulty )
+			difficulty := GetConfigInt( elem , "tameskill" );
+		endif
+	endif
+
+	if( !difficulty )
+		SendSysmessage( character , "You can't tame that!" );
+		return;
+	endif
+
+	if( the_creature.script == "tamed" )
+		SendSysmessage( character , "That creature looks tamed already." );
+	   	return;
+	endif
+
+	if( GetEffectiveSkill( character , SKILLID_TAMING ) < difficulty )
+		SendSysmessage( character , "You have no chance of taming this creature!");
+		return;
+	endif
+
+	var thename := GetName( the_creature.name );
+
+	//difficulty := difficulty + 20; // old line
+	difficulty := difficulty + 10; //will be much easier to tame, with the old line, raising taming was not possible
+	// and many high level tamers were failing hellhounds and drakes way too much. anyways we will see how this goes
+	// and can change it if needed,
+
+
+	var prev_tame := GetObjProperty( the_creature , "PreviouslyTamed" );
+	if( !prev_tame )
+		prev_tame := 0;
+	endif
+
+	difficulty := Cint(difficulty - ( PREV_TAMED_MINUS * prev_tame ));
+	if( difficulty < 1 )
+		difficulty := 1;
+	endif
+
+	//var calming_diff := difficulty + 20;
+	//old line ^
+	var calming_diff := difficulty + 10;
+	var ranger := GetObjProperty( character , CLASSEID_RANGER );
+
+	if( calming_diff < 1 )
+		calming_diff := 1;
+	endif
+
+	var tame_timer := GetObjProperty( the_creature , "tametimer" );
+	var nexttame := GetObjProperty( the_creature, "tametime");
+
+	if(nexttame)
+		nexttame := nexttame + 1200;
+	elseif(nexttame)
+		nexttame := ReadGameClock() - 1;
+	endif
+
+if (nexttame < ReadGameClock() )
+	if( !tame_timer or tame_timer < ReadGameClock() )
+		if( CheckSkill( character, SKILLID_ANIMALLORE, calming_diff, 0 ) )
+			if( the_creature.warmode )
+				PrintTextAbove( the_creature , cstr(character.name + " has calmed the beast!") );
+				var ev := array;
+				ev.+ type;
+				ev.+ source;
+				ev.type := EVID_PEACEMADE;
+				ev.source := character;
+				SendEvent( the_creature , ev );
+			endif
+		else
+			if( IsABadAss( the_creature ) )
+				var chance := 75;
+				if( ranger )
+					chance := Cint( chance / CLASSE_BONUS );
+				endif
+
+				if( RandomInt(100) < chance )
+					PrintTextAbove( the_creature , cstr(character.name + " has angered the beast!") );
+					var ev := array;
+					ev.+ type;
+					ev.+ source;
+					ev.type := SYSEVENT_DAMAGED;
+					ev.source := character;
+					SendEvent(the_creature, ev);
+					return;
+				endif
+			endif
+		endif
+	else
+
+		var chance := 75;
+		if( ranger )
+			chance := Cint( chance / CLASSE_BONUS );
+		endif
+
+		if( RandomInt(100) < chance )
+			PrintTextAbove( the_creature , cstr(character.name + " has angered the beast!") );
+			var ev := array;
+			ev.+ type;
+			ev.+ source;
+			ev.type := SYSEVENT_DAMAGED;
+			ev.source := character;
+			SendEvent(the_creature, ev);
+			return;
+		endif
+	endif
+endif
+
+	PrintTextAbove( character , "What a nice " + thename );
+	if( !WaitAndCheckTheTamer( character , the_creature ) )
+		return;
+	endif
+
+	PrintTextAbove( character , "I've always wanted a " + thename + " like you." );
+	if( !WaitAndCheckTheTamer( character , the_creature ) )
+		return;
+	endif
+
+	PrintTextAbove( character , cstr(thename + ", will you be my friend?") );
+	if( !WaitAndCheckTheTamer( character , the_creature ) )
+		return;
+	endif
+
+	if( the_creature.script == "tamed" )
+		SendSysmessage( character , cstr(the_creature.name + " belongs to someone else!") );
+		return;
+	endif
+
+
+
+	if( !tame_timer or tame_timer < ReadGameClock() )
+
+		EraseObjProperty( the_creature , "tametimer" );
+
+		if( CheckSkill( character , SKILLID_TAMING , difficulty , difficulty * POINT_MULTIPLIER ) )
+			SendSysmessage( character , "You successfully tame the " + thename );
+			SetObjProperty( the_creature ,"master" , character.serial );
+			the_creature.setmaster( the_creature );
+			the_creature.script := "tamed";
+			RestartScript( the_creature );
+			SetObjProperty( the_creature , "PreviouslyTamed" , prev_tame + 1 );
+			Detach();
+			WarnSpawnPointManager( the_creature );
+
+		else
+
+			SendSysmessage( character , "You failed to tame the creature." );
+			var chance := 80 - Cint( (GetEffectiveSkill( character , SKILLID_TAMING ) - difficulty + 20) * 2 );
+			if( ranger )
+				chance := Cint( chance / CLASSE_BONUS );
+			endif
+
+			if( chance < 1 )
+				chance := 1;
+			endif
+
+			if( Random(100)+1 <= chance )
+				SendSysmessage( character , "And have made the creature unresponsive to taming." );
+				SetObjProperty( the_creature , "tametimer" , ReadGameClock() + UNRESPONSIVE_TIME );
+			endif
+		endif
+	else
+
+		SendSysmessage( character , "You failed to tame the creature." );
+	endif
+
+endprogram
+
+
+function GetName( thename )
+
+	if (find(thename, "an ",1) == 1)
+		var i;
+		var tempname;
+
+		tempname := thename[4,len(thename)];
+		return tempname;
+	elseif (find(thename, "a ",1) == 1)
+		var i;
+		var tempname;
+
+		tempname := thename[3,len(thename)];
+		return tempname;
+	else
+		return thename;
+	endif
+
+endfunction
+
+
+function IsABadAss(critter)
+
+	var npccfgfile := ReadConfigFile( "::npcdesc" );
+	var myscript := npccfgfile[critter.npctemplate].script;
+
+	case( critter.objtype )
+	0xc:
+	0x3d:
+	0x3c:
+	0x3b:
+		return 1;
+	0xc8:
+		if( myscript == "firebreather" )
+			return 1;
+		endif
+	endcase
+
+	return 0;
+
+endfunction
+
+
+function WaitAndCheckTheTamer( the_tamer , the_creature )
+
+	Sleep( BETWEEN_SPEECHS );
+	if( Distance( the_tamer , the_creature ) > MAX_DISTANCE )
+		SendSysmessage( the_tamer , "You're too far away to continue taming." );
+		return 0;
+	endif
+
+	if( the_tamer.hidden )
+		SendSysmessage( the_tamer , "You can't tame a creature that does not see you." );
+		return 0;
+	endif
+
+	if( !CheckLineOfSight( the_tamer , the_creature ) )
+		SendSysMessage( the_tamer , "The creature isn't in your line of sight." );
+		return 0;
+	endif
+
+	return 1;
+
+endfunction
+
+
+function WarnSpawnPointManager( the_creature )
+return 1;
+	Sleep(300);
+
+	if( !the_creature )
+		return;
+	endif
+
+	if( the_creature.script != "tamed" )
+		return;
+	endif
+
+	WarnManagerOfNpcDeath(the_creature);
+
+endfunction

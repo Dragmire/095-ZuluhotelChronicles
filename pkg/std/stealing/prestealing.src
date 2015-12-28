@@ -1,0 +1,20 @@
+// Developer Omero - ZuluHotel Italia
+// Thief Gloves package - they are needed to snoop and steal
+// based on a previous Zulu package
+
+use uo;
+use os;
+
+program prestealing(who)
+
+	var stato;
+
+	if(GetObjProperty(who, "#snooper"))
+		stato := "stealing";
+	else
+		stato := "../snooping/snooping";
+	endif
+
+	start_script(stato, who);
+
+endprogram

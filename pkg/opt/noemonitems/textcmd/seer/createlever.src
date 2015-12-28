@@ -1,0 +1,15 @@
+use os;
+use uo;
+
+program createswitch(who);
+
+    var item := CreateItemAtLocation( who.x, who.y, who.z, 0x108e,1 );
+	item.graphic := 0x108e;
+	item.movable:=0;
+    item.name    := "a lever";
+//    SetObjProperty(chest, "usescript", chest.usescript);
+    item.usescript := ":noemonitems:newlever";
+    SendSysMessage(who, "You create a lever.");
+
+
+endprogram

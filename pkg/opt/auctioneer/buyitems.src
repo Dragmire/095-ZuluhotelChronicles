@@ -1,0 +1,215 @@
+use uo;
+use os;
+use util;
+
+include "include/client";
+include "include/objtype";
+include "include/utility";
+include "include/myutil";
+include "include/math";
+include "include/yesno";
+include "auctioneer";
+
+var gump_layout := {};
+var gump_data := {};
+var string_counter := 1;
+
+var itembox, current_item_num, current_item;
+var players_gold_held;
+var players_gold_available;
+
+const BUTTON_LAST_ITEM := 1000;
+const BUTTON_NEXT_ITEM := 1001;
+
+program display_forsale_items (parms)
+	var auctioneer := parms[1];
+	var player := parms[2];
+	if (!auctioneer || !player)
+		return;
+	endif
+
+	PrintTextAbovePrivate(auctioneer, "Hello, there!  What can I show you?", player);
+	var category := SelectCategory(player);
+	if (!category)
+		PrintTextAbovePrivate(auctioneer, "Maybe next time, then.", player);
+		return;
+	endif
+
+	itembox := find_or_create_item(storage, category, UOBJ_BANKBOX);
+	var items := ListRootItemsInContainer(itembox);
+	if (!len(items))
+		PrintTextAbovePrivate(auctioneer, "I'm afraid I have nothing for sale in that category.", player);
+		return;
+	endif
+
+	current_item_num := GetObjProperty(player, "#auction_item_num");
+	if (!current_item_num || current_item_num > len(items))
+		current_item_num := 1;
+	endif
+
+	repeat
+		players_gold_held := DetermineGoldHeld(player.acctname);
+		players_gold_available := DetermineGoldAvailable(player.acctname);
+		current_item := items[current_item_num];
+		BuildDisplayGump(current_item);
+
+		var gump_return := SendDialogGump(player, gump_layout, gump_data);
+		if (!gump_return && gump_return[0] != 0)
+			PrintTextAbovePrivate(auctioneer, "Please close other gumps first.", player);
+			return;
+		elseif (gump_return[0]==0)
+			PrintTextAbovePrivate(auctioneer, "Maybe next time.", player);
+			return;
+		endif
+	
+		if (gump_return[0] == BUTTON_NEXT_ITEM)
+			current_item_num := current_item_num + 1;
+			if (current_item_num > len(items))
+				current_item_num := 1;
+			endif
+			SetObjProperty(player, "#auction_item_num", current_item_num);
+		elseif (gump_return[0] == BUTTON_LAST_ITEM)
+			current_item_num := current_item_num - 1;
+			if (current_item_num < 1)
+				current_item_num := len(items);
+			endif
+			SetObjProperty(player, "#auction_item_num", current_item_num);
+		else
+			var item := current_item;
+			//check the timer to see if it expired when they were browsing
+			if (!GetObjProperty(item, "endtime") || GetObjProperty(item, "endtime") < ReadGameClock())
+				PrintTextAbovePrivate(auctioneer, "Too late!  Bidding is already closed on that item", player);
+				return;
+			endif
+
+			var selleracctname := GetObjProperty(item, "selleracctname");
+			if (selleracctname == player.acctname)
+				PrintTextAbovePrivate(auctioneer, "You can't bid on your own items!", player);
+				return;
+			endif
+		
+			var current_high_bidder := GetObjProperty(item, "current_high_bidder");
+			if (current_high_bidder && current_high_bidder == player.serial)
+				PrintTextAbovePrivate(auctioneer, "You're already the highest bidder!", player);
+				return;
+			endif
+		
+			var minbid := GetObjProperty(item, "minbid");
+			if (GetObjProperty(item, "current_high_bid") )
+				minbid := minbid + 1;
+			endif
+
+			players_gold_held := DetermineGoldHeld(player.acctname);
+			players_gold_available := DetermineGoldAvailable(player.acctname);
+			if (players_gold_available < minbid)
+				PrintTextAbovePrivate(auctioneer, "The minimum bid is " + minbid + " gold.", player);
+				sleep(1);
+				PrintTextAbovePrivate(auctioneer, "You don't have that much available!", player);
+				return;
+			endif
+
+			var players_bid := SendTextEntryGump(player, "Enter your bid:",
+				TE_CANCEL_DISABLE, TE_STYLE_NORMAL, 10, "(Must be at least " + minbid + " gold)");
+			players_bid := CInt(players_bid);
+			if (!players_bid)
+				PrintTextAbovePrivate(auctioneer, "Maybe next time, then.", player);
+				return;
+			endif
+
+			//check the timer again to see if it expired when they were entering a price, or if it was
+			//just about to expire, extend it a bit
+			if (!GetObjProperty(item, "endtime") || GetObjProperty(item, "endtime") < ReadGameClock())
+				PrintTextAbovePrivate(auctioneer, "Too late!  Bidding is already closed on that item", player);
+				return;
+			elseif (GetObjProperty(item, "endtime") + 600 < ReadGameClock() )
+				SetObjProperty(item, "endtime", ReadGameClock() + 600);
+			endif
+
+			if (players_bid < minbid)
+				PrintTextAbovePrivate(auctioneer, "That's less than the current bid!", player);
+				return;
+			endif
+			if (players_bid > players_gold_available)
+				PrintTextAbovePrivate(auctioneer, "You don't have that much available!", player);
+				return;
+			endif
+
+			var current_high_bid := GetObjProperty(item, "current_high_bid");
+			if (!current_high_bid)
+				current_high_bid := minbid - 1;
+			endif
+		
+			if (current_high_bid >= players_bid)
+				SetObjProperty(item, "minbid", players_bid);
+				PrintTextAbovePrivate(auctioneer, "I'm sorry, but there's an existing higher bid.", player);
+				return;
+			endif
+		
+			SetObjProperty(item, "current_high_bidder", player.serial);
+			SetObjProperty(item, "current_high_bid", players_bid);
+			SetObjProperty(item, "minbid", (current_high_bid+1));
+			PrintTextAbovePrivate(auctioneer, "Congratulations!  You're the current high bidder at " + (current_high_bid+1) + " gold!", player);
+		endif
+	until (!player);
+endprogram
+
+
+
+
+///////////////////
+//  does thw grunt work of building the gump
+///////////////////
+
+function BuildDisplayGump(byref item)
+	gump_layout := {
+		"page 0",
+		"nodispose",
+		"resizepic 20 20 2600 500 350",
+		"resizepic 60 60 5120 60 60",
+		"text 140 70 1327 0",
+		"text 140 100 1327 1",
+		"text 100 130 1327 2",
+		"text 100 160 1327 3",
+		"text 150 300 1327 4",
+		"text 300 300 0 5",
+		"text 150 320 1327 6",
+		"text 300 320 0 7",
+		"text 120 220 0 8",
+		"button 60 200 5603 5607 1 0 " + BUTTON_LAST_ITEM,
+  		"button 480 200 5601 5605 1 0 " + BUTTON_NEXT_ITEM,
+		"page 1",
+		"tilepic 70 70 " + item.graphic,
+		"text 200 70 0 9",
+		"text 200 100 0 10",
+		"text 200 130 0 11",
+		"text 200 160 0 12"
+	};
+
+	gump_data := {
+		"Item:",
+		"Seller:",
+		"Current bid:",
+		"Ends in:",
+		"Gold Held:",
+		players_gold_held,
+		"Gold Available:",
+		players_gold_available,
+		"Bid on Item",
+		item.desc,
+		GetObjProperty(item, "sellername"),
+		GetObjProperty(item, "minbid"),
+	};
+
+	var time := CInt(GetObjProperty(item, "endtime")) - ReadGameClock();
+	var days := CInt(time/86400);
+	var hours := CInt((time - days*86400)/3600);
+	var minutes := CInt( (time - days*86400 - hours*3600)/60);
+
+	gump_data.append (days + " days, " + hours + " hours, " + minutes + " minutes");
+	gump_layout.append ("button 100 225 2104 2103 1 0 " + (current_item_num));
+endfunction
+
+
+
+
+

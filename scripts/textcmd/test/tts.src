@@ -1,0 +1,36 @@
+/*
+   Author: MontuZ (MontuZ@aol.com) Feb 09, 2004.
+   Version: 1.0
+   Core: 093
+   Syntax: .privs
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Include "include/classes";
+
+Program TextCMD_Death( who )
+
+    Var Health := ( GetVitalMaximumValue( Who, "Life" ) / 100 );
+
+ SendSysMessage( Who, "Bonus: " + GetHealingAmount( Who, Health ) );
+
+EndProgram
+
+Function GetHealingAmount( Who, Health )
+
+    Var Level := CDbl( GetObjProperty( Who, CLASSEID_RANGER ) );
+    If( !Level )
+    Level := 0.50;
+    Endif
+
+    Var BPlvl := 0.05;
+    Var Amount := 0;
+
+    Amount := Floor( ( ( BPlvl * Level ) * Health ) + RandomInt( 5 ) );
+
+    Return CInt( Amount );
+
+Endfunction

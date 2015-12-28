@@ -1,0 +1,60 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/doppelcombatevent";
+include "ai/setup/setup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+Const MOVING_EFFECT_FIREBALL  := 0x36D4;
+
+program KillPlayers()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	if ( GetObjProperty(me,"#numchanges") )
+		num_changes := GetObjProperty(me,"#numchanges");
+	else
+		num_changes := 0;// I'm on my "native" shape
+	endif
+	graphics := GetConfigStringArray( speechelem, "graphics" );
+
+	SetWarMode( 0 );
+	main_AI_loop();
+
+endprogram
+
+function CloseDistance( opponent )
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        default:
+            WalkToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+    endcase
+    
+
+endfunction

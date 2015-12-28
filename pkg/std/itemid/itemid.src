@@ -1,0 +1,108 @@
+use uo;
+use os;
+use basic;
+
+include "include/client";
+include "include/itemutil";
+include "include/skillpoints";
+include "include/namingbyenchant";
+
+
+program do_itemid( character )
+
+	var thepoints := get_default_points( SKILLID_ITEMID );
+	var the_item;
+
+	SendSysMessage( character, "Select an object to identify." );
+	the_item := Target(character, TGTOPT_CHECK_LOS);
+	if( !the_item )
+		return;
+	endif
+		
+	if( !Accessible( character , the_item ) )
+		SendSysMessage( character , "You can't reach that." );
+		return;
+	endif
+	
+	if( Distance( character , the_item ) > 2 )
+		SendSysMessage( character , "That is too far." );
+		return;
+	endif
+		
+	if( !the_item.IsA(POLCLASS_ITEM) )
+		SendSysMessage( character , "That's not an item!" );
+		return;
+	endif
+	
+	if( !the_item.movable )
+		SendSysMessage( character, "You can't id unmovable items." );
+		return 0;
+	endif
+
+	if( the_item.graphic == 5359 OR the_item.graphic == 5360 OR the_item.objtype == 0x12AC )
+		SendSysMessage( character, "You cannot id this!" );
+		return 0;
+	endif
+		
+	var ided := GetObjProperty( the_item , "IDed" );
+	if( !ided )		
+		if( !IsIDable( the_item ) )
+			SendSysmessage( character , "This is a normal item." );
+			SetObjProperty( the_item , "IDed" , 1 );
+			return;
+
+		elseif( !CheckSkill( character , SKILLID_ITEMID , -2 , thepoints ) )
+			SendSysmessage (character, "I'm not sure . . .");
+			return;
+		endif
+	endif
+	
+	var ncharges   := GetObjProperty( the_item , "charges" );
+	var manastored := GetObjProperty( the_item , "ManaLevel" );
+	if( ncharges )
+
+		var staticname := GetObjProperty( the_item , "StaticName" );
+		var true_name := GetObjProperty( the_item , "tname" );
+				
+		if( staticname )
+			Setname( the_item , staticname );		
+		elseif( true_name ) 
+			Setname( the_item , true_name );
+		endif
+		
+		SendSysmessage( character , "It appears to be a " + the_item.desc + "," );
+		SendSysmessage( character , "and there's " + ncharges + " charges left in that item." );
+		
+	elseif( manastored )
+	
+		var staticname := GetObjProperty( the_item , "StaticName" );
+		var true_name := GetObjProperty( the_item , "tname" );
+				
+		if( staticname )
+			Setname( the_item , staticname );		
+		elseif( true_name ) 
+			Setname( the_item , true_name );
+		endif
+		
+		SendSysmessage( character , "It appears to be a " + the_item.desc + "," );
+		SendSysmessage( character , "and there's " + manastored + " mana stored in it." );
+	
+	
+	elseif( GetObjProperty( the_item , "UnIDedMagicalItem" ) or 
+		GetObjProperty( the_item , "Enchanted" ) or 
+		GetObjProperty( the_item , "IsGMItem" ) or 
+		GetObjProperty( the_item , "EnchantColor" ) or
+		GetObjProperty( the_item , "StaticName" ) )
+			
+		if( !ided )
+			SetNameByEnchant( the_item );
+		endif
+		SendSysmessage( character , "It appears to be a " + the_item.desc );
+				
+	else
+		SendSysmessage( character , "This is a normal item." );
+	endif
+	
+	SetObjProperty( the_item , "IDed" , 1 );
+			
+endprogram

@@ -1,0 +1,81 @@
+use uo;
+use cfgfile;
+
+
+program addteleporter(who)
+
+var elem := {};
+
+var cfg;
+var maxint;
+var elems := array;
+elem.+pname;
+elem.+pvalue;
+
+SendSysMessage(who, "Where would you like to place the teleporter?");
+
+var where := targetcoordinates(who);
+
+if (!where) sendsysmessage(who, "Canceled."); return; endif
+
+SendSysMessage(who, "Where would you like to destination to be?");
+SendSysMessage(who, "You can .go , .goxyz, or walk to the destination.");
+SendSysMessage(who, "Want gates? use these: 0x7010, 0x7011, 0x7012, 0x7013");
+
+var whereto := targetcoordinates(who);
+
+if (!whereto)
+        sendsysmessage(who, "Canceled.");
+        return;
+endif
+
+elem.pname := "fromx";
+elem.pvalue := where.x;
+elems[1] := elem;
+
+elem.pname := "fromy";
+elem.pvalue := where.y;
+elems[2] := elem;
+
+elem.pname := "fromz";
+// elem.pvalue := getmapinfo(where.x, where.y).z;
+elem.pvalue := where.z;
+elems[3] := elem;
+
+elem.pname := "tox";
+elem.pvalue := whereto.x;
+elems[4] := elem;
+
+elem.pname := "toy";
+elem.pvalue := whereto.y;
+elems[5] := elem;
+
+elem.pname := "toz";
+// elem.pvalue := getmapinfo(whereto.x, whereto.y).z;
+elem.pvalue := where.z;
+
+elems[6] := elem;
+
+cfg := readconfigfile("teleporters");
+
+maxint := getconfigmaxintkey(cfg) + 1;
+
+AppendConfigFileElem("teleporters", "teleporter", maxint, elems );
+
+print ("adding " + elems + " to teleporter");
+unloadconfigfile("teleporters");
+
+       
+var teleporter := CreateItemAtLocation( where.X, where.Y, getmapinfo(where.x, where.y).z, "systemteleporter", 1 );
+if ( teleporter )
+            SetObjProperty( teleporter, "DestX", whereto.x );
+            SetObjProperty( teleporter, "DestY", whereto.Y );
+            SetObjProperty( teleporter, "DestZ", getmapinfo(whereto.x, whereto.y).z );
+
+else
+            sendsysmessage( who, "Error: " + teleporter.errortext  );
+endif
+
+SendSysMessage(who, "Gates saved on restart: 0x7010, 0x7011, 0x7012, 0x7013");
+
+endprogram

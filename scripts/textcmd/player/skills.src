@@ -1,0 +1,753 @@
+////////////////////////////////////////////////////////////////////////////
+//
+// scripts/misc/skillwin.src: skill-window request hook script
+//
+//   if this script is not present, this functionality will be executed
+//   internally.
+//
+////////////////////////////////////////////////////////////////////////////
+
+Use uo;
+Use os;
+Use cfgfile;
+
+Include "include/classes";
+Include "include/attributes";
+Include "include/client";
+
+Const SKILL_START	:= 71;
+Const PERFORM_SKILL	:= 500;
+
+Program skillwindow( who )
+
+    SendSkillWindow( who, who );
+
+    var layout := { "page 0",    	// layout[1]
+    "nodispose",
+    "page 1",    	// layout[3]
+    "button 50 50 2105 2105 0 2",		// Button to page 2
+    "page 2",    	// layout[5]
+    "resizepic 50 50 2520 320 325",	// Background
+    "text 95  100 603 3",    // Bard
+    "text 95  120 603 4",    // Crafter
+    "text 95  140 603 5",    // Mage
+    "text 95  160 603 6",    // Ranger
+    "text 95  180 603 7",    // Thief
+    "text 95  200 603 8",    // Warrior
+    "text 95  220 603 9",    // Others
+    "text 160 60  603 0",    // SKILLS
+    "text 160 345 603 1",    // TOTAL
+    "text 260 345 603 2",    // The Total
+    "gumppic 75 90  2091",		// Deco Bar
+    "gumppic 75 300 2091",		// Deco Bar
+    "gumppic 75 312 2102",		// Text
+    // Bard
+    "gumppic 135 110 2101",		// layout[20]
+    "gumppic 150 110 2101",
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+    // Crafter
+    "gumppic 150 130 2101",		// layout[30]
+    "gumppic 165 130 2101",
+    "gumppic 180 130 2101",
+    "gumppic 195 130 2101",
+    "gumppic 210 130 2101",
+    "gumppic 225 130 2101",
+    "gumppic 240 130 2101",
+    "gumppic 255 130 2101",
+    "gumppic 270 130 2101",
+    // Mage
+    "gumppic 142 150 2101",		// layout[39]
+    "gumppic 150 150 2101",
+    "gumppic 165 150 2101",
+    "gumppic 180 150 2101",
+    "gumppic 195 150 2101",
+    "gumppic 210 150 2101",
+    "gumppic 225 150 2101",
+    "gumppic 240 150 2101",
+    "gumppic 255 150 2101",
+    "gumppic 270 150 2101",
+    // Ranger
+    "gumppic 150 170 2101",		// layout[49]
+    "gumppic 165 170 2101",
+    "gumppic 180 170 2101",
+    "gumppic 195 170 2101",
+    "gumppic 210 170 2101",
+    "gumppic 225 170 2101",
+    "gumppic 240 170 2101",
+    "gumppic 255 170 2101",
+    "gumppic 270 170 2101",
+    // Thief
+    "gumppic 142 190 2101",		// layout[58]
+    "gumppic 150 190 2101",
+    "gumppic 165 190 2101",
+    "gumppic 180 190 2101",
+    "gumppic 195 190 2101",
+    "gumppic 210 190 2101",
+    "gumppic 225 190 2101",
+    "gumppic 240 190 2101",
+    "gumppic 255 190 2101",
+    "gumppic 270 190 2101",
+
+    // Warrior
+    "gumppic 165 210 2101",		// layout[68]
+    "gumppic 180 210 2101",
+    "gumppic 195 210 2101",
+    "gumppic 210 210 2101",
+    "gumppic 225 210 2101",
+    "gumppic 240 210 2101",
+    "gumppic 255 210 2101",
+    "gumppic 270 210 2101",
+
+    // Others
+    "gumppic 150 230 2101",		// layout[76]
+    "gumppic 165 230 2101",
+    "gumppic 180 230 2101",
+    "gumppic 195 230 2101",
+    "gumppic 210 230 2101",
+    "gumppic 225 230 2101",
+    "gumppic 240 230 2101",
+    "gumppic 255 230 2101",
+    "gumppic 270 230 2101",
+		
+    "button 180  31 2093 2093 0 1",	// Button to page 2 layout[85]
+    "button 75  102 2087 2086 0 3",	// Bard arrow
+    "button 75  122 2087 2086 0 4",	// Crafter arrow
+    "button 75  142 2087 2086 0 5",	// Mage arrow
+    "button 75  162 2087 2086 0 6",	// Ranger arrow
+    "button 75  182 2087 2086 0 7",	// Thief arrow
+    "button 75  202 2087 2086 0 8",	// Warrior arrow
+    "button 75  222 2087 2086 0 9",	// Others
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 3",        // layout[94]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 3",    		// Bard
+    "text 100 120 0  10",    		// Begging
+    "text 260 120 0 " + (SKILL_START+SKILLID_BEGGING),	// val
+    "text 100 140 0  11",    		// Cartography
+    "text 260 140 0 " + (SKILL_START+SKILLID_CARTOGRAPHY),	// val
+    "text 100 160 0  12",    		// Enticement
+    "text 260 160 0 " + (SKILL_START+SKILLID_ENTICEMENT),	// val
+    "text 100 180 0  13",    		// Herding
+    "text 260 180 0 " + (SKILL_START+SKILLID_HERDING),	// val
+    "text 100 200 0  14",    		// Musicianship
+    "text 260 200 0 " + (SKILL_START+SKILLID_MUSICIANSHIP),	// val
+    "text 100 220 0  15",    		// Peacemaking
+    "text 260 220 0 " + (SKILL_START+SKILLID_PEACEMAKING),	// val
+    "text 100 240 0  16",    		// Provocation
+    "text 260 240 0 " + (SKILL_START+SKILLID_PROVOCATION),	// val
+    "text 100 260 0  17",    		// Taste Identification
+    "text 260 260 0 " + (SKILL_START+SKILLID_TASTEID),	// val
+    "text 100 280 0  18",    		// Percent
+    "text 260 280 0  19",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[115]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[118]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 135 110 2101",    	// layout[121]
+    "gumppic 150 110 2101",
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[131]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125  2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_BEGGING),	// Button for Begging
+    "",    		// State for Begging
+    "",    		// State for Cartography
+    "button 85 165 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_ENTICEMENT),	// Button for Enticement
+    "",    		// State for Enticement
+    "",    		// State for Herding
+    "",    		// State for Musicianship
+    "button 85 225 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_PEACEMAKING),	// Button for Peacemaking
+    "",    		// State for Peacemaking
+    "button 85 245 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_PROVOCATION),	// Button for Provocation
+    "",    		// State for Provocation
+    "button 85 265 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_TASTEID),	// Button for Taste Identification
+    "",    		// State for Taste Identification
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 4",        // layout[147]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 4",    		// Crafter
+    "text 100 120 0  20",    		// Arms Lore
+    "text 260 120 0 " + (SKILL_START+SKILLID_ARMSLORE),	// val
+    "text 100 140 0  21",    		// Blacksmithy
+    "text 260 140 0 " + (SKILL_START+SKILLID_BLACKSMITHY),	// val
+    "text 100 160 0  22",    		// Bowcraft
+    "text 260 160 0 " + (SKILL_START+SKILLID_BOWCRAFT),	// val
+    "text 100 180 0  23",    		// Carpentry
+    "text 260 180 0 " + (SKILL_START+SKILLID_CARPENTRY),	// val
+    "text 100 200 0  24",    		// Lumberjacking
+    "text 260 200 0 " + (SKILL_START+SKILLID_LUMBERJACKING),	// val
+    "text 100 220 0  25",    		// Mining
+    "text 260 220 0 " + (SKILL_START+SKILLID_MINING),	// val
+    "text 100 240 0  26",    		// Tailoring
+    "text 260 240 0 " + (SKILL_START+SKILLID_TAILORING),	// val
+    "text 100 260 0  27",    		// Tinkering
+    "text 260 260 0 " + (SKILL_START+SKILLID_TINKERING),	// val
+    "text 100 280 0  28",    		// Percent
+    "text 260 280 0  29",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[168]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[171]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 150 110 2101",    	// layout[174]
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[183]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_ARMSLORE),	// Button for Arms Lore
+    "",    		// State for Arms Lore
+    "",    		// State for Blacksmithy
+    "",    		// State for Bowcraft
+    "",    		// State for Carpentry
+    "",    		// State for Lumberjacking
+    "",    		// State for Mining
+    "",    		// State for Tailoring
+    "",    		// State for Tinkering
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+
+    "page 5",        // layout[195]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 5",    		// Mage
+    "text 100 120 0  30",    		// Alchemy
+    "text 260 120 0 " + (SKILL_START+SKILLID_ALCHEMY),	// val
+    "text 100 140 0  31",    		// Evaluating Intelligence
+    "text 260 140 0 " + (SKILL_START+SKILLID_EVALINT),	// val
+    "text 100 160 0  32",    		// Inscription
+    "text 260 160 0 " + (SKILL_START+SKILLID_INSCRIPTION),	// val
+    "text 100 180 0  33",    		// Item Identification
+    "text 260 180 0 " + (SKILL_START+SKILLID_ITEMID),	// val
+    "text 100 200 0  34",    		// Magery
+    "text 260 200 0 " + (SKILL_START+SKILLID_MAGERY),	// val
+    "text 100 220 0  35",    		// Meditation
+    "text 260 220 0 " + (SKILL_START+SKILLID_MEDITATION),	// val
+    "text 100 240 0  36",    		// Resisting Spells
+    "text 260 240 0 " + (SKILL_START+SKILLID_MAGICRESISTANCE),	// val
+    "text 100 260 0  37",    		// Spirit Speak
+    "text 260 260 0 " + (SKILL_START+SKILLID_SPIRITSPEAK),	// val
+    "text 100 280 0  38",    		// Percent
+    "text 260 280 0  39",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[216]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[219]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 142 110 2101",    	// layout[222]
+    "gumppic 150 110 2101",
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[232]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "",    		// State for Alchemy
+    "button 85 145 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_EVALINT),	// Button for Evaluating Intelligence
+    "",    		// State for Evaluating Intelligence
+    "button 85 165 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_INSCRIPTION),	// Button for Inscription
+    "",    		// State for Inscription
+    "button 85 185 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_ITEMID),	// Button for Item Identification
+    "",    		// State for Item Identification
+    "",    		// State for Magery
+    "button 85 225 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_MEDITATION),	// Button for Meditation
+    "",    		// State for Meditation
+    "",    		// State for Resisting Spells
+    "button 85 265 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_SPIRITSPEAK),	// Button for Spirit Speak
+    "",    		// State for Spirit Speak
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 6",        // layout[248]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 6",    		// Ranger
+    "text 100 120 0  40",    		// Animal Lore
+    "text 260 120 0 " + (SKILL_START+SKILLID_ANIMALLORE),	// val
+    "text 100 140 0  41",    		// Animal Taming
+    "text 260 140 0 " + (SKILL_START+SKILLID_TAMING),	// val
+    "text 100 160 0  42",    		// Archery
+    "text 260 160 0 " + (SKILL_START+SKILLID_ARCHERY),	// val
+    "text 100 180 0  43",    		// Camping
+    "text 260 180 0 " + (SKILL_START+SKILLID_CAMPING),	// val
+    "text 100 200 0  44",    		// cooking
+    "text 260 200 0 " + (SKILL_START+SKILLID_COOKING),	// val
+    "text 100 220 0  45",    		// Fishing
+    "text 260 220 0 " + (SKILL_START+SKILLID_FISHING),	// val
+    "text 100 240 0  46",    		// Tracking
+    "text 260 240 0 " + (SKILL_START+SKILLID_TRACKING),	// val
+    "text 100 260 0  47",    		// Veterinary
+    "text 260 260 0 " + (SKILL_START+SKILLID_VETERINARY),	// val
+    "text 100 280 0  48",    		// Percent
+    "text 260 280 0  49",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[269]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[272]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+		    
+    "gumppic 150 110 2101",    	// layout[275]
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[284]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_ANIMALLORE),	// Button for Animal Lore
+    "",    		// State for Animal Lore
+    "button 85 145 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_TAMING),	// Button for Animal Taming
+    "",    		// State for Animal Taming
+    "",    		// State for Archery
+    "",    		// State for Camping
+    "",    		// State for Cooking
+    "",    		// State for Fishing
+    "button 85 245 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_TRACKING),	// Button for Tracking
+    "",    		// State for Tracking
+    "",    		// State for Veterinary
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 7",        // layout[298]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 7",    		// Thief
+    "text 100 120 0  50",    		// Detecting Hidden
+    "text 260 120 0 " + (SKILL_START+SKILLID_DETECTINGHIDDEN),	// val
+    "text 100 140 0  51",    		// Hiding
+    "text 260 140 0 " + (SKILL_START+SKILLID_HIDING),	// val
+    "text 100 160 0  52",    		// Lockpicking
+    "text 260 160 0 " + (SKILL_START+SKILLID_LOCKPICKING),	// val
+    "text 100 180 0  53",    		// Poisoning
+    "text 260 180 0 " + (SKILL_START+SKILLID_POISONING),	// val
+    "text 100 200 0  54",    		// Remove Trap
+    "text 260 200 0 " + (SKILL_START+SKILLID_REMOVETRAP),	// val
+    "text 100 220 0  55",    		// Snooping
+    "text 260 220 0 " + (SKILL_START+SKILLID_SNOOPING),	// val
+    "text 100 240 0  56",    		// Stealing
+    "text 260 240 0 " + (SKILL_START+SKILLID_STEALING),	// val
+    "text 100 260 0  57",    		// Stealth
+    "text 260 260 0 " + (SKILL_START+SKILLID_STEALTH),	// val
+    "text 100 280 0  58",    		// Percent
+    "text 260 280 0  59",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[319]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[322]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 142 110 2101",    	// layout[325]
+    "gumppic 150 110 2101",
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[335]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_DETECTINGHIDDEN),	// Button for Detecting Hidden
+    "",    		// State for Detecting Hidden
+    "button 85 145 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_HIDING),	// Button for Hiding
+    "",    		// State for Hiding
+    "",    		// State for Lockpicking
+    "button 85 185 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_POISONING),	// Button for Poisoning
+    "",    		// State for Poisoning
+    "button 85 205 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_REMOVETRAP),	// Button for Remove Trap
+    "",    		// State for Remove Trap
+    "button 85 225 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_SNOOPING),	// Button for Snooping
+    "",    		// State for Snooping
+    "button 85 245 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_STEALING),	// Button for Stealing
+    "",    		// State for Stealing
+    "button 85 265 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_STEALTH),	// Button for Stealth
+    "",    		// State for Stealth
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 8",        // layout[353]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 8",    		// Warrior
+    "text 100 120 0  60",    		// Anatomy
+    "text 260 120 0 " + (SKILL_START+SKILLID_ANATOMY),	// val
+    "text 100 140 0  61",    		// Fencing
+    "text 260 140 0 " + (SKILL_START+SKILLID_FENCING),	// val
+    "text 100 160 0  62",    		// Healing
+    "text 260 160 0 " + (SKILL_START+SKILLID_HEALING),	// val
+    "text 100 180 0  63",    		// Mace Fighting
+    "text 260 180 0 " + (SKILL_START+SKILLID_MACEFIGHTING),	// val
+    "text 100 200 0  64",    		// Parrying
+    "text 260 200 0 " + (SKILL_START+SKILLID_PARRY),	// val
+    "text 100 220 0  65",    		// Swordsmanship
+    "text 260 220 0 " + (SKILL_START+SKILLID_SWORDSMANSHIP),	// val
+    "text 100 240 0  66",    		// Tactics
+    "text 260 240 0 " + (SKILL_START+SKILLID_TACTICS),	// val
+    "text 100 260 0  67",    		// Wrestling
+    "text 260 260 0 " + (SKILL_START+SKILLID_WRESTLING),	// val
+    "text 100 280 0  68",    		// Percent
+    "text 260 280 0  69",    		// val
+
+    "text 160 60  603 0",    		// SKILLS layout[374]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[377]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 165 110 2101",    	// layout[380]
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[388]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_ANATOMY),	// Button for Anatomy
+    "",    		// State for Anatomy
+    "",    		// State for Fencing
+    "",    		// State for Healing
+    "",    		// State for Mace Fighting
+    "",    		// State for Parrying
+    "",    		// State for Swordsmanship
+    "",    		// State for Tactics
+    "",    		// State for Wrestling
+    "button 180 369 2095 2094 1 0 400",	// Refresher button
+
+
+    "page 9",        // layout[400]
+    "resizepic 50 50 2520 320 325",    // Background
+    "text 95  100 603 9",    		// Others
+    "text 100 120 0   70",    	// Forensic Evaluation
+    "text 260 120 0 " + (SKILL_START+SKILLID_FORENSICS),	// val
+
+    "text 160 60  603 0",    		// SKILLS layout[405]
+    "text 160 345 603 1",    		// TOTAL
+    "text 260 345 603 2",    		// The Total
+
+    "gumppic 75  90  2091",    	// Deco Bar layout[408]
+    "gumppic 75  300 2091",    	// Deco Bar
+
+    "gumppic 75 312 2102",    	// Text
+
+    "gumppic 150 110 2101",    	// layout[411]
+    "gumppic 165 110 2101",
+    "gumppic 180 110 2101",
+    "gumppic 195 110 2101",
+    "gumppic 210 110 2101",
+    "gumppic 225 110 2101",
+    "gumppic 240 110 2101",
+    "gumppic 255 110 2101",
+    "gumppic 270 110 2101",
+
+    "button 180 31 2093 2093 0 1",	// Button to page 1 layout[420]
+    "button 75 102 2086 2087 0 2",	// Return to page 2
+    "button 85 125 2104 2103 1 0 " + (PERFORM_SKILL+SKILLID_FORENSICS),	// Button for AnForensic Evaluationatomy
+    "",    		// State for Forensic Evaluation
+    "button 180 369 2095 2094 1 0 400" };	// Refresher button
+		 
+
+    var data := {	"SKILLS",
+    "TOTAL",
+    "",	// 3 The total
+    "Bard",
+    "Crafter",
+    "Mage",
+    "Ranger",
+    "Thief",
+    "Warrior",
+    "Others",
+    "Begging",
+    "Cartography",
+    "Enticement",
+    "Herding",
+    "Musicianship",
+    "Peacemaking",
+    "Provocation",
+    "Taste Identification",
+    "Percent",
+    "",
+    "Arms Lore",
+    "Blacksmithy",
+    "Bowcraft",
+    "Carpentry",
+    "Lumberjacking",
+    "Mining",
+    "Tailoring",
+    "Tinkering",
+    "Percent",
+    "",
+    "Alchemy",
+    "Evaluating Intelligence",
+    "Inscription",
+    "Item Identification",
+    "Magery",
+    "Meditation",
+    "Resisting Spells",
+    "Spirit Speak",
+    "Percent",
+    "",
+    "Animal Lore",
+    "Animal Taming",
+    "Archery",
+    "Camping",
+    "Cooking",
+    "Fishing",
+    "Tracking",
+    "Veterinary",
+    "Percent",
+    "",
+    "Detecting Hidden",
+    "Hiding",
+    "Lockpicking",
+    "Poisoning",
+    "Remove Trap",
+    "Snooping",
+    "Stealing",
+    "Stealth",
+    "Percent",
+    "",
+    "Anatomy",
+    "Fencing",
+    "Healing",
+    "Mace Fighting",
+    "Parrying",
+    "Swordsmanship",
+    "Tactics",
+    "Wrestling",
+    "Percent",
+    "",
+    "Forensic Evaluation"	};
+
+	var res;
+	repeat
+		FillInArrays( who, layout, data );
+		res := SendDialogGump( who, layout, data );
+		res := CInt( res[0] );
+		if( res )
+    // Set the skill to decrease
+    if( res < 100 )
+    	var state_array   := GetObjProperty( Who, SKILLSTATE );
+    	if( !state_array )
+    		state_array := {};
+    	endif
+    	state_array[ res ] := SKILLSTATE_LOWER;
+    	//TakeCurrentSkillLevelInNote( who, res );
+    	SetObjProperty( who, SKILLSTATE, state_array );
+
+    // Lock the skill
+    elseif( res < 200 )
+    	var state_array   := GetObjProperty( Who, SKILLSTATE );
+    	if( !state_array )
+    		state_array := {};
+    	endif
+    	state_array[ res-100 ] := SKILLSTATE_LOCKED;
+    	//TakeCurrentSkillLevelInNote( who, (res-101) );
+    	SetObjProperty( who, SKILLSTATE, state_array );
+
+    // Make the skill raise again
+    elseif( res < 300 )
+    	var state_array   := GetObjProperty( Who, SKILLSTATE );
+    	if( !state_array )
+    		state_array := {};
+    	endif
+    	state_array[ res-200 ] := SKILLSTATE_NORMAL;
+    	//TakeCurrentSkillLevelInNote( who, (res-201) );
+    	SetObjProperty( who, SKILLSTATE, state_array );
+
+    // Perform skill
+    elseif( res >= PERFORM_SKILL )
+		
+
+    endif
+		endif
+
+	until( !res );
+
+endprogram
+
+
+function FillInArrays( who, byref layout, byref data )
+
+	var state_array   := GetObjProperty( who, SKILLSTATE );
+	if( !state_array )
+		state_array := {};
+	endif
+
+	var total	:= 0.0;
+	var bard	:= 0.0;
+	var crafter	:= 0.0;
+	var mage	:= 0.0;
+	var ranger	:= 0.0;
+	var thief	:= 0.0;
+	var warrior	:= 0.0;
+var i;
+	for(i:=0; i<=SKILLID__HIGHEST; i:=i+1)
+		var skill := GetEffectiveSkill(who,i);
+		var effec := CInt( skill );
+		var deci  := CInt( CDbl( (skill / 10.0 ) - CInt( CInt(skill) / 10 )) * 10 );
+		total	    := total + skill;
+		if( i in GetClasseSkills( CLASSEID_BARD ) )
+    bard := bard + skill;
+		elseif( i in GetClasseSkills( CLASSEID_CRAFTER ) )
+    crafter := crafter + skill;
+		elseif( i in GetClasseSkills( CLASSEID_MAGE ) )
+    mage := mage + skill;
+		elseif( i in GetClasseSkills( CLASSEID_RANGER ) )
+    ranger := ranger + skill;
+		elseif( i in GetClasseSkills( CLASSEID_THIEF ) )
+    thief := thief + skill;
+		elseif( i in GetClasseSkills( CLASSEID_WARRIOR ) )
+    warrior := warrior + skill;
+		endif
+	
+		var suffix;
+		case( state_array[i+1] )
+    SKILLSTATE_NORMAL:	 suffix := "2435 2436 1 0 " + (i+1);	break;
+    SKILLSTATE_LOWER:	 suffix := "2437 2438 1 0 " + (i+101);	break;
+    SKILLSTATE_LOCKED:	 suffix := "2092 2092 1 0 " + (i+201);	break;
+    default: suffix := "2435 2436 1 0 " + (i+1);	break;
+		endcase
+
+
+		case( i )
+    SKILLID_ALCHEMY:	 layout[234] := "button 315 125 " + suffix;	break;
+    SKILLID_ANATOMY:	 layout[391] := "button 315 125 " + suffix;	break;
+    SKILLID_ANIMALLORE:	 layout[287] := "button 315 125 " + suffix;	break;
+    SKILLID_ITEMID:		 layout[240] := "button 315 185 " + suffix;	break;
+    SKILLID_ARMSLORE:	 layout[186] := "button 315 125 " + suffix;	break;
+    SKILLID_PARRY:		 layout[395] := "button 315 205 " + suffix;	break;
+    SKILLID_BEGGING:	 layout[134] := "button 315 125 " + suffix;	break;
+    SKILLID_BLACKSMITHY:	 layout[187] := "button 315 145 " + suffix;	break;
+    SKILLID_BOWCRAFT:	 layout[188] := "button 315 165 " + suffix;	break;
+    SKILLID_PEACEMAKING:	 layout[141] := "button 315 225 " + suffix;	break;
+    SKILLID_CAMPING:	 layout[291] := "button 315 185 " + suffix;	break;
+    SKILLID_CARPENTRY:	 layout[189] := "button 315 185 " + suffix;	break;
+    SKILLID_CARTOGRAPHY:	 layout[135] := "button 315 145 " + suffix;	break;
+    SKILLID_COOKING:	 layout[292] := "button 315 205 " + suffix;	break;
+    SKILLID_DETECTINGHIDDEN: layout[338] := "button 315 125 " + suffix;	break;
+    SKILLID_ENTICEMENT:	 layout[137] := "button 315 165 " + suffix;	break;
+    SKILLID_EVALINT:	 layout[236] := "button 315 145 " + suffix;	break;
+    SKILLID_HEALING:	 layout[393] := "button 315 165 " + suffix;	break;
+    SKILLID_FISHING:	 layout[293] := "button 315 225 " + suffix;	break;
+    SKILLID_FORENSICS:	 layout[423] := "button 315 125 " + suffix;	break;
+    SKILLID_HERDING:	 layout[138] := "button 315 185 " + suffix;	break;
+    SKILLID_HIDING:		 layout[340] := "button 315 145 " + suffix;	break;
+    SKILLID_PROVOCATION:	 layout[143] := "button 315 245 " + suffix;	break;
+    SKILLID_INSCRIPTION:	 layout[238] := "button 315 165 " + suffix;	break;
+    SKILLID_LOCKPICKING:	 layout[341] := "button 315 165 " + suffix;	break;
+    SKILLID_MAGERY:		 layout[241] := "button 315 205 " + suffix;	break;
+    SKILLID_MAGICRESISTANCE: layout[244] := "button 315 245 " + suffix;	break;
+    SKILLID_TACTICS:	 layout[397] := "button 315 245 " + suffix;	break;
+    SKILLID_SNOOPING:	 layout[347] := "button 315 225 " + suffix;	break;
+    SKILLID_MUSICIANSHIP:	 layout[139] := "button 315 205 " + suffix;	break;
+    SKILLID_POISONING:	 layout[343] := "button 315 185 " + suffix;	break;
+    SKILLID_ARCHERY:	 layout[290] := "button 315 165 " + suffix;	break;
+    SKILLID_SPIRITSPEAK:	 layout[246] := "button 315 265 " + suffix;	break;
+    SKILLID_STEALING:	 layout[349] := "button 315 245 " + suffix;	break;
+    SKILLID_TAILORING:	 layout[192] := "button 315 245 " + suffix;	break;
+    SKILLID_TAMING:		 layout[289] := "button 315 145 " + suffix;	break;
+    SKILLID_TASTEID:	 layout[145] := "button 315 265 " + suffix;	break;
+    SKILLID_TINKERING:	 layout[193] := "button 315 265 " + suffix;	break;
+    SKILLID_TRACKING:	 layout[295] := "button 315 245 " + suffix;	break;
+    SKILLID_VETERINARY:	 layout[296] := "button 315 265 " + suffix;	break;
+    SKILLID_SWORDSMANSHIP:	 layout[396] := "button 315 225 " + suffix;	break;
+    SKILLID_MACEFIGHTING:	 layout[394] := "button 315 185 " + suffix;	break;
+    SKILLID_FENCING:	 layout[392] := "button 315 145 " + suffix;	break;
+    SKILLID_WRESTLING:	 layout[398] := "button 315 265 " + suffix;	break;
+    SKILLID_LUMBERJACKING:	 layout[190] := "button 315 205 " + suffix;	break;
+    SKILLID_MINING:		 layout[191] := "button 315 225 " + suffix;	break;
+    SKILLID_MEDITATION:	 layout[243] := "button 315 225 " + suffix;	break;
+    SKILLID_STEALTH:	 layout[351] := "button 315 265 " + suffix;	break;
+    SKILLID_REMOVETRAP:	 layout[345] := "button 315 205 " + suffix;	break;
+		endcase
+
+		data[SKILL_START+i+1] := effec + "." + deci;
+	endfor
+
+	var effective	:= CInt( total / 10 );
+	var decimal	:= CInt( CDbl( (total / 10.0 ) - CInt( CInt(total) / 10 )) * 10 );
+	data[3]	 := effective + "." + decimal;
+	data[20] := GivePercent( bard, total ) + "%";
+	data[30] := GivePercent( crafter, total ) + "%";
+	data[40] := GivePercent( mage, total ) + "%";
+	data[50] := GivePercent( ranger, total ) + "%";
+	data[60] := GivePercent( thief, total ) + "%";
+	data[70] := GivePercent( warrior, total ) + "%";
+
+endfunction
+
+
+function GivePercent( skill, total )
+
+	var percent	:= CDbl( skill / total * 100.0 );
+	var floating	:= CInt( percent * 10 );
+	var cuted	:= CInt( percent ) * 10;
+	var diffe	:= CInt( floating - cuted );
+
+	percent	:= CInt(percent) + "." + diffe;
+
+	return percent;
+
+endfunction

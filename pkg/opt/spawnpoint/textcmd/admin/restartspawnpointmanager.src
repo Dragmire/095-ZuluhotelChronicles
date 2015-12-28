@@ -1,0 +1,30 @@
+use uo;
+use os;
+
+include "include/constants/propids";
+
+program textcmd_restartspawnpointmanager(who)
+
+	var msg;
+	var pid := GetGlobalProperty(PROPID_GLOBAL_SPAWNPOINTS_MANAGER);
+	if( pid )
+		var manager := getprocess(pid);
+		if( manager )
+			manager.kill();
+		endif
+	endif
+
+	unload_scripts(":spawnpoint:spawnpoint");
+	pid := start_script(":spawnpoint:spawnpointmanager").pid;
+	if( pid )
+		SetGlobalProperty(PROPID_GLOBAL_SPAWNPOINTS_MANAGER, pid);
+		msg := "Spawnpoints manager restarted. PID = " + pid;
+		SendSysMessage(who, msg);
+		syslog(msg);
+	else
+		msg := "COULDN'T RESTART THE SPAWNPOINTS MANAGER!!!";
+		SendSysMessage(who, msg);
+		syslog(msg);
+	endif
+
+endprogram

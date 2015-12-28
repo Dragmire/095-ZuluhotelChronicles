@@ -1,0 +1,24 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+
+program cast_reflect( caster )
+
+	if (!can_cast(caster, 5))
+		return;
+	endif
+
+	var circle := 5;
+	var cast_on := caster;
+	var magery := GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var amount := ModifyWithMagicEfficiency( caster, CInt( (magery / 12) + 1 ) );
+
+	PlaySoundEffect( caster, SFX_SPELL_MAGIC_REFLECTION );
+	PlayObjectCenteredEffect( caster, FX_SPELL_MAGIC_REFLECTION, 10, 10 );
+	SetObjProperty( caster, "mr", amount );
+
+endprogram

@@ -1,0 +1,76 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+program cast_summonspirit( parms )
+   
+	var circle := GetCircle( SPELLID_SUMMON_SPIRIT );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_SUMMON_SPIRIT ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	var magery := GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var bonus  := 0;
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		bonus := 2;
+	endif
+
+	var amount := RandomDiceStr("2d2") + bonus;
+	var npctemplate;
+
+ 	while( amount > 0 )
+
+		var creature := RandomDiceStr("1d8") + bonus;
+		case( creature )
+			1:
+			2:
+			3:
+			4:	npctemplate := "shade";		break;
+			5:
+			6:
+			7:	npctemplate := "liche";		break;
+			8:
+			9:	npctemplate := "lichelord";	break;
+			10:	npctemplate := "bloodliche";	break;
+		endcase
+
+		var cast_loc := TargetCoordinates( caster );
+		if( !cast_loc )
+			SendSysMessage( caster, "Canceled." );
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	
+		SummonCreature( caster, npctemplate, cast_loc, SFX_SPELL_SUMMON_SPIRIT );
+		amount := amount - 1;
+	
+	endwhile
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram

@@ -1,0 +1,28 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated by Zulu (zulu@zuluhotel.com) Dec 24, 1999
+// - funky xmas coal.
+// updated November 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+
+program xmaspres(who,xmas)
+
+    if(!ReserveItem(xmas)) return; endif
+
+    DestroyItem(xmas);
+
+    var sexname;
+
+    if (who.gender)
+      sexname:="girl";
+    else
+      sexname:="boy";
+    endif
+
+    SendSysMessage(who,"You must have been a bad little "+sexname+".");
+    SendSysMessage(who,"Next year, you will have to be good.");
+
+endprogram

@@ -1,0 +1,137 @@
+// serpent pillar - version .1
+// updated April 16, 2000
+// zulu (zulu@zuluhotel.com)
+
+use uo;
+use os;
+use basic;
+use boat;
+
+include "include/eventid";
+include "include/objtype";
+
+program PillarListener(pillar)
+
+RegisterForSpeechEvents(pillar,30);
+EnableEvents(SYSEVENT_SPEECH,12);
+
+  var ev;
+
+    while (1)
+        ev:=wait_for_event(10);
+        if (ev)
+            if (ev.type == SYSEVENT_SPEECH)
+                    handle_speech( ev, pillar );
+            endif
+        endif
+    endwhile
+endprogram
+
+function handle_speech( event, pillar )
+
+    var text := lower( event.text );
+
+    var password := GetObjProperty(pillar, "password");
+    var who := Hex(event.source);
+
+   if((text==password) && (pillar.objtype==0x7061))
+	movenewloc(5965,2695,who,pillar);
+	return;
+    endif
+   if((text==password) && (pillar.objtype==0x7062))
+	movenewloc(2976,2888,who,pillar);
+	return;
+    endif
+   if((text==password) && (pillar.objtype==0x7063))
+	movenewloc(5258,2755,who,pillar);
+	return;
+    endif
+   if((text==password) && (pillar.objtype==0x7064))
+	movenewloc(415,3281,who,pillar);
+	return;
+    endif
+
+endfunction
+
+function movenewloc(x,y,who, pillar)
+
+var oldlock, oldhatch, boattype, boattag, boatoff;
+ x:=CInt(x);
+ y:=CInt(y);
+PlaySoundEffect(who, 0x1dd);
+
+foreach boat in ListItemsNearLocation(CInt(pillar.x),CInt(pillar.y),CInt(pillar.z),20)
+
+if((boat.graphic==0x3e65) || (boat.graphic==0x3e93) || (boat.graphic==0x3eae) || (boat.graphic==0x3eb9))
+oldlock := GetObjProperty(boat, "lockid");
+oldhatch := boat.serial;
+boattype := boat.multi.objtype;
+boattag := boat.multi;
+boatoff := boat;
+break;
+endif
+
+endforeach
+
+var newboat := CreateMultiAtLocation( x, y, -5, boattype );
+
+if ( newboat.errortext ) return; endif
+
+var newhatch, talkman;
+
+foreach boat in ListItemsNearLocation(x,y,-5,20)
+
+if ((boat.graphic==0x3e4e) || (boat.graphic==0x3e55) || (boat.graphic==0x3e4b) || (boat.graphic==0x3e50) && (boat.multi.serial == newboat.multi.serial))
+talkman := boat.serial;
+endif
+
+if((boat.graphic==0x3e65) || (boat.graphic==0x3e93) || (boat.graphic==0x3eae) || (boat.graphic==0x3eb9) && (boat.multi.serial == newboat.multi.serial))
+SetObjProperty(boat.serial, "lockid",oldlock);
+boat.locked := 1;
+newhatch := boat.serial;
+endif
+
+if ((boat.graphic==0x3ed5) || (boat.graphic==0x3eb1) || (boat.graphic==0x3ed4) || (boat.graphic==0x3eb2) || (boat.graphic==0x3e89) || (boat.graphic==0x3e8a) || (boat.graphic==0x3e84) || (boat.graphic==0x3e85) && (boat.multi.serial == newboat.multi.serial))
+SetObjProperty(boat.serial, "lockid",oldlock);
+boat.locked := 1;
+endif
+
+endforeach
+
+foreach item in EnumerateItemsInContainer( oldhatch );
+
+        if (!newhatch == item.serial)
+	      MoveItemToContainer( item, newhatch );
+	elseif (item.container.serial==oldhatch)
+	      MoveItemToContainer( item, newhatch );
+        endif
+
+endforeach
+
+foreach mob in (boattag.mobiles)
+MoveCharacterToLocation(mob, CInt((mob.x-boattag.x)+newboat.x), CInt((mob.y-boattag.y)+newboat.y), -2,  MOVECHAR_FORCELOCATION );
+endforeach
+
+//if (boatoff.has_offline_mobiles)
+boatoff.move_offline_mobiles( CInt(boattag.x+1), CInt(boattag.y), -2 );
+//endif
+
+foreach mob in (boattag.items)
+MoveItemToLocation(mob, CInt((mob.x-boattag.x)+newboat.x), CInt((mob.y-boattag.y)+newboat.y), -2,MOVECHAR_FORCELOCATION  );
+endforeach
+
+PrintTextAbove( talkman, "Whew, what a ride!" );
+sleep(1);
+
+deleteboat(boattag);
+
+endfunction
+
+function deleteboat(boat)
+
+    var res := DestroyMulti( boat );
+    if (!res)
+print(  "Can't delete: " + res.errortext + " @ X:" + boat.x + " Y:" + boat.y + " serial:" + boat.multi.serial );
+syslog( "Can't delete: " + res.errortext + " @ X:" + boat.x + " Y:" + boat.y + " serial:" + boat.multi.serial );
+    endif
+endfunction

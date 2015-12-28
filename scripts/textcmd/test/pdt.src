@@ -1,0 +1,20 @@
+use os;
+use uo;
+
+include "include/client";
+
+program textcmd_setskill( who )
+
+   var daaa := Target( who );
+
+
+var i;
+for (i := 0; i <= SKILLID__HIGHEST; i := i + 1)
+        var res := SetBaseSkillBaseValue( daaa, i, 0 );
+        if (res == error)
+            SendSysMessage( daaa, "Unable to set skill: " + res.errortext );
+        else
+            SendSysMessage( daaa, "New Effective Skill: " + GetEffectiveSkill(daaa,i) );
+        endif
+    endfor
+endprogram

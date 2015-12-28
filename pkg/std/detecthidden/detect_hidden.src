@@ -1,0 +1,78 @@
+use uo;
+use os;
+use basic;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/classes";
+include "include/random";
+var item_cfg := ReadConfigFile( ":*:itemdesc" );;
+
+const TRAP   := "hiddentrap";
+const POINTS := 100;
+
+program detect_hidden( who )
+
+	var thief  := GetObjProperty( who, CLASSEID_THIEF );
+
+	if( !CheckSkill( who, SKILLID_DETECTINGHIDDEN, -1, POINTS ) )
+		SendSysMessage( who, "You didnt find any anyone." );
+		return;
+	endif
+
+		
+	var range  := CInt( GetAttribute( who, ATTRIBUTEID_DETECTINGHIDDEN ) / 15 );
+	if( thief )
+		range := CInt( range * ClasseBonus( who, CLASSEID_THIEF ) );
+	endif
+
+	var hiders := ListMobilesNearLocationEx( who.x, who.y, who.z, range, LISTEX_FLAG_HIDDEN );
+	var items  := ListItemsNearLocation( who.x, who.y, who.z, range );
+	var count  := 0;
+
+
+	foreach mobile in hiders
+		if( mobile.hidden && mobile.serial != who.serial )
+			if( Found( who, mobile ) )
+				mobile.hidden := 0;
+				count := count + 1;
+				PrintTextAbovePrivate( mobile, "You have been discovered!", mobile );
+				PrintTextAbovePrivate( mobile, "Found someone!!", who );
+			endif
+		endif
+	endforeach
+
+	if( !count )
+		SendSysMessage( who, "You didnt find any anyone." );
+	endif
+
+	var elem;
+	var data;
+	var prop;
+
+
+endprogram
+
+
+function Found( finder, hider )
+
+	var finder_skill := GetAttribute( finder, ATTRIBUTEID_DETECTINGHIDDEN );
+	var hider_skill  := GetAttribute( hider, ATTRIBUTEID_HIDING );
+
+	if( GetObjProperty( finder, CLASSEID_THIEF ) )
+		finder_skill := CInt( finder_skill * ClasseBonus( finder, CLASSEID_THIEF ) );
+	endif
+
+	if( GetObjProperty( hider, CLASSEID_THIEF ) )
+		hider_skill := CInt( hider_skill * ClasseBonus( hider, CLASSEID_THIEF ) );
+	endif
+
+	var chance := finder_skill - CInt( hider_skill / 2 );
+	if( RandomDiceStr( "1d100" ) < chance )
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction

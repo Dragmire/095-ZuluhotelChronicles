@@ -1,0 +1,65 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Use os;
+Use math;
+Use cfgfile;
+
+Program textcmd_mount( who )
+
+    Var Bag := CreateItemInBackpack( who, 0xE76, 1 );
+    
+    Foreach item in ListReagents()
+    CreateItemInContainer( Bag, item, 10000 );
+    Endforeach
+
+
+Endprogram
+
+Function ListReagents()
+
+    Return {
+    0xf78,
+    0xf79,
+    0xf7a,
+    0xf7b,
+    0xf7c,
+    0xf7d,
+    0xf7e,
+    0xf7f,
+    0xf80,
+    0xf81,
+    0xf82,
+    0xf83,
+    0xf84,
+    0xf85,
+    0xf86,
+    0xf87,
+    0xf88,
+    0xf89,
+    0xf8a,
+    0xf8b,
+    0xf8c,
+    0xf8d,
+    0xf8e,
+    0xf8f,
+    0xf90,
+    0xf91,
+    0xf25,
+    0xf16,
+    0xf15,
+    0xf30,
+    0xf10,
+    0xf13,
+    0xf11,
+    0xf0f,
+    0xf18
+    };
+
+Endfunction

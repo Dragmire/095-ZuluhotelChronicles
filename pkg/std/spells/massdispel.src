@@ -1,0 +1,168 @@
+use uo;
+
+include "include/dotempmods";
+include "include/attributes";
+include "include/spelldata";
+include "include/damages";
+include "include/classes";
+include "include/client";
+
+program mass_dispel ( parms )
+
+	var circle := 7;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetArea( caster, circle );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+
+endprogram
+
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+	var circle := 7;
+
+	var magery	:= ModifyWithMagicEfficiency( caster, GetEffectiveSkill(caster, SKILLID_MAGERY) );
+	var range	:= CInt(magery / 15);
+	var targets	:= ListMobilesNearLocation( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range );
+
+	foreach mobile in targets
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) )
+			Send_Attack( mobile, caster, SPELLID_MASS_DISPEL );
+			var summoned := GetObjProperty( mobile, "summoned" );
+			var animated := GetObjProperty( mobile, "animated" );
+	
+			if( summoned )
+				var immunity := IsProtected( caster, mobile, circle );
+				if( immunity == IMMUNED )
+					return;
+				endif
+			
+				if( immunity == CURSED )
+					magery := magery * 2;
+				endif
+			
+				if( GetObjProperty( caster, CLASSEID_MAGE ) )
+					magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+				endif
+	
+				if( !CheckSkill( mobile, SKILLID_MAGICRESISTANCE, magery, 50 ))
+					PlaySoundEffect( mobile, SFX_SPELL_DISPEL );
+					MoveCharacterToLocation(mobile,0,0,0,MOVECHAR_FORCELOCATION);
+					ApplyTheDamage( mobile, caster, GetMaxHp(mobile) + 3, DMGID_MAGIC );
+				endif
+
+			elseif( animated )
+				var immunity := IsProtected( caster, mobile, circle );
+				if( immunity == IMMUNED )
+					return;
+				endif
+			
+				if( immunity == CURSED )
+					magery := magery * 2;
+				endif
+	
+				if( GetObjProperty( caster, CLASSEID_MAGE ) )
+					magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+				endif
+	
+				if( !CheckSkill( mobile, SKILLID_MAGICRESISTANCE, magery, 50 ))
+					PlaySoundEffect( mobile, SFX_SPELL_DISPEL );
+					ApplyTheDamage( mobile, caster, GetMaxHp(mobile) + 3, DMGID_MAGIC );
+				endif
+			
+			else
+				WipeMods( mobile );
+				if( mobile.graphic != mobile.trueobjtype && !mobile.dead )
+					mobile.graphic := mobile.trueobjtype;
+				endif
+			endif
+		endif
+	endforeach
+endfunction
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+	var circle := 7;
+
+	var magery	:= ModifyWithMagicEfficiency( caster, GetEffectiveSkill(caster, SKILLID_MAGERY) );
+	var range	:= CInt(magery / 15);
+	var targets	:= ListMobilesNearLocation( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range );
+
+	foreach mobile in targets
+	   if(!(mobile.npctemplate))
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) )
+			Send_Attack( mobile, caster, SPELLID_MASS_DISPEL );
+			var summoned := GetObjProperty( mobile, "summoned" );
+			var animated := GetObjProperty( mobile, "animated" );
+	
+			if( summoned )
+				var immunity := IsProtected( caster, mobile, circle );
+				if( immunity == IMMUNED )
+					return;
+				endif
+			
+				if( immunity == CURSED )
+					magery := magery * 2;
+				endif
+			
+				if( GetObjProperty( caster, CLASSEID_MAGE ) )
+					magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+				endif
+	
+				if( !CheckSkill( mobile, SKILLID_MAGICRESISTANCE, magery, 50 ))
+					PlaySoundEffect( mobile, SFX_SPELL_DISPEL );
+					MoveCharacterToLocation(mobile,0,0,0,MOVECHAR_FORCELOCATION);
+					ApplyTheDamage( mobile, caster, GetMaxHp(mobile) + 3, DMGID_MAGIC );
+				endif
+
+			elseif( animated )
+				var immunity := IsProtected( caster, mobile, circle );
+				if( immunity == IMMUNED )
+					return;
+				endif
+			
+				if( immunity == CURSED )
+					magery := magery * 2;
+				endif
+	
+				if( GetObjProperty( caster, CLASSEID_MAGE ) )
+					magery := CInt( magery * ClasseBonus( caster, CLASSEID_MAGE ) );
+				endif
+	
+				if( !CheckSkill( mobile, SKILLID_MAGICRESISTANCE, magery, 50 ))
+					PlaySoundEffect( mobile, SFX_SPELL_DISPEL );
+					ApplyTheDamage( mobile, caster, GetMaxHp(mobile) + 3, DMGID_MAGIC );
+				endif
+			
+			else
+				WipeMods( mobile );
+				if( mobile.graphic != mobile.trueobjtype && !mobile.dead )
+					mobile.graphic := mobile.trueobjtype;
+				endif
+			endif
+		endif
+	   endif
+	endforeach
+endfunction

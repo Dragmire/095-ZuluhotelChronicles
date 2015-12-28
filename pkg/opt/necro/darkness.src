@@ -1,0 +1,104 @@
+use uo;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_DARKNESS;
+const SPELL_EFFECT_ID		:= FX_SPELL_DARKNESS;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_DARKNESS;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_DARKNESS;
+
+program cast_darkness( parms )
+
+	var circle := GetCircle( SPELLID_DARKNESS );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if( parms[4] )
+			circle := parms[4];
+		endif
+		if( parms[5] )
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_DARKNESS ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+
+        PlaySoundEffect(caster, SFX_SPELL_DARKNESS );
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var magery	:= GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var level	:= ModifyWithMagicEfficiency( caster, 20 + CInt( magery / 15 ) );
+	var duration	:= GetModDuration( caster );
+
+	if( level > 30 )
+		level	 := 30;
+	endif
+
+	if( immunity == CURSED )
+		duration := duration * 2;
+		level	 := 30;
+	endif
+
+	var protection := GetResultingPlaneProtection( cast_on, plane );
+	if( protection )
+		var modifier := 100 - (protection * 20);
+		if( modifier < 1 )
+			modifier := 0;
+		endif
+
+		duration := CInt( duration * modifier / 100 );
+
+		if( !duration )
+			PrintTextAbovePrivate( cast_on, "The nature of the target prevent it from being affected by that spell!", caster );
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !GetObjProperty( cast_on, "#PermNightSight" ) )
+		cast_on.setlightlevel( level, Resisted( caster, cast_on, circle, duration ) );
+        	SetObjProperty( cast_on, "#Blinded", 1 );
+        else
+        	SendSysMessage( cast_on, "You're protected from the spell effect." );
+        endif
+       
+        EraseObjProperty( caster, "#Casting" );
+        sleep( CInt( duration / 2 ) );
+        EraseObjProperty( cast_on, "#Blinded" );
+
+endprogram

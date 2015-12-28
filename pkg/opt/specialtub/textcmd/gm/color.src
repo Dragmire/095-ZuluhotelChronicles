@@ -1,0 +1,9 @@
+use uo;
+use os;
+
+program textcmd_color( who )
+
+	var color := SelectColor( who, who.backpack );
+	SendSysMessage( who, "You choose color number " + color );
+
+endprogram

@@ -1,0 +1,161 @@
+use uo;
+use os;
+
+const SCISSORS_SOUND	 := 0x0249;
+const UOBJ_BOLT_START	:= 0x0f95; // Bolts <Initial Tile>
+const UOBJ_BOLT_END	  := 0x0f9c; // Bolts <Final Tile>
+const UOBJ_CLOTH_STARTS := 0x175d; // Real cloth
+const UOBJ_CLOTH_END	 := 0x1768; // Real cloth
+const UOBJ_MUTLI_CLOTH  := 0x1765; // What we will turn bolts into
+const UACTION_SHEAR := 0x0020;
+const BRIDLE := 0x1374;
+const HIDES := 0x1078;
+const ROBE := 0x7568;
+const BANDAGES := 0x0e21;
+
+include "include/client";
+include "include/random";
+
+program use_scissors( character, scissors )
+
+	if(!ReserveItem(scissors)) return; endif
+
+	SendSysMessage( character, "Select the object to cut." );
+	var boltcount, cloth := Target( character );
+
+	if (cloth.graphic==0x00cf)
+	Carvesheep(character, cloth, character.x, character.y);
+	return;
+	 elseif (cloth.graphic==0x00df)
+	SendSysMessage( character, "There is not enough wool here to shear." );
+	return;
+	 endif
+
+	if(!ReserveItem(cloth)) return; endif
+
+	if(!cloth)
+		SendSysMessage( character, "canceled." );
+		return;
+	endif
+
+  if ((cloth.objtype >= UOBJ_BOLT_START) && (cloth.objtype <= UOBJ_BOLT_END))
+	boltcount := cloth.amount;
+		  DestroyItem(cloth);
+		  CreateItemInBackpack(character, UOBJ_MUTLI_CLOTH, boltcount * 50);
+	SendSysMessage(character, "You create the item and place it in you pack.");
+	return;
+  endif
+
+	// cutting robes into bandages, useful =)
+  if (cloth.objtype == 0x1f03)
+	PerformAction(character, UACTION_SHEAR);
+	PlaySoundEffect(character, 0x249);
+	sleep(5);
+
+	CreateItemInBackpack(character, BANDAGES, 5);
+
+	SendSysMessage(character, "You create some bandages and place them in you pack.");
+	DestroyItem(cloth);
+	return;
+  endif
+
+  if (cloth.objtype == HIDES)
+	if (cloth.amount >= 10)
+
+		PerformAction(character, UACTION_SHEAR);
+		PlaySoundEffect(character, 0x249);
+		sleep(5);
+
+		if (CheckSkill(character, SKILLID_TAILORING, 100, 1000))
+
+			SubtractAmount( cloth, 10 );
+		  		CreateItemInBackpack(character, BRIDLE, 1);
+			SendSysMessage(character, "You create the bridle and place it in you pack.");
+		
+		else
+			SubtractAmount( cloth, 5 );
+			SendSysMessage(character, "You fail and ruin some leather.");
+		
+		endif
+
+		return;
+	else
+		SendSysMessage(character, "You don't have enough leather.");
+		return;
+	endif;
+  endif
+
+
+	if((cloth.objtype >= UOBJ_CLOTH_STARTS) && (cloth.objtype <= UOBJ_CLOTH_END))
+		PlaySoundEffect(character, SCISSORS_SOUND);
+		sleep(1);
+
+	if(CheckSkill(character, SKILLID_TAILORING, 5, 20))
+		var amt := CInt(cloth.amount * (Random(3)+1));
+		CreateItemInBackpack( character, 0x0e21, amt );
+		SendSysMessage( character, "You create " + amt + " bandages in your pack." );
+	else
+		SendSysMessage( character, "You destroy the cloth." );
+	endif
+
+		DestroyItem( cloth );
+	else
+		SendSysMessage( character, "You may only use that on cloth or sheep." );
+		return;
+	endif
+
+endprogram
+
+function Carvesheep(character, sheep, mex, mey)
+
+		  var difficulty := CInt(GetObjProperty(sheep,"wool"));
+
+	if (difficulty == 0 || difficulty == error)
+		  	SendSysMessage(character, "There is not enough wool here to shear");
+		  	return;
+	else
+		SendSysMessage(character, "You begin shearing...");
+	 	endif
+
+	var i, num_wools, theamount, wool_amount, distt;
+
+	num_wools := Random(3) + 2;
+
+	for(i := 1; i <= num_wools; i := i + 1)
+	 		PerformAction(character, UACTION_SHEAR);
+		PlaySoundEffect(character, 0x249);
+		sleep(1);
+		if ( (character.x != mex) || (character.y != mey)  )
+			SendSysMessage(character,"You stop shearing.");
+			 		return;
+		endif
+	endfor
+	if (CheckSkill(character, SKILLID_ANIMALLORE, 60-difficulty, 200))
+		  	var theroll := Random(100) + 1;
+	
+		if (theroll == 100)
+			SendSysMessage(character, "You have found a black pearl!");
+			CreateItemInBackpack(character, 0x0f7a, 1);
+			return;
+					  else
+	 	  wool_amount := Random(4) + 2;
+		  if (wool_amount > difficulty)
+ 			  wool_amount := difficulty;
+		  endif
+
+		i := difficulty - wool_amount;
+
+		  SetObjProperty(sheep,"wool",i);	
+		  CreateItemInBackpack(character, 0x0df8, wool_amount);
+		  SendSysMessage(character, "You put some wool in your backpack");
+
+		  if (i == 0)
+			  sheep.graphic :=0x00df;
+		  endif
+		  return;
+	endif
+	else
+		SendSysMessage(character, "You fail to get any usable wool.");
+		return;
+	endif
+endfunction

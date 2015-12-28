@@ -1,0 +1,28 @@
+use uo;
+
+include "include/constants/objtypes";
+
+program textcmd_createspawnpoint( who, range )
+
+	CreateItemAtLocation( who.x, who.y, who.z, 0xa300, 1 );
+         
+  if( !range )
+		range := 5;
+	endif
+
+	range := CInt(range);
+	if( !range )
+		SendSysMessage( who, "parameter must be a number" );
+		return 0;
+	endif
+
+	var counter :=1;
+
+	foreach spawnpoint in ListItemsNearLocationOfType( who.x, who.y, who.z, range, UOBJ_SPAWNPOINT )
+		if( spawnpoint.invisible )
+			spawnpoint.invisible := 0;
+			counter	:= counter + 1;
+		endif
+	endforeach
+
+endprogram

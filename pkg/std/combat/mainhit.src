@@ -1,0 +1,36 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+
+
+program mainhit(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+
+	if( attacker.serial = defender.serial )
+
+		var times := CInt( GetObjProperty( attacker , "#AttackedSelf" ) );
+
+		if( times > 3 )
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+			ApplyRawDamage( attacker , GetHp(attacker) );
+			return 0;
+		elseif( times )
+			times := times+1;
+			SetObjProperty( attacker , "#AttackedSelf" , times);
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+		else
+			SetObjProperty( attacker , "#AttackedSelf" , 1 );
+			SendSysMessage( attacker , "The god won't tolerate such a foolishness..." );
+			PlayLightningBoltEffect( attacker );
+		endif
+
+	endif
+
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage );
+	DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+endprogram
+

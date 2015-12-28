@@ -1,0 +1,46 @@
+////////////////////////////////////////////////////////////////////////////////////
+//										   			    //
+//      Piercing hitscript make a weapon to go through any armor deal a raw  	    //
+//      amount of damage, defined in the piercingDam porperty of the weapon.	    //
+//								  		   			    //
+////////////////////////////////////////////////////////////////////////////////////
+
+
+use uo;
+use os;
+
+include "include/hitscriptinc";
+include "include/damages";
+include "include/random";
+program bouncingonhit(parms)
+
+	var attacker 	 := parms[1];
+	var defender 	 := parms[2];
+	var weapon 	 := parms[3];
+	var armor 	 := parms[4];
+	var basedamage := parms[5];
+	var rawdamage	 := parms[6];
+	
+	var chance 	 := GetObjProperty( armor , "ChanceofEffect" );
+
+	if( GetObjProperty( armor , "Cursed" ) )
+		ApplyTheDamage( defender , attacker , Cint(rawdamage * 1.5) , DMGID_MAGIC );
+		return;
+	endif
+	
+	if( RandomDiceStr("1d100") <= chance )
+		var kickbackx := Random(10) - 5;
+		var kickbacky := Random(10) - 5;
+		var kickbackz := Random(10);
+		var newx	:= attacker.x + kickbackx;
+		var newy	:= attacker.y + kickbacky;
+		var newz	:= attacker.z + kickbackz;
+		
+		if( CheckLosAt( attacker , newx , newy , newz ) )
+			MoveCharacterToLocation( attacker , newx , newy , newz );
+		endif
+	endif
+				 	 
+	ApplyTheDamage( defender , attacker , rawdamage );
+
+endprogram

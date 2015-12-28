@@ -1,0 +1,100 @@
+use uo;
+use os;
+include "include/random";
+
+const SOUND_EFFECT_EAT1 := 0x3b;     
+const SOUND_EFFECT_EAT2 := 0x3c; 
+const SOUND_EFFECT_EAT3 := 0x3d; 
+const POISON_SOUND := 0x247;
+const EFFECT_SPARKLE  := 0x374a;
+const ACTION_EAT := 0x22;
+
+//fixme : return control to character after poison ingested
+
+program eat_food( character, food )
+
+ var retval;
+ var themsg;
+ var poison := CInt(GetObjProperty(food, "poison_level"));
+
+ var hungrylevel:=CInt(GetObjProperty(character, "hungrylevel"));
+ if (!hungrylevel)
+   hungrylevel :=10;
+   SetObjProperty(character, "hungrylevel", hungrylevel);
+   SendSysMessage(character, "You are full, and can't eat anything more.");   
+   return 0;
+   elseif (hungrylevel==10)
+     SendSysMessage(character, "You are full, and can't eat anything more.");   
+     return 0;
+ endif
+
+ SubtractAmount( food, 1);
+ PerformAction(character, ACTION_EAT);
+ if (poison > 0 )
+  SendSysMessage(character, "You have been poisoned!");   
+  var poison_level :=CInt(GetObjProperty(character, "poison_level"));
+  poison_level := poison_level + poison;
+  if (poison_level >= 15)
+	        poison_level := 15;
+  endif 
+  if ( poison_level > 0)
+ 
+  retval := SetObjProperty(character, "poison_level",CStr(poison_level));
+  else
+ 
+  retval := SetObjProperty(character, "poison_level",CStr(poison_level));
+  start_script( "spells/poisondamage", character );
+  endif
+      
+  SetObjProperty(character, "poison_level",CStr(poison_level));
+  start_script( ":spells:poisondamage", character );
+
+
+ else      
+ var rand_nbr := Random(3) + 1;
+ if (rand_nbr == 1)
+         PlaySoundEffect(character,SOUND_EFFECT_EAT1);
+         themsg := "Delicious!";
+ elseif (rand_nbr == 2)
+         PlaySoundEffect(character,SOUND_EFFECT_EAT2);
+         themsg := "Hmmm!";
+ else
+         PlaySoundEffect(character,SOUND_EFFECT_EAT3);
+         themsg := "Very Tasty!";
+        
+ endif
+ SendSysMessage(character, themsg);
+
+     hungrylevel:=hungrylevel+1;
+     if (hungrylevel>10)
+       hungrylevel:=10;
+     endif
+     SetObjProperty(character, "hungrylevel", hungrylevel);	     
+     if (hungrylevel==1)
+       themsg := "You are almost dieing of hungry";
+     elseif (hungrylevel==2)
+       themsg := "You are starving";
+     elseif (hungrylevel==3)      
+       themsg := "Your stomach hurts and you feel dizzy";
+     elseif (hungrylevel==4)      
+       themsg := "Your stomach hurts";
+     elseif (hungrylevel==5)      
+       themsg := "You are REALLY hungry";
+     elseif (hungrylevel==6)      
+       themsg := "You are somewhat hungry";
+     elseif (hungrylevel==7)      
+       themsg := "You are with little hungry";
+     elseif (hungrylevel==8)      
+       themsg := "You are not hungry";
+     elseif (hungrylevel==9)      
+       themsg := "You are full";
+     elseif (hungrylevel==10)      
+       themsg := "You are full, and can't eat anything more.";
+     endif
+     if (hungrylevel>1)
+       SetObjProperty(character,"hungrycount",0);
+     endif
+     SendSysMessage(character, themsg);     
+ endif
+
+endprogram

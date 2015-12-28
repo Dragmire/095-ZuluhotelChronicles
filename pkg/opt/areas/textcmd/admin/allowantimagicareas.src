@@ -1,0 +1,112 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/areas";
+
+program allowantimagicareas( who )
+
+	SendSysMessage( who, "Allow spellcasting in special areas to who?" );
+	var mobile := Target(who);
+	if( !mobile )
+		return 0;
+	endif
+
+	if( !mobile.IsA(POLCLASS_MOBILE) )
+		SendSysMessage( who, "you must target a player" );
+		return 0;
+	endif
+
+	var cfg		:= ReadConfigFile( ":areas:areas" );
+	var areas	:= GetConfigStringArray( cfg[1], "Area" );
+	var allowed	:= GetObjProperty( mobile, "AllowedAntiMagicAreas" );
+	if( !allowed )
+		allowed := array;
+	endif
+
+	var layout	:= array( "page 0",
+				  "nodispose",
+				  "resizepic 50  0   2600 250 325",
+				  "resizepic 100 280 5100 150 25",
+				  "text 115 30 5 0" );
+				
+	var data	:= array( "Allowed Areas" );
+
+	var name;
+	var splited;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 10;
+	var y 		:= 70;
+	var i;
+	var j;
+
+	layout.append( "page " + page );
+	if( areas.size() > perpage )
+		layout.append( "button 200 281 5540 5542 0 " + (page + 1) );
+	endif
+	
+	for( i := 1; i <= areas.size(); i := i + 1 )
+		if( done = perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 70;
+			
+			layout.append( "page " + page );
+			layout.append( "button 125 281 5537 5538 0 " + (page - 1) );
+			if( areas.size() > (count + perpage) )
+				layout.append( "button 200 281 5540 5542 0 " + (page + 1) );
+			endif
+		endif
+		
+		if( allowed[i] )
+			layout.append( "checkbox 250 " + y + " 210 211 1 " + i );
+		else
+			layout.append( "checkbox 250 " + y + " 210 211 0 " + i );
+		endif
+				
+		splited	:= SplitWords( areas[i] );
+		name	:= splited[5];
+		j := 6;
+		while( splited[j] )
+			name := name + " " + splited[j];
+			j := j + 1;
+		endwhile
+			
+		layout.append( "text 85 " + y + " 0 " + data.size() );
+		data.append( name );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+		Sleepms(1);
+	endfor
+	
+	var save;
+	var result := SendDialogGump( who, layout, data );
+	for( i := 1; i <= areas.size(); i := i + 1 )
+		if( result[i] )
+			allowed[i] := 1;
+			save := 1;
+		else
+			allowed[i] := 0;
+		endif
+	endfor
+	
+	if( save )
+		if( SetObjProperty( mobile, "AllowedAntiMagicAreas", allowed ) )
+			SendSysMessage( who, "Data saved" );
+			return 1;
+		endif
+	else
+		if( EraseObjProperty( mobile, "AllowedAntiMagicAreas" ) )
+			SendSysMessage( who, "Data saved" );
+			return 1;
+		endif
+	endif
+
+	SendSysMessage( who, "Error occured" );
+	return 0;
+
+endprogram

@@ -1,0 +1,53 @@
+Use uo;
+Use os;
+
+Include "include/client";
+
+Const UOBJECT_DUMMYSWING_EW := 0x1ec1;
+Const UOBJECT_DUMMYFREEZE_EW := 0x1ec0;
+Const UOBJECT_DUMMYSWING_NS := 0x1ec4;
+Const UOBJECT_DUMMYFREEZE_NS := 0x1ec3;
+
+Program Traing_Dummy( who, dummy )
+
+    If( !Accessible( who, dummy ) )
+    SendSysMessage( who, "You can't reach that!" );
+    Return;
+    Endif
+
+    If( !CheckLineOfSight( who, dummy ))
+    SendSysMessage( who, "You don't have line of sight to that." );
+    Return;
+    Endif
+    
+    If( ReadGameClock( ) < CInt( GetObjProperty( who, "#lastdiptrain" ) + 10 ) )
+    SendSysMessage( who, "You must wait some time before being able to train again." );
+    Return;
+    Endif
+    
+    SetObjProperty( who, "#lastdiptrain", ReadGameClock() );
+
+    If( CheckSkill( who, SKILLID_VETERINARY, -1, 110 ) )
+    PlaySoundEffect( who, SFX_58 );
+    SendSysMessage( who, "You successfully cured the " + dummy.desc );
+    Else
+    Set_Critical( 1 );
+
+    PlaySoundEffect( who, SFX_41 );
+    SendSysMessage( who, "You failed to cure the " + dummy.desc );
+
+      If( dummy.objtype == UOBJECT_DUMMYFREEZE_NS )
+      dummy.graphic := UOBJECT_DUMMYSWING_NS;
+      SleepMS( 3600 );
+      dummy.graphic := UOBJECT_DUMMYFREEZE_NS;
+      Elseif( dummy.objtype == UOBJECT_DUMMYFREEZE_EW )
+      dummy.graphic := UOBJECT_DUMMYSWING_EW;
+      SleepMS( 3600 );
+      dummy.graphic := UOBJECT_DUMMYFREEZE_EW;
+      Endif
+
+    Set_Critical( 0 );
+
+    Endif
+
+Endprogram

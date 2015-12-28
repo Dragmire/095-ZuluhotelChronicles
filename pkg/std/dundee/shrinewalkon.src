@@ -1,0 +1,63 @@
+use os;
+use uo;
+
+include "include/bitwise";
+include "include/client";
+include "include/dotempmods";
+include "include/res";
+
+const EFFECT_SPARKLE := 0x373a;
+const SOUND_EFFECT_RES := 0x215;
+
+program shrinewalkon( parms );
+
+	var who := parms[1];
+	var item := parms[2];
+
+	if (who.isA(POLCLASS_NPC)) return; endif
+
+	if (who.poisoned)
+		CurePoison(who,0,"Cured!");
+	endif
+
+	set_critical( 1 );
+	if( who.dead )
+		PlaySoundEffect( who, SOUND_EFFECT_RES );
+		ResurrectMobile( who );
+		PlayObjectCenteredEffect( who, EFFECT_SPARKLE, 10,10);
+		return;
+	endif
+
+	var shrine:= GetObjProperty(item,"shrine");
+	if ( shrine )
+		var shrineflag := GetObjProperty(who,"shrines");
+		if (!shrineflag) shrineflag := 0; endif
+		if (!FlagCheck(shrineflag, shrine))
+			shrineflag := FlagSet(shrineflag, shrine);
+
+			PlaySoundEffect( who, SFX_1F3 );
+			PlayObjectCenteredEffect( who, EFFECT_SPARKLE, 10,10);
+
+			SetObjProperty(who,"shrines",shrineflag);
+			PrintTextAbovePrivate(who,"You meditate at the shrine of " +
+				ShrineName(shrine), who);
+			AwardKarma( who, 250 );
+		endif
+	endif
+
+endprogram
+
+function ShrineName(shrine)
+
+	case (shrine)
+	1: return "Sacrifice";
+	2: return "Spirituality";
+	3: return "Justice";
+	4: return "Humility";
+	5: return "Honor";
+	6: return "Honesty";
+	7: return "Compassion";
+	8: return "Valor";
+	endcase
+
+endfunction

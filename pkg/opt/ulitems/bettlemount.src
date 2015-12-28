@@ -1,0 +1,35 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Feb 10, 2004.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+
+Program Horse_Mount( who, item )
+
+    If( !ReserveItem( item ) )
+    Return;
+    Endif
+
+   var mounttype := 0x3F10;
+
+    var alreadymounted := GetEquipmentByLayer( who, 25 );
+    if( alreadymounted )
+      SendSysMessage( who , "You are already mounted." );
+      return 0;
+    endif
+    if( mounttype )
+      var mount     := CreateItemAtLocation( who.x, who.y, who.z, 0xF021, 1 );
+      mount.movable := 1;
+      mount.color := item.color;
+      mount.graphic := mounttype;
+      EquipItem( who, mount );
+      mount.movable := 0;
+      SendSysMessage( who, "You mount the bettle." );
+      SetObjProperty( who, "DMount", 1 );
+    endif
+
+EndProgram

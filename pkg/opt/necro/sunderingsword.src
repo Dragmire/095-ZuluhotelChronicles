@@ -1,0 +1,30 @@
+use uo;
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/npcbackpacks";
+
+program use_sunderingsword(who, sword)
+
+	SendSysMessage(who, "Select Target.");
+	var casttarg := Target(who);
+
+	if (!casttarg)
+		SendSysMessage(who, "canceled.");
+		return;
+	endif
+
+	var summoncheck := GetObjProperty(casttarg, "summoned");
+	if (summoncheck != 1)
+		SendSysMessage(who, "Invalid target.");
+		return;
+	endif
+
+	PrintTextAbove(casttarg, casttarg.name + " has been destroyed!");
+	PlaySoundEffect(casttarg, 0x202);
+	PlayObjectCenteredEffect(casttarg, 0x375a, 1, 0x10);
+	ApplyRawDamage(casttarg, GetHp(casttarg)+3);
+	return;
+
+endprogram

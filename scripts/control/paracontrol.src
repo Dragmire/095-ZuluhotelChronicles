@@ -1,0 +1,54 @@
+use uo;
+use os;
+use cfgfile;
+
+
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+
+const DELAY_BETWEEN_CHECKS_MS	:= 1000;
+
+program para_control( item )
+
+	var diff     := 50;
+	var points   := 25;
+	var duration := 10;
+	var creator := 0;
+	var serial  := CInt( GetObjProperty( item, "Creator" ) );
+
+	if( GetObjProperty( item, "ByTrueMage" ) )
+		diff := CInt( diff * CLASSE_BONUS );
+		points := CInt( points / CLASSE_BONUS );
+		duration := CInt( duration * CLASSE_BONUS );
+	endif
+
+	if( serial )
+		creator := SystemFindObjectBySerial( serial );
+		if( !creator )
+			creator := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+		endif
+
+		if(creator)
+			SetScriptController(creator);
+		endif
+	endif
+
+	while( item )
+		PlaySoundEffect( item, SFX_SPELL_PARALYZE_FIELD );
+		foreach mobile in ListMobilesNearLocation( CInt(item.x), CInt(item.y), CInt(item.z), 0 )
+			if( CanMod( mobile, "p" ) )
+				if( !GetObjProperty( mobile, "FreeAction" ) )
+					if( !CheckSkill( mobile, SKILLID_MAGICRESISTANCE, diff, points ) )
+						PlayObjectCenteredEffect( mobile, FX_SPELL_PARALYZE, SPEED_SPELL_PARALYZE, LOOP_SPELL_PARALYZE );
+						PlaySoundEffect( mobile, SFX_SPELL_PARALYZE );
+						DoTempMod( mobile, "p", 1, duration );
+					endif
+				endif
+			endif
+		endforeach
+	
+		sleepms( DELAY_BETWEEN_CHECKS_MS );
+	endwhile
+ 
+endprogram

@@ -1,0 +1,34 @@
+use uo;
+
+program textcmd_bcast( who, text )
+
+	if( !text )
+		SendSysMessage( who, "Usage is : .staff <msg>" );
+	else
+		var color;
+		var words := SplitWords(text);
+		var min_cmdlevel := 1;
+		if( Cint(words[1][1]) )
+			if( words[1][":"] )
+				min_cmdlevel := Cint(words[1][1]);
+				text := text - (words[1]+" ");
+			endif
+		endif
+		
+		if( min_cmdlevel > 5 )
+			SendSysMessage( who, "You can't set a minimum cmdlevel above 5." );
+			return 0;
+		endif
+		
+		text := who.name + " (Staff): " + text;
+		
+		color := 130;
+				
+		foreach character in EnumerateOnlineCharacters()
+			if( character.cmdlevel >= min_cmdlevel )
+				SendSysMessage( character, text, 3, color );
+			endif
+		endforeach
+	endif
+	
+endprogram

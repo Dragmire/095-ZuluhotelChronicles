@@ -1,0 +1,589 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//	Tailoring: Original Code by Racalac
+//	Updated: 8/25/1999	 By: Sentack
+//	TODO: Move all the UOBJ objects to "include/objtype.inc"
+//
+//	NOTES: Lines 129 and 196 are optional statments that are designed to
+//		replace lines 127 and 194.	They are used to remove a random amount of
+//		cloth from the players inventory instead of just one unit of cloth
+//		as does the OSI way of dealing with failer.	Sometimes you lose a little
+//		while other times you lose a lot.	But never more then the amount of
+//		cloth the object original was going to take.
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use cfgfile;
+use os;
+use math;
+
+include "include/yesno";
+include "include/objtype";
+include "include/client";
+include "include/string";
+include "include/classes";
+include "include/itemutil";
+include "include/random";
+include "util/repair";
+include "include/autoloop";
+
+const SCISSORS_SOUND    := 0x0249;
+const ID_HIDES          := 1;
+const ID_CLOTH          := 2;
+const DIVIDER           := 3;
+const APPEAR_AT         := -10;
+const POINTS_MULTIPLIER := 20;
+//const FAME_BONUS        := 100;
+
+var tailor_cfg          := ReadConfigFile( "tailoring" );
+var tailor_items        := ReadConfigFile( ":tailoring:itemdesc" );
+var resource_diff       := 0;
+var resource_qual       := 1;
+var resource_name;
+
+program use_sewing_kit( character, sewing_kit )
+	
+
+	if( !ReserveItem( sewing_kit ) )
+		return;
+	endif
+
+	var item;
+
+	SendSysmessage( character, "What would you like to use that on?" );
+	var use_on := Target( character, TGTOPT_CHECK_LOS );
+
+	if( !use_on )
+		return;
+	endif
+
+	if( !Accessible( character, use_on ) )
+		SendSysMessage( character, "You can't reach that." );
+		return;
+	endif
+
+	if( !ReserveItem(use_on) )
+		return;
+	endif
+
+	if( !IsInContainer( character.backpack, use_on ) )
+		SendSysmessage( character, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( IsHat( use_on ) and use_on.hp == use_on.maxhp )
+		FortifyHat( character, use_on );
+
+	elseif( use_on.hp and use_on.quality and tailor_items[use_on.objtype] )
+		repair_item( character, use_on, SKILLID_TAILORING );
+
+	elseif( IsHide( use_on.objtype ) )
+		item := MakeAndProcessMenu( character, use_on, ID_HIDES );
+
+	elseif( use_on.objtype == UOBJ_MUTLI_CLOTH )
+		item := MakeAndProcessMenu( character, use_on, ID_CLOTH );
+
+	else
+		SendSysMessage( character, "You don't know how to use those items together." );
+	endif
+
+	item := item.objtype;
+	if( !item )
+		return;
+	endif
+
+	TryToMakeItem( character, use_on, item );
+
+endprogram
+
+
+function MakeAndProcessMenu( character, use_on, id )
+
+	resource_diff := tailor_cfg[use_on.objtype].Difficulty;
+
+	var skill := GetAttribute( character, SKILLID_TAILORING );
+	if( skill < resource_diff )
+		SendSysmessage( character, "You aren't skilled enough to make anything with this yet." );
+		return;
+	endif
+
+	resource_name := tailor_cfg[use_on.objtype].Name;
+	resource_qual := tailor_cfg[use_on.objtype].Quality;
+
+	var elemkeys := GetConfigStringKeys( tailor_cfg );
+	var can_make;
+	var choice;
+
+	var menu := CreateMenu( "What would you like to make?" );
+
+	case( id )
+
+		ID_HIDES:
+			AddMenuItem( menu, 0x13CC, "Leather Armors" );
+			AddMenuItem( menu, 0x13DB, "Studded Leather Armors" );
+			AddMenuItem( menu, 0x1C02, "Females Armors" );
+			AddMenuItem( menu, 0x1711, "Shoes" );
+			AddMenuItem( menu, 0x141b, "Misc" );
+			AddMenuItem( menu, 0x0E76, "Containers" );
+			break;
+
+		ID_CLOTH:
+			AddMenuItem( menu, 0x1517, "Shirts" );
+			AddMenuItem( menu, 0x1539, "Pants" );
+			AddMenuItem( menu, 0x1713, "Caps" );
+			AddMenuItem( menu, 0x153D, "Misc" );
+			AddMenuItem( menu, 0x0AD1, "Carpet" );
+			break;
+
+	endcase
+
+	choice := SelectMenuItem2( character, menu ).index;
+	if( !choice )
+		return;
+	endif
+
+	choice := (id * 10) + choice;
+
+	menu := CreateMenu( "What would you like to make?" );
+
+	foreach key in elemkeys
+		if( tailor_cfg[key].Type == choice )
+			if( CanMake( character, key, use_on ) )
+				AddMenuItem( menu, Cint(key), tailor_cfg[key].Name );
+				can_make := 1;
+			endif
+		endif
+	endforeach
+
+	if( can_make )
+		return SelectMenuItem2( character, menu );
+	else
+		SendSysmessage( character, "You can't make anything of this category." );
+		return;
+	endif
+
+endfunction
+
+
+function CanMake( who, key, resource )
+
+	var diff := tailor_cfg[key].Skill + Cint( resource_diff / DIVIDER );
+	if( diff < 1 )
+		diff := 1;
+	elseif( diff > 130 )
+		diff := 130;
+	endif
+
+	if( GetAttribute( who, SKILLID_TAILORING ) >= ( diff + APPEAR_AT ) )
+		if( resource.amount >= tailor_cfg[key].Material )
+			return 1;
+		endif
+	endif
+
+	return 0;
+
+endfunction
+
+
+function TryToMakeItem( character, resource, to_make_objtype )
+
+	var skill;
+	var element;
+	var material;
+	var points;
+	var itemname;
+	var speccolor;
+
+	element := FindConfigElem( tailor_cfg, to_make_objtype );
+	if( element )
+		material	:= element.Material;
+	else
+		return;
+	endif
+
+	AutoLoop_init( character );
+	while( AutoLoop_more() && ( resource.amount >= material ) && NOT character.dead)
+
+		skill := element.Skill;
+		skill := skill + CInt( resource_diff / DIVIDER );
+
+		if( skill < 1 )
+			skill := 1;
+		elseif( skill > 140 )
+			skill := 140;
+		endif
+
+		points	:= CInt( (skill + material) * POINTS_MULTIPLIER );
+
+		itemname := element.Name;
+
+		PlaySound( character );
+
+		if( CheckSkill( character, SKILLID_TAILORING, skill, points ) )
+
+			var theitem;
+			if( to_make_objtype == UOBJ_BANDAGE )
+				material := resource.amount;
+				theitem := CreateItemInBackpack( character, to_make_objtype, CInt( material / 4 ) );
+			else
+				theitem := CreateItemInBackpack( character, to_make_objtype );
+			endif
+
+			if( theitem )
+
+				var excep_ch := 10;
+				var cprops   := GetConfigStringArray( tailor_cfg[resource.objtype], "CProp" );
+				var item_cfg := ReadConfigFile( ":*:itemdesc" );
+
+				//var sell_price := item_cfg[to_make_objtype].VendorBuysFor;
+
+				if( resource_name )
+					itemname := resource_name + " " + itemname;
+				endif
+
+				if( theitem.quality and resource_qual )
+					theitem.quality := resource_qual;
+				endif
+
+				if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+					excep_ch := Cint( excep_ch * ClasseBonus( character, CLASSEID_CRAFTER ) );
+				else
+					skill := skill + 20;
+				endif
+
+				if( skill < 90 )
+					skill := 90;
+				endif
+
+				if( ( Random(100) < excep_ch ) && CheckSkill( character, SKILLID_TAILORING, skill, 0 ) )
+
+					//Made something Exceptional
+					if( theitem.quality )
+
+						var armslore := GetAttribute( character, SKILLID_ARMSLORE );
+						var multiplier := 5 + Cint( armslore / 10 );
+
+						if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+							multiplier := Cint( multiplier * ClasseBonus( character, CLASSEID_CRAFTER ) );
+						endif
+
+						multiplier := 100 + multiplier;
+						var newquality := Cint(theitem.quality * multiplier);
+						newquality := Cdbl(newquality);
+						newquality := newquality / 100;
+						theitem.quality := newquality;
+					endif
+
+					itemname := "Exceptional " + itemname;
+					itemname := itemname + " [Crafted by " + character.name + "]";
+
+					
+					/*if( sell_price )
+						theitem.buyprice := Cint( sell_price * 2 );
+					endif*/
+					
+
+					SendSysmessage( character, "You make an exceptional item and put it in your pack" );
+					SetObjProperty( theitem, "IsExceptional", 1 );
+					if( skill >= 130 )
+						SendSysmessage( character, "This masterpiece will make you famous around the world." );
+						//AwardFame( character, FAME_BONUS );
+					elseif( GetObjProperty( character, CLASSEID_CRAFTER ) and skill >= 110 )
+						SendSysmessage( character, "This masterpiece will make you famous around the world." );
+						//AwardFame( character, FAME_BONUS );
+					endif
+					if ( Random(20) < 3)
+						speccolor := SpecialColor();
+						theitem.color := speccolor;
+						SendSysMessage( character, "The Stained Sewing Kit rubs off some color on the item." );
+					endif
+				else
+
+					//Made a normal item
+					SendSysmessage( character, "You create the item and place it in your pack." );
+				endif
+
+				if( Len( cprops ) && ( theitem.equipscript == "::skilladvancerequip" ) )
+					foreach cprop in cprops
+						var splited := SplitWords( cprop );
+						var prop_name := splited[1];
+						var prop_mod  := Cint(splited[2]);
+						if( prop_name and prop_mod )
+							var presently := GetObjProperty( theitem, prop_name );
+							if( !presently )
+								presently := 0;
+							endif
+
+							if( presently and abs(prop_mod) > abs(presently) )
+								prop_mod := 0 - presently;
+							endif
+
+							var resulting := presently + prop_mod;
+							if( resulting > 0 and prop_name == "DefaultDex" )
+								resulting := 0;
+							endif
+
+							if( resulting  )
+								SetObjProperty( theitem, prop_name, resulting );
+							elseif( presently )
+								EraseObjProperty( theitem, prop_name );
+							endif
+						endif
+					endforeach
+				endif
+
+				theitem.hp := theitem.maxhp;
+				if(!speccolor)
+					theitem.color := resource.color;
+				endif
+				SubtractAmount( resource, material );
+				SetObjProperty( theitem, "BaseName", itemname );
+				SetName( theitem, itemname );
+
+
+				/*if( sell_price )
+					if( theitem.quality )
+						theitem.buyprice := Cint( Pow( sell_price, theitem.quality ) );
+					elseif( resource_qual )
+						theitem.buyprice := Cint( Pow( sell_price, resource_qual ) );
+					endif
+				endif*/
+
+			else
+				SubtractAmount( resource, material );
+				AutoLoop_finish();
+				SendSysmessage( character, "Your backpack is full." );
+				return;
+			endif
+
+		else
+
+			var tail := GetAttribute( character, SKILLID_TAILORING );
+			var destroy := 75 - CInt( tail / 2 );
+			if( GetObjProperty( character, CLASSEID_CRAFTER ) )
+				destroy := Cint( destroy / ClasseBonus( character, CLASSEID_CRAFTER ) );
+			endif
+
+			if( destroy > 50 )
+				destroy	:= 50;
+			endif
+
+			destroy	:= Cint( material * destroy / 100 );
+			if( destroy < 1 )
+				destroy	:= 1;
+			endif
+
+			SubtractAmount( resource, destroy );
+			SendSysmessage( character, "You destroyed " + destroy + " " + GetresourceName( resource ) + "." );
+
+		endif
+	endwhile
+
+	AutoLoop_finish();
+
+endfunction
+
+
+function GetresourceName( resource )
+
+	var t_name := resource.desc;
+
+	if( resource.amount > 1 )
+		var i := len( t_name );
+		var amt := resource.amount;
+		var count := 2;
+		while( Cint(amt / 10) )
+			count := count + 1;
+			amt := Cint( amt / 10 );
+		endwhile
+
+		t_name := t_name[count+1, i - count];
+	endif
+
+	return t_name;
+
+endfunction
+
+
+function PlaySound( character )
+
+	PlaySoundEffect( character, SCISSORS_SOUND );
+	Sleep( 1 );
+	PlaySoundEffect( character, SCISSORS_SOUND );
+	Sleep( 1 );
+
+endfunction
+
+
+function IsHide( objtype )
+
+	if( objtype == UOBJ_HIDE1 or objtype == UOBJ_HIDE2 )
+		return 1;
+	elseif( objtype >= UOBJ_HIDES_START and objtype <= UOBJ_HIDES_END )
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction
+
+
+function FortifyHat( who, hat )
+
+	SendSysMessage( who, "Fortify this hat with what?" );
+	var helm := Target( who, TGTOPT_CHECK_LOS );
+	if( !helm )
+		return;
+	endif
+
+	if( !IsHelm(helm) )
+		SendSysMessage( who, "That's not a helmet." );
+		return;
+	endif
+
+	if( !ReserveItem(helm) )
+		return 0;
+	endif
+
+	if( !IsInContainer( who.backpack, helm ) )
+		SendSysmessage( who, "The helm have to be in your backpack." );
+		return;
+	endif
+
+	PlaySound( who );
+
+	if( !CheckSkill( who, SKILLID_TAILORING, -1, 250 ) )
+		SendSysMessage( who, "You fail and ruin both, the hat and the helm." );
+		DestroyItem( hat );
+		DestroyItem( helm );
+		return;
+	endif
+
+	DupeItem( hat, helm );
+	SetName( helm, "a fortified " + TruncateArticle(hat.desc) );
+	DestroyItem( hat );
+
+endfunction
+
+
+function IsHat( what )
+
+	case( what.graphic )
+		0x153F:
+		0x1540:
+		0x1543:
+		0x1544:
+		0x1713:
+		0x1714:
+		0x1715:
+		0x1716:
+		0x1717:
+		0x1718:
+		0x1719:
+		0x171A:
+		0x171B:
+		0x171C:		return 1;
+
+		default:	return 0;
+	endcase
+
+endfunction
+
+
+function IsHelm( what )
+
+	case (what.graphic)
+		0x13BB:
+		0x13C0:
+		0x1408:
+		0x1409:
+		0x140A:
+		0x140B:
+		0x140C:
+		0x140D:
+		0x140E:
+		0x140F:
+		0x1412:
+		0x1419:
+		0x1451:
+		0x1456:
+		0x1DB9:
+		0x1DBA:		return 1;
+				break;
+
+		default:	return 0;
+	endcase
+
+endfunction
+
+Function SpecialColor()
+	
+	var tnum := Random(30)+1;
+	var color;
+
+	Case( tnum )
+
+		1:	color := 1160;
+			break;
+		2:	color := 1167;
+			break;
+		3:	color := 1169;
+			break;
+		4:	color := 1273;
+			break;
+		5:	color := 1277;
+			break;
+		6:	color := 1280;
+			break;
+		7:	color := 1281;
+			break;
+		8:	color := 1289;
+			break;
+		9:	color := 1301;
+			break;
+		10:	color := 1302;
+			break;
+		11:	color := 1303;
+			break;
+		12:	color := 1300;
+			break;
+		13:	color := 1305;
+			break;
+		14:	color := 2452;
+			break;
+		15:	color := 2454;
+			break;
+		16:	color := 2455;
+			break;
+		17:	color := 2469;
+			break;
+		18:	color := 2461;
+			break;
+		19:	color := 2466;
+			break;
+		20:	color := 2467;
+			break;
+		21:	color := 2531;
+			break;
+		22:	color := 2539;
+			break;
+		23:	color := 2536;
+			break;
+		24:	color := 2543;
+			break;
+		25:	color := 2628;
+			break;
+		26:	color := 2627;
+			break;
+		27:	color := 2635;
+			break;
+		28:	color := 2640;
+			break;
+		29:	color := 2634;
+			break;
+		30:	color := 2633;
+			break;
+	endcase
+	return color;
+endfunction
+	

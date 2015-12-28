@@ -1,0 +1,1057 @@
+use npc;
+use basic;
+use cfgfile;
+use os;
+use uo;
+
+include "include/dotempmods";
+include "include/attributes";
+include "include/eventid";
+include "include/npcbackpacks";
+include "include/randname";
+include "include/utility";
+include "include/mrcspawn";
+include "include/speech";
+include "include/myutil";
+include "ai/setup/modsetup";
+include "ai/main/sleepmode";
+include "include/random";
+
+const REACT_THRESHOLD := 3;
+const RESPAWN_MINUTES := 30;
+const MAXFRIENDS      := 3;
+const MAX_SKILLS      := 48;
+
+var me := Self();
+var storage, inv_fs, inv_pb, inv_1c;
+
+storage := FindStorageArea( "Merchant Storage" );
+if (!storage)
+	exit;
+endif
+
+inv_fs := find_or_create_item( storage, me.serial + " FS", 0xe7c );
+inv_pb := find_or_create_item( storage, me.serial + " PB", 0xe7c );
+inv_1c := find_or_create_item( storage, me.serial + " 1C", 0xe7c );
+
+if (!inv_fs || !inv_pb || !inv_1c)
+	exit;
+endif
+
+var speech;
+var merchant_type;
+var currentmoney;
+
+SetSpeechAndType();
+
+if( me.name["<random>"] )
+	SetMeUp();
+endif
+
+EnableEvents( REACT_THRESHOLD );
+
+program merchantai()
+
+	if ( me.graphic == 401 )
+		me.gender := 1;
+	endif
+	me.graphic := 400 + me.gender;
+
+	var next_restock := ReadGameClock() + RESPAWN_MINUTES*60;
+
+	WalkHome();
+
+	EnableMainEvents();
+
+	var mydestx := 0;
+	var mydesty := 0;
+	var steps   := 0;
+	var wanders := 60;
+	var next_wander := ReadGameClock();
+
+	while (1)
+	var ev;
+		if (me.hidden)
+			me.hidden := 0;
+		endif
+
+			ev := os::wait_for_event( 120 );
+
+		if (ev)
+  
+	case (ev.type)
+
+		SYSEVENT_ENGAGED:
+			say( ev.source.name + ", I'll call a guard, if you don't stop that!");
+			SYSEVENT_DAMAGED:
+			SetHp(me, me.maxhp);
+			if( me.poisoned ) CurePoison( me ); endif
+			// ev.source.hp := 0; hploss removed
+			say("Help guards!!! I'm being attacked!!");
+			SetObjProperty(me, "guardkill", 1);
+			start_script( ":areas:callguards", me );
+			sleep(5);
+			say("You scoundrel!!!");
+
+			foreach chr in EnumerateOnlineCharacters()
+				if (chr.cmdlevel>0)
+					SendSysMessage(chr, CStr(ev.source.name + " is attacking an invul NPC!!!"), 3, 130);
+				endif
+			endforeach
+			me.hidden := 1;
+			sleep(200);
+			me.hidden := 0;
+
+		SYSEVENT_ENTEREDAREA:
+			YellToFriend(ev.source);
+
+		SYSEVENT_SPEECH:
+			TurnToward(ev.source);
+			if (ev.text["buy"])
+				var res;
+				foreach item in (ev.source.backpack)
+					if(item.objtype == 0xeed)
+					     ReserveItem(item);
+					endif
+				endforeach
+				res := SendBuyWindow( ev.source, inv_fs, me, inv_pb );
+				foreach item in (ev.source.backpack)
+					if(item.objtype == 0xeed)
+					     ReleaseItem(item);
+					endif
+				endforeach
+				if (!res)
+					print( "SendBuyWindow failed: " + res.errortext );
+				endif
+			elseif (ev.text["sell all"])
+				BuyAll(ev.source);
+
+			elseif (ev.text["sell bag"])
+				BuyBag(ev.source);
+
+			elseif (ev.text["sell many"])
+				BuyMany(ev.source);
+			elseif (ev.text["sell"])
+				sell(me, ev.source );
+
+
+
+
+				/*set_priority( 1 );
+				currentmoney:= CheckMoney(ev.source);
+				var res := SendSellWindow( ev.source, me, inv_fs, inv_pb, inv_1c );
+				if (res)
+					PrintTextAbovePrivate( me, "Can I help thee?", ev.source );
+				else
+					print( "SendSellWindow failed: " + res.errortext );
+				endif
+				set_priority( 50 );*/
+			elseif ( ev.text["vendor train"] || ev.text["merchant train"] )
+				TurnToward( ev.source );
+				MerchantTrain( me, ev.source, ev.text );
+			else
+				check_speech(ev.text, ev.source);
+			endif
+
+		SYSEVENT_MERCHANT_BOUGHT:
+			TurnToward( ev.source );
+			PrintTextAbovePrivate( me, "The total of your sale is " + ev.amount, ev.source );
+			LogSold(ev.source);
+			set_priority( 50 );
+			SetObjProperty(me, "restock", 1);
+			var currentamount := CheckMoney(ev.source)-currentmoney;
+			var newamount := ev.amount - currentamount;
+			while( newamount > 60000 )
+				CreateItemInBackpack( ev.source, UOBJ_GOLD_COIN, 60000 );
+				newamount := newamount - 60000;
+			endwhile
+			if( newamount > 0 ) CreateItemInBackpack( ev.source, UOBJ_GOLD_COIN, newamount ); endif
+			newamount := 0;
+
+		SYSEVENT_MERCHANT_SOLD:
+			TurnToward( ev.source );
+			PrintTextAbovePrivate( me, "The total of your purchase is " + ev.amount, ev.source );
+			SetObjProperty(me, "restock", 1);
+
+		SYSEVENT_ITEM_GIVEN:
+			if( ev.item.objtype == 0xeed )
+				TrainSkill( me, ev.source, ev.item );
+			else
+				TakeItem(ev.source, ev.item);
+			endif
+
+	endcase
+
+		elseif (ReadGameClock() > next_restock)
+			if ( GetObjProperty(me, "restock") )
+				RestockInventory( merchant_type, inv_fs );
+				EraseObjProperty(me, "restock");
+			endif
+			next_restock := ReadGameClock() + RESPAWN_MINUTES*60;
+		endif
+
+	endwhile
+
+endprogram
+
+function BuyMany(you)
+
+	var itemdesc := ReadConfigFile("::itemdesc");
+	PrintTextAbovePrivate( me, "What would you like me to buy all of?", you );
+	var items := Target(you);
+	if ( (!items) || (not Accessible(you, items)) )
+		return;
+	endif
+
+	var elem := FindConfigElem(itemdesc, items.objtype);
+	if (!elem)
+		return;
+	endif
+
+	var itemprice := GetConfigInt(elem, "vendorbuysfor");
+	var theobjtype := items.objtype;
+	var thecolor := items.color;
+	var thecontainer := items.container.serial;
+	var thename;
+
+	if (items.name)
+		thename := items.name;
+	endif
+
+	if (!itemprice)
+		return;
+	endif
+//zeeber changed this bit below in the if
+	var totalsale := 0;
+	var itemamount := 0;
+	foreach item in EnumerateItemsInContainer(you.backpack)
+		if ( (item.objtype == theobjtype) &&
+		     (item.color == thecolor) &&
+		     (item.container.serial == thecontainer) &&
+		     (!item.newbie) && (!IsMagic(item)) && (!IsContainer(item))  && (!(item.movable==0)) )
+			if ( ((!thename) && (!item.name)) || (item.name == thename) )
+				if (!GetObjProperty(item, "ownerserial") && ReserveItem( item))
+					itemamount := item.amount;
+					if (totalsale + (itemprice * itemamount) < 50000)
+						if (DestroyItem(item))
+							totalsale := totalsale + (itemprice * itemamount);
+							sleepms(100);
+							if (totalsale > 50000)
+								break;
+							endif
+						endif
+					else
+						say("That's too much!");
+						break;
+					endif
+				else
+					say(item.desc + " is marked!");
+				endif
+			endif
+		endif
+	endforeach
+
+	PrintTextAbovePrivate( me, "The total of your sale is " + totalsale, you );
+	CreateItemInContainer(you.backpack, "goldcoin", totalsale);
+
+	LogSold(you);
+
+endfunction
+
+function BuyAll(you)
+
+	var itemdesc := ReadConfigFile(":*:itemdesc");
+	PrintTextAbovePrivate( me, "What would you like me to buy all of?", you );
+	var items := Target(you);
+	if ( (!items) || (not Accessible(you, items)) )
+		return;
+	endif
+
+	var elem := FindConfigElem(itemdesc, items.objtype);
+
+	if (!elem)
+		return;
+	endif
+
+	var itemprice := GetConfigInt(elem, "vendorbuysfor");
+
+	if (!itemprice) return; endif
+
+
+	if ( itemprice > 60000 )
+		if (!ReserveItem(items)) return; endif
+		say("Ooh, an expensive one!");
+		while (itemprice > 60000)
+			CreateItemInContainer(you.backpack, "goldcoin", 60000);
+			itemprice := itemprice - 60000;
+		endwhile
+		CreateItemInContainer(you.backpack, "goldcoin", itemprice);
+		DestroyItem(items);
+		return;
+	endif
+
+	var theobjtype := items.objtype;
+	var thecolor := items.color;
+	var thecontainer := items.container.serial;
+
+	if (!itemprice)
+		return;
+	endif
+//zeeber changed this bit same again
+	var totalsale := 0;
+	var itemamount := 0;
+	foreach item in EnumerateItemsInContainer(you.backpack)
+		if ( (item.objtype == theobjtype) &&
+		     (item.color == thecolor) &&
+		     (!item.newbie) &&
+			(item.container.serial == thecontainer) &&
+		     (!IsMagic(item)) && (!IsContainer(item)) )
+			if (!GetObjProperty(item, "ownerserial") && ReserveItem( item ))
+				itemamount := item.amount;
+				if (totalsale + (itemprice * itemamount) <= 60000)
+				if (DestroyItem(item))
+					totalsale := totalsale + (itemprice * itemamount);
+					sleepms(100);
+					if (totalsale > 60000)
+						break;
+					endif
+				endif
+				else
+					say("That's too much!");
+					break;
+				endif
+			else
+				say(item.desc + " is marked!");
+			endif
+		endif
+	endforeach
+
+	PrintTextAbovePrivate( me, "The total of your sale is " + totalsale, you );
+	CreateItemInContainer(you.backpack, "goldcoin", totalsale);
+
+	LogSold(you);
+
+endfunction
+
+function LogSold(who)
+
+	var cfg;
+	var elemkey := who.name + "(" + who.acctname + ")";
+
+	var logfile := { };
+	var prop:= { };
+    	prop .+ pname;
+    	prop .+ pvalue;
+
+	foreach item in EnumerateItemsInContainer( inv_pb )
+		if ( (GetObjProperty(item, "ownerserial")) &&
+		   (GetObjProperty(item, "ownerserial") != who.serial) )
+			prop.pname := "Owned by: "+ GetObjProperty(item, "ownername");
+			prop.pvalue := "item: " + item.name;
+			logfile.append( prop );
+		endif
+		DestroyItem( item );
+	endforeach
+
+	if ( len(logfile) )
+		AppendConfigFileElem( "itemssold", "SOLD BY", elemkey, logfile );
+		UnloadConfigFile("itemssold");
+	endif
+
+endfunction
+
+function BuyBag(you)
+
+	var itemdesc := ReadConfigFile(":*:itemdesc");
+	PrintTextAbovePrivate( me, "I do not buy containers!", you );
+	return;
+/*	var bag := Target(you);
+
+	if (!bag)
+		return;
+	endif
+
+	if ( bag.serial != you.backpack.serial )
+		var inpack := 0;
+		foreach item in EnumerateItemsInContainer(you.backpack)
+			if (bag.serial == item.serial)
+				inpack := 1;
+				break;
+			endif
+		endforeach
+		if (!inpack)
+			say("That bag isn't in your inventory.");
+			return;
+		endif
+	endif
+
+	var elem;
+	var itemprice;
+	var itemamount;
+	var totalsale := 0;
+
+    foreach item in ListRootItemsInContainer(bag)
+		ReleaseItem(item);
+		
+		elem := FindConfigElem(itemdesc, item.objtype);
+		if (elem)
+			itemprice := GetConfigInt(elem, "vendorbuysfor");
+			itemamount := item.amount;
+			if ( (itemprice) && (!item.newbie) &&
+				(item.objtype != 0xeed) && (!IsContainer(item)) &&
+				(!IsMagic(item)) && ( ReleaseItem( item ) ) )
+
+				if (!GetObjProperty(item, "ownerserial"))
+
+				if (totalsale + (itemprice * itemamount) < 50000)
+					totalsale := totalsale + (itemprice * itemamount);
+					var dii := DestroyItem(item);
+					sleepms(100);
+					if (totalsale > 50000)
+						break;
+					endif
+				else
+					ReleaseItem(item);
+					break;
+				endif
+				else
+					ReleaseItem(item);
+					say(item.desc + " is marked!");
+				endif
+			endif
+		endif
+	endforeach
+
+	PrintTextAbovePrivate( me, "The total of your sale is " + totalsale, you );
+	CreateItemInContainer(you.backpack, "goldcoin", totalsale);
+
+	LogSold(you);*/
+
+endfunction
+
+function WalkHome()
+
+	var myhome := {};
+	if (!GetObjProperty(me, "myhome"))
+		myhome[1] := me.x;
+		myhome[2] := me.y;
+		SetObjProperty(me, "myhome", myhome);
+	else
+		myhome := GetObjProperty(me, "myhome");
+	endif
+
+	if ( me.x == myhome[1] && me.y == myhome[2] )
+		SetAnchor( me.x, me.y, 3, 80 );
+		return;
+	endif
+
+	var i;
+	for (i := 1; i < 11; i := i + 1)
+		WalkTowardLocation(myhome[1], myhome[2]);
+		if (me.x == myhome[1] && me.y == myhome[2] )
+			break;
+		endif
+	endfor
+
+	if (me.x != myhome[1] && me.y != myhome[2] )
+		MoveCharacterToLocation(me, myhome[1], myhome[2],
+			GetMapInfo(myhome[1], myhome[2]).z, MOVECHAR_FORCELOCATION);
+	endif
+
+	SetAnchor( myhome[1], myhome[2], 3, 80 );
+
+endfunction
+/*
+function ProcessEvent(byref ev, byref mydestx, byref mydesty, byref steps)
+
+	if (ev.source.isA(POLCLASS_NPC))
+		return 0;
+	endif
+
+	case (ev.type)
+
+		SYSEVENT_ENGAGED:
+			say( ev.source.name + ", I'll call a guard, if you don't stop that!");
+			SYSEVENT_DAMAGED:
+			SetHp(me, me.maxhp);
+			if( me.poisoned ) CurePoison( me ); endif
+			// ev.source.hp := 0; hploss removed
+			say("Help guards!!! I'm being attacked!!");
+			SetObjProperty(me, "guardkill", 1);
+			start_script( ":areas:callguards", me );
+			sleep(5);
+			say("You scoundrel!!!");
+
+			foreach chr in EnumerateOnlineCharacters()
+				if (chr.cmdlevel>0)
+					SendSysMessage(chr, CStr(ev.source.name + " is attacking an invul NPC!!!"), 3, 130);
+				endif
+			endforeach
+			me.hidden := 1;
+			sleep(200);
+			me.hidden := 0;
+
+		SYSEVENT_ENTEREDAREA:
+			YellToFriend(ev.source);
+
+		SYSEVENT_SPEECH:
+			TurnToward(ev.source);
+			if (ev.text["buy"])
+				var res;
+				foreach item in (ev.source.backpack)
+					if(item.objtype == 0xeed)
+					     ReserveItem(item);
+					endif
+				endforeach
+				res := SendBuyWindow( ev.source, inv_fs, me, inv_pb );
+				foreach item in (ev.source.backpack)
+					if(item.objtype == 0xeed)
+					     ReleaseItem(item);
+					endif
+				endforeach
+				if (!res)
+					print( "SendBuyWindow failed: " + res.errortext );
+				endif
+			elseif (ev.text["sell all"])
+				BuyAll(ev.source);
+
+			elseif (ev.text["sell bag"])
+				BuyBag(ev.source);
+
+			elseif (ev.text["sell many"])
+				BuyMany(ev.source);
+			elseif (ev.text["sell"])
+				sell(me, ev.source );
+
+
+
+
+				set_priority( 1 );
+				currentmoney:= CheckMoney(ev.source);
+				var res := SendSellWindow( ev.source, me, inv_fs, inv_pb, inv_1c );
+				if (res)
+					PrintTextAbovePrivate( me, "Can I help thee?", ev.source );
+				else
+					print( "SendSellWindow failed: " + res.errortext );
+				endif
+				set_priority( 50 );
+			elseif ( ev.text["vendor train"] || ev.text["merchant train"] )
+				TurnToward( ev.source );
+				MerchantTrain( me, ev.source, ev.text );
+			else
+				check_speech(ev.text, ev.source);
+			endif
+
+		SYSEVENT_MERCHANT_BOUGHT:
+			TurnToward( ev.source );
+			PrintTextAbovePrivate( me, "The total of your sale is " + ev.amount, ev.source );
+			LogSold(ev.source);
+			set_priority( 50 );
+			SetObjProperty(me, "restock", 1);
+			var currentamount := CheckMoney(ev.source)-currentmoney;
+			var newamount := ev.amount - currentamount;
+			while( newamount > 60000 )
+				CreateItemInBackpack( ev.source, UOBJ_GOLD_COIN, 60000 );
+				newamount := newamount - 60000;
+			endwhile
+			if( newamount > 0 ) CreateItemInBackpack( ev.source, UOBJ_GOLD_COIN, newamount ); endif
+			newamount := 0;
+
+		SYSEVENT_MERCHANT_SOLD:
+			TurnToward( ev.source );
+			PrintTextAbovePrivate( me, "The total of your purchase is " + ev.amount, ev.source );
+			SetObjProperty(me, "restock", 1);
+
+		SYSEVENT_ITEM_GIVEN:
+			if( ev.item.objtype == 0xeed )
+				TrainSkill( me, ev.source, ev.item );
+			else
+				TakeItem(ev.source, ev.item);
+			endif
+
+		EVID_ALL_FOLLOW_CMD:
+			mydestx := ev.x;
+			mydesty := ev.y;
+			steps := 0;
+			SetAnchor( mydestx, mydesty, 3, 80 );
+			WalkTowardLocation(mydestx, mydesty);
+
+	endcase
+
+	return 1;
+
+endfunction
+*/
+function CheckMoney(who)
+
+   var totalmoney := 0, backpack := EnumerateItemsInContainer(who.backpack);
+
+   foreach item in backpack
+      if (item.objtype == UOBJ_GOLD_COIN)
+        totalmoney := totalmoney + GetAmount(item);
+      endif
+   endforeach
+   return totalmoney;
+endfunction
+
+function SetMeUp()
+
+	SetObjProperty(me, "serial", me.serial);
+
+	me.gender := Random(2);
+	me.graphic := 400+me.gender;
+
+	me.name := RandomName( me );
+
+	var style := "poor";
+	if ((lower(merchant_type) == "mage") || (lower(merchant_type) == "healer"))
+		style:="mage";
+	elseif ((lower(merchant_type) == "alchemist") || (lower(merchant_type) == "scribe"))
+		style:="mage";
+	elseif ((lower(merchant_type) == "weaponsmith") || (lower(merchant_type) == "armorer"))
+		style:="warrior";
+	elseif ((lower(merchant_type) == "tinker") || (lower(merchant_type) == "leatherworker"))
+		style:="warrior";
+	elseif ((lower(merchant_type) == "bowyer") || (lower(merchant_type) == "leatherworker"))
+		style:="warrior";
+	elseif ((lower(merchant_type) == "bard") || (lower(merchant_type) == "jeweler"))
+		style:="rich";
+	elseif ((lower(merchant_type) == "tailor") || (lower(merchant_type) == "architect"))
+		style:="rich";
+	else
+		style:="rich";
+	endif
+
+	var parms := {};
+	parms[1]:= me;
+	parms[2]:= style;
+	set_priority( 1 );
+	start_script("::/misc/dressme", parms);
+
+	RestockInventory( merchant_type, inv_fs );
+
+endfunction
+
+function SetSpeechAndType()
+
+	var npccfg := ReadConfigFile("npcdesc");
+	var elem := npccfg[me.npctemplate];
+	speech := GetConfigString(elem, "speech");
+
+	merchant_type := GetObjProperty( Self(), "MerchantType" );
+
+	if( !merchant_type )
+		SetObjProperty( Self(), "MerchantType", "Mage" );
+		merchant_type := "Mage";
+	endif
+
+endfunction
+
+function EnableMainEvents()
+
+	EnableEvents( SYSEVENT_ITEM_GIVEN );
+	EnableEvents( SYSEVENT_ENGAGED);
+	EnableEvents( SYSEVENT_DAMAGED );
+	EnableEvents( SYSEVENT_ENTEREDAREA, 4 );
+	EnableEvents( SYSEVENT_SPEECH, 1 );
+
+endfunction
+
+function DisableMainEvents()
+
+	DisableEvents( SYSEVENT_ITEM_GIVEN );
+	DisableEvents( SYSEVENT_SPEECH );
+
+endfunction
+
+// Used to inform a player if and how much a NPC can train a player
+function MerchantTrain( me, who, text )
+
+	var skillcfg := ReadConfigFile( "::skills" ); // Link to the skills cfg file 'pol\config\skills.cfg'
+	var elem;             // used to contain the skill structure for the skill in question.
+	var i;                // Counter for various operations
+	var totaltrain := 0;  // How many skills the player can be trained in <Used as a flag>
+
+	// Get what the player says and divide it into words
+	var words := SplitWords( text );
+
+	// The third word is the skill we are looking for
+	var skill := words[3];
+
+	// Test to see if it exists, if not then player wants to know what NPC an train them
+	if( !skill )
+		var trainable := "";
+		// For each of the available skills
+		for( i := 0; i <= MAX_SKILLS; i := i+1 )
+			// acquire the skills attributes.
+			elem := FindConfigElem( skillcfg, i );
+			// if the NPC has the skill
+			if( GetEffectiveSkill(me, i) )
+				// if the NPC's skill is greater then the PC's
+				if ((GetEffectiveSkill(me, i)/3) > GetEffectiveSkill(who, i))
+					// Add the skill to the string, and increment total train.
+					trainable  := trainable + GetConfigString( elem, "Name" ) + ", ";
+					totaltrain := totaltrain + 1;
+				endif
+			endif
+		endfor
+
+		// If there where skills that the PC can be trained in, list them, else say so.
+		if (totaltrain > 0)
+			say( "I can train thee in the following skills:" );
+			say(trainable);
+		else
+			say("I can not train thee.");
+		endif
+	else
+		// The player wishes to train in a skill
+		skill := lower(skill);
+		// for each of the available skills
+		for( i := 0; i <= MAX_SKILLS; i := i+1 )
+			// Acquire skill attributes
+			elem := FindConfigElem( skillcfg, i );
+			// Test to see if this skill is the one the player is referring to.
+			if( lower(GetConfigString( elem, "Name" )) == skill )
+				// Acquire the NPC's value at this skill.
+				var npc_level := (GetEffectiveSkill(me, i) / 3);
+				// Test to see if there is a skill value <Redundant check>
+				if( npc_level != 0 )
+					// Get PC's skill
+					var pc_level := GetEffectiveSkill( who, i );
+					// if the pc's skill is greater then the NPC's we can do nothing
+					if( pc_level > npc_level )
+						say("I cannot teach you anymore.");
+						return;
+					else
+						// Determine the cost for training the PC, and inform the PC of the cost
+						var skillid := i;
+						var trainmaxcost := GoldForSkillGain(npc_level, pc_level, skillid);
+						say( "I will train thee " + GetConfigString( elem, "Name" ) + " for " + trainmaxcost + " gold.");
+						// Mark the PC with the skill and The cost to train in the skill
+						SetObjProperty( who, "TrainMaxCost", trainmaxcost );
+						SetObjProperty( who, "TrainSkillID", skillid );
+						return;
+					endif
+				endif
+			endif
+		endfor
+
+		// All else, The player named an unknown skill.
+		say("I know not of that skill.");
+	endif
+endfunction
+
+// This handles the NPC's training of the PC or the PC's donation of gold to the NPC
+// TODO: Reputation bonus if gold donation is greater then a specific amount.
+function TrainSkill( me, who, item )
+
+	var skillcfg := ReadConfigFile( "::skills" ); // Link to master skills config file
+	var variance := 0;       // The variance between the players skill and the npc's skill
+	var npc_level := 0;      // The NPC's level at the skill
+	var pc_level := 0;       // The PC's level at the skill
+	var goldreceived := 0;   // The amount of gold the PC did give us.
+	var new_level := 0;      // The PC's new skill level
+	var currentnpccost := 0; // The current NPC's cost for training the Player
+
+	// if the item handed to the NPC was gold and not zero <Integrity check>
+	if( (item.objtype == UOBJ_GOLD_COIN) && (item.amount != 0)  )
+		// Acquire information on what skill the PC whishes to train in.
+		var trainmaxcost := GetObjProperty( who, "TrainMaxCost" );
+		var trainskillid := GetObjProperty( who, "TrainSkillID" );
+
+		// If the pc is not expecting training, then it was a donation.
+		if( (!trainmaxcost || !trainskillid) && trainskillid != 0)
+			say( "I don't know what this is for, but thanks!" );
+			DestroyItem( item );
+			// TODO: Reputation bonus
+			// TODO: OSI has a "Desires" property with all npc's.  It's used to determine if an NPC gives out clues to a minor quest.
+			return;
+		endif
+
+		// If the NPC does have the skill
+		if( GetEffectiveSkill(me, trainskillid) )
+			npc_level    := GetEffectiveSkill(me,  trainskillid) / 3; // Acquire NPC's training level
+			pc_level     := GetEffectiveSkill(who, trainskillid);     // Acquire PC's  level
+			goldreceived := item.amount;                     // How much gold was received
+			variance     := npc_level - pc_level;            // How many skill points are there between the npc and player.
+			currentnpccost := GoldForSkillGain(npc_level, pc_level, trainskillid);
+
+			// Double check to make sure that the pc's skill is lower then the NPC's
+			if (pc_level < npc_level)
+
+				// If what the NPC can train the player is different from what the player is expecting, adjust accordingly.
+				if (currentnpccost != trainmaxcost)
+
+					if (currentnpccost > trainmaxcost)
+						// The current NPC is better then the one we received an offer from.
+						npc_level := SkillGainForGold(npc_level, pc_level, trainskillid, trainmaxcost);  // Adjust the NPC's level variable to the lower skill level
+						variance  := npc_level - pc_level;
+					else
+						// The current NPC is worse then the one we received an offer from.
+						// Determine what the cost would be for this NPC
+						if (goldreceived > currentnpccost)
+							// The NPC can't help the player
+							say("I can not train thee to that level.");
+							MoveItemToContainer( who.backpack, item );
+							return;
+						else
+							// The NPC can help, but we need to adjust
+							trainmaxcost := currentnpccost;
+						endif
+					endif
+				endif
+
+				// Determine what level the player will be trained to
+				// if the PC gives the NPC the max cost or more. Train them to the fullest
+				if( trainmaxcost <= goldreceived )
+					new_level := (npc_level * 10);
+					EraseObjProperty( who, "TrainMaxCost" );  // Clear the trainmaxcost property on the PC.
+					EraseObjProperty( who, "TrainSkillID" );  // Clear the skill flag
+					// TODO: If the player gives a lot more then the training cost, grant a Reputation Bonus and/or a mini-quest clue.
+				else
+					// Train the PC to whatever percentage they can afford.
+					new_level := ((pc_level + CInt((CDbl(variance) * (CDbl(goldreceived) / CDbl(trainmaxcost))))) * 10);
+					SetObjProperty( who, "TrainMaxCost", trainmaxcost-goldreceived );
+				endif
+
+				say("Let me show you how it's done.");  // NPC informs player training was successful
+
+				// Set the PC's skill
+				SetBaseSkillBaseValue( who, trainskillid, new_level);
+
+				DestroyItem( item );  // Destroy gold
+
+				SendSysMessage( who, "Your skill increases." ); // Note increase
+
+			else
+				// PC just paid NPC to be trained but NPC doesn't have the skill.
+				say("I'm not as good as thee.  Please find another to train thee.");
+				MoveItemToContainer( who.backpack, item );
+			endif
+		else
+			// NPC does not have that skill to train the PC.  Return gold
+			say("I don't know that skill. Why don't you ask me what i can train you in?");
+			MoveItemToContainer( who.backpack, item );
+		endif
+	else
+		// PC gave NPC something else other then gold.  Return it.
+		say("Bah, I have no use for this. Be off with ye.");
+		MoveItemToContainer( who.backpack, item );
+		// TODO: OSI has a "Desires" property with all npc's.  I think it's used to determine if an NPC
+		//  gives out clues to a minor quest or reputation bonus, depending on the item donated <Type and value>
+	endif
+
+endfunction
+
+// Used to determine cost for raising the pc's skill to the level of the NPC.
+// Note: This function is designed to handle different skills have different rates at different levels, etc.
+function GoldForSkillGain( npc_skill, pc_skill, skillid )
+	var maxskill := npc_skill - pc_skill;
+	return maxskill*10; // Cost equals ten times the difference.
+endfunction
+
+// Used to determine what the skill level of the PC will be for the amount of gold they gave
+// Note: This function is designed to handle different skills have different rates at different levels, etc.
+function SkillGainForGold(npc_level, pc_level, trainskillid, goldreceived)
+	return (goldreceived/10) + pc_level;
+endfunction
+
+function IsMagic(item)
+
+	if ( item.desc["magic"] )
+		say("Ooh, "+item.desc);
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction
+
+function BuyContainers( you )
+
+	var itemdesc := ReadConfigFile(":*:itemdesc");
+	PrintTextAbovePrivate( me, "I do not buy containers!", you );
+	return;
+
+/*	var itemdesc := ReadConfigFile("::itemdesc");
+	PrintTextAbovePrivate( me, "What containers would you like me to buy all of?", you );
+	var items := Target(you);
+	if ( (!items) || (not Accessible(you, items)) )
+		return;
+	endif
+
+	var elem := FindConfigElem(itemdesc, items.objtype);
+	if (!elem)
+		return;
+	endif
+
+	var itemprice := GetConfigInt(elem, "vendorbuysfor");
+	var theobjtype := items.objtype;
+	var thecolor := items.color;
+	var thecontainer := items.container.serial;
+
+	if (!itemprice)
+		return;
+	endif
+//zeeber changed this bit same again	
+	var totalsale := 0;
+	var itemamount := 0;
+	foreach item in EnumerateItemsInContainer(you.backpack)
+		if ( (item.objtype == theobjtype) &&
+		     (item.color == thecolor) &&
+		     (!item.newbie) &&
+		     (item.container.serial == thecontainer) &&
+		     (!IsMagic(item)) )
+			if (!GetObjProperty(item, "ownerserial") && ReserveItem( item ))
+				itemamount := item.amount;
+				if (totalsale + (itemprice * itemamount) < 50000)
+				if (DestroyItem(item))
+					totalsale := totalsale + (itemprice * itemamount);
+					sleepms(100);
+					if (totalsale > 50000)
+						break;
+					endif
+				endif
+				else
+					say("That's too much!");
+					break;
+				endif
+			else
+				say(item.desc + " is marked!");
+			endif
+		endif
+	endforeach
+
+	PrintTextAbovePrivate( me, "The total of your sale is " + totalsale, you );
+	CreateItemInContainer(you.backpack, "goldcoin", totalsale);
+
+	LogSold(you);*/
+
+endfunction
+
+function sell(me, you)
+
+	var itemdesc := ReadConfigFile(":*:itemdesc");
+	PrintTextAbovePrivate( me, "Can i help thee?", you);
+	var tgt := Target(you);
+
+	if ( (!tgt) || (not Accessible(you, tgt)) )
+		PrintTextAbovePrivate( me, "I cannot access that", you);
+		return;
+	endif
+
+	if ( tgt.container.serial != you.backpack.serial )
+		var inpack := 0;
+		foreach item in EnumerateItemsInContainer(you.backpack)
+			if (tgt.serial == item.serial)
+				inpack := 1;
+				break;
+			endif
+		endforeach
+		if (!inpack)
+			say("That item isn't in your inventory.");
+			return;
+		endif
+	endif
+	var elem := FindConfigElem(itemdesc, tgt.objtype);
+
+	if (!elem)
+		PrintTextAbovePrivate( me, "no elem", you);
+		return;
+	endif
+
+	var itemprice := GetConfigInt(elem, "vendorbuysfor");
+
+	if(!itemprice)
+		PrintTextAbovePrivate( me, "I have no need for that!", you);
+		return;
+	endif
+
+	var amount := tgt.amount;
+	var sale;
+
+	if(tgt.movable==0)
+		PrintTextAbovePrivate( me, "That item is not movable!", you);
+		return;
+	endif
+
+	if(amount)
+		sale := itemprice * amount;
+	endif
+
+	if ( (itemprice) && (!tgt.newbie) &&	(tgt.objtype != 0xeed) && (!IsMagic(tgt)) )
+				LogIt(you, tgt, sale);
+				var di := DestroyItem(tgt);
+				if(!di)
+						foreach chr in EnumerateOnlineCharacters();
+						if(chr.cmdlevel)
+							SendSysMessage(chr, "_POSSIBLE_ sell bug abuse detected for character " + you.name + " : " + di.errortext, 3, 130);
+						endif
+						endforeach
+						syslog("_POSSIBLE_ sell bug detected for chracter " + you.name + " : " + di.errotext + " for item : " + tgt + " " + tgt.serial);
+						return;	
+				endif
+			
+					if(sale>60000)
+						var newamount := sale;
+
+							while( newamount > 60000 )
+								CreateItemInBackpack( you, UOBJ_GOLD_COIN, 60000 );
+								newamount := newamount - 60000;
+							endwhile
+						CreateItemInBackpack( you, UOBJ_GOLD_COIN, newamount);
+					else
+						
+
+
+					CreateItemInContainer(you.backpack, "goldcoin", sale);
+
+					endif
+
+				PrintTextAbove( me, "The total of your sale is " + sale);
+
+	else
+
+	PrintTextAbovePrivate( me, "Sorry i can't buy this!", you );
+
+	endif
+
+
+endfunction
+
+function LogIt(me, item, sellprice)
+var where := me;
+var desc := "name: " + me.name + " / acct: " + me.acctname;
+
+
+var elemkey := desc;
+
+    var props:= array;
+    var prop:= array;
+    prop .+ pname;
+    prop .+ pvalue;
+
+    prop.pname := "x y z: ";
+    prop.pvalue := where.x + " " + where.y + " " + where.z;
+    props[1] := prop;
+
+
+    prop.pname := "item: ";
+    prop.pvalue := item.name;
+    props[3] := prop;
+
+    prop.pname := "serial: ";
+    prop.pvalue := item.serial;
+    props[4] := prop;
+
+    prop.pname := "sell price:";
+    prop.pvalue := sellprice;
+    props[5] := prop;
+   
+
+    AppendConfigFileElem( "sell-logger", "res", elemkey, props );
+
+
+UnloadConfigFile("textcmd.res");
+
+endfunction

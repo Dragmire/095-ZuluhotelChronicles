@@ -1,0 +1,114 @@
+use uo;
+use os;
+use util;
+
+include "include/all";
+include "include/managers";
+
+program ConvertSpawnPoint( point )
+
+	point.invisible := 1;
+	var pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+		pt_data	    := array;
+		pt_data[1]  := "NPC";	// Type
+		pt_data[2]  := "nil";	// Template
+		pt_data[3]  := 0;	// Max appear
+		pt_data[4]  := 0;	// Appear Range
+		pt_data[5]  := 0;	// Wander Range
+		pt_data[6]  := 0;	// Frequency
+		pt_data[7]  := 0;	// Disabled
+		pt_data[8]  := 0;	// Spawn in group.
+		pt_data[9]  := 0;	// Despawn on destroy
+		pt_data[10] := 0;	// Expire time
+		pt_data[11] := 0;	// Expire number
+		pt_data[12] := 0;	// Start spawning hours
+		pt_data[13] := 0;	// End spawning hours
+		pt_data[14] := "";	// Notes
+		
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+		
+		var temp := GetObjProperty( point, "Type" );
+		if( temp )
+			pt_data[1] := temp;
+			EraseObjProperty( point, "Type" );
+		endif
+		
+		temp := GetObjProperty( point, "Template" );
+		if( temp )
+			pt_data[2] := temp;
+			EraseObjProperty( point, "Template" );
+		endif
+		
+		temp := GetObjProperty( point, "Max" );
+		if( temp )
+			pt_data[3] := temp;
+			EraseObjProperty( point, "Max" );
+		endif
+		
+		temp := GetObjProperty( point, "Range" );
+		if( temp )
+			pt_data[5] := temp;
+			EraseObjProperty( point, "Range" );
+		endif
+		
+		temp := GetObjProperty( point, "Frequency" );
+		if( temp )
+			pt_data[6] := temp;
+			EraseObjProperty( point, "Frequency" );
+		endif
+		
+		temp := GetObjProperty( point, "Disabled" );
+		if( temp )
+			pt_data[7] := temp;
+			EraseObjProperty( point, "Disabled" );
+		endif
+		
+		temp := GetObjProperty( point, "Group" );
+		if( temp )
+			pt_data[8] := temp;
+			EraseObjProperty( point, "Group" );
+		endif
+		
+		temp := GetObjProperty( point, "Despawn" );
+		if( temp )
+			pt_data[9] := temp;
+			EraseObjProperty( point, "Despawn" );
+		endif
+		
+		temp := GetObjProperty( point, "Expire" );
+		if( temp )
+			pt_data[10] := temp;
+			EraseObjProperty( point, "Expire" );
+		endif
+		
+		temp := GetObjProperty( point, "ExpireNum" );
+		if( temp )
+			pt_data[11] := temp;
+			EraseObjProperty( point, "ExpireNum" );
+		endif
+		
+		temp := GetObjProperty( point, "HrStart" );
+		if( temp )
+			pt_data[12] := temp;
+			EraseObjProperty( point, "HrStart" );
+		endif
+		
+		temp := GetObjProperty( point, "HrEnd" );
+		if( temp )
+			pt_data[13] := temp;
+			EraseObjProperty( point, "HrEnd" );
+		endif
+		
+		temp := GetObjProperty( point, "Note" );
+		if( temp )
+			pt_data[14] := temp;
+			EraseObjProperty( point, "Note" );
+		endif
+		
+		SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, pt_data );
+	endif
+	
+	return 1;
+	
+endprogram

@@ -1,0 +1,36 @@
+use uo;
+use basic;
+include "include/attributes";
+
+program walkon_racegate(who, me)
+
+var equipt := GetObjProperty(me, "equipt");
+var strmod := CInt(GetObjProperty(me, "strmod"));
+var intmod := CInt(GetObjProperty(me, "intmod"));
+var dexmod := CInt(GetObjProperty(me, "dexmod"));
+var graphic := CInt(GetObjProperty(me, "graphic"));
+var color := CInt(GetObjProperty(me, "color"));
+var sound := CInt(GetObjProperty(me, "sound"));
+var racename := GetObjProperty(me, "race");
+
+
+if (sound)
+        PlaySoundEffect(who, sound);
+endif
+
+EquipFromTemplate(who, equipt);
+SetBaseStrength(who,GetStrength(who) + strmod);
+SetBaseDexterity(who,GetDexterity(who) + dexmod);
+SetBaseIntelligence(who,GetIntelligence(who) + intmod);
+
+if (graphic)
+        who.graphic := graphic;
+endif
+
+if (color)
+        who.color := color;
+        who.truecolor := color;
+endif
+SetObjProperty(who, "race", racename);
+who.name := who.name + " [" + racename + "]";
+endprogram

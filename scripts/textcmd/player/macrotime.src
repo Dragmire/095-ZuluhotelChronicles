@@ -1,0 +1,31 @@
+use uo;
+use os;
+
+include "include/objtype";
+include "include/constants/timeids";
+
+program macro( who )
+
+	var hour := 0;
+	var minutes := 0;
+	var secs := 0;
+
+	if( ReadGameClock() > CInt(GetObjProperty( who ,"#macrostart" ) +36000 ) )
+		
+		if(!GetObjProperty( who, "#macrostart"))
+			SendSysMessage( who, "You are not activated for macro, to active yourself please type .startmacro" );
+		endif
+	else
+		secs := CInt( ( GetObjProperty( who, "#macrostart" ) +36000) - ReadGameclock() );
+
+		hour	:= CInt( secs / TIMEID_SECONDS_PER_HOUR );
+		secs	:= secs % TIMEID_SECONDS_PER_HOUR;
+
+		minutes	:= CInt( secs / TIMEID_SECONDS_PER_MINUTE );
+		secs	:= secs % TIMEID_SECONDS_PER_MINUTE;
+
+		SendSysMessage( who , "You may macro for another: "+hour+" hours, "+minutes+" minutes and "+secs+" seconds." );
+		
+	endif
+
+endprogram

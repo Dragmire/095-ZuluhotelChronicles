@@ -1,0 +1,45 @@
+Use uo;
+
+Program TextCMD_Spellbooks( who )
+
+    // Normal Spellbook
+    Var book := CreateItemInBackpack( who,0x0efa, 1 );
+    SetObjProperty( book , "Staff" , who.serial );
+    Var i;
+    For( i := 0x1f2d; i <= 0x1f6c; i := i + 1 )
+    CreateItemInContainer(book,  i, 1);
+    Endfor
+
+    // Codex Damnorum
+    Var necro := CreateItemInBackpack( who, 0xA100, 1 );
+    SetObjProperty( necro , "Staff" , who.serial );
+    SetObjProperty( necro , "Lesser" , 255 );
+    SetObjProperty( necro , "Greater" , 255 );
+
+    // Book of Earth
+    Var druid := CreateItemInBackpack( who, 0xB100, 1 );
+    SetObjProperty( druid , "Staff" , who.serial );
+    SetObjProperty( druid , "Lesser" , 255 );
+    SetObjProperty( druid , "Greater" , 255 );
+
+    // Book of Songs
+    Var bard := CreateItemInBackpack( who, 0x6177, 1 );
+    SetObjProperty( bard , "Staff" , who.serial );
+    SetObjProperty( bard , "Lesser" , 255 );
+    SetObjProperty( bard , "Greater" , 255 );
+    
+    // Holy Book
+    Var Holy := CreateItemInBackpack( who, 0x6166, 1 );
+    SetObjProperty( Holy , "Staff" , who.serial );
+    SetObjProperty( Holy , "Lesser" , 255 );
+    SetObjProperty( Holy , "Greater" , 255 );
+
+    // Ritual Book
+    Var ritual := CreateItemInBackpack( who, 0xC100, 1 );
+    SetObjProperty( ritual , "Staff" , who.serial );
+    SetObjProperty( ritual , "Circle1" , 255 );
+    SetObjProperty( ritual , "Circle2" , 255 );
+    SetObjProperty( ritual , "Circle3" , 255 );
+    SetObjProperty( ritual , "Circle4" , 255 );
+
+Endprogram

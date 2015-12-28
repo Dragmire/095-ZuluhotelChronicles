@@ -1,0 +1,28 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/drinkpotion";
+
+program drink_green( character, potion )
+
+	if( !CheckIfCanDrink(character) )
+		return;
+	endif
+
+	var plvl := GetPotionStrength( potion );
+
+	if( CheckSkill( character, CInt(SKILLID_TASTEID), CInt(plvl*15),  CInt(plvl*15*10) ) )
+		SendSysMessage( character, "That potion is poisonous!" );
+		return;
+	endif
+
+	EmptyBottle( character, potion );
+
+	SetPoison( character, plvl, "You've been poisoned!" );
+
+	Detach();
+	sleep( DELAY_BETWEEN_DRINK );
+	CanDrink( character );
+
+endprogram

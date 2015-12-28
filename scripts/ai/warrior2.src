@@ -1,0 +1,2608 @@
+//Warrior for Hire AI
+//Developed by Slaine 2002-2007
+
+use npc;
+use os;
+use uo;
+use cfgfile;
+use math;
+
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "include/npcbackpacks";
+include "include/dotempmods";
+include "include/myutil";
+include "include/yesno";
+include "include/random";
+include "ai/setup/modsetup";
+
+const HALT_THRESHOLD := 10;
+
+Const DRINK_SOUND := 0x32;
+Const SOUND_EFFECT_HEAL	:= 0x1f3; 
+Const SOUND_EFFECT_CURE	:= 0x1e1;
+Const EFFECT_SPARKLE  := 0x374a;
+
+var speech := 5;
+var me := Self();
+
+var lastbark := ReadGameClock();
+var masterserial := 0;
+var master;
+
+var chaseloop := 0;
+var following := 0;
+var guarding := 0;
+var nextwatch := ReadGameClock();
+var laststrengthgain := ReadGameClock();
+var okie;
+var cwtiles;
+var lastdist;
+var canmove;
+var fs;
+var leadmovex;
+var leadmovey;
+
+program Warrior()
+
+	if( me.name["<random>"] )
+		SetMeUp();
+	endif
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	FixStuff();
+
+	masterserial := GetObjProperty(me,"master");
+	if ( (masterserial == 0) or (!masterserial) or (masterserial == "<error>") )
+		masterserial := 0;
+	else
+		master := SystemFindObjectBySerial(masterserial);
+		if (master)
+			me.setmaster(master);
+			if (distance(me, master) < 20)
+				following := master;
+				guarding := master;
+			endif
+		endif
+	endif
+
+	SetWarMode( 0 );
+	Drop_Anchor();
+
+	var ev;
+	var next_wander := ReadGameClock() + 10;
+	var wanders := 9;
+
+	EnableAllEvents();
+	if (masterserial != 0)
+		EnableEvents(SYSEVENT_SPEECH,12);
+	else
+		EnableEvents(SYSEVENT_SPEECH,2);
+	endif
+
+	while (1)
+		SetObjProperty(me,"Str",me.strength);
+		SetObjProperty(me,"Int",me.intelligence);
+		SetObjProperty(me,"Dex",me.dexterity);
+		SetObjProperty(me,"Name",me.name);
+		SetObjProperty(me,"Sex",(400+me.gender));
+		SetObjProperty(me,"wfhscript","warrior2");
+		if (me.poisoned)
+			ApplyHealing(me);
+		elseif ( me.hp < (me.maxhp-(me.maxhp/4)) )
+			ApplyHealing(me);
+		endif
+		if (master.poisoned and GetObjProperty(me,"#heal") < ReadGameClock())
+			ApplyHealing(master);
+		elseif (master.hp < (master.maxhp/3) and GetObjProperty(me,"#heal") < ReadGameClock())
+			ApplyHealing(master);
+		endif
+
+		ev := WarriorMovement(wanders, next_wander);
+		var monline := 0;
+		var mygod := GetObjProperty(me, "master");
+		foreach char in EnumerateOnlineCharacters()
+			if (char.serial == mygod)
+				monline := 1;
+			endif
+		endforeach
+		if (monline == 0)
+			DisableEvents(SYSEVENT_SPEECH);
+		endif
+		if (monline == 1)
+			EnableEvents(SYSEVENT_SPEECH,12);
+		endif
+		if (ev and monline)
+			if (Random(100)+1 == 1 and !me.hidden)
+				if (ReadGameClock() > GetObjProperty(me,"LastGibber") or !GetObjProperty(me,"LastGibber"))
+					SayRandom();
+					SetObjProperty(me,"LastGibber",ReadGameClock() + (60*10));
+				endif
+			endif
+			if (masterserial == 0)
+				ProcessMasterlessEvents(ev, wanders, next_wander);
+			else
+				ProcessMasterEvents(ev, wanders, next_wander);
+			endif
+		elseif(ev and !monline)
+			sleep(5);
+		endif
+		sleepms(25);
+		if (!GetObjProperty(me,"hungertime") or ReadGameClock() > GetObjProperty(me,"hungertime"))
+			Hunger();
+		endif
+		var hgr := GetObjProperty(me,"hunger");
+		if (hgr > 5)
+			if (!CanEat( me ) )
+				HungerDamage( me);
+			endif
+		endif
+		if (me.dexterity_mod > 1000)
+			me.dexterity_mod := 0;
+		endif;
+	endwhile
+endprogram
+
+function CloseDistance( opponent )
+
+	var archerymovement := HasBow();
+	var gd := 0;
+	var d := distance(me, opponent);
+
+	if ( d > 15 )
+		return 2;
+	endif
+
+	if (!archerymovement)
+		if ( d > 1 )
+			RunToward( opponent );
+			return 0;
+		else
+			return 1;
+		endif
+	else
+		if (d == 1)
+			ChangeWeapons();
+		elseif ( d < 4 )
+			RunAwayFrom(opponent);
+			return 0;
+		elseif ( d > 8 )
+			RunToward(opponent);
+			return 0;
+		else
+			return 1;
+		endif
+	endif
+
+endfunction
+
+function HasBow()
+
+	var ammotype := 0;
+	var bowarmed := 0;
+	var weapon := me.weapon;
+	if (!weapon.objtype)
+		say("I don't have a weapon!");
+		ChangeWeapons();
+		return 0;
+	endif
+	case (weapon.objtype)
+		0x13B2:
+		0x7600:
+		0x7656:
+		0x762B:
+			bowarmed := 1;
+			ammotype := 0xf3f;//bow and arrows
+		0x0F4F:
+		0x13FD:
+		0x7603:
+		0x762E:
+		0x7659:
+		0x7604:
+		0x762F:
+		0x766A:
+			bowarmed := 1;
+			ammotype := 0x1bfb;//xbow and bolts
+		0x6050:
+		0x7601:
+		0x762C:
+		0x7657:
+			bowarmed := 1;
+			ammotype := 0x6051;//firebow and firearrows
+		0xB201:
+		0x759F:
+		0x762A:
+		0x7655:
+			bowarmed := 1;
+			ammotype := 0xB200;//icebow and icearrows
+		default: return 0;
+	endcase
+	if (!bowarmed) return 0; endif
+
+	var myammo := EnumerateItemsInContainerOfObjtype(me.backpack, ammotype);
+
+	if (!len(myammo))
+		say("No ammo!");
+		ChangeWeapons();
+		return 0;
+	else
+		return 1;
+	endif
+
+endfunction
+
+function sleepmode()
+
+	foreach critter in ListMobilesNearLocation( me.x,me.y,me.z, 32 )
+          if (!critter.npctemplate)
+		return 0;
+          endif
+	endforeach
+
+	var ev;
+	while (1)
+		ev := os::wait_for_event( 120 );
+		repeat
+		if (ev)
+		case (ev.type)
+                	SYSEVENT_ENGAGED:
+			SYSEVENT_DAMAGED:
+				return ev;
+			SYSEVENT_ENTEREDAREA:
+			SYSEVENT_SPEECH:
+				if (!ev.source.npctemplate)
+					return ev;
+				endif
+		endcase
+		endif
+		until (! (ev := os::wait_for_event(120)) );
+	endwhile      
+
+endfunction       
+
+function SetMeUp()
+
+	me.gender := Random(2);
+	me.graphic := 400+me.gender;
+
+	if (!GetObjProperty(me,"master"))
+		me.name := "<random>";
+		me.name := RandomName( me );
+	endif
+	me.title_suffix := " the Warrior";
+
+	foreach item in ListEquippedItems(me)
+		DestroyItem(item);
+	endforeach
+
+	me.setstr( Random(50)+10 );
+	me.setint( Random(50)+10 );
+	me.setdex( Random(50)+10 );
+
+	if (!GetObjProperty(me,"master"))
+		var parms := {};
+		parms[1]:= me;
+		parms[2]:= "weakwarrior";
+		start_script("::/misc/dressme", parms);
+	endif
+
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+		if (!EquipItem(me, newbackpack)) DestroyItem(newbackpack); endif
+	endif
+	var i;
+	if (!GetObjProperty(me,"master"))
+		for (i := 0; i <= 48; i := i + 1)
+			SetBaseSkillBaseValue( me , i , 1 );
+		endfor
+		SetBaseSkillBaseValue( me , 1 , 130 );
+		SetBaseSkillBaseValue( me , 17 , 130);
+		SetBaseSkillBaseValue( me , 5 , 130);
+		SetBaseSkillBaseValue( me , 43 , 130 );
+		SetBaseSkillBaseValue( me , 27 , 130 );
+		SetBaseSkillBaseValue( me , 41 , 130 );
+		SetBaseSkillBaseValue( me , 40 , 130 );
+		SetBaseSkillBaseValue( me , 42 , 130 );
+		SetBaseSkillBaseValue( me , 5 , 130 );	
+		SetBaseSkillBaseValue( me , 31 , 130 );	
+		SetBaseSkillBaseValue( me , 26 , 130 );	
+		master := 0;
+		masterserial := 0;
+		SetObjProperty(me,"master",masterserial);
+	endif
+	SetObjProperty(me,"WarriorForHire",1);
+	me.hp := me.maxhp;
+endfunction
+
+function ProcessMasterlessEvents(byref ev, byref wanders, byref next_wander)
+	case (ev.type)
+	SYSEVENT_SPEECH:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		var evtext := lower(ev.text);
+		if ( evtext[ lower(me.name) ] )
+			TurnToward(ev.source);
+			say ("Hi there, " + ev.source.name);
+		elseif ( evtext[ "join"] )
+			TurnToward(ev.source);
+			JoinThem(ev.source);
+		elseif (!AskToJoin(ev.source))
+			check_speech(ev.text, ev.source);
+		endif
+	SYSEVENT_ENGAGED:
+	SYSEVENT_DAMAGED:
+		AddToHitList(ev);
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if ( (ev.source) and (!ev.source.dead) )
+			Fight( ev.source );
+		endif
+	SYSEVENT_ENTEREDAREA:
+		return;
+	SYSEVENT_ITEM_GIVEN:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		TakeItem(ev.source,ev.item);
+	endcase
+
+endfunction
+
+function FixStuff()
+
+	me.graphic := 400+me.gender;
+	me.title_suffix := " the Warrior";
+
+endfunction
+
+function fight(opponent)
+	//SetOpponent(opponent);
+	EraseObjProperty(me,"TakePoint");
+	var wasfollowing := following;
+	following := 0;
+
+	if (me.dexterity_mod >= 5000)
+		me.dexterity_mod := me.dexterity_mod - 5000;
+	endif
+
+	if ((opponent.cmdlevel > 0) or (opponent == me) )
+        	setwarmode(0); 
+		following := wasfollowing;
+		return;
+	endif
+
+	if (opponent.npctemplate == "humuc")
+		following := wasfollowing;
+		setwarmode(0);
+		opponent := 0;
+		return;
+	endif
+
+	if ( opponent == master )
+		say("Wanna spar, eh?  Just tell me when to stop!");
+	endif
+
+	//var oldprio := set_priority(50);
+	SetOpponent( opponent );
+	turntoward( opponent );
+
+	if ( GetObjProperty( me, "keywordbattlecry") )
+		Say ( GetObjProperty( me, "keywordbattlecry") );
+	endif
+
+	var ev;
+
+	chaseloop := 0;
+	var loops := 1;
+	var cd;
+
+	var wasmoving:=1;
+	var rloop;
+    	while ( (opponent) and not 
+	    (opponent.dead or opponent.hidden or opponent.concealed) and 
+	    (distance(me,opponent) < 20) )
+		rloop := 0;
+		while (Distance(me,opponent) > 2 and rloop < 10 and !HasBow())
+			me.dexterity_mod := me.dexterity_mod+ 5000;
+			rloop := rloop + 1;
+			RunToward(opponent);
+			me.dexterity_mod := me.dexterity_mod- 5000;
+		endwhile
+		if (me.poisoned)
+			ApplyHealing(me);
+		elseif (me.hp < (me.maxhp/2))
+			ApplyHealing(me);
+			Flee(opponent);
+		elseif ( me.hp < (me.maxhp - (me.maxhp/4)) )
+			ApplyHealing(me);
+		elseif (me.hp < 10)
+			Flee(opponent);
+		endif
+		if (master.hp < (master.maxhp/2) and GetObjProperty(me,"#heal") < ReadGameClock() and Distance(me,master)< 3)
+			ApplyHealing(master);
+		endif
+		GainStat();
+
+		cd := CloseDistance( opponent );
+		case (cd)
+		0:
+			wasmoving := 1;
+			loops := loops + 1;
+			if (loops > 25)
+				if ( HasBow() ) ChangeWeapons(); endif
+				chaseloop := chaseloop + 1;
+				loops := 0;
+				RunRandom(opponent, chaseloop);
+				if (chaseloop > 5)
+					loops := 0;
+					chaseloop := 0;
+					flee(opponent);
+				endif
+			endif
+		1:
+			if (wasmoving) TurnToward(opponent); endif
+			if (!CheckLineOfSight(me,opponent))
+				SetOpponent(0);
+				SetWarMode(0);
+				following := wasfollowing;
+				if ( distance(following,me)>15 ) 
+					if (following)
+						say("Oh crap.  Where is " + following.name + "?");
+						following:=0;
+					endif
+				endif
+				return;
+			endif
+			loops := 0;
+			chaseloop := 0;
+			wasmoving := 0;
+		endcase
+
+		ev := wait_for_event( cd );
+		case (ev.type)
+		SYSEVENT_SPEECH:
+			SetObjProperty(me,"WarriorForHire",1); // retrospective gwhack fix
+			var evtext := lower(ev.text);
+			var mename := lower(me.name);
+			if (ev.source.serial == masterserial)
+				if ( evtext["stop"] )
+					say("Okay");
+					setwarmode(0);
+					opponent := 0;
+					following := wasfollowing;
+					if ( distance(following,me)>15 ) following:=0;endif
+					chaseloop := 0;
+					return;
+				elseif (evtext[mename + " rearm"] )
+					Say("Okay");
+					ChangeWeapons();
+					if (HasBow())
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						turntoward( opponent );
+					endif
+				elseif (evtext[mename + " arm 1"] )
+					Say("Okay");
+					ChangeWeapons1();
+					if (HasBow())
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						turntoward( opponent );
+					endif
+				elseif (evtext[mename + " arm 2"] )
+					Say("Okay");
+					ChangeWeapons2();
+					if (HasBow())
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						turntoward( opponent );
+					endif
+				elseif (evtext[mename + " arm 3"] )
+					Say("Okay");
+					ChangeWeapons3();
+					if (HasBow())
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						RunAwayFrom(opponent);
+						turntoward( opponent );
+					endif
+				else
+					ObeyCommand(ev);
+					if (following)
+						setwarmode(0);
+						opponent := 0;
+						chaseloop := 0;
+						return;
+					endif
+				endif
+			endif
+		SYSEVENT_DAMAGED:
+		SYSEVENT_ENGAGED:
+			if (ev.source)
+				AddToHitList(ev);
+				if (ev.source != opponent)
+					if ( (Random(6)=1) or 
+					     (distance(ev.source,me) < distance(me, opponent)) )
+						opponent := ev.source;
+						SetOpponent( opponent );
+						turntoward( opponent );
+					endif
+				endif
+			endif
+		EVID_PEACEMADE:
+			setwarmode(0);
+			opponent := 0;
+			following := wasfollowing;
+			if ( distance(following,me)>15 ) following:=0;endif
+			chaseloop := 0;
+			return;
+		endcase
+
+		OpenDoors(opponent);
+
+	endwhile
+
+	SetOpponent(0);
+	SetWarMode(0);
+	following := wasfollowing;
+	if ( distance(following,me)>15 ) 
+		if (following)
+			say("Oh crap.  Where is " + following.name + "?");
+			following:=0;
+		endif
+	endif
+	var pck;	
+	var npck;
+	if (opponent.dead and opponent.acct)
+		pck := GetObjProperty(me,"PCKills");
+		if (!pck)
+			pck := 0;
+		endif
+		SetObjProperty(me,"PCKills",pck+1);
+	endif
+	if (!opponent)
+		npck := GetObjProperty(me,"NPCKills");
+		if (!npck)
+			npck := 0;
+		endif
+		SetObjProperty(me,"NPCKills",npck+1);
+	endif
+endfunction
+
+function AddToHitList(ev)
+
+	if ( (ev.type != SYSEVENT_DAMAGED) or (ev.source.npctemplate) ) return; endif
+	var hitlist := GetObjProperty(me,"hitlist");
+	if (!hitlist) hitlist := {}; endif
+	foreach mob in hitlist
+		if (mob == ev.source.serial) return; endif
+	endforeach
+	hitlist.append(ev.source.serial);
+	SetObjProperty(me,"hitlist",hitlist);
+
+endfunction
+
+function flee(opponent)
+
+	EraseObjProperty(me,"killme");
+	if ( (me.frozen) or (me.paralyzed) )
+		sleep(1);
+		return;
+	endif
+	var runs := 0;
+	var ev;
+
+	if (Random(10) == 1)
+		say("Aaaaiiiiiii!!!");
+	endif
+
+	me.stamina := me.stamina + 50;
+	if (me.stamina > me.maxstamina)
+		me.stamina := me.maxstamina;
+	endif
+
+	while ( (distance(me, opponent) < 7) and (runs < 30) )
+		runawayfrom(opponent);
+		runs := runs +1;
+		ev := wait_for_event(0);
+		if (ev)
+			AddToHitList(ev);
+		endif
+	endwhile
+	me.hidden := 1;
+	sleep(4);
+	me.hidden := 0;
+endfunction
+
+function EnableAllEvents()
+
+	EnableEvents(SYSEVENT_SPEECH,8);
+	EnableEvents(SYSEVENT_ITEM_GIVEN + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED);
+	EnableEvents( SYSEVENT_DOUBLECLICKED );
+	EnableEvents(SYSEVENT_ENTEREDAREA, HALT_THRESHOLD);
+	EnableEvents( EVID_PEACEMADE );
+
+endfunction
+
+function AskToJoin(you)
+
+	if ( lastbark > ReadGameClock() ) return 0; endif
+	if (you.strength < 90 and you.intelligence < 90 and you.dexterity < 90)
+		return 0;
+	else
+		lastbark := ReadGameClock()+60;
+		say("I want to be a great warrior someday.");
+		sleep(1);
+		say("You look like a capable leader.  If you will train me, I would follow you.");
+		sleep(1);
+		say("Would you like for me to JOIN you?");
+		return 1;
+	endif
+
+endfunction
+
+function JoinThem(you)
+
+	if (you.strength < 90 and you.intelligence < 90 and you.dexterity < 90)
+		say("You don't look like much of a leader, to me.");
+		return 0;
+	endif
+
+	var henchman := GetObjProperty(you,"henchman");
+	if (henchman)
+		henchman := SystemFindObjectBySerial(henchman);
+		if (henchman) 
+			say("You already have a henchman.");
+			return;
+		endif
+	endif
+
+	setobjproperty(you,"henchman",me.serial);
+	setobjproperty(me,"master",you.serial);
+	masterserial := you.serial;
+	master := you;
+	me.SetMaster(you);
+	following := master;
+	guarding := master;
+
+	var i;
+if (!GetObjProperty(me,"master"))
+	for (i := 0; i <= 48; i := i + 1)
+		SetBaseSkillBaseValue( me , i , BaseSkillToRawSkill( 1 ) );
+	endfor
+	SetBaseSkillBaseValue( me , 1 , 130 );
+	SetBaseSkillBaseValue( me , 17 , 130 );
+	SetBaseSkillBaseValue( me , 5 , 130 );
+	SetBaseSkillBaseValue( me , 43 , 130 );
+	SetBaseSkillBaseValue( me , 27 , 130 );
+	SetBaseSkillBaseValue( me , 41 , 130 );
+	SetBaseSkillBaseValue( me , 40 , 130 );
+	SetBaseSkillBaseValue( me , 42 , 130 );
+	SetBaseSkillBaseValue( me , 5 , 130 );	
+	SetBaseSkillBaseValue( me , 31 , 130 );	
+	SetBaseSkillBaseValue( me , 26 , 130 );	
+	SetBaseSkillBaseValue( me , 21 , BaseSkillToRawSkill( 1000 ) );	
+	me.setstr( Random(10)+50 );
+	
+	me.setint( Random(10)+50 );
+	
+	me.setdex( Random(10)+50 );
+	SetObjProperty(me,"PermMagicImmunity",3);
+	SetObjProperty(me,"NecroProtection",3);
+	SetObjProperty(me,"EarthProtection",3);
+	SetObjProperty(me,"FireProtection",3);
+	SetObjProperty(me,"WaterProtection",3);
+	SetObjProperty(me,"AirProtection",3);
+	SetObjProperty(me,"PhysicalProtection",3);
+	SetObjProperty(me,"PermPoisonImmunity",3);
+	SetObjProperty(me,"BaseHpRegen",100);
+	SetObjProperty(me,"HealingIncrease",3);
+endif
+	SetObjProperty(me,"WarriorForHire",1);
+	Say("Wow, I've learned so much from you already!");
+
+	set_critical(1);
+	if ( GetObjProperty( me, "regspawn" ) )
+		var SpawnName := GetObjProperty( me, "regspawn" );
+		var numspawns := Cint(GetGlobalProperty(SpawnName))-1;
+		SetGlobalProperty(SpawnName,numspawns);
+		EraseObjProperty( me, "regspawn" );
+	endif
+	set_critical(0);
+
+	EnableEvents(SYSEVENT_SPEECH,12);
+
+endfunction
+
+function ProcessMasterEvents(byref ev, byref wanders, byref next_wander)
+	if ( (!master) and (ev.source.serial == masterserial) )
+		master := ev.source;
+		me.setmaster(master);
+		following := master;
+		guarding := master;
+	endif
+
+	case (ev.type)
+	SYSEVENT_SPEECH:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		var evtext := lower(ev.text);
+		if (ev.source.serial == masterserial)
+			if (!ObeyCommand(ev))
+				check_speech(ev.text, ev.source);
+			endif
+		else
+			if (!GetObjProperty(me,"squelch"))
+				check_speech(ev.text, ev.source);
+			endif
+		endif
+	SYSEVENT_ENGAGED:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if ( (ev.source) and (!ev.source.dead) and (!guarding) )
+			Fight( ev.source );
+		endif
+	SYSEVENT_DAMAGED:
+		AddToHitList(ev);
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if ( (ev.source) and (!ev.source.dead) )
+			Fight( ev.source );
+		endif
+	SYSEVENT_ENTEREDAREA:
+		return;
+	EVID_ALL_ATTACK_CMD:
+		Fight(ev.target);
+	SYSEVENT_ITEM_GIVEN:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		if (ev.source.serial == masterserial)
+			var it := ev.item;
+			MoveItemToContainer( it, me.backpack);
+			if ( CutRobe(it))
+				say("Thanks, I've cut that into bandages.");	
+			else 
+				Say("Thanks, I'll put that in my backpack");
+			endif
+		else
+			TakeItem(ev.source,ev.item);
+		endif
+	SYSEVENT_DOUBLECLICKED:
+		if (random(20)=1) say("hehe"); endif
+		if (ev.source.serial == masterserial) OpenMyPack(); endif
+	EVID_ALL_FOLLOW_CMD:
+		following := ev.target;
+	EVID_ALL_GUARD_CMD:
+		guarding := ev.target;
+	endcase
+
+endfunction
+
+function WarriorMovement(byref wanders, byref next_wander)
+
+	if (masterserial == 0)
+		if ( ReadGameClock() >= next_wander )
+			wanders:=wanders+1;
+			wander();
+			next_wander := ReadGameClock() + 10;
+			if (wanders>60)
+				wanders := 0;
+				return (sleepmode());
+			else
+				return (wait_for_event(5));
+			endif
+		else
+			return (wait_for_event(5));
+		endif
+	endif
+
+	if ( (following) and (master) )
+		SetAnchor( me.x, me.y, 20, 0 );
+		Follow();
+		return (wait_for_event(0));
+	elseif ( (guarding) and (master) )
+		SetAnchor( me.x, me.y, 20, 0 );
+		Guard();
+		return (wait_for_event(7));
+	else
+		//I'm not following, guarding, my master is offline, and I'm bored:
+		var monline := 0;
+		var mygod := GetObjProperty(me, "master");
+		foreach char in EnumerateOnlineCharacters()
+			if (char.serial == mygod)
+				monline := 1;
+			endif
+		endforeach
+		if (monline == 0)
+			me.warmode := 0;
+			me.hidden := 1;
+		endif
+		return (wait_for_event(240));
+	endif			
+
+endfunction
+
+function Guard()
+	if ( (me.frozen) )
+		sleep(10);
+		return;
+	endif
+
+	if ( nextwatch <= readgameclock() ) 
+		nextwatch := readgameclock() + 5;
+		if ( random(20)=1 and !GetObjProperty(me,"squelch"))
+			if (GetObjProperty(me,"TakePoint"))
+				case (Random(3)+1)
+					1 :say("*guarding "+guarding.name+"*");
+					2 :say("gotcha covered "+guarding.name);
+					3 :say("I'm guarding "+guarding.name);
+				endcase
+			endif
+			if (!GetObjProperty(me,"TakePoint"))
+				case (Random(6)+1)
+					1 : say("I've got your back, " + guarding.name);	if ( random(20)=1 ) 	say("WAY back"); 	endif
+					2 :say("*guarding "+guarding.name+"*");
+					3 :say("I'll watch your back, "+guarding.name);
+					4 :say("gotcha covered "+guarding.name);
+					5 :say("I'm guarding "+guarding.name);
+					6: say("I'll watch our six");
+				endcase
+			endif
+		endif
+		foreach mob in ListHostiles( guarding, 9, 0 );
+			Fight(mob);
+		endforeach
+	endif
+	
+	if ( (!guarding.strength) or (guarding.dead) or (distance(me,guarding) > 15) )
+		guarding := 0;
+	endif
+
+endfunction
+
+function Follow()
+	var range :=0;
+	if (GetObjProperty(me,"TakePoint"))
+		range := 7;
+	else
+		range := 4;
+	endif
+	if ( (me.frozen) )
+		sleep(10);
+		return;
+	endif
+	if(GetObjProperty(me,"hunger") > 9)
+		me.hidden := 0;
+		Say("I'm not going anywhere until I get something to eat!");
+		following := 0;
+		EraseObjProperty(me,"TakePoint");
+		guarding := 0;
+		return;
+	endif
+	if(me.stamina < 2)
+		Say("I'm out of stamina!");
+		following := 0;
+		EraseObjProperty(me,"TakePoint");
+		guarding := 0;
+		return;
+	endif
+	okie := 1;
+	cwtiles := ListItemsNearLocationOfType(cint(following.x), cint(following.y), cint(following.z), 12, 16046);
+	foreach item in cwtiles
+		if (item.graphic == 16046 and following.multi)
+			okie := 0;
+			setwarmode(0);
+			guarding := 0;
+			sleep(1);
+			following := 0;
+			chaseloop := 0;
+			say("No thanks. I don't like boats.");
+			return;
+		endif
+	endforeach
+	var d := Distance( me, following );
+	if (d < range)
+		chaseloop := 0;
+	elseif (( d > 14 ) or ( chaseloop > 50 ))
+		if (okie == 1)
+			MoveCharacterToLocation( me, following.x, following.y, following.z,
+				MOVECHAR_FORCELOCATION );
+		chaseloop := 0;
+		endif
+	else
+		if (Distance(me,following) > 3)
+			me.dexterity_mod := me.dexterity_mod + 5000;
+			RunToward(following);
+			chaseloop := chaseloop + 1;
+			me.dexterity_mod := me.dexterity_mod - 5000;
+		endif
+	endif
+
+	if ( (!following.strength) or (following.dead) )
+		following := 0;
+	endif
+
+	if ( (master) and (!guarding) )
+		guarding := master;
+	endif
+
+	if (guarding)
+		Guard();
+	endif
+
+	if (me.dexterity_mod >= 5000)
+		me.dexterity_mod := me.dexterity_mod - 5000;
+	endif
+	if (GetObjProperty(me,"TakePoint"))
+		TakePoint();
+	endif
+endfunction
+
+function ObeyCommand(ev)
+	var mename := lower(me.name);
+	var evtext := lower(ev.text);
+	var you := ev.source;
+
+	if (!master)
+		master := you;
+		me.setmaster(you);
+		following := master;
+		guarding := master;
+		say("You da boss");
+	endif
+
+	if (master != you)
+		say("Funny, I thought you were my master...");
+		return 0;
+	endif
+
+	if (evtext[mename + " kill"] or evtext[mename + " attack"] or 
+	    evtext["all kill"] or evtext["all attack"] )
+		var what := Target( you , TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (what)
+			if (evtext["all kill"] or evtext["all attack"] )
+				if (what.npctemplate and what.script != "tamed")
+					AllCommand(EVID_ALL_ATTACK_CMD, what);
+        	        		Fight( what );
+				else 
+					say ("By the virtues! I refuse to attack that.");
+				
+				endif
+			else
+				if (what.npctemplate and what.script != "tamed")
+					Fight( what );
+				else 
+					say ("By the virtues! I refuse to attack that.");
+				
+				endif
+			endif
+		endif
+	elseif( evtext[mename + " stop"] or evtext["all stop"])
+		guarding := 0;
+		following := 0;
+		EraseObjProperty(me,"TakePoint");
+	elseif( evtext[mename + " heal"] or evtext["heal me"])
+		if ( evtext["heal me"] )
+			TurnToward(you);
+			if (!ApplyHealing(you))
+				say("I can't heal again yet.");
+			endif
+		else
+			var what := Target( you , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+			TurnToward(what);
+			if (what.npctemplate)
+				say("I can't heal that!");
+				return;
+			endif
+			if (!ApplyHealing(what))
+				say("I can't heal again yet.");
+			endif
+		endif
+	elseif ((evtext[mename + " come"]) or (evtext["all come"]))
+		var done := 0;
+		var chaseloop := 0;
+		EraseObjProperty(me,"TakePoint");
+		while( done == 0 )
+			chaseloop := chaseloop +1;
+			done := CloseDistance( you );
+			if (chaseloop > 25)
+				done :=1;
+			endif
+		endwhile
+	elseif (evtext[mename + " follow"])
+		if (evtext["follow me"])
+			say("Okay");
+			following := you;
+		else
+			var what := Target( you , TGTOPT_CHECK_LOS );
+			if ( (what) and (what.strength) )
+				say("I'll follow " + what.name);
+				following := what;
+			endif
+		endif	
+		EraseObjProperty(me,"TakePoint");
+	elseif (evtext["all follow"])
+		if (evtext["follow me"])
+			say("Okay");
+			following  := you;
+		else
+			var what := Target( you , TGTOPT_CHECK_LOS );
+			if (what)
+				AllCommand(EVID_ALL_FOLLOW_CMD, what);
+			endif
+		endif
+		EraseObjProperty(me,"TakePoint");
+	elseif (evtext[mename + " transfer"])
+		TurnToward(you);
+		say("Are you talking to me?");
+	elseif (evtext[mename + " guard"])
+		if (evtext["guard me"])
+			guarding := you;
+			say("Gotcha covered, " + guarding.name);
+		else
+			var what := Target( you , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+			if (what.hp)
+				guarding := what;
+				say("Gotcha covered, " + guarding.name);
+			endif
+		endif	
+		EraseObjProperty(me,"TakePoint");	
+	elseif (evtext["all guard"])
+		if (evtext["guard me"])
+			guarding := you;
+			say("Gotcha covered, " + guarding.name);
+		else
+			var what := Target( you , TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+			if (what.hp)
+				AllCommand(EVID_ALL_GUARD_CMD, what);
+			endif
+		endif		
+	elseif (evtext[mename + " fetch"]  or (evtext[mename + " get"]))
+		Fetch();
+	elseif (evtext[mename + " drop"])
+		TurnToward(you);
+		DropEverything();
+	elseif (evtext[mename + " dismount"])
+		var mount := GetEquipmentByLayer( me, 25 );
+		if (mount) 
+			DestroyItem(mount);
+			var spawnmount := GetObjProperty(me, "mountedon");
+			if (spawnmount)
+				var newmount := CreateNPCfromTemplate( spawnmount , me.x , me.y , me.z );
+				say("all transfer");
+				SetObjProperty( newmount ,"master" , master.serial );
+				newmount.setmaster( newmount );
+				newmount.script := "tamed";
+				RestartScript( newmount );
+				SetObjProperty( newmount , "PreviouslyTamed" , 1);
+			endif
+		endif		
+	elseif ( (evtext[mename + " ride"]) or (evtext[mename + " mount"]) )
+		TurnToward(you);
+		var alreadymounted := GetEquipmentByLayer( me, 25 );
+		if (alreadymounted) 
+			say("I already have a mount, thanks");
+		else
+			say("Ride what?");
+			var horse := Target(you);
+			if (horse)
+				MountHorse(horse);
+			endif
+		endif
+	elseif (evtext[mename + " speak"] )
+		EraseObjProperty(me,"squelch");
+		Say("Okay");
+	elseif (evtext[mename + " unsquelch"] )
+		EraseObjProperty(me,"squelch");
+		Say("Okay");
+	elseif (evtext[mename + " stfu"] )
+		SetObjProperty(me,"squelch",1);
+		Say("Okay");
+	elseif (evtext[mename + " squelch"] )
+		SetObjProperty(me,"squelch",1);
+		Say("Okay");
+	elseif (evtext[mename + " rearm"] )
+		Say("Okay");
+		ChangeWeapons();
+	elseif ( evtext[mename + " release"] )
+		TurnToward(you);
+		say("You're firing me?");
+		if (YesNo(you,"Fire them?")) Release(); endif
+	elseif ( evtext[mename + " wear"] )
+		TurnToward(you);
+		say ("Wear what?");
+		var it := target(you);
+		WearItem(it, you);
+	elseif ( evtext == "brb" )
+		say("k, np");
+		sleep(5);
+	elseif (evtext[mename + " hide"]) 
+		me.hidden := 1;
+	elseif (evtext[mename + " showpack"]) 
+		OpenMyPack();
+	elseif (evtext[mename + " stats"]) 
+		Say("I currently have "+me.strength+" str, "+me.dexterity+ " dex, "+me.intelligence+" int, "+me.ar+" ar");
+	elseif (evtext[mename + " statkills"]) 
+		ShowKills();
+	elseif (evtext[mename + " sexchange"]) 
+		SexChange();
+	elseif (evtext[mename + " skin"]) 
+		Skin();
+	elseif (evtext[mename + " arm 1"] )
+		Say("Okay");
+		ChangeWeapons1();
+	elseif (evtext[mename + " arm 2"] )
+		Say("Yes Sir!");
+		ChangeWeapons2();
+	elseif (evtext[mename + " arm 3"] )
+		Say("Ok");
+		ChangeWeapons3();
+	elseif ( evtext[mename + " disarm 1"] )
+		say("Yes Sir!");
+		sleep(1);
+		Undress1();
+	elseif ( evtext[mename + " disarm 2"] )
+		say("Ok");
+		sleep(1);
+		Undress2();
+	elseif ( evtext[mename + " disarm 3"] )
+		say("Sure.");
+		sleep(1);
+		Undress3();
+	elseif ( evtext[mename + " sayrandom"] )
+		SayRandom();
+	elseif (evtext[mename + " warcry "])
+		var bcry := SplitWords( evtext );
+		var blen := len(bcry);
+		var i := 1;
+		var warcry;
+			if (!bcry[3] or bcry[3] =="" or bcry[3] == "none")
+				EraseObjProperty(me, "keywordbattlecry");
+				say("I now have no warcry");
+			else
+				warcry := "";
+				while (i < blen-1)
+					warcry := warcry + bcry[i+2]+" ";
+					i := i + 1;
+				endwhile
+				SetObjProperty(me,"keywordbattlecry",warcry);
+				say("my warcry is now :");
+				say(warcry);
+		endif
+	elseif (evtext[mename + " setinsult "])
+		var bcry := SplitWords( evtext );
+		var blen := len(bcry);
+		var i := 1;
+		var warcry;
+			if (!bcry[3] or bcry[3] =="" or bcry[3] == "none")
+				EraseObjProperty(me, "Insult");
+				say("I now have no insult");
+			else
+				warcry := "";
+				while (i < blen-1)
+					warcry := warcry + bcry[i+2]+" ";
+					i := i + 1;
+				endwhile
+				SetObjProperty(me,"Insult",warcry);
+				say("my insult is now :");
+				say(warcry);
+		endif
+	elseif (evtext[mename + " insult"]) 
+		Taunt();
+	elseif (evtext[mename + " eat"]) 
+		Eat();
+	elseif (evtext[mename + " lead"]) 
+		SetObjProperty(me,"TakePoint",1);
+		following := you;
+	elseif (evtext[mename + " hunger"])
+		Case(GetObjProperty(me,"hunger"))
+		 	0: Say("I am absolutely stuffed!");
+		 	1: Say("I am stuffed!");
+		 	2: Say("I'm not hungry at all");
+		 	3: Say("I am a little hungry");
+		 	4: Say("I am somehwhat hungry");
+		 	5: Say("I am REALLY hungry");
+		 	6: Say("My stomach hurts");
+		 	7: Say("My stomach hurts and I feel dizzy");
+		 	8: Say("I am starving");
+		 	9: Say("I am almost dying of hunger");
+		 	10: Say("I am DYING of hunger");
+		endcase
+	elseif (evtext[mename + " go crazy"]) 
+		me.dexterity_mod := me.dexterity_mod + 5000;
+		GoMad(you);
+		say("ah..I'm all better now");
+		if (Random(10) >  7)
+			sleep(4);
+			say ("no, wait...here it comes again - aargh!");
+			sleep (2);
+			GoMad(you);	 
+		endif
+		me.dexterity_mod := me.dexterity_mod - 5000;
+	elseif ( evtext[mename + " undress"] )
+		say("Okeedokee");
+		sleep(1);
+		Say("Wooh!");
+		Undress();
+	else
+		return 0;
+	endif
+
+	return 1;
+
+endfunction
+
+function AllCommand(evtype,what)
+
+	var mobs := ListMobilesNearLocation( master.x, master.y, master.z, 9 );
+	var eve array;
+	eve.+type := evtype;
+	eve.+source := me;
+	eve.+target := what;
+	SendEvent( me , eve );
+	foreach mob in mobs 
+		if( GetObjProperty( mob , "master" ) == me.master.serial )
+			SendEvent( mob , eve );
+		endif
+	endforeach
+
+endfunction
+
+function ApplyHealing(who)
+
+	if (distance(me,who) > 2)
+		var tth := 0;
+		while (distance(me,who) > 1 and tth < 10)
+			RunToward(who);
+			tth := tth + 1;
+		endwhile
+	endif
+	if (distance(me,who) > 3)
+		return;
+	endif
+
+	if (me.hp < (me.maxhp/3)) 
+		DrinkHeal(); 
+	endif
+
+	if (!GetObjProperty(me,"#heal"))
+		SetObjProperty(me,"#heal", ReadGameClock()-15);
+	endif
+
+	if ( GetObjProperty(me,"#heal") > ReadGameClock())
+		return 0;
+	endif
+	if (who == me)
+		SetObjProperty(me,"#heal", ReadGameClock()+1);
+	else
+		SetObjProperty(me,"#heal", ReadGameClock()+20);
+	endif
+	if (me.poisoned and Random (10)= 1) say("I'm poisoned!"); endif
+	
+	var bandage := FindMyBandage();
+	if (!bandage)
+		if (!GetObjProperty(me,"#noband")) 
+			say("I don't have any bandages!");
+		endif
+		if (ReadGameClock() > GetObjProperty(me,"#noband"))
+			say("I don't have any bandages!");
+		endif
+		SetObjProperty(me,"#noband",ReadGameClock()+60);	
+		return  1;
+	endif
+
+	//if (me.poisoned)
+	//	CurePoison(me,0,me.name + " has CURED you!");
+	//	say("*Whew!*  I'm cured!");
+	//	return 1;
+	//endif
+
+	var parms := {};
+	parms[1] := me;
+	parms[2] := who;	
+	parms[3] := bandage;
+	
+	start_script(":healing:npchealing",parms);
+
+	return 1;
+
+endfunction
+
+function FindMyBandage()
+
+	foreach item in EnumerateItemsInContainerOfObjType(me.backpack, 0x0e21 )
+		return item;
+	endforeach
+	return 0;
+
+endfunction
+
+function WearItem(it, you)
+	foreach worn in ListEquippedItems (you )
+		if (it.serial == worn.serial)
+			say("I cant wear something you are wearing!");
+			return;
+		endif
+	endforeach
+	var inpack :=0;
+	foreach item in EnumerateItemsInContainer( you.backpack )
+		if (it.serial == item.serial)
+			inpack := 1;
+		endif
+	endforeach
+	if (inpack == 0)
+		say("The item must be in your backpack!");
+		return;
+	endif
+	var myhorse := GetEquipmentByLayer( me, 25 );
+
+	var mygear := {};
+	foreach thing in listequippeditems(me)
+		if ( RemoveIt(thing) ) mygear.append(thing); endif
+	endforeach
+
+	set_critical(1);
+	foreach thing in mygear
+		if ( RemoveIt(thing) )
+			moveitemtocontainer(thing, me.backpack);
+		endif
+	endforeach
+
+	if (!equipitem(me, it))
+		say("I can't wear that.  Maybe I'm not strong enough.");
+	endif
+	
+	foreach thing in mygear
+     	  	if (!EquipItem(me, thing))
+			MoveItemToContainer(thing,you.backpack);
+		endif
+	endforeach
+
+	set_critical(0);
+
+endfunction
+
+function DropEverything()
+	if (Distance(me,master) < 3)
+		Say("Ok");
+		foreach item in ListRootItemsInContainer(me.backpack)
+			moveitemtocontainer(item,master.backpack);
+			sleepms(100);
+		endforeach
+	endif
+
+endfunction
+
+function MountHorse(horse)
+
+	if (horse.script != "tamed")
+		say("I don't know... looks kind of wild, to me.");
+		return;
+	elseif ( GetObjProperty(horse,"master") != masterserial )
+		say("Howzabout you lemme ride YOUR horse?");
+		return;
+	endif
+
+	var mounttype := 0;
+	case (horse.graphic)
+	0xcc: //dark brown/horse
+			mounttype := 0x3ea2;
+		0xc8: //lightbrown/horse2
+			mounttype := 0x3e9f;
+		0xe2: //light grey/horse3
+			mounttype := 0x3ea0;
+		0xe4: //greybrown/horse4
+			mounttype := 0x3ea1;
+		0xdc: //Llama:
+			mounttype := 0x3ea6;
+		0xd2: //desert
+			mounttype := 0x3ea3;
+		0xda: //frenzied
+			mounttype := 0x3ea4;
+		0xdb: //forest
+			mounttype := 0x3ea5;
+		0x23d: //vortex
+			mounttype := 0x3ea7;
+		0xd5:  //polar
+			mounttype := 0x03f0f;
+		0x3c: //drake1
+			mounttype := 0x03f0e;
+		0xF1: //Unicorn
+			mounttype := 0x469;
+		0xF3: //Undead Horse
+			mounttype := 0x1FA;
+		0xF4: //Beetle
+			mounttype := 0x3F10;
+		0xF6: //Ridgeback
+			mounttype := 0x1FB;
+		0x84: //Sphinx
+			mounttype :=  0x3F13;
+
+	endcase
+
+
+	if (!mounttype)
+		say("Well how am I supposed to ride THAT?");
+		return;
+	endif
+	if (mounttype)
+		if ( MoveCharacterToLocation(me,horse.x,horse.y,horse.z,0) )
+			set_critical(1);
+			me.facing := horse.facing;
+			var mount := CreateItemAtLocation(5288 , 1176 , 0, 0xF021,1);
+			mount.color := horse.color;
+			setobjproperty(mount,"petname",horse.name);
+			setobjproperty(mount,"pethp",horse.hp);
+			setobjproperty(mount,"petmana",horse.mana);
+			setobjproperty(mount,"freetime",ReadGameClock()+1200);
+			mount.graphic := mounttype;
+			setobjproperty(me,"mountedon",horse.npctemplate);
+			setobjproperty(me,"mountspawn",horse.npctemplate);
+			MoveCharacterToLocation(horse, 5288 , 1176 , 0, MOVECHAR_FORCELOCATION);
+			RevokePrivilege( horse, "invul" );
+			setobjproperty(horse,"guardkill",1);
+			damage(horse,horse.maxhp+3);
+			EquipItem(me,mount);
+			if (horse)
+				MoveCharacterToLocation(horse, 5288 , 1176 , 0,
+				 MOVECHAR_FORCELOCATION);
+				RevokePrivilege(horse, "invul" );
+				setobjproperty(horse,"guardkill",1);
+				damage(horse,horse.maxhp+3);
+			endif
+			set_critical(0);
+		endif
+	endif
+
+endfunction
+
+function OpenMyPack()
+
+	if (!master)
+		master := SystemFindObjectBySerial( masterserial );
+		me.setmaster( master );
+		following := master;
+		guarding := master;
+	endif
+
+	if (distance(me,master) > 1)
+		return;
+	endif
+
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+		EquipItem(me, newbackpack);
+	endif
+
+	SendOpenSpecialContainer( master, me.backpack );
+
+endfunction
+
+function GainStat()
+	var ismo;
+	var mo := GetObjProperty(me, "master");
+	if (mo)
+		ismo := SystemFindObjectBySerial( mo );
+	else
+		return;
+	endif
+	if (!ismo)
+		return;
+	endif
+	if ( laststrengthgain > ReadGameClock() )
+		return;
+	else
+		laststrengthgain := ReadGameClock()+3600;
+	endif
+
+	if (!master) return; endif
+
+	var maxstr := master.strength - master.strength_mod;
+	var maxint := master.intelligence - master.intelligence_mod;
+	var maxdex := master.dexterity - master.dexterity_mod;
+
+	var basestr := me.strength - me.strength_mod;
+	var baseint := me.intelligence - me.intelligence_mod;
+	var basedex := me.dexterity - me.dexterity_mod;
+
+	if ( basestr < maxstr )
+		if ( (Random(140)+1 ) > (basestr) )
+			me.setstr(basestr + 1);
+			say("Woohoo!  I'm getting stronger!");
+		endif
+	endif
+	if ( baseint < maxint )
+		if ( (Random(140)+1 ) > (baseint) )
+			me.setint(baseint + 1);
+			say("I'm learning a lot from you!");
+		endif
+	endif
+	if ( basedex < maxdex )
+		if ( (Random(140)+1 ) > (basedex) )
+			me.setdex(basedex + 1);
+			say("Ha!  I liked that move!");
+		endif
+	endif
+	SetObjProperty(me,"Str",me.strength);
+	SetObjProperty(me,"Int",me.intelligence);
+	SetObjProperty(me,"Dex",me.dexterity);
+	SetObjProperty(me,"Name",me.name);
+	SetObjProperty(me,"Sex",me.objtype);
+endfunction
+
+function runrandom(opponent, numruns := 2)
+
+	var stepstotake := (numruns)+4;
+	var tox := me.x;
+	var toy := me.y;
+	var highx := tox - opponent.x;
+	if ( highx < 0 ) highx := 0 - highx; endif
+	var highy := tox - opponent.y;
+	if ( highy < 0 ) highy := 0 - highy; endif
+
+	case ( highy > highx )
+	0:	//run along the x access
+		case ( Random(2) )
+		0:	//to the right
+			toy := (me.y - stepstotake);
+			if (random(2)) tox := opponent.x; endif //to his x
+		1:	//to the left
+			toy := (me.y + stepstotake);
+			if (random(2)) tox := opponent.x; endif //to his x
+		endcase
+	1:
+		//run along the y access
+		case( random(2) )
+		0:	//to the right
+			tox := (me.x - stepstotake);
+			if (random(2)) toy := opponent.y; endif //to his y
+		1:	//to the left
+			tox := (me.x + stepstotake);
+			if (random(2)) toy := opponent.y; endif //to his y
+		endcase
+	endcase
+
+	var runs := 0;
+	var ev;
+	while ( (distance(me, opponent) > 0) and (runs <= stepstotake) )
+		RunTowardLocation( tox, toy );
+		OpenDoors(opponent);
+		runs := runs +1;
+		ev := wait_for_event(0);
+		if (ev)
+			case (ev.type)
+			EVID_PEACEMADE: return 1;
+			SYSEVENT_DAMAGED:
+				AddToHitList(opponent);
+				if (ev.source.serial == opponent.serial)
+					flee(opponent);
+				endif
+			endcase
+		endif
+		if ( (me.x == tox) and (me.y == toy) )
+			return 0;
+		endif
+	endwhile
+
+	return 0;
+
+endfunction
+
+function OpenDoors(opponent)
+
+	//only check once per 5 seconds:
+	var nextbreath := GetObjProperty(me,"#lastbreath");
+	if ( (nextbreath) and (nextbreath > ReadGameClock() ) )
+		return;
+	endif
+	
+	if (opponent != master)
+	if ( distance(me,opponent) < 2 )
+		SetObjProperty(me,"#lastbreath",ReadGameClock() + 20 );
+		return;
+	endif
+	endif;
+
+	var itemdesc := ReadConfigFile( ":doors:itemdesc" );
+	var doorstoopen := 0;
+	var tox, toy;
+	var Doors := ListItemsNearLocation( me.x,me.y,me.z,6 );
+	foreach door in Doors
+			if (itemdesc[door.objtype].doortype)
+				doorstoopen := 1;
+				tox := door.x;
+				toy := door.y;
+				break;
+			endif
+	endforeach
+
+	if ( doorstoopen )
+		start_script("::/misc/npcdoor", me);
+		SetObjProperty(me,"#lastbreath",ReadGameClock() + 20 );
+		sleepms(150);
+		RunTowardLocation(tox, toy);
+		sleepms(150);
+		RunTowardLocation(tox, toy);
+	else
+		SetObjProperty(me,"#lastbreath",ReadGameClock() + 5 );
+	endif
+
+endfunction
+
+function Release()
+
+	me.setmaster( 0 );
+	SetObjProperty(me, "master", 0);
+	EraseObjproperty(master,"henchman");
+	say("See ya");
+	flee(master);
+	SetAnchor(me.x,me.y,10,1 );
+	RestartScript(me);
+
+endfunction
+
+function Undress()
+
+	set_critical(1);
+	foreach thing in listequippeditems(me)
+		if (RemoveIt(thing))
+			moveitemtocontainer(thing, me.backpack);
+		endif
+	endforeach
+	set_critical(0);
+
+endfunction
+
+function RemoveIt(it)
+
+	if ( it == GetEquipmentByLayer( me, LAYER_BEARD ) )
+		return 0;
+	elseif ( it == GetEquipmentByLayer( me, LAYER_HAIR ) )
+		return 0;
+	elseif ( it == GetEquipmentByLayer( me, LAYER_MOUNT ) )
+		return 0;
+	elseif ( it == GetEquipmentByLayer( me, LAYER_HAIR ) )
+		return 0;
+	elseif ( it.objtype == 0x204E) 
+		return 0;
+	elseif ( it == (me.backpack) )
+		return 0;
+	endif
+
+	return 1;
+
+endfunction
+
+function DrinkHeal()
+
+	if ( cint(getobjproperty(me, "#potion")) > ReadGameClock()  )
+        	return 0;
+	endif
+
+	foreach item in EnumerateItemsInContainer(me.backpack)
+		if ( ( item.objtype == 0xDC03 ) or ( item.objtype == 0xDC02 ) )
+			PlaySoundEffect (me, DRINK_SOUND);
+			PerformAction(me, ANIM_EAT);
+			CreateItemInBackpack(me, UOBJ_EMPTY_BOTTLE, 1);
+			var heal_amount;
+			if (item.objtype == 0xDC02)
+				heal_amount := RandomDiceStr("2d12+3");
+			else
+				heal_amount := RandomDiceStr("5d12+3");
+			endif			
+			HealDamage(me, heal_amount);
+			DestroyItem(item);
+			PlaySoundEffect( me,  SOUND_EFFECT_HEAL );
+			setobjproperty(me, "#potion", (ReadGameClock() + 20));
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function Fetch()
+
+	var tobj := Target(master);
+	if (tobj.container)
+		return;
+	endif
+
+	var times := 0;
+	while ( (distance(me, tobj) > 1) and times < 5 and CheckLineOfSight(me,tobj) )
+		if( !runtoward(tobj))
+			sleep(1);
+			times := times + 1;
+		else
+			times := 0;
+		endif
+	endwhile
+
+	if (Accessible(me,tobj))
+		MoveItemToContainer(tobj, me.backpack);
+	endif
+
+endfunction
+
+function GoMad(you1)
+		var mad := 0;
+		var said := 0;
+		while (mad < 20)
+			mad := mad + 1;
+			RunToward(you1);
+			if (said == 0 )
+				if (Random(10) < 3)
+					say("vtttt! vttt! haddabba da");
+					said := 1;
+				elseif (Random(10)<3)
+					say("waaaaaaaaaaaaaah! I'm a teapot!");
+					said := 1;
+				elseif (Random(10) < 3)
+					say ("asdweqfgds!!! - my old man's a mushroom!");
+					said := 1;
+				elseif (Random(10) < 3)
+					say ("Up in the air, I fly zoom zoom a zoom a zoom zoom");
+					said := 1;
+				endif
+			endif
+		endwhile
+		mad := 0;
+		if (Random(10) < 5)
+			say("zzzzoooooooommmmmmmm!");
+		endif
+		while (mad < 10)
+			RunAwayFrom(you1);
+			mad := mad + 1;
+		endwhile
+		mad := 0;
+		while (mad < 30)
+			mad := mad + 1;
+			RunToward(you1);
+		endwhile
+endfunction
+
+function ShowKills()
+	var pc := GetObjProperty(me,"PCKills");
+	if (!pc)
+		pc := 0;
+	endif	
+	var npck := GetObjProperty(me,"NPCKills");
+	if (!npck)
+		npck := 0;
+	endif
+	Say ("I have helped to kill "+npck+" NPCs and "+pc+" Players");
+endfunction
+
+function SexChange()
+	if (me.gender == 0)
+		PerformAction( me, ANIM_SALUTE );
+		sleep(2);
+		me.graphic := 401;
+		me.gender := 1;	
+		Say("*wink*");
+		return;
+	endif;
+	if (me.gender == 1)
+		PerformAction( me, ANIM_SALUTE );
+		sleep(2);
+		me.graphic := 400;
+		me.gender := 0;
+		Say("Rawr!!");
+		return;
+	endif;
+endfunction
+
+function Skin()
+	if(master.cmdlevel < 1)
+		Say("Sorry, I can't do that.....yet ;)");
+		return;
+	endif
+	var hasblade := 0;
+	foreach item in ListRootItemsInContainer(me.backpack)	
+		Case(item.objtype)
+			0x0F60 : hasblade := 1;
+			0x0f5e : hasblade := 1;
+			0x1440 : hasblade := 1;
+			0x0f51 : hasblade := 1;
+			0x13fe : hasblade := 1;
+			0x1401 : hasblade := 1;
+			0x13b5 : hasblade := 1;
+			0x13b9 : hasblade := 1;
+			0x13f6 : hasblade := 1;
+			0x0ec2 : hasblade := 1;
+			0x0ec4 : hasblade := 1;
+			0x759d : hasblade := 1;
+			0x7616 : hasblade := 1;
+			0x7617 : hasblade := 1;
+			0x7618 : hasblade := 1;
+			0x7619 : hasblade := 1;
+			0x761a : hasblade := 1;
+			0x761b : hasblade := 1;
+			0x761c : hasblade := 1;
+			0x761f : hasblade := 1;
+			0x7620 : hasblade := 1;
+			0x7621 : hasblade := 1;
+			0x7628 : hasblade := 1;
+			0x7641 : hasblade := 1;
+			0x7642 : hasblade := 1;
+			0x7643 : hasblade := 1;
+			0x7644 : hasblade := 1; 
+			0x7645 : hasblade := 1;
+			0x7646 : hasblade := 1;
+			0x7647 : hasblade := 1;
+			0x764a : hasblade := 1;
+			0x764b : hasblade := 1;
+			0x764c : hasblade := 1;
+			0x7653 : hasblade := 1;
+			0x767c : hasblade := 1;
+			0x767d : hasblade := 1;
+			0x767e : hasblade := 1;
+			0x767f : hasblade := 1;
+			0x7680 : hasblade := 1;
+			0x7681 : hasblade := 1;
+			0x7682 : hasblade := 1;
+			0x7685 : hasblade := 1;
+			0x7686 : hasblade := 1;
+			0x7687 : hasblade := 1;
+		endcase
+	endforeach
+	foreach thing in listequippeditems(me)
+		Case(thing.objtype)
+			0x0F60 : hasblade := 1;
+			0x0f5e : hasblade := 1;
+			0x1440 : hasblade := 1;
+			0x0f51 : hasblade := 1;
+			0x13fe : hasblade := 1;
+			0x1401 : hasblade := 1;
+			0x13b5 : hasblade := 1;
+			0x13b9 : hasblade := 1;
+			0x13f6 : hasblade := 1;
+			0x0ec2 : hasblade := 1;
+			0x0ec4 : hasblade := 1;
+			0x759d : hasblade := 1;
+			0x7616 : hasblade := 1;
+			0x7617 : hasblade := 1;
+			0x7618 : hasblade := 1;
+			0x7619 : hasblade := 1;
+			0x761a : hasblade := 1;
+			0x761b : hasblade := 1;
+			0x761c : hasblade := 1;
+			0x761f : hasblade := 1;
+			0x7620 : hasblade := 1;
+			0x7621 : hasblade := 1;
+			0x7628 : hasblade := 1;
+			0x7641 : hasblade := 1;
+			0x7642 : hasblade := 1;
+			0x7643 : hasblade := 1;
+			0x7644 : hasblade := 1; 
+			0x7645 : hasblade := 1;
+			0x7646 : hasblade := 1;
+			0x7647 : hasblade := 1;
+			0x764a : hasblade := 1;
+			0x764b : hasblade := 1;
+			0x764c : hasblade := 1;
+			0x7653 : hasblade := 1;
+			0x767c : hasblade := 1;
+			0x767d : hasblade := 1;
+			0x767e : hasblade := 1;
+			0x767f : hasblade := 1;
+			0x7680 : hasblade := 1;
+			0x7681 : hasblade := 1;
+			0x7682 : hasblade := 1;
+			0x7685 : hasblade := 1;
+			0x7686 : hasblade := 1;
+			0x7687 : hasblade := 1;
+		endcase
+	endforeach
+	if (hasblade == 0)
+		Say("I don't have a blade to skin with!");
+		return;
+	endif
+	Case(Random(5)+1)
+		1: Say("Yes Sir!");
+		2: Say("Okay");
+		3: Say("As you wish, master");
+		4: Say("sure");
+		5: Say("No problem");
+	endcase
+	var mehp := me.hp;
+	var chaseloop;
+	var cut;
+	var skinnable := 0;
+	var Near_Items := ListItemsNearLocationOfType(cint(me.x), cint(me.y), cint(me.z), 15, UOBJ_CORPSE);
+	//var Near_Items := ListItemsNearLocation(me.x, me.y, me.z,10);
+	Foreach item in Near_items
+		cut := 0;
+		if  ( item.objtype == UOBJ_CORPSE and  (CheckLineOfSight( me, item) )  and !GetObjProperty(item,"cut")) 
+
+			var key := GetObjProperty( item , "npctemplate" );
+			if( !key )
+				key := "player";
+			endif
+				sleep(1);
+				Sleep(1);
+				SetObjProperty(item,"cut",1);
+				var cfg  := ReadConfigFile( "corpses" );
+				var elem := FindConfigElem( cfg , key );
+				var items := GetConfigStringArray( elem , "item" );
+				if( len(items) )
+						var got_one;	
+						foreach thing in items
+							if (me.hp < mehp)
+									return;
+							endif
+							var splited := SplitWords( thing );
+							var chance  := Cint( splited[3] );
+							if( !chance )
+								chance := 100;
+							endif
+							if( Random(100) < chance )
+								var objtype := Cint( splited[1] );
+								if( !objtype )
+									objtype := GetObjtypeByName(splited[1]);
+								endif
+								if( objtype )
+									me.dexterity_mod := me.dexterity_mod + 5000;
+									chaseloop := 0;
+									while (Distance(me,item) > 1 and chaseloop < 20)
+										RunToward(item);
+										chaseloop := chaseloop + 1;
+									endwhile
+									me.dexterity_mod := me.dexterity_mod - 5000;
+									var amount  := RandomDiceStr( splited[2] );
+									sleep(1);
+									if( !amount )
+										amount := 1;
+									endif
+									if (Distance(me,item) < 3)
+										var tingy  := CreateItemInContainer( me.backpack , objtype , amount );
+										if( tingy )
+											if (cut == 0)
+												skinnable := 1;
+												PerformAction( me, ANIM_SALUTE );
+												sleep(2);
+												cut := 1;
+												MakeBlood(item);
+											endif
+											got_one := 1;
+											chaseloop := 0;
+										endif
+									endif
+								endif
+							endif
+						endforeach
+				endif
+			sleepms(10);
+		endif
+	endforeach
+	if (skinnable == 0 )
+		sleep(1);
+		Say("There's nothing to skin nearby..");
+	endif
+endfunction
+
+function MakeBlood(item)
+	start_script("::/ai/warriorblood", item);
+endfunction
+
+function ChangeWeapons1()
+	Undress();
+	var numitems := GetObjProperty(me,"Arm1Num");
+	var weapon := GetEquipmentByLayer(me,LAYER_HAND1);
+	var shield := GetEquipmentByLayer(me,LAYER_HAND2);
+
+	if (weapon)
+		MoveItemToLocation(weapon, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	if (shield)
+		MoveItemToLocation(shield, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	var i;
+	var eitem;
+	if (!numitems)
+	foreach item in ListRootItemsInContainer(me.backpack)
+		EquipItem(me,item);
+	endforeach
+	Say ("Arm 1 Not Set! I'll just wear whatever is in my pack");
+	return;
+	endif
+	foreach item in ListRootItemsInContainer(me.backpack)
+		i := 1;
+		while (i <= numitems)
+			if (item.serial == GetObjProperty(me,"Arm1:"+i))
+				eitem := item;
+			endif
+			i := i + 1;	
+		endwhile
+		if (eitem)
+			EquipItem(me,eitem);
+		endif
+	endforeach
+	if (weapon)
+		MoveItemToContainer(weapon, me.backpack);
+	endif
+	if (shield)
+		MoveItemToContainer(shield, me.backpack);
+	endif
+	PlaySoundEffect(me,0x0057);
+endfunction
+
+
+function ChangeWeapons2()
+	Undress();
+	var numitems := GetObjProperty(me,"Arm2Num");
+	var weapon := GetEquipmentByLayer(me,LAYER_HAND1);
+	var shield := GetEquipmentByLayer(me,LAYER_HAND2);
+
+	if (weapon)
+		MoveItemToLocation(weapon, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	if (shield)
+		MoveItemToLocation(shield, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	var i;
+	var eitem;
+	if (!numitems)
+	foreach item in ListRootItemsInContainer(me.backpack)
+		EquipItem(me,item);
+	endforeach
+	Say ("Arm 2 Not Set! I'll just wear whatever is in my pack");
+	return;
+	endif
+	foreach item in ListRootItemsInContainer(me.backpack)
+		i := 1;
+		while (i <= numitems)
+			if (item.serial == GetObjProperty(me,"Arm2:"+i))
+				eitem := item;
+			endif
+			i := i + 1;	
+		endwhile
+		if (eitem)
+			EquipItem(me,eitem);
+		endif
+	endforeach
+	if (weapon)
+		MoveItemToContainer(weapon, me.backpack);
+	endif
+	if (shield)
+		MoveItemToContainer(shield, me.backpack);
+	endif
+	PlaySoundEffect(me,0x0057);
+endfunction
+
+
+function ChangeWeapons3()
+	Undress();
+	var numitems := GetObjProperty(me,"Arm3Num");
+	var weapon := GetEquipmentByLayer(me,LAYER_HAND1);
+	var shield := GetEquipmentByLayer(me,LAYER_HAND2);
+
+	if (weapon)
+		MoveItemToLocation(weapon, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	if (shield)
+		MoveItemToLocation(shield, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	var i;
+	var eitem;
+	if (!numitems)
+	foreach item in ListRootItemsInContainer(me.backpack)
+		EquipItem(me,item);
+	endforeach
+	Say ("Arm 3 Not Set! I'll just wear whatever is in my pack");
+	return;
+	endif
+	foreach item in ListRootItemsInContainer(me.backpack)
+		i := 1;
+		while (i <= numitems)
+			if (item.serial == GetObjProperty(me,"Arm3:"+i))
+				eitem := item;
+			endif
+			i := i + 1;	
+		endwhile
+		if (eitem)
+			EquipItem(me,eitem);
+		endif
+	endforeach
+	if (weapon)
+		MoveItemToContainer(weapon, me.backpack);
+	endif
+	if (shield)
+		MoveItemToContainer(shield, me.backpack);
+	endif
+	PlaySoundEffect(me,0x0057);
+endfunction
+
+function Undress1()
+	var equip := "";
+	var numitems := 0;
+	set_critical(1);
+	foreach thing in listequippeditems(me)
+		if (RemoveIt(thing))
+			numitems := numitems + 1;
+			SetObjProperty(me,"Arm1:"+numitems,thing.serial);
+			moveitemtocontainer(thing, me.backpack);
+		endif
+	endforeach
+	set_critical(0);
+	SetObjProperty(me,"Arm1Num",numitems);
+endfunction
+
+function Undress2()
+	var equip := "";
+	var numitems := 0;
+	set_critical(1);
+	foreach thing in listequippeditems(me)
+		if (RemoveIt(thing))
+			numitems := numitems + 1;
+			SetObjProperty(me,"Arm2:"+numitems,thing.serial);
+			moveitemtocontainer(thing, me.backpack);
+		endif
+	endforeach
+	set_critical(0);
+	SetObjProperty(me,"Arm2Num",numitems);
+endfunction
+
+function Undress3()
+	var equip := "";
+	var numitems := 0;
+	set_critical(1);
+	foreach thing in listequippeditems(me)
+		if (RemoveIt(thing))
+			numitems := numitems + 1;
+			SetObjProperty(me,"Arm3:"+numitems,thing.serial);
+			moveitemtocontainer(thing, me.backpack);
+		endif
+	endforeach
+	set_critical(0);
+	SetObjProperty(me,"Arm3Num",numitems);
+endfunction
+
+function ChangeWeapons()
+
+	var weapon := GetEquipmentByLayer(me,LAYER_HAND1);
+	var shield := GetEquipmentByLayer(me,LAYER_HAND2);
+
+	if (weapon)
+		MoveItemToLocation(weapon, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	if (shield)
+		MoveItemToLocation(shield, me.x, me.y, me.z, MOVEITEM_FORCELOCATION);
+	endif
+	foreach item in ListRootItemsInContainer(me.backpack)
+		EquipItem(me,item);
+	endforeach
+	if (weapon)
+		MoveItemToContainer(weapon, me.backpack);
+	endif
+	if (shield)
+		MoveItemToContainer(shield, me.backpack);
+	endif
+
+endfunction
+
+function Taunt()	
+	me.dexterity_mod := me.dexterity_mod + 5000;
+	SendSysmessage( master, "Insult who?" );
+	var you1 := Target(master, TGTOPT_CHECK_LOS);
+	if (!you1 or you1.npctemplate)
+		SendSysmessage( master, "cancelled." );
+		return;
+	endif
+	if (you1 == master)
+		Say("I refuse to insult my glorious master!");
+		return;
+	endif
+		var mad := 0;
+		var said := 0;
+		while (mad < 30)
+			mad := mad + 1;
+			RunToward(you1);
+			if (Distance(me,you1) < 2)
+				if (GetObjProperty(me,"Insult") and said == 0 and mad > 10)
+					Say(GetObjProperty(me,"Insult"));
+					said :=1;
+				endif
+		
+	           			if(!GetObjProperty(me,"Insult"))
+					if (said == 0  and mad > 10)
+						if (Random(10) < 3)
+							say(master.name + " thinks you suck!");
+							said := 1;
+						elseif (Random(10)<3)
+							say("you look like a huge noob to me!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("sit down and give your mind a rest!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("wanna fight?!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say (master.name+" and I are going to whoop ya!"   );
+							said := 1;
+						elseif (Random(10) < 3)
+							say (you1.name +" is a noob!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("My god, "+you1.name+" is ugly!!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say (master.name+ " > "+you1.name);
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("I could kick your butt without even breaking a sweat!");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("I heard you killed a mongbat once.");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("Whats your highest skill? Running away?");
+							said := 1;
+						elseif (Random(10) < 3)
+							say ("This guy stinks!!");
+							said := 1;
+						endif
+					endif
+				endif
+			endif
+		endwhile
+		mad := 0;
+		if (Random(10) < 2 )
+			Sleep(1);
+			say("*"+me.name+ " is attacking you*");
+		endif
+		me.dexterity_mod := me.dexterity_mod - 5000;
+endfunction
+
+function CanEat(me)
+
+	var cfg := readconfigfile("::food");
+	var elem := findconfigelem(cfg,"cooked");
+	var foodarray := GetConfigStringArray(elem,"food");
+
+	var hgr := Cint(GetObjProperty(me, "hunger"));
+
+	foreach item in enumerateitemsincontainer(me.backpack)
+		if ( cstr(item.objtype) in foodarray )
+			PlaySoundEffect(me,cint(0x3b) + Random(3));
+			Say("*Yummy!*");
+			var foodvalue := cint(GetObjProperty(item,"foodvalue"));
+			if (!foodvalue)
+				foodvalue := 1;
+			endif
+			hgr := hgr - 4;
+			if (hgr < 0)
+				hgr := 0;
+			endif
+			SetObjProperty(me,"hunger",hgr);
+			SubtractAmount(item,1);
+			return 1;
+		endif
+	endforeach
+
+	return 0;
+
+endfunction
+
+function Hunger()
+	var hungertime := GetObjProperty(me,"hungertime");
+	var hgr := GetObjProperty(me,"hunger");
+	if (hgr > 5)
+		if (!CanEat( me ) )
+			HungerDamage( me);
+		endif
+	endif
+
+	if (!hungertime or ReadGameClock() > hungertime)
+		SetObjProperty(me,"hungertime",ReadGameClock()+(60*30));
+		if (!hgr)
+			hgr := 0;
+		endif
+		hgr := hgr + 1;
+		if (hgr > 10)
+			hgr := 10;
+		endif
+		SetObjProperty(me,"hunger",hgr);
+	endif		
+endfunction
+
+
+function HungerDamage( chr )
+	var hgr := GetObjProperty(chr, "hunger");
+	var hungerdmgtime := GetObjProperty(chr,"hungerdmgtime");
+	if (!hungerdmgtime or ReadGameClock() > hungerdmgtime);
+		SetObjProperty(me, "hungerdmgtime", ReadGameClock()+10);
+		hungerdmgtime := GetObjProperty(chr,"hungerdmgtime");
+		if (hgr > 9)
+			if (chr.stamina > 10)
+				chr.stamina := chr.stamina -10;
+			endif
+		endif
+	endif
+endfunction
+
+function Eat()
+	if(!CanEat(me))
+		Say("I have no food in my backpack!");
+	endif
+	if(GetObjProperty(me,"hunger") < 1)
+		Say("I am absolutely stuffed!");
+	endif
+endfunction
+
+function TakePoint()
+	//this was a whore to script.
+	var tox;
+	var toy;
+	var value := 3; //tiles to lead by (redundant - see below);
+	var ydiff;
+	var xdiff;
+	var leaveloop := 0;
+	var uns;
+	var mount := GetEquipmentByLayer( master, 25 );
+	if (mount) 
+		value := 4;
+	else
+		value := 3;
+	endif
+	while (leaveloop == 0)
+	tox := master.x;
+	toy := master.y;
+		//Find furthest point from master, in front of master's direction, AND with LOS to point AND a player or NPC isnt in the way
+		Case(master.facing)
+			0: toy := toy -value ;
+			1: tox := tox +value-1;
+			    toy := toy -value -1;
+			2: tox := tox+value;
+			3: tox :=  tox+value-1;
+			    toy := toy + value-1;
+			4: toy := toy +value;
+			5: tox := tox-value-1;
+			    toy := toy+value-1;
+			6: tox :=  tox-value ;
+			7: tox := tox- value-1;
+			   toy := toy - value-1;
+		endcase
+		if (CheckLosAt( me, tox, toy, GetWorldHeight( tox, toy )))
+			leaveloop := 1;
+		endif
+		if (value == 1)
+			leaveloop := 1;
+		endif
+		value := value -1;
+		if (value < 0)
+			value := 0;
+		endif;
+	endwhile
+	var ambehind;
+	ambehind := 0;
+	Case(master.facing)
+		0: if (me.y > master.y)
+			ambehind := 1;
+		    endif
+		1: if (me.x < master.x)
+			ambehind := 1;
+		    endif
+		2: if (me.x < master.x)
+			ambehind := 1;
+		    endif
+		3: if (me.x < master.x)
+			ambehind := 1;
+		    endif
+		4: if (me.y < master.y)
+			ambehind := 1;
+		    endif
+		5: if (me.x > master.x)
+			ambehind := 1;
+		    endif
+		6: if (me.x > master.x)
+			ambehind := 1;
+		    endif
+		7: if (me.x > master.x)
+			ambehind := 1;
+		    endif
+	endcase
+
+	//If trying to overtake master and am behind master, tele onto master to enable running through master, instead of around
+	if (ambehind == 1 and Distance(me,master) < 2 and (me.x - tox > value or me.x-tox < -value or me.y-toy > value or me.y-toy < -value)  and CheckLosAt( me, tox, toy, GetWorldHeight( tox, toy )))
+		MoveCharacterToLocation( me, master.x, master.y, master.z, MOVECHAR_FORCELOCATION ); 
+	endif
+	uns := 0; //warmode flag
+	//Run toward determined lead point
+	if (me.x != tox or me.y !=toy)
+	//if ((me.x - tox >1 or me.x-tox < -1) or (me.y-toy > 1 or me.y-toy < -1))
+		if (me.warmode= 0)	
+			uns := 1;	
+			me.dexterity_mod := me.dexterity_mod + 5000;	
+		endif
+		if (CheckLosAt( me, tox, toy, GetWorldHeight( tox, toy ) ) or (Distance(me,master) > 2 and Distance(me,master) < 6))
+			RunTowardLocation(tox,toy);
+		endif
+		if (uns == 1)		
+			me.dexterity_mod := me.dexterity_mod - 5000;
+		endif
+	endif
+	Dizzy(tox,toy);
+endfunction
+
+function CutRobe(robe)
+	var scissors := 0;
+	if(robe.objtype == 0x1f03)
+		foreach item in enumerateitemsincontainer(me.backpack)
+			if ( item.objtype  == 0xf9e)
+				scissors := 1;
+			endif
+		endforeach
+		if (scissors == 1)	
+			performaction(me, 0x0020);
+			PlaySoundEffect(me, 0x249);
+			CreateItemInBackpack(me, 0xE21 , 5);
+			DestroyItem(robe);	
+			return 1;
+		endif
+	endif
+endfunction
+		
+function Dizzy(tox,toy)
+	//Experimental anti 'jiggle' code for npc movement
+	// self contained apart from tox and toy which are the destination x,y variables
+	var xdiff;
+	var ydiff;
+	var lastx := GetObjProperty(me,"LastLeadX");
+	var lasty := GetObjProperty(me,"LastLeadY");
+	if (!GetObjProperty(me,"DizzyTimer") or ReadGameClock() > GetObjProperty(me,"DizzyTimer"))
+		SetObjProperty(me,"DizzyTimer",ReadGameClock()+60);
+		EraseObjProperty(me,"Dizzy");
+		return;
+	endif
+	if (!lastx or !lasty or (me.x == lastx and me.y == lasty)) //I'm standing still
+		SetObjProperty(me,"LastLeadX",me.x);
+		SetObjProperty(me,"LastLeadY",me.y);
+		return;
+	endif
+	var diz := GetObjProperty(me,"Dizzy");
+	if (!diz)
+		diz := 0;
+		SetObjProperty(me,"DizzyTimer",ReadGameClock()+40);
+	endif
+	if(!GetObjProperty(me,"CanMoveCheck") or ReadGameClock() > GetObjProperty(me,"CanMoveCheck")  )
+		SetObjProperty(me,"CanMoveCheck",ReadGameClock()+1);
+		leadmovey := GetObjProperty(me,"LeadMoveY");
+		if (leadmovey)
+			if (me.y != toy)
+				//i did want to move on the yaxis
+				if (me.y == leadmovey)
+					//but i didnt move on the y axis
+					//say("cant move on y axis!");
+					diz := diz + 1;
+				endif
+			endif
+		endif
+		SetObjProperty(me,"LeadMoveY",me.y);
+		leadmoveX := GetObjProperty(me,"LeadMoveX");
+		if (leadmovex)
+			if (me.x !=tox)
+				//i did want to move on the xaxis
+				if (me.x == leadmovex)
+					//but i didnt move on the x axis
+					//say("cant move on x axis!");
+					diz := diz + 1;
+				endif
+			endif
+		endif
+		SetObjProperty(me,"LeadMoveX",me.x);
+	endif
+	SetObjProperty(me,"LastLeadX",me.x);
+	SetObjProperty(me,"LastLeadY",me.y);
+	//I'm Dizzy from Jumping about
+	if (diz > GetObjProperty(me,"Dizzy"))
+	if (diz == 3)
+		Say("I'm getting dizzy!");
+	endif	
+	if (diz ==6)
+		Say("I think I'm going to be sick!");
+	endif	
+	if (diz == 9)
+		Say("Argh!!!!!!!");
+	endif
+	if (diz=12)
+		diz := 0;
+		following := 0;
+		guarding := 0;
+		GoMad(master);
+		Say("Tell Slaine to fix this! :P");
+	endif
+	endif
+	//Say(diz);
+	SetObjProperty(me,"Dizzy",diz);
+endfunction
+
+function SayRandom()
+	if (!GetObjProperty(me,"squelch"))
+		Case(Random(70)+1)
+			1: Say("There are two rules for success: 1.) Don't tell all you know... ");
+			2: Say("Never go to bed angry, stay awake and plot your revenge. ");
+			3: Say ("I've been on so many blind dates, I should get a free dog.");
+			4: Say("Treat each day as your last; one day you will be right. ");
+			5: Say("Marriage is not a word. It's a sentence. ");
+			6: Say("I'm one bad relationship away from having 30 cats. ");
+			7: Say(" like my women like I like my coffee. Ground up and in the freezer. ");
+			8: Say("Well, paint me purple and call me Barney.");
+			9: Say("Remember: First you pillage THEN you burn.");
+			10: Say("Lets pillage their women, rape their horses and steal their town. Oh wait! Thats not right..");
+			11: Say("Save the whales: collect the whole set .");
+			12: Say("If at first you don't succeed, destroy all evidence that you tried.");
+			13: Say("For every action there is an equal and opposite criticism.");
+			14: Say("Success always occurs in private and failure in full view.");
+			15: Say("The problem with the gene pool is that there is no lifeguard.");
+			16: Say("Imitation is not the sincerest form of flattery. Stalking is.");
+			17: Say("We are born naked, wet and hungry. Then things get worse.");
+			18: Say("What was the best thing BEFORE sliced bread?");
+			19: Say("The last thing I want to do is insult you. But it IS on the list.");
+			20: Say("Forgive and forget, but keep a list of names just in case.");
+			21: Say("The meek shall inherit the earth - after we're through with it.");
+			22: Say("Don't get married, find someone you hate and give them house. Cuts out the middle man.");
+			23: Say("I was only looking at your nametag, honest!");
+			24: Say("Is reading in the bathroom considered multi-tasking?");
+			25: Say("I'd kill for a Nobel Peace prize.");
+			26: Say("I'd like to have more self-esteem, but I don't deserve it.");
+			27: Say("Artificial intelligence is no match for natural stupidity.");
+			28: Say("Polynesia - memory loss in parrots.");
+			29: Say("Some people have a way with words, others not have way.");
+			30: Say("There are 10 types of people in the world. Those who can read binary and those who can't.");
+			31: Say("It's sad how whole families are torn apart by simple things, like wild dogs.");
+			32: Say("3 out of 4 people make up 75% of the population.");
+			33: Say("Bigamy: one wife too many. Monogamy: same thing.");
+			34: Say("Did you hear? They took the word gullible out of the dictionary!");
+			35: Say("Friction is such a drag.");
+			36: Say("Anyone who believes in telekenesis raise my hand.");
+			37: Say("When I want your opinion, I'll remove the duct tape.");
+			38: Say("I like kids, but I don't think I could eat a whole one.");
+			39: Say("I've got a mind like a.. a.. what's that thing called?");
+			40: Say("The Dark Ages was caused by the Y1K problem.");
+			41: Say("You have the capacity to learn from your mistakes. You will learn a lot today.");
+			42: Say("Sometimes too much to drink isn't enough.");
+			43: Say("Losing a girlfriend can be hard. In my case it was almost impossible.");
+			44: Say("Seen it all. Done it all. Can't remember most of it.");
+			45: Say("If we aren't supposed to eat animals, why are they made out of meat?");
+			46: Say("Vegetarians don't get cancer - they just look like they have it.");
+			47: Say("Bombs don't kill people, explosions kill people.");
+			48: Say("I want to die peacefully, in my sleep, like my grandfather, not screaming, terrified, like his passengers.");
+			49: Say("I'm ready for a three-some, all I need is two more people.");
+			50: Say("99 percent of lawyers give the rest a bad name.");
+			51: Say("Assassins do it from behind.");
+			52: Say("Death is hereditary.");
+			53: Say("Friends help you move. Real friends help you move bodies.");
+			54: Say("I don't suffer from insanity. I enjoy every minute of it.");
+			55: Say("I used to have a handle on life, and then it broke.");
+			56: Say("I'm as confused as a baby in a topless bar.");
+			57: Say("If ignorance is bliss, you must be orgasmic.");
+			58: Say("It IS as bad as you think, and they ARE out to get you.");
+			59: Say("Out of my mind. Back in five minutes.");
+			60: Say("Reality is a crutch for people who can't handle drugs.");
+			61: Say("Some people are only alive because it is illegal to shoot them.");
+			62: Say("There's too much blood in my alcohol system!");
+			63: Say(" I started out with nothing and I still have most of it.");
+			64: Say("Sometimes I wake up grumpy; other times I let her sleep.");
+			65: Say("Eat right. Stay fit. Die anyway.");
+			66: Say("The more people I meet, the more I like my dog.");
+			67: Say("I can handle pain until it hurts.");
+			68: Say("No matter where I go, you're there.");
+			69: Say("Gravity always gets me down.");
+			70: Say("Nobody's perfect. I'm a nobody.");
+		endcase
+	endif
+endfunction
+			
+

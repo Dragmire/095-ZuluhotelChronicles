@@ -1,0 +1,59 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/spelldata";
+include "include/dotempmods";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_AGILITY;
+const SPELL_EFFECT_ID		:= FX_SPELL_AGILITY;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_AGILITY;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_AGILITY;
+
+program cast_AGILITY( parms )
+
+	var circle := 2;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HELPFUL + TGTOPT_CHECK_LOS );
+	endif
+
+	if (!cast_on)
+		return;
+	endif
+	
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	endif
+
+	PlaySoundEffect(cast_on, SFX_SPELL_AGILITY);
+
+	if (!CanMod(cast_on, "dex"))
+		SendSysMessage(caster,"Already under the influence!");
+		return;
+	endif
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	var mod_amount := GetModAmount( caster );
+	var duration := GetModDuration( caster );
+
+	DoTempMod(cast_on, "dex", mod_amount, duration);
+
+endprogram

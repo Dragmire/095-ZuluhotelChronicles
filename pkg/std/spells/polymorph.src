@@ -1,0 +1,184 @@
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+include "include/classes";
+include "include/client";
+include "include/random";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_POLYMORPH;
+const SPELL_EFFECT_ID		:= FX_SPELL_POLYMORPH;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_POLYMORPH;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_POLYMORPH;
+
+program cast_poly( parms )
+
+	var circle := 7;
+	var caster;
+	var cast_on := caster;
+
+	if (parms[1] == "#MOB")
+		CastToad(parms[2],parms[3]);
+		return;
+	else
+		caster := parms;
+		if (!can_cast(caster, circle))
+        		return;
+		endif
+	endif
+
+
+	var magery := GetEffectiveSkill( caster, SKILLID_MAGERY );
+	var critgroup;
+	var thecreature;
+
+	if (magery < 70)
+		critgroup := Random(1);
+	elseif (magery < 80)
+		critgroup := Random(1)+1;
+	elseif (magery < 90)
+		critgroup := Random(1)+2;
+	else
+		critgroup := 3;
+	endif
+
+	var critter := Random(8);
+
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		critgroup := critgroup + 1;
+		critter	:= critter + 2;
+	elseif( GetObjProperty( caster, CLASSEID_WARRIOR ) )
+		critgroup := critgroup - 1;
+		critter	:= critter - 2;
+		if( critgroup < 0 )
+			critgroup := 0;
+		endif
+	
+		if( critter < 0 )
+			critter := 0;
+		endif
+	endif
+
+	case( critgroup )
+		0:	case( critter )
+		 		0: thecreature := 6;	//bird
+		 		1: thecreature := 51;	//slime
+		 		2: thecreature := 5;	//eagle
+		 		3: thecreature := 39;	//mongbat
+		 		4: thecreature := 31;	//headless
+		 		5: thecreature := 29;	//gorilla
+		 		6: thecreature := 42;	//ratman
+		 		7: thecreature := 28;	//giant spider
+		 		8: thecreature := 28;	//giant spider
+		 		9: thecreature := 28;	//giant spider
+			endcase
+			break;
+	
+		1:	case( critter )
+		 		0: thecreature := 48;	//scorpion
+		 		1: thecreature := 7;	//orc
+		 		2: thecreature := 3;	//zombie
+		 		3: thecreature := 17;	//orc
+		 		4: thecreature := 33;	//lizardman
+		 		5: thecreature := 26;	//shade
+		 		6: thecreature := 33;	//lizardman
+		 		7: thecreature := 30;	//harpy
+		 		8: thecreature := 30;	//harpy
+		 		9: thecreature := 30;	//harpy
+			endcase
+			break;
+	
+		2:	case( critter )
+		 		0: thecreature := 18;	//ettin
+		 		1: thecreature := 8;	//corpser
+		 		2: thecreature := 22;	//beholder
+		 		3: thecreature := 14;	//earth elem
+		 		4: thecreature := 16;	//water elem
+		 		5: thecreature := 15;	//fire elem
+		 		6: thecreature := 13;	//air elem
+		 		7: thecreature := 47;	//ent
+		 		8: thecreature := 47;	//ent
+		 		9: thecreature := 47;	//ent
+			endcase
+			break;
+	
+		3:	case( critter )
+		 		0: thecreature := 1;	//ogre
+		 		1: thecreature := 4;	//gargoyle
+		 		2: thecreature := 24;	//lich
+		 		4: thecreature := 9;	//demon
+		 		5: thecreature := 12;	//dragon
+		 		6: thecreature := 10;	//demon with sword
+		 		7: thecreature := 58;	//wisp
+		 		8: thecreature := 12;	//dragon
+		 		9: thecreature := 12;	//dragon
+			endcase
+			break;
+		
+		4:	case( critter )
+				0: thecreature := 58;	//wisp
+		 		1: thecreature := 58;	//wisp
+		 		2: thecreature := 24;	//lich
+		 		3: thecreature := 9;	//demon
+		 		4: thecreature := 9;	//demon
+		 		5: thecreature := 12;	//dragon
+		 		6: thecreature := 10;	//demon with sword
+		 		7: thecreature := 58;	//wisp
+		 		8: thecreature := 12;	//dragon
+		 		9: thecreature := 12;	//dragon
+			endcase
+			break;
+	endcase
+
+	var new_color;
+	if( thecreature == 150 )
+		new_color := 233;
+	else
+		new_color := 0;
+	endif
+
+	var mod_amount := ModifyWithMagicEfficiency( caster, CInt((critgroup * 3) + critter) );
+	var duration	 := GetModDuration( caster );
+
+	PolymorphMobile( caster, thecreature, new_color, duration, mod_amount );
+
+endprogram
+
+
+function CastToad( caster,cast_on )
+
+	var circle := 7;
+	var fromhit;
+	send_attack(cast_on, caster, SPELLID_POLYMORPH );
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	endif
+	PlaySoundEffect( cast_on, SFX_SPELL_POLYMORPH);
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+
+	var mod_amount := Resisted( caster, cast_on, circle, GetModAmount( caster ) );
+	var duration := 0 - GetModDuration( caster );
+
+	if( immunity == CURSED )
+		SendSysMessage( cast_on, "One of your equipped item increase the effect of the spell!" );
+		mod_amount := mod_amount * 2;
+		duration := duration * 2;
+	endif
+
+	var new_form 	:= 0x51;
+	var new_color := 1425;
+
+	PolymorphMobile( cast_on, new_form, new_color, duration, mod_amount );
+
+endfunction

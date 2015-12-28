@@ -1,0 +1,109 @@
+use uo;
+
+include "include/objtype";
+include "include/spelldata";
+include "include/areas";
+include "include/client";
+include "include/recalling";
+include "../pkg/std/housing/utility";
+
+program cast_recall( caster )
+
+	if (!can_cast(caster, 4))
+		return;
+	endif
+
+	if( IsForbiddenAreaToRecallFrom( caster ) )
+		SendSysMessage( caster, "You can't gate from there." );
+		return 0;
+	endif
+
+
+	SendSysMessage( caster, "Select a rune to recall from." );
+
+	var cast_on := CanTargetThing(caster, 4, TGTOPT_CHECK_LOS );
+	if(!cast_on)
+		return;
+	elseif( !Accessible( caster, cast_on ) )
+		SendSysMessage( caster, "You can't reach that." );
+		return 0;
+	elseif( cast_on.objtype != UOBJ_RUNE && cast_on.objtype != 0x6100 )
+		SendSysMessage( caster, "You can only cast that on a recall rune or a runebook!" );
+		return 0;
+	elseif( !ReserveItem( cast_on ) )
+		return 0;
+	endif
+
+	var tox := CInt( GetObjProperty( cast_on, "x" ) );
+	var toy := CInt( GetObjProperty( cast_on, "y" ) );
+	var toz := CInt( GetObjProperty( cast_on, "z" ) );
+	var sx  := caster.x;
+	var sy  := caster.y;
+	var sz  := caster.z;
+
+	if( !tox && !toy && !toz )
+		SendSysMessage( caster, "This is a blank rune!");
+		return 0;
+	
+	elseif( IsForbiddenAreaToRecallTo( caster, tox, toy ) )
+		SendSysMessage( caster, "You can't recall to this place." );
+		if( cast_on.objtype == UOBJ_RUNE )
+			DestroyItem(cast_on);
+		endif
+		return 0;
+	endif
+
+
+//---- by Greven ----//
+	//DONATOR basic area
+	var x1 := 5894;
+	var x2 := 6016;
+	var y1 := 1416;
+	var y2 := 1533;
+
+        if(tox >= x1 and tox <= x2 and toy >= y1 and toy <= y2)
+           sendsysmessage(caster,"You can't recall to this place.",3,33);
+	   return;
+	endif
+
+	//DONATOR elite area
+	var elitex1 := 5375;
+	var elitex2 := 5427;
+	var elitey1 := 1080;
+	var elitey2 := 1142;
+
+	if(tox >= elitex1 and tox <= elitex2 and toy >= elitey1 and toy <= elitey2)
+            sendsysmessage(caster,"You can't recall to this place.",3,33);
+	    return;
+	endif
+
+	//DONATOR pro area
+	var prox1 := 6033;
+	var prox2 := 6138;
+	var proy1 := 1284;
+	var proy2 := 1388;
+
+	if(tox >= prox1 and tox <= prox2 and toy >= proy1 and toy <= proy2)
+            sendsysmessage(caster,"You can't recall to this place.",3,33);
+	    return;
+	endif
+//---- end ----//
+
+
+
+	var multi := GetStandingHeight( tox, toy, toz ).multi;
+	if( multi )
+		if( !IsOwner( caster, multi )  )
+			if( !IsFriend( caster, multi ) )
+				SendSysMessage( caster, "You can't recall to this house." );
+				return;
+			endif
+		endif
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_RECALL1 );
+	sleepms(250);
+	MoveCharacterToLocation( caster, tox, toy, toz );
+	PlaySoundEffect( caster, SFX_SPELL_RECALL2 );
+
+endprogram

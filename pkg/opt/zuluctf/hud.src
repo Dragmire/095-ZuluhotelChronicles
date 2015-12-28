@@ -1,0 +1,92 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+var layout := {
+"page 0",
+"nodispose",
+"nomove",
+"page 1",
+"resizepic 0 0 5054 50 74",
+"resizepic 491 0 5054 149 50",
+"tilepic 495 9 11528",
+"tilepic 542 2 11530",
+"tilepic 591 2 11534",
+"text 576 31 4 1",
+"text 625 31 33 0",
+"text 5 1 300 2",
+"text 5 18 300 3",
+"text 5 35 300 4",
+"text 5 52 300 5",
+"text 23 1 300 6",
+"text 23 18 300 7",
+"text 23 35 300 8",
+"text 23 52 300 9",
+""
+//"noclose"
+};
+
+var data := {
+"0",
+"0",
+"S:",
+"C:",
+"K:",
+"D:",
+"0",
+"0",
+"0",
+"0",
+};
+
+program hud(who)
+
+case (GetGlobalProperty("ctfredloc"))
+
+"play": layout[9]:="tilepic 591 2 11535";
+"drop": layout[9]:="tilepic 591 2 11536";
+
+endcase
+
+case (GetGlobalProperty("ctfblueloc"))
+
+"play": layout[8]:="tilepic 542 2 11531";
+"drop": layout[8]:="tilepic 542 2 11532";
+
+endcase
+
+case (GetObjProperty(who,"#ctftech"))
+
+"armor": layout[7]:="tilepic 495 9 11520";
+"disrupt": layout[7]:="tilepic 495 9 11521";
+"haste": layout[7]:="tilepic 495 9 11522";
+"inviso": layout[7]:="tilepic 495 9 11523";
+"strength": layout[7]:="tilepic 495 9 11524";
+"magic": layout[7]:="tilepic 495 9 11525";
+"quad": layout[7]:="tilepic 495 9 11526";
+"regen": layout[7]:="tilepic 495 9 11527";
+
+endcase
+
+var pid,i;
+pid:=getpid();
+var proc := getprocess(pid);
+
+data[7]:= GetObjProperty(who,"ctfscore");
+data[8]:= GetObjProperty(who,"ctfcaps");
+data[9]:= GetObjProperty(who,"ctfkills");
+data[10]:= GetObjProperty(who,"ctfdeaths");
+
+data[1]:= GetGlobalProperty("ctfredcaps");
+data[2]:= GetGlobalProperty("ctfbluecaps");
+
+start_script(":zuluctf:gkilled",proc);
+
+SendDialogGump(who,layout,data);
+
+endprogram

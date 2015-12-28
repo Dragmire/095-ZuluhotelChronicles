@@ -1,0 +1,127 @@
+use uo;
+use os;
+Use cfgfile;
+
+Include "include/time";
+
+program textcmd_summon( character, whom )
+
+	if( !whom )
+		var chr := MakeAndProcessGump( character );
+		if( chr )
+			MoveCharacterToLocation( chr, character.x, character.y, character.z, MOVECHAR_FORCELOCATION );
+		endif
+
+	else
+		whom := upper( whom );
+
+		foreach chr in EnumerateOnlineCharacters()
+			if( upper( chr.name ) == whom )
+				MoveCharacterToLocation( chr, character.x, character.y, character.z, MOVECHAR_FORCELOCATION );
+                                LogEditing( character, chr, { character.x, character.y, character.z } );
+				break;
+			endif
+		endforeach
+	endif
+ 
+ 
+
+endprogram
+
+Function LogEditing( Who, Summoned, To_Loc )
+
+    Var datafile := ReadConfigFile( "logging_summoned" );
+
+    If( datafile == error )
+    SendSysMessage( Who, "File Error " + datafile.errortext );
+    Return 0;
+    Endif
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",     Who.name });
+    elem.append({ "Staff Serial",   Hex( Who.serial ) });
+    elem.append({ "Staff IP",   Who.ip });
+    elem.append({ "Player Name",    Summoned.name });
+    elem.append({ "Player Serial",  Hex( Summoned.serial) });
+    elem.append({ "Player IP",   Summoned.ip });
+    elem.append({ "SummonedTo",     To_Loc[1] + " " + To_Loc[2] + " " + To_Loc[3] });
+    elem.append({ "TimeOf",         GetDateString( polcore().systime ) });
+
+    AppendConfigFileElem( "logging_summoned", "Summoned", "" , elem );
+    UnloadConfigFile( "logging_summoned" );
+    EndIf
+
+Endfunction
+
+function MakeAndProcessGump( who )
+
+	var layout	:= array( "page 0",
+				  "resizepic 50  0   2600 300 525",
+				  "resizepic 100 480 5100 200  25",
+				  "text 150 30 5 0" );
+
+	var data	:= array( "Summon Menu" );
+
+
+	var players	:= EnumerateOnlineCharacters();
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 20;
+	var y 	:= 70;
+	var i;
+	var j;
+	var uhunter;
+
+	layout.append( "page " + page );
+	if( len(players) > perpage )
+		layout.append( "button 250 481 5540 5541 0 " + (page + 1) );
+	endif
+
+	for( i := start; i <= len(players); i := i + 1 )
+		uhunter:=CInt(GetObjProperty(players[i],"UHunter"));
+
+		if ( uhunter==0 || ( who.cmdlevel>3 ))
+
+			if( done == perpage )
+				done 	:= 0;
+				page 	:= page + 1;
+				y 	:= 70;
+
+				layout.append( "page " + page );
+				layout.append( "button 125 481 5537 5538 0 " + (page - 1) );
+				if( len(players) > (count + perpage) )
+					layout.append( "button 250 481 5540 5541 0 " + (page + 1) );
+				endif
+			endif
+                         if(players[i].concealed <= who.cmdlevel)
+			if (players[i].cmdlevel > 0)
+			  layout.append( "text 85 " + y + " 51 " + len(data) );
+			else
+			  layout.append( "text 85 " + y + " 0 " + len(data) );
+			endif
+
+			layout.append( "button 300 " + (y+5) + " 2118 2117 1 0 " + i );
+			data.append( players[i].name );
+
+			y 	:= y + 20;
+			done 	:= done + 1;
+			count 	:= count + 1;
+   endif
+		endif
+	endfor
+
+	var result := SendDialogGump( who, layout, data );
+	if( !result[0] )
+		return;
+	endif
+
+	result := CInt( result[0] );
+
+	return players[result];
+
+endfunction

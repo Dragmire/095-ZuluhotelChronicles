@@ -1,0 +1,20 @@
+use os;
+use uo;
+
+program auxtest( connection )
+	syslog( "Logger manager " + getpid() + " started" );
+	SetGlobalProperty( "#LoggerPID", getpid() );
+	var ev;
+	connection.transmit( "POLLogger02" );
+	while( connection )
+		ev := wait_for_event( 60 );
+		if( ev )
+			connection.transmit( ev );
+			print( "Packet of "+ SizeOf( ev ) +" bytes sent! (" + events_waiting() +  " events in queue)" );
+		endif
+	endwhile
+	if( CInt( GetGlobalProperty( "#LoggerPID" ) ) == getpid() )
+		EraseGlobalProperty( "#LoggerPID" );
+	endif
+	syslog( "Logger manager " + getpid() + " closed" );
+endprogram

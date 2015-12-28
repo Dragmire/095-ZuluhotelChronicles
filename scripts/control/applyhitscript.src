@@ -1,0 +1,29 @@
+use uo;
+use os;
+use cfgfile;
+
+program applyhitscript(item)
+
+	sleep( 2 );
+
+	//print(item.attribute); 
+ 	//SetObjProperty(item, "SkillId", GetSkillIdByAttribute(item.Attribute));
+	
+	if( !item.hitscript )
+		var cfg := ReadConfigFile( "::itemdesc" );
+		item.hitscript := cfg[item.objtype].hitscript;
+	endif
+
+endprogram
+
+function GetSkillIdByAttribute(attr)
+
+	case(attr)
+	"Archery":	return 31;
+	"Macefighting": return 41;
+	"Swordsmanship": return 40;	
+	"Fencing":	return 42;
+	default:	return "error";
+	endcase
+
+endfunction

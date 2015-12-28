@@ -1,0 +1,57 @@
+// Locking Spawning Chest system  version .1
+// by Zulu (zulu@zuluhotel.com)   July 5, 2000
+
+use uo;
+use os;
+
+include "include/chests";
+
+program LockThemChests()
+
+  var sleeptime, chests;
+
+  while(1)
+
+    chests:=GetGlobalProperty("unlockedchests");
+
+    if (chests[1]!="NONE") RelockEm(); endif
+
+    sleep(120*60);
+
+  endwhile
+
+endprogram
+
+function RelockEm()
+
+set_critical(1);
+
+  var i,chest,chests:=GetGlobalProperty("unlockedchests"),csize:=chests.size();
+
+    for (i:=1;i<=csize;i:=i+1)
+      chest:=SystemFindObjectBySerial(CInt(chests[i]));
+      if (chest)
+        if (!playersaround(chest))
+          foreach item in EnumerateItemsInContainer(chest)
+            DestroyItem(item);
+          endforeach
+          chests.erase(i);
+          if (chests.size()==0) chests:={"NONE"}; endif
+          lockem(chest);
+        endif
+      endif
+    endfor
+
+SetGlobalProperty("unlockedchests",chests);
+set_critical(0);
+endfunction
+
+function playersaround(chest)
+
+  foreach mob in ListMobilesNearLocationEx(chest.x,chest.y,chest.z,9,LISTEX_FLAG_NORMAL+LISTEX_FLAG_HIDDEN)
+    if (!mob.isA(POLCLASS_NPC)) return 1; endif
+  endforeach
+
+  return 0;
+
+endfunction

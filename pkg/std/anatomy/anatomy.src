@@ -1,0 +1,80 @@
+use uo;
+
+const DEFAULT_POINT := 80; // Default was 100...
+
+program anatomy( who )
+  SendSysMessage( who, "Select a target." );
+  var subject := Target(who);
+  if(!subject)
+   SendSysMessage(who, "Canceled.");
+  endif
+  var percenthealth := CInt( (100 * GetVital( subject, "stamina" ) / GetVitalMaximumValue( subject, "stamina" ) ) );
+  var skill := GetAttribute(who, "anatomy");
+  if (!subject.isA(POLCLASS_MOBILE))
+	 SendSysMessage(who, "Invalide mobile.");
+	 return;
+  endif
+  if(CheckSkill(who, 1, -1, DEFAULT_POINT))
+    var str := findstrength(GetAttribute(subject, "strength"));
+    var dex := finddex(GetAttribute(subject, "dexterity"));
+    SendSysMessage(who, str);
+    SendSysMessage(Who, dex);
+    if(skill >= 75)
+      SendSysMessage(who, "This being is at " + percenthealth + "% of his max vigor.");
+    endif
+  else
+    SendSysMessage(who, "You're not sure ...");
+  endif
+endprogram
+
+function findstrength(str)
+	if( str > 150 )
+		return "a Legendary Strength.";				
+	elseif( str > 135 )
+		return "One of the strongest people you have ever seen.";			
+	elseif( str > 120 )
+		return "Strong as an ox.";			
+	elseif( str > 105 )
+		return "Extraordinarily strong.";		
+	elseif( str > 90 )
+		return "Extremely strong.";
+	elseif( str > 75 )
+		return "Very strong."; 
+	elseif( str > 60 )
+		return "Somewhat strong.";
+	elseif( str > 45 )
+		return "To be of normal strength.";
+	elseif( str > 30 )
+		return "Somewhat weak."; 
+	elseif( str > 15 )
+		return "Rather Feeble.";
+	else
+		return "like they would have trouble lifting small objects."; 
+	endif
+endfunction
+
+function finddex(dex)
+	if( dex > 150 )
+		return "a Legendary Agility.";		
+	elseif( dex > 135 )
+		return "One of the fastest people you have ever seen.";		
+	elseif( dex > 120 )
+		return "Moves like quicksilver.";				
+	elseif( dex > 105 )
+		return "Extraordinarily agile.";				
+	elseif( dex > 90 )
+		return "Extremely agile."; 
+	elseif( dex > 75 )
+		return "Very agile."; 
+	elseif( dex > 60 )
+		return "Somewhat agile."; 
+	elseif( dex > 45 )
+		return "Moderately dextrous."; 
+	elseif( dex > 30 )
+		return "Somewhat uncoordinated."; 
+	elseif( dex > 15 )
+		return "Very clumsy.";
+	else
+		return "like they barely manage to stay standing."; 
+	endif
+endfunction

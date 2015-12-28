@@ -1,0 +1,23 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+Use datafile;
+include "include/attributes";
+Program Test( Who )
+
+   Var player := Target( Who );
+   
+   SetIntelligenceMod( Player, 0 );
+   SetDexterityMod( Player, 0 );
+   SetStrengthMod( Player, 0 );
+   who.ar_mod := 0;
+   
+    
+Endprogram

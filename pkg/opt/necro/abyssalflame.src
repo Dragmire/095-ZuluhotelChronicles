@@ -1,0 +1,154 @@
+use uo;
+use os;
+
+include "include/classes";
+include "include/attributes";
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ABYSSAL_FLAME;
+const SPELL_EFFECT_ID		:= FX_SPELL_ABYSSAL_FLAME;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ABYSSAL_FLAME;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ABYSSAL_FLAME;
+
+
+program abyssalflame( parms )
+
+	var circle := GetCircle( SPELLID_ABYSSAL_FLAME );
+	var element := FIRE;
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_ABYSSAL_FLAME ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "Select a target." );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_ABYSSAL_FLAME );
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayMovingEffect(caster,
+                                 cast_on,
+                                 SPELL_EFFECT_ID,
+                                 SPELL_EFFECT_SPEED,
+                                 SPELL_EFFECT_LOOP,
+                                 explode := 0);
+	endif
+
+	PlaySoundEffect( caster, SFX_SPELL_ABYSSAL_FLAME );
+
+	var protected := IsProtected( caster, cast_on, circle );
+	if( protected != IMMUNED )
+		if( protected == CURSED )
+			ApplyElementalDamage( caster, cast_on, circle * 2, CalcSpellDamage( caster, cast_on, circle ), element );
+		else
+			ApplyElementalDamage( caster, cast_on, circle, CalcSpellDamage( caster, cast_on, CInt(circle / 2) ), element );
+		endif
+	endif
+
+if(caster.npctemplate)
+targetear_se_for_npc(caster,cast_on,fromhit);
+else
+targetear_se_for_human(caster,cast_on,fromhit);
+endif
+
+
+
+endprogram
+
+
+function targetear_se_for_human(caster,cast_on,fromhit)
+	var circle := GetCircle( SPELLID_ABYSSAL_FLAME );
+	var element := FIRE;
+	var plane := NECRO;
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster, CInt( GetEffectiveSkill( caster, SKILLID_MAGERY ) / 35 ) );
+	if( !range )
+		return;
+	endif
+
+	var victims := ListMobilesNearLocation( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range );
+	EraseObjProperty( caster, "#Casting" );
+	sleepms( 500 );
+
+	foreach mobile in victims
+
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) && mobile.dead == 0 )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+		
+				dmg := CalcSpellDamage( caster, mobile, CInt(circ / 2), AREA_EFFECT_SPELL );
+				Send_attack( mobile, caster, SPELLID_ABYSSAL_FLAME );
+				PlaySoundEffect( mobile, SFX_SPELL_EXPLOSION );
+				PlayStationaryEffect( CInt(mobile.x),CInt(mobile.y),CInt(mobile.z), FX_SPELL_EXPLOSION, SPEED_SPELL_EXPLOSION, LOOP_SPELL_EXPLOSION );
+				ApplyplanarDamage( caster, mobile, circ, dmg, plane );
+			endif
+		endif
+
+	endforeach
+endfunction
+
+
+function targetear_se_for_npc(caster,cast_on,fromhit)
+	var circle := GetCircle( SPELLID_ABYSSAL_FLAME );
+	var element := FIRE;
+	var plane := NECRO;
+	var dmg;
+	var range := ModifyWithMagicEfficiency( caster, CInt( GetEffectiveSkill( caster, SKILLID_MAGERY ) / 35 ) );
+	if( !range )
+		return;
+	endif
+
+	var victims := ListMobilesNearLocation( CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z), range );
+	EraseObjProperty( caster, "#Casting" );
+	sleepms( 500 );
+
+	foreach mobile in victims
+	  if(!(mobile.npctemplate))
+		if( CheckLosAt( mobile, CInt(cast_on.x), CInt(cast_on.y), CInt(cast_on.z) ) && mobile.dead == 0 )
+			var immunity := IsProtected( caster, mobile, circle );
+			var circ := circle;
+			if( immunity != IMMUNED )
+				if( immunity == CURSED )
+					circ := circ * 2;
+				endif
+		
+				dmg := CalcSpellDamage( caster, mobile, CInt(circ / 2), AREA_EFFECT_SPELL );
+				Send_attack( mobile, caster, SPELLID_ABYSSAL_FLAME );
+				PlaySoundEffect( mobile, SFX_SPELL_EXPLOSION );
+				PlayStationaryEffect( CInt(mobile.x),CInt(mobile.y),CInt(mobile.z), FX_SPELL_EXPLOSION, SPEED_SPELL_EXPLOSION, LOOP_SPELL_EXPLOSION );
+				ApplyplanarDamage( caster, mobile, circ, dmg, plane );
+			endif
+		endif
+           endif
+	endforeach
+endfunction
+

@@ -1,0 +1,26 @@
+use uo;
+
+include "../../karmafame";
+include "include/yesno";
+
+program textcmd_resetkf( who )
+
+	var tgt := TargetCoordinates( who );
+
+	if( tgt.mobile )
+		var mob := tgt.mobile;
+
+		if( !YesNo( who, "Reset karma?" ) )
+			SendSysMessage( who, "Canceled." );
+			return;
+		endif
+
+		SetKarma(mob, 0);
+		SetFame(mob, 0);
+
+		SetNewNotoName( mob );
+
+		SendSysMessage( who, "Setting " + mob.name + " right title: " + mob.title_prefix + " K:"+ GetKarma( mob ) );
+	endif
+
+endprogram

@@ -1,0 +1,34 @@
+use uo;
+
+include "include/constants/objtypes";
+include "include/managers";
+
+program textcmd_showspawnpoints( who )
+ 
+        var spawnpoints := SendSpawnPointEvent(EVID_SPAWNPOINT_REQUEST_POINTS);
+	
+	var counter :=0;
+        var counter2 :=0;
+        var counter3 :=0;
+        var pt_data;
+	
+	foreach point in spawnpoints
+        pt_data := GetObjProperty( point, PROPID_SPAWNPOINT_SETTING );
+	if( !pt_data )
+        counter2 := counter2 + 1;
+        point.name := "SpawnPoint [Invalid]";
+        SetObjProperty( point, PROPID_SPAWNPOINT_SETTING, {"NPC","nil",0,0,4,0,0,0,0,0,0,0,0,""} );
+	elseif( pt_data[2] == "nil" )
+        counter3 := counter3 + 1;
+        
+        else
+        counter := counter + 1;
+        point.name := "SpawnPoint [" + pt_data[3] + " " + pt_data[2] + "]";
+        endif
+	endforeach
+
+	SendSysMessage( who,"Valid Points Named: " + counter );
+        SendSysMessage( who,"Invalid Points Named: " + counter2 );
+        SendSysMessage( who,"Nil Points: " + counter3 );
+	
+endprogram

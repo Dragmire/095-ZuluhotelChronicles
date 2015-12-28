@@ -1,0 +1,60 @@
+use os;
+use uo;
+
+program textcmd_gotoserial( who, serial )
+
+	serial := CInt(serial);
+	if( !serial )
+		return 0;
+	endif
+
+	var object := SystemFindObjectBySerial(serial);
+	if( object )
+		var parent := object;
+		while( parent.container )
+			parent := parent.container;
+		endwhile
+	
+		SendSysMessage( who, "Object is " + object.name + "." );
+		MoveCharacterToLocation( who, object.x, object.y, object.z, MOVECHAR_FORCELOCATION );
+	else
+		object := SystemFindObjectBySerial(serial, SYSFIND_SEARCH_STORAGE_AREAS);
+		if( object )
+			var parent := object;
+			while( parent.container )
+				parent := parent.container;
+			endwhile
+		
+			var parent_owner_serial := CInt(SplitWords(parent.name)[3]);
+			var owner := SystemFindObjectBySerial(parent_owner_serial);
+			if(!owner )
+				owner := SystemFindObjectBySerial(parent_owner_serial, SYSFIND_SEARCH_OFFLINE_MOBILES);
+			endif
+		
+			SendSysMessage( who, "Object is " + object.name + " and is in the bankbox of Mobile " + Hex(parent_owner_serial) + ": " + owner.name + ", Account: " + owner.acctname + "." );
+		else
+			object := SystemFindObjectBySerial(serial, SYSFIND_SEARCH_OFFLINE_MOBILES);
+			if( object )
+				var parent := object;
+				while( parent.container )
+					parent := parent.container;
+				endwhile
+			
+				if( parent )
+					parent := SystemFindObjectBySerial(parent.serial, SYSFIND_SEARCH_OFFLINE_MOBILES);
+				endif
+			
+				if( object.serial != parent.serial )
+					SendSysMessage( who, "Object is " + object.name + " and is on the Player: " + parent.name + ", Account: " + parent.acctname + ", at location: (" + parent.x + ", " + parent.y + ", " + parent.z + ")." );
+				elseif( object.isA(POLCLASS_NPC) )
+					SendSysMessage( who, "Object is " + object.name + ", at location: (" + object.x + ", " + object.y + ", " + object.z + ")." );
+				else
+					SendSysMessage( who, "Object is " + object.name + ", Account: " + object.acctname + ", at location: (" + object.x + ", " + object.y + ", " + object.z + ")." );
+				endif
+			else
+				SendSysMessage( who, "Couldn't find an object with this serial." );
+			endif
+		endif
+	endif
+
+endprogram

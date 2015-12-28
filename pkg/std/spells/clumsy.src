@@ -1,0 +1,70 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_CLUMSY;
+const SPELL_EFFECT_ID		:= FX_SPELL_CLUMSY;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_CLUMSY;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_CLUMSY;
+
+program cast_clumsy( parms )
+
+	var circle := 1;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		send_attack(cast_on,caster, SPELLID_CLUMSY );
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+        endif
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	PlaySoundEffect(cast_on, SFX_SPELL_CLUMSY);
+
+	var immunity := IsProtected( caster, cast_on, circle );
+	if( immunity == IMMUNED )
+		return;
+	endif
+
+	if (!CanMod(cast_on, "dex"))
+		SendSysMessage( caster, "Already under the influence!" );
+		return;
+	endif
+
+	var mod_amount := Resisted( caster, cast_on, circle, GetModAmount( caster ));
+	var duration := GetModDuration( caster );
+
+	if( immunity == CURSED )
+		SendSysMessage( cast_on, "One of your equipped item increase the effect of the spell!" );
+		mod_amount := mod_amount * 2;
+		duration := duration * 2;
+	endif
+
+	DoTempMod(cast_on, "dex", (0-mod_amount), duration);
+
+endprogram

@@ -1,0 +1,24 @@
+use os;
+use uo;
+use util;
+
+program textcmd_testInternal(who, params)
+	var p:=SplitWords(params);
+	if(!(p[2]))
+		SendSysMessage(who, "Syntax: .testinternal throws modulo" );
+	endif
+	var t:=CInt(p[1]), m:=CInt(p[2]);
+  var arr:={}, r;
+	for i:=1 to m
+		arr[i]:=0;
+	endfor
+	for i:=1 to t
+		r:=RandomInt(m)+1;
+		arr[r]:=arr[r]+1;
+		sleepms(1);
+	endfor
+	for i:=1 to m
+		print("P["+(i-1)+"]="+arr[i]);
+	endfor
+	SendSysMessage(who, "OK (see console for results)");
+endprogram

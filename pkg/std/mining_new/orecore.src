@@ -1,0 +1,117 @@
+use uo;
+use os;
+
+include "include/random";
+include "include/attributes";
+include "include/client";
+
+const EVID_CHECK_SPOT := 0x123456;
+
+var oretable := GetGlobalProperty("orelist");
+if(!oretable)
+  oretable := dictionary;
+endif
+var ev;
+var ed := dictionary;
+var ttime := ReadGameClock();
+
+program ore_server()
+
+  SetGlobalProperty("#OreCorePointManagerPID",getpid());
+  print("[ORE CORE MANAGER] started.  PID = "+getpid());
+
+  while(1)
+	ev := wait_for_event(20);
+	case(ev.type)
+	  EVID_CHECK_SPOT: CheckSpot();
+	endcase
+	if(ttime + 120 < ReadGameClock())
+	  SetGlobalProperty("orelist", oretable);
+	  ttime := ReadGameClock();
+	endif
+  endwhile
+endprogram
+
+function CheckSpot()
+  var src := ev.source;
+//  Print("Requesting Ore Type: "+ ev.x +", "+ev.y);
+  var x := CInt(ev.x/3);
+  var y := CInt(ev.y/3);
+  if(!oretable.exists(x))
+    NewSpot(0,y,src);
+  elseif(!oretable[x].exists(y))
+    NewSpot(x,y,src);
+  endif
+  print("Ore type found: " + oretable[x][y]);
+  src.sendevent(oretable[x][y]);
+endfunction
+
+function NewSpot(x:=0,y,src)
+//  Print("Generating new ore vein");
+  if( x == 0)
+ 	oretable.insert(CInt(ev.x/3),ed);
+  endif
+
+  var ore := GenerateNewOreType(src);
+  oretable[CInt(ev.x/3)].insert(y,ore);
+  SetGlobalProperty("orelist", oretable);
+endfunction
+
+
+function GenerateNewOreType(src)
+
+var rnum,skill := GetEffectiveSkill(src, SKILLID_MINING);
+
+if((skill >= 1) && (skill <15))
+rnum:=1;
+elseif((skill >= 15) && (skill <20))
+rnum:=2;
+elseif((skill >= 20) && (skill <25))
+rnum:=3;
+elseif((skill >= 25) && (skill <30))
+rnum:=4;
+elseif((skill >= 30) && (skill <35))
+rnum:=5;
+elseif((skill >= 35) && (skill <40))
+rnum:=6;
+elseif((skill >= 40) && (skill <45))
+rnum:=7;
+elseif((skill >= 45) && (skill <50))
+rnum:=8;
+elseif((skill >= 50) && (skill <55))
+rnum:=9;
+elseif((skill >= 55) && (skill <60))
+rnum:=10;
+elseif((skill >= 60) && (skill <65))
+rnum:=11;
+elseif((skill >= 65) && (skill <70))
+rnum:=12;
+elseif((skill >= 70) && (skill <75))
+rnum:=13;
+elseif((skill >= 75) && (skill <80))
+rnum:=14;
+elseif((skill >= 80) && (skill <84))
+rnum:=15;
+elseif((skill >= 84) && (skill <88))
+rnum:=16;
+elseif((skill >= 88) && (skill <91))
+rnum:=17;
+elseif((skill >= 91) && (skill <94))
+rnum:=18;
+elseif((skill >= 94) && (skill <95))
+rnum:=19;
+elseif((skill >= 95) && (skill <97))
+rnum:=20;
+elseif((skill >= 97) && (skill <105))
+rnum:=21;
+elseif((skill >= 105) && (skill <120))
+rnum:=22;
+elseif((skill >= 120) && (skill <125))
+rnum:=28;
+elseif (skill>=130)
+rnum:=30;
+endif
+
+return(random(rnum)+1);
+
+endfunction

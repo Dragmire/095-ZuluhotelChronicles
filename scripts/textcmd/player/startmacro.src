@@ -1,0 +1,41 @@
+use uo;
+use os;
+
+include "include/objtype";
+include "include/yesno";
+
+program macro( who )
+	
+
+var answer;
+
+	If( !GetObjProperty( who, "#startmacrocmd") )
+		SetObjProperty( who, "#startmacrocmd", 1);
+	elseif( GetObjProperty( who, "#startmacrocmd") == 1 )
+		SendSysMessage( who, "Macrostarter allready open!" );
+		return;
+	endif
+
+
+	if( ReadGameClock() < Cint(GetObjProperty( who ,"#macrostart" ) +86400 ) )
+		SendSysMessage( who , "You can only use the macro feature once every 24 hours!" );
+		EraseObjProperty( who, "#startmacrocmd");
+		return;
+	else
+
+		answer:= YesNo(who,"Start Macro?");
+
+		if (!answer)
+			SendSysMessage(who,"Macrotime not started!",3,34);
+			EraseObjProperty( who, "#startmacrocmd");
+			return;
+		endif
+
+		EraseObjProperty( who, "#macrostart");
+		EraseObjProperty( who, "#startmacrocmd");
+		SendSysMessage( who , "You may now macro for 10 hours!" );
+		SetObjProperty( who, "#macrostart", ReadGameClock() );
+		
+	endif
+
+endprogram

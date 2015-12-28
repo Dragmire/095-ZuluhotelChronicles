@@ -1,0 +1,41 @@
+use uo;
+use os;
+
+include "include/time";
+
+program mkaccount(who, text)
+
+	if ( !text)
+		SendSysMessage( who, ".mkaccount <accountname> <password> <email>" );
+		return;
+	endif
+
+	var params := SplitWords( text );
+
+	if (Len(params)<>3)
+		SendSysMessage( who, ".mkaccount <accountname> <password> <email>" );
+		return;
+	endif
+
+	var UserName     := params[1];
+	var UserPassword := params[2];
+	var UserEmail    := params[3];
+	var account;
+
+	var ret := CreateAccount( UserName, UserPassword, 1 );
+
+	if( ret == error )
+		SendSysMessage( who, "Sorry, account creation failed.");
+		SendSysMessage( who, "Error: " + ret.errortext );
+		return;
+	else
+		account := FindAccount(UserName);
+		account.setprop("Email", UserEmail);
+		account.setprop("IP", who.ip);
+		account.setprop("Login ", NowString());
+		account.setprop("Notes", "<none>");
+		account.setprop("Release", 0);
+		SendSysMessage( who, "The account has been created." );
+	endif
+
+endprogram

@@ -1,0 +1,37 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program rspellwarding( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_SPELL_WARDING, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	SetObjProperty( item, "PermMagicImmunity", power );
+	SendSysMessage( caster, "This " + item.desc + " will now immunise his wearer from certain spells." );
+	SetNameByEnchant( item );
+
+endprogram

@@ -1,0 +1,53 @@
+use uo;
+use os;
+
+
+program textcmd_goto( character , parm )
+
+	var chr := "nochar";
+	foreach ppl in enumerateonlinecharacters()
+		if(ppl.serial == getobjproperty(character , "LastMSG"))
+			
+		chr := ppl;
+
+		endif
+	endforeach
+
+
+		if(chr == "nochar" and getobjproperty(character , "LastMSG"))
+		sendsysmessage(character , "That person is offline!");
+			return;
+		elseif(!getobjproperty(character , "LastMSG"))
+			sendsysmessage(character , "There is no person to reply to!");
+			return;
+		endif
+		
+	
+	
+	if( chr )
+		if(Getobjproperty(chr , "MsgIsOff" ))
+			sendsysmessage(character , "You can't seem to talk to him!",3,0x0026);
+			return;
+		else
+			
+			if(!parm)
+				sendsysmessage(character , "Usage is .reply <MSG>!");
+				
+				return;
+			else
+				if(getobjproperty(character, "realname"))
+					sendsysmessage(chr , getobjproperty(character, "realname")+": "+parm, 3, 1176);
+				else
+					sendsysmessage(chr , character.name+": "+parm, 3, 1176);
+				endif
+				sendsysmessage(character, "Message sent to "+chr.name+".");
+			endif
+		endif
+				
+	endif
+
+endprogram
+
+
+
+

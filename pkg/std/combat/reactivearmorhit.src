@@ -1,0 +1,30 @@
+use uo;
+use os;
+
+program reactivearmorhit(param)
+  var attacker := param[1];
+  var defender := param[2];
+  var weapon := param[3];
+  var armor := param[4];
+  var basedamage := param[5];
+  var rawdamage := param[6];
+  if((attacker.dead) or (defender.dead))
+    return;
+  endif
+  var charges := CInt(GetObjProperty(defender, "ReactiveArmor") );
+  if(!charges)
+    SetObjProperty(defender, "TempDamage", rawdamage);
+    return;
+  endif
+  charges := charges - 1;
+  if(charges = 0)
+    EraseObjProperty(defender, "ReactiveArmor");
+  else
+    SetObjProperty(defender, "ReactiveArmor", charges);
+  endif
+  PlayObjectCenteredEffect(attacker, 0x374a, 10,10);
+  PlaySoundEffect(attacker, 0x1f2);
+  rawdamage := Cint(rawdamage / 2);
+  ApplyRawDamage(attacker, rawdamage);
+  SetObjProperty(defender, "TempDamage", rawdamage);
+endprogram

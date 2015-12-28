@@ -1,0 +1,40 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+program cast_flame_spirit( parms )
+
+	var circle := GetCircle( SPELLID_SUMMON_GUARDIAN );
+	var caster;
+	var cast_loc;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_loc := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+
+	else
+		caster := parms;	
+		if( TryToCast( caster, SPELLID_SUMMON_GUARDIAN ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		
+		cast_loc := CanTargetArea( caster , circle );
+		if (!cast_loc)
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+	EraseObjProperty( caster , "#Casting" );
+	if (!caster.npctemplate)
+	    	SummonCreature( caster , "holywisp" , cast_loc );	
+	else
+		SummonCreature( caster , "infernalwisp" , cast_loc );	
+	endif
+endprogram

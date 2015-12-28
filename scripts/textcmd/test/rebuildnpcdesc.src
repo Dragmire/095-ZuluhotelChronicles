@@ -1,0 +1,286 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use file;
+Use os;
+Use uo;
+
+Include "include/time";
+Include "include/attributes";
+
+Program textcmd_mount( Who )
+
+    Var Refs_Weapons := Array{};
+
+	Var NPC_Desc := ReadConfigFile( "npcdesc" );
+	Var Elements := GetConfigStringKeys( NPC_Desc );
+	Var Skills := GetAttributeIds();
+	Var NPC_Elem;
+	Var LineBreak := 0;
+
+	Foreach Elem in (Elements)
+		NPC_Elem := NPC_Desc[Elem];
+		Refs_Weapons.Append( "NpcTemplate " + Elem );
+		Refs_Weapons.Append( "{" );
+
+		If( NPC_Elem.Name )
+			Refs_Weapons.Append( "	Name			" + NPC_Elem.Name );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.ObjType )
+			Refs_Weapons.Append( "	ObjType			" + Hex( NPC_Elem.ObjType ) );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.Script )
+			Refs_Weapons.Append( "	Script			" + NPC_Elem.Script );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.Equip )
+			Refs_Weapons.Append( "	Equip			" + NPC_Elem.Equip );
+			LineBreak := 1;
+		Endif
+		//If( NPC_Elem.Gender )
+			Refs_Weapons.Append( "	Gender			" + CInt( NPC_Elem.Gender ) );
+			LineBreak := 1;
+		//Endif
+		If( NPC_Elem.Color )
+			Refs_Weapons.Append( "	Color			" + CInt( NPC_Elem.Color ) );
+			LineBreak := 1;
+		Endif
+		//If( NPC_Elem.TrueColor )
+			Refs_Weapons.Append( "	TrueColor		" + CInt( NPC_Elem.TrueColor ) );
+			LineBreak := 1;
+		//Endif
+		If( NPC_Elem.AR )
+			Refs_Weapons.Append( "	AR				" + CInt( NPC_Elem.AR ) );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.Alignment )
+			Refs_Weapons.Append( "	Alignment		" + NPC_Elem.Alignment );
+			LineBreak := 1;
+		Endif
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		Var TotalStr := CInt( NPC_Elem.STR );
+		Var TotalInt := CInt( NPC_Elem.INT );
+		Var TotalDex := CInt( NPC_Elem.DEX );
+		Var StatMods := GetStats( Elem );
+		TotalStr := CInt( TotalStr + StatMods[1] );
+		TotalInt := CInt( TotalInt + StatMods[2] );
+		TotalDex := CInt( TotalDex + StatMods[3] );
+
+		If( NPC_Elem.STR )
+			Refs_Weapons.Append( "	STR			" + TotalStr );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.INT )
+			Refs_Weapons.Append( "	INT			" + TotalInt );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.DEX )
+			Refs_Weapons.Append( "	DEX			" + TotalDex );
+			LineBreak := 1;
+		Endif
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		Var i;
+		For( i := 1; i <= Skills.Size(); i := i + 1 )
+			Var Value := GetConfigInt( NPC_Elem, Skills[i] );
+			If( Value )
+				If( Len( Skills[i] ) < 8 )
+				Refs_Weapons.Append( "	" + Skills[i] + "			" + Value );
+				LineBreak := 1;
+				Else
+				Refs_Weapons.Append( "	" + Skills[i] + "		" + Value );
+				LineBreak := 1;
+				Endif
+			Endif
+			SleepMS( 2 );
+		Endfor
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		If( NPC_Elem.cast_pct )
+			Refs_Weapons.Append( "	Cast_PCT		" + NPC_Elem.cast_pct );
+			LineBreak := 1;
+		Endif
+
+		If( NPC_Elem.num_casts )
+			Refs_Weapons.Append( "	Num_Casts		" + NPC_Elem.num_casts );
+			LineBreak := 1;
+		Endif
+
+		If( NPC_Elem.saywords )
+			Refs_Weapons.Append( "	SayWords		" + NPC_Elem.saywords );
+			LineBreak := 1;
+		Endif
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		Var Spells := GetConfigStringArray( NPC_Elem, "Spell" );
+		Foreach Spell in Spells
+			Refs_Weapons.Append( "	Spell		" + Spell );
+			LineBreak := 1;
+			SleepMS( 2 );
+		Endforeach
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		If( NPC_Elem.MoveMode )
+			Refs_Weapons.Append( "	MoveMode		" + NPC_Elem.MoveMode );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.Privs )
+			Refs_Weapons.Append( "	Privs			" + NPC_Elem.Privs );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.Settings )
+			Refs_Weapons.Append( "	Settings		" + NPC_Elem.Settings );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.SpeechColor )
+			Refs_Weapons.Append( "	SpeechColor		" + NPC_Elem.SpeechColor );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.SpeechFont )
+			Refs_Weapons.Append( "	SpeechFont		" + NPC_Elem.SpeechFont );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.RunSpeed )
+			Refs_Weapons.Append( "	RunSpeed		" + NPC_Elem.RunSpeed );
+			LineBreak := 1;
+		Endif
+		If( NPC_Elem.UseAdjustments )
+			Refs_Weapons.Append( "	UseAdjustments	" + NPC_Elem.UseAdjustments );
+			LineBreak := 1;
+		Endif
+
+		If( NPC_Elem.tameskill )
+			Refs_Weapons.Append( "	TameSkill		" + NPC_Elem.tameskill );
+			LineBreak := 1;
+		Endif
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		Var Loot_Level := CInt( NPC_Elem.MagicItemLevel );
+		If( Loot_Level >= 6 )
+			Loot_Level := 3;
+		Elseif( Loot_Level >= 3 && Loot_Level <= 5 )
+			Loot_Level := 2;
+		Elseif( Loot_Level >= 0 && Loot_Level < 3 )
+			Loot_Level := 1;
+		Endif
+
+		If( !Loot_Level )
+			Loot_Level := 1;
+		Endif
+
+		If( Loot_Level )
+			Refs_Weapons.Append( "	LootLevel		" + Loot_Level );
+			LineBreak := 1;
+		Endif
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		Var CProps := GetConfigStringArray( NPC_Elem, "CProp" );
+		MAIN:	Foreach CProp in CProps
+					If( CProp["BaseStrmod"] || CProp["BaseIntmod"] || CProp["BaseDexmod"] )
+						Continue MAIN;
+					Else
+						Var CPropA := SplitWords( CProp );
+						If( Len( CPropA[1] ) > 16 )
+							Refs_Weapons.Append( "	CProp		" + CPropA[1] + "	" + CPropA[2] );
+							LineBreak := 1;
+						Elseif( Len( CPropA[1] ) > 8 )
+							Refs_Weapons.Append( "	CProp		" + CPropA[1] + "		" + CPropA[2] );
+							LineBreak := 1;
+						Elseif( Len( CPropA[1] ) < 8 )
+							Refs_Weapons.Append( "	CProp		" + CPropA[1] + "			" + CPropA[2] );
+							LineBreak := 1;
+						Endif
+					Endif
+					SleepMS( 2 );
+				Endforeach
+
+		If( LineBreak )
+			Refs_Weapons.Append( "" );
+			LineBreak := 0;
+		Endif
+
+		If( NPC_Elem.MagicItemChance )
+			Refs_Weapons.Append( "	MagicItemChance		" + NPC_Elem.MagicItemChance );
+			LineBreak := 1;
+		Endif
+
+		If( NPC_Elem.MagicItemLevel )
+			Refs_Weapons.Append( "	MagicItemLevel		" + NPC_Elem.MagicItemLevel );
+			LineBreak := 1;
+		Endif
+
+		Refs_Weapons.Append( "}" );
+		Refs_Weapons.Append( "" );
+
+		SleepMS( 5 );
+	Endforeach
+
+    Var Result := AppendToFile( "npcdesc.txt", Refs_Weapons );
+
+    SendSysMessage( Who, "Result: " + Result );
+
+Endprogram
+
+Function GetStats( NPC )
+
+    Var CFG := ReadConfigFile( ":*:npcdesc" );
+    NPC := FindConfigElem( CFG, NPC );
+    Var CProps := GetConfigStringArray( NPC, "CProp" );
+
+    Var data := array;
+
+    Foreach CProp in CProps
+		Var Splited := SplitWords( CProp );
+		Var PropName := Splited[1];
+		Var PropVal  := Splited[2];
+		If( PropName == "BaseStrmod" )
+			PropVal := Cint( PropVal - PropVal["i"] );
+			data.Append( Cint( PropVal ) );
+		Elseif( PropName == "BaseIntmod" )
+			PropVal := Cint( PropVal - PropVal["i"] );
+			data.Append( Cint( PropVal ) );
+		Elseif( PropName == "BaseDexmod" )
+			PropVal := Cint( PropVal - PropVal["i"] );
+			data.Append( Cint( PropVal ) );
+		Endif
+    Endforeach
+    
+    Return data;
+    
+Endfunction

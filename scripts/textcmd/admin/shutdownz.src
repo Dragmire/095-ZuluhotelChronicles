@@ -1,0 +1,23 @@
+// Zulu  zuluhotel@hotmail.com
+
+use uo;
+use os;
+include "include/client";
+
+program shutdownserver()
+
+var shutdowntimer := 0;
+
+while (shutdowntimer>0)
+    Broadcast( "Server is shutting down in " + shutdowntimer + " minute(s).", FONT_BOLD, 33 );
+    sleep(60);
+    shutdowntimer := shutdowntimer -1;
+endwhile
+
+Broadcast("Server is restarting...", FONT_BOLD, 33);
+sleep(1);
+SaveWorldState();
+sleep(1);
+Shutdown();
+
+endprogram

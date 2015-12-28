@@ -1,0 +1,46 @@
+use uo;
+use os;
+
+program go_go_gadget_map( who, map )
+
+//	SendSysMessage(who, "This map is an old, expire version. It will be destroyed.");
+	
+//	DestroyItem(map);
+
+//endprogram
+
+
+    var active := Hex("0x0001"); //some key shit dunno
+    var packetString := "90" + fixPacketLength(active,4) + "139D";
+    packetString := packetString + fixPacketLength(hex(map.xWest),2);
+    packetString := packetString + fixPacketLength(hex(map.yNorth),2);
+    packetString := packetString + fixPacketLength(hex(map.xEast),2);
+    packetString := packetString + fixPacketLength(hex(map.ySouth),2);
+    packetString := packetString + fixPacketLength(hex(map.gumpWidth),2);
+    packetString := packetString + fixPacketLength(hex(map.gumpHeight),2);
+    return SendPacket(who,packetString);
+
+endprogram
+
+function fixPacketLength( packetString, byteLength )
+    if( !packetString || packetString == error )
+        packetString := 0;
+    endif
+    packetString := cStr(packetString);
+    
+    if( packetString[1,2] == "0x" )
+        packetString := cStr(packetString[3,len(packetString)]);
+    endif
+    
+    if( len(packetString) > byteLength * 2 )
+        var extraBytes := (byteLength*2) - len(packetString);
+        return cStr(packetString[extraBytes,len(packetString)]);
+    endif
+    
+    while( len(packetString) < byteLength * 2 )
+        packetString := "0" + packetString;
+    endwhile
+    
+    return packetString;
+endfunction
+

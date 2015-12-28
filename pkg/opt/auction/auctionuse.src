@@ -1,0 +1,40 @@
+// auction  version 1.2
+// by Zulu (zulu@zuluhotel.com)   November 12, 2000
+
+use os;
+use uo;
+
+include "include/utility";
+
+var storage:=FindStorageArea("Merchant Storage");
+var inv_sell:=find_or_create_item(storage,"AUCTION",0xe7c);
+
+if(!storage || !inv_sell) exit; endif
+
+program textcmd_online(who,item2)
+
+var pause:=0,totalitems:=0;
+
+var item:=SystemFindObjectBySerial( GetObjProperty(item2,"orgitem"),2 );
+
+SendSysMessage(who,item.desc+" includes:",3,600);
+
+foreach auction_item in EnumerateItemsInContainer(inv_sell)
+    	if (auction_item.container.serial==item.serial)
+    	if ((auction_item.objtype>=0xff0 && auction_item.objtype<=0x0ff4) || (auction_item.objtype==0x0fef))
+    	SendSysMessage(who,"[book] "+auction_item.desc,3,600);
+	else
+	SendSysMessage(who,auction_item.desc,3,600);
+	endif
+    	totalitems:=totalitems+1;
+        pause:=pause+1;
+        if (pause==4) sleep(1); pause:=0; endif
+	endif
+endforeach
+
+if (totalitems==0)
+   SendSysMessage(who,"nothing.",3,600);
+else
+   SendSysMessage(who,totalitems+" total item(s).",3,600);
+endif
+endprogram

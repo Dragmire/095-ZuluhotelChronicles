@@ -1,0 +1,29 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+
+program allmessage(who,message)
+
+var team:=GetObjProperty(who,"team");
+
+if (!team) return; endif
+
+var msgcolor:=33;
+if (team=="BLUE") msgcolor:=300; endif
+
+var chr,i,ctfplyr:=GetGlobalProperty("#ctfplyr"),csize:=ctfplyr.size();
+
+for (i:=1;i<=csize;i:=i+1)
+chr:=SystemFindObjectBySerial(CInt(ctfplyr[i]));
+
+if (GetObjProperty(chr,"ctfloc")>0)
+SendSysMessage(chr,who.name+":"+message,3,msgcolor);
+endif
+
+endfor
+
+endprogram

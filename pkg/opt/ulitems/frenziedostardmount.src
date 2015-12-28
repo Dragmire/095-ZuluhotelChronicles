@@ -1,0 +1,46 @@
+/*
+   Author: Seeker (lokaum@Gmail.com) Jan 16, 2007.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use uo;
+Include "include/random";
+Program FrenziedOstard_Mount( who, item )
+
+    Donator(who);
+
+    If( !ReserveItem( item ) )
+    Return;
+    Endif
+    Var horse;
+    Case( Random( 1 ) )
+    0:    horse := "$frenziedsostard";
+    Endcase
+
+    Var mount := CreateNpcFromTemplate( horse, who.x, who.y, who.z );
+    SetObjProperty( mount, "master", who.serial );
+    SetObjProperty( mount, "script", mount.script );
+    mount.setmaster( who );
+    mount.script := "tamed";
+    RestartScript( mount );
+    SendSysMessage( who, "Thanks!" );
+    SetObjProperty( mount, "DMounts", 1 );
+    SetObjProperty(mount, "untamable", 1);
+    EraseObjProperty(mount, "tamableAt");
+    Destroyitem(item);
+
+EndProgram
+
+Function Donator (who)
+    Var DAcct   := who.acct;
+    If( DAcct.GetProp( "ProDonator", 1 ) )
+    Elseif( DAcct.GetProp( "EliteDonator", 1 ) )
+    Elseif( DAcct.GetProp( "BasicDonator", 1 ) )
+    Else
+    SendSysMessage( Who, "You're not a Donator." );
+    Return;
+    Endif
+Endfunction

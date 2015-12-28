@@ -1,0 +1,64 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/areas";
+
+const DELAY_BETWEEN_USE	:= 30;
+
+program item_cast_spell( who , item )
+
+/*	if( !ReserveItem( item ) )
+		return;
+	endif
+
+	var last_use := Cint(GetObjProperty( who , "#last_use_items" ));
+	if( last_use and last_use > Cint(ReadGameClock() - DELAY_BETWEEN_USE) )
+		SendSysMessage( who , "You must wait before using it again." );
+		return;
+	endif
+
+	if (IsInArea( who, AREAID_JAIL) && who.cmdlevel < 3)
+		SendsysMessage( who, "You cannot use that while in jail!");
+		return;
+	endif
+		
+
+		
+	PlaySoundEffect( who , SFX_SPELL_RECALL1 );
+	SendSysMessage( who, "You will be teleported in 10 seconds");
+
+	var x := who.x;
+	var y := who.y;
+	var check := 10;
+	while ( (who.x==x) and (who.y==y) and check > 0)
+    		sleep(1);
+		check := check-1;
+	endwhile
+	if (check > 0)
+		SendSysMessage(who, "You must stand still to use that");
+		return;
+	endif
+	MoveCharacterToLocation( who , 1475 , 1645 , 20 );
+	PlaySoundEffect( who , SFX_SPELL_RECALL2 );
+	SetObjProperty( who  , "#last_use_items" , Cint(ReadGameClock()) );
+	
+	if( !GetObjProperty( item , "RequireNoCharges" ) )
+		var charges := Cint(GetObjProperty( item , "charges" ));
+		if( !charges )
+			PrintTextAbovePrivate( item , "That is out of charges", who );
+			return;
+		else
+			charges := charges - 1;
+			SetObjProperty( item , "charges" , charges );
+		endif
+	endif
+	Detach();
+	
+	Sleep( DELAY_BETWEEN_USE );
+	EraseObjProperty( who , "#last_use_items" );*/
+	return;
+
+endprogram
+

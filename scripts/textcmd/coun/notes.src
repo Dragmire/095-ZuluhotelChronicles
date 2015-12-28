@@ -1,0 +1,182 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) April 21, 2006.
+   Version: 1.9
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/time";
+Include "include/gumps";
+Include "include/arrays";
+Include "include/yesno";
+
+Program Test( Who, Text )
+
+    Var Player := Target( Who, TGTOPT_NOCHECK_LOS );
+
+    If( !Player.ip )
+    Return Error;
+    Endif
+
+    Var X := 40;
+    Var Y := 40;
+
+    Var Place := 1;
+    Var Page := 1;
+    Var Count := 0;
+    Var Account := Player.acct;
+    Var Notes := Account.GetProp( "xNotes" );
+
+    GFInitGump();
+    GFResizePic( 25, 25, 9270, 600, 260 ); // 9270 3600 5100 2600 5170 2620 3000 3500 5054
+    GFTextLine( X, Y, 1935, "Notes for " + Player.name );
+    GFButtonID( ( X + 350 ), Y + 3, 2117, 2118, 1, 666 );
+    GFTextLine( ( X + 370 ), Y, 1935, "Erase Notes" );
+    GFButtonID( ( X + 465 ), Y + 3, 2117, 2118, 1, 1337 );
+    GFTextLine( ( X + 485 ), Y, 1935, "Add Note" );
+
+    Var Jailed := GetJailTime( Player );
+    If( Jailed != Error )
+    GFTextLine( 215, 250, 1935, Jailed[1] + " days, " + Jailed[2] + " hours, " + Jailed[3] + " minutes, " + Jailed[4] + " seconds left in jail." );
+    Endif
+
+    GFPage( Page );
+
+    Foreach Note in Notes
+
+    Y := Y + 20;
+    GFButtonID( X, Y + 3, 2117, 2118, 1, Place );
+
+    Var Staff := SystemFindObjectBySerial( Note[1], SYSFIND_SEARCH_OFFLINE_MOBILES );
+    If( !Staff )
+    Staff := "Unknown";
+    Endif
+    GFTextLine( ( X + 20 ), Y, 2633, "Posted by " + Staff.name + " on " + Note[2] );
+    GFTextLine( X, Y + 20, 1935, Note[3] );
+
+
+    Place := Place + 1;
+    Count := Count + 1;
+    Y := Y + 20;
+
+    If( Count > 3 )
+    GFButtonPage( 40, 228 + 20, 2117, 2118, Page + 1 );
+    GFTextLine( 60, 225 + 20, 1935, "Next" );
+    Page := Page + 1;
+    GFPage( Page );
+    GFButtonPage( 40, 228, 2117, 2118, Page - 1 );
+    GFTextLine( 60, 225, 1935, "Previous" );
+    Count := 0;
+    Y := 40;
+    Endif
+    SleepMS( 10 );
+    Endforeach
+
+    Var Result := GFSendGump( Who );
+    Result := Result[0];
+
+    If( !Result )
+    Return 0;
+    Endif
+
+    Case( Result )
+    666:
+    If( Who.cmdlevel > 2 )
+      If( YesNo( Who, "Erase note?" ) )
+      SendSysMessage( Who, "Erased all notes." );
+      Account.EraseProp( "xNotes" );
+      Return 1;
+      Else
+      SendSysMessage( Who, "Canceled." );
+      Return 0;
+      Endif
+    Else
+    SendSysMessage( Who, "You have to be atleast a GM to erase notes." );
+    Return 0;
+    Endif
+
+    1337:
+    Var NewNote := RequestInput( Who, Who.backpack, "Please enter a new note." );
+
+    If( NewNote != "" )
+    Var xNotes := Account.GetProp( "xNotes" );
+      If( !xNotes )
+      xNotes := Array;
+      Endif
+    Var Seconds := PolCore().systime;
+    xNotes.Append( { Who.serial, GetDateString( Seconds ) + " at " + GetTimeString( Seconds ), NewNote } );
+    Account.SetProp( "xNotes", xNotes );
+    SendSysMessage( Who, "New note added: " + NewNote );
+    Endif
+    Return 1;
+
+    Endcase
+
+    If( Who.cmdlevel > 2 )
+      If( YesNo( Who, "Erase note?" ) )
+        If( !Notes )
+        SendSysMessage( Who, "Canceled." );
+        Return 0;
+        Endif
+          Var Erased := Notes.Erase( Result );
+          If( Erased )
+          Account.SetProp( "xNotes", Notes );
+          SendSysMessage( Who, "Note erased." );
+          Else
+          SendSysMessage( Who, "Error: " + Erased.errortext );
+          Endif
+      Else
+      SendSysMessage( Who, "Canceled." );
+      Endif
+    Else
+    SendSysMessage( Who, "You have to be atleast a GM to erase notes." );
+    Endif
+
+Endprogram
+
+Function GetJailTime( Who )
+
+    Var Account := Who.acct;
+
+    Var Release := Account.getprop( "Release" );
+    
+    If( !Release )
+    Release := 0;
+    Endif
+
+    Var Seconds := CInt( Release - ReadGameClock() );
+    
+    If( Seconds < 0 )
+    Return Error;
+    Endif
+
+    Var Days := ( Seconds / TIMEID_SECONDS_PER_DAY );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_DAY;
+
+    Var Hours := ( Seconds / TIMEID_SECONDS_PER_HOUR );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_HOUR;
+
+    Var Minutes := ( Seconds / TIMEID_SECONDS_PER_MINUTE );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_MINUTE;
+
+    Var Time_Str := "";
+
+    If( Hours < 10 )
+    Hours := "0" + Hours;
+    Endif
+
+    If( Minutes < 10 )
+    Minutes := "0" + Minutes;
+    Endif
+
+    If( Seconds < 10 )
+    Seconds := "0" + Seconds;
+    Endif
+
+    Return { Days, Hours, Minutes, Seconds };
+
+Endfunction

@@ -1,0 +1,243 @@
+use uo;
+use cfgfile;
+use basic;
+use os;
+
+include "include/client";
+include "include/objtype";
+include "include/classes";
+include "include/itemutil";
+include "include/autoloop";
+
+
+const SFX_GRIND        := 0x0243;
+const SFX_POUR         := 0x0241;
+const SFX_BUBBLE       := 0x004f;
+
+const APPEAR_AT        := -10;
+const POINT_MULTIPLIER := 15;
+const NUM_PERFORM      := 4;
+const ANIM_DELAY_MS    := 1500;
+
+var conf := ReadConfigFile( "alchemy" );
+
+program use_mortar( user, mortar )
+
+	if( !ReserveItem( mortar ) )
+		return;
+	endif
+
+	if( GetObjProperty( mortar, "contents" ) )
+		TryToMakePotion( user, mortar );
+		return;
+	endif
+
+	SendSysmessage( user, "What would you like to use that on?" );
+
+	var use_on := Target( user, TGTOPT_CHECK_LOS );
+	if( !use_on )
+		return;
+	endif
+
+	if( !IsReagent( use_on ) )
+		SendSysMessage( user, "That's not a reagent!" );
+		return;
+	endif
+
+	if( !IsInContainer( user.backpack , use_on ) )
+		SendSysmessage( user, "That item has to be in your backpack." );
+		return;
+	endif
+
+	if( !ReserveItem( use_on ) )
+		return;
+	endif
+
+	var elem := conf[use_on.objtype];
+	if( !elem )
+		SendSysmessage( user, "You don't know any recipe that use this reagent." );
+		return;
+	endif
+
+	var possibles := GetConfigStringArray( elem, "potion" );
+	if( !len(possibles) )
+		SendSysmessage( user, "You don't know any recipe that use this reagent." );
+		return;
+	endif
+
+	var menu := CreateMenu( "Select a potion to make" );
+	var num_possibilities;
+	var mage := GetObjProperty( user, CLASSEID_MAGE );
+
+	foreach potion_type in possibles
+		if( CanMake( user, potion_type, use_on, mage ) )
+			AddMenuItem( menu, conf[potion_type].objtype, potion_type );
+			num_possibilities := 1;
+		endif
+	endforeach
+
+	if( !num_possibilities )
+		SendSysMessage( user, "You can't make any potions!" );
+		return;
+	endif
+
+	var choice := SelectMenuItem2( user, menu ).index;
+	if( !choice )
+		return;
+	endif
+
+	TryToMakePotion( user, mortar, possibles[choice], use_on, mage );
+
+endprogram
+
+
+function TryToMakePotion( user, mortar, potion := 0, reg := 0, mage := 0 )
+
+	var bonus := 0;
+
+	if( potion and reg )
+
+		var difficulty := conf[potion].skill;
+		var sx := user.x;
+		var sy := user.y;
+		var i;
+		var product := conf[potion].objtype;
+
+		if( mage )
+			var itemcfg := ReadConfigFile( "itemdesc" );
+			var base := itemcfg[product].Strength;
+			bonus := CInt( base * ClasseBonus( user, CLASSEID_MAGE ) ) - base;
+			if( !bonus )
+				bonus := 1;
+			endif
+		endif
+
+		if( !ReserveItem( reg ) )
+			return;
+		endif
+
+		AutoLoop_init( user );
+
+		SendSysMessage( user, "You start grinding reagents..." );
+
+		while( AutoLoop_more() && NOT user.dead)
+
+			if( CanMake( user, potion, reg, mage, usereg := 1 ) )
+
+				for( i := 1 ; i <= NUM_PERFORM ; i := i + 1 )
+					PlaySoundEffect( user, SFX_GRIND );
+					PerformAction( user, ANIM_SALUTE );
+					Sleepms( ANIM_DELAY_MS );
+				endfor
+
+				if( CheckSkill( user, SKILLID_ALCHEMY, difficulty, difficulty * POINT_MULTIPLIER ) )
+
+					if( GetBottle( {mortar.container, user.backpack, reg.container} ) )
+						var the_potion := CreateItemInContainer( mortar.container, product, 1 );
+						SetName( the_potion, GetPotionName( product ) );
+						PlaySoundEffect( user, SFX_POUR );
+						if( mage )
+							SetObjProperty( the_potion, "ByTrueMage", bonus );
+						endif
+					else
+						SendSysMessage( user, "With no bottles, you are forced to store the mixture in your mortar" );
+						SetObjProperty( mortar, "contents", product );
+						SendSysMessage( user, "You stop griding reagents." );
+						AutoLoop_finish();
+						return;
+					endif
+				else
+					PlaySoundEffect( user, SFX_POUR );
+					PrintTextAbovePrivate( user, "You pour out the useless mixture", user );
+				endif
+
+			else
+
+				break;
+
+			endif
+
+		endwhile
+
+		SendSysMessage( user, "You stop griding reagents." );
+		AutoLoop_finish();
+
+	else
+
+		if( GetBottle( {mortar.container, user.backpack} ) )
+			var product := GetObjProperty( mortar, "contents" );
+			var the_potion := CreateItemInContainer( mortar.container, product, 1 );
+			SetName( the_potion, GetPotionName( product ) );
+			PlaySoundEffect( user, SFX_POUR );
+			SendSysMessage( user, "You pour the content of your mortar in a bottle." );
+			EraseObjProperty( mortar, "contents" );
+			if( mage )
+				var itemcfg := ReadConfigFile( "itemdesc" );
+				var base := itemcfg[product].Strength;
+				bonus := CInt( base * ClasseBonus( user, CLASSEID_MAGE ) ) - base;
+				if( !bonus )
+					bonus := 1;
+				endif
+				SetObjProperty( the_potion, "ByTrueMage", bonus );
+			endif
+		else
+			SendSysMessage( user, "You have no bottles to pour this into." );
+			return;
+		endif
+
+	endif
+
+endfunction
+
+
+function CanMake( user, potion, reg, mage, usereg := 0 )
+
+	var skillneeded:= conf[potion].skill;
+	var amount_needed:= conf[potion].reagent_amount;
+
+	if( mage )
+		amount_needed := CInt( amount_needed / ClasseBonus( user, CLASSEID_MAGE ) );
+		if( amount_needed < 1 )
+			amount_needed := 1;
+		endif
+	endif
+
+	if( GetEffectiveSkill( user, SKILLID_ALCHEMY ) >= ( skillneeded + APPEAR_AT ) )
+		if( reg.amount )
+			if( reg.amount >= amount_needed )
+				if( usereg > 0 )
+					SubtractAmount( reg, amount_needed );
+				endif
+				return 1;
+			endif
+		endif
+	endif
+	return 0;
+
+endfunction
+
+
+function GetPotionName( product )
+
+	var alchemcfg := ReadConfigFile(":alchemy:itemdesc");
+	return alchemcfg[product].sname;
+
+endfunction
+
+
+// find a bottle in backpack and reserve it
+function GetBottle( byref conts )
+
+	var item;
+	foreach container in conts
+		item := FindObjtypeInContainer( container, UOBJ_EMPTY_BOTTLE );
+		if( item )
+			if( ReserveItem( item ) )
+				SubtractAmount( item, 1 );
+				return 1;
+			endif
+		endif
+	endforeach
+	return 0;
+
+endfunction

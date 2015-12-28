@@ -1,0 +1,26 @@
+use os;
+use uo;
+
+
+program effect_poison( parms )
+
+       
+    var cast_on := parms[1];
+    var caster := parms[2];
+    var thepoison := parms[3];
+    var poison_level;
+
+    SendSysMessage(cast_on, "You have been poisoned by " + caster.name);
+
+    poison_level := CInt(GetObjProperty(cast_on, "poison_level"));
+    if (poison_level > 0 )
+            SendSysMessage(cast_on, "You have been poisoned");
+            poison_level := poison_level + thepoison;
+            SetObjProperty(cast_on, "poison_level",CInt(poison_level));
+    else
+            poison_level := poison_level + thepoison;
+            SetObjProperty(cast_on, "poison_level",CInt(poison_level));
+            start_script( "poisondamage", cast_on );
+    endif
+
+endprogram

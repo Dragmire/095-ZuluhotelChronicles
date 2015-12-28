@@ -1,0 +1,180 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/npcbackpacks";
+
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/chaoskillpcsloop";
+include "ai/combat/chaosfight";
+include "ai/combat/spellcombatevent";
+include "ai/setup/spellsetup";
+include "ai/setup/modsetup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+program KillPlayers()
+	var critter;
+	var oldhp;
+	var ldr;
+	var hastarget;
+	SetObjProperty(me,"oldhp",GetMaxHP(me));
+	if (GetObjProperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+	while (!me.dead and me.script = "formationkillpcs");	
+		sleepms(100);
+		MyPos (me);
+		if (GetObjProperty(me,"fkill"))
+			critter := SystemFindObjectBySerial( GetObjProperty(me,"fkill") );
+			if (critter and !critter.dead)
+				if (CheckLineOfSight( me, critter) )
+					if (!hastarget)
+						hastarget := SetOpponent(critter);
+						me.warmode := 1;
+					endif
+					spellattack(critter);
+				endif
+			else
+				EraseObjProperty(me, "fkill");
+				hastarget := 0;
+				ldr := SystemFindObjectBySerial( GetObjProperty(me,"myleader") );
+				if (ldr)
+					EraseObjProperty(ldr, "takingdamage");
+				endif
+				me.script := GetObjProperty(me, "foldscript");
+				EraseObjProperty(me,"myleader");
+				EraseObjProperty(me,"formpos");
+				RestartScript(me);
+			endif
+		endif
+		ldr := SystemFindObjectBySerial( GetObjProperty(me,"myleader") );
+		if(GetHP(me) < GetObjProperty(me,"oldhp"))
+			SetObjProperty(ldr,"takingdamage",1);
+		endif
+		SetObjProperty(me,"oldhp",GetHP(me));
+	endwhile
+endprogram
+
+function MyPos(me)
+	var xpos;
+	var ypos;
+	var leader;
+	var myleader;
+	var leadernum;
+	var formx;
+	var formy;
+	var mos := GetObjProperty(me,"foldscript");
+	var mynum := GetObjProperty(me,"formpos");
+	myleader := GetObjProperty(me,"myleader");
+	leader := SystemFindObjectBySerial( myleader );
+	if (!leader or !mynum)
+		me.script := mos;
+		EraseObjProperty(me,"myleader");
+		EraseObjProperty(me,"formpos");
+		RestartScript(me);
+	endif
+	case (mynum)
+		1:
+			xpos := -1;
+			ypos := -1;
+		2:
+			xpos := 0;
+			ypos := -1;
+		3:
+			xpos := 1;
+			ypos := -1;
+		4:	
+			xpos := -1;
+			ypos := 0;
+		5:  
+			xpos := 1;
+			ypos := 0;
+		6:  
+			xpos := -1;
+			ypos := 1;
+		7:
+			xpos := 0;
+			ypos := 1;
+		8:
+			xpos := 1;
+			ypos := 1;
+		9:
+			xpos := -2;
+			ypos := -2;
+		10:	
+			xpos := -1;
+			ypos := -2;
+		11:
+			xpos := 0;
+			ypos := -2;
+		12:
+			xpos := 1;
+			ypos := -2;
+		13:
+			xpos := 2;
+			ypos := -2;
+		14:	 
+			xpos := 2;
+			ypos := -1;
+		15:
+			xpos := 2;
+			ypos := 0;
+		16:
+			xpos := 2;
+			ypos := 1;
+		17:	
+			xpos := 2;
+			ypos := 2;
+		18:
+			xpos := 1;
+			ypos := 2;
+		19:
+			xpos := 0;
+			ypos := 2;
+		20:
+			xpos := -1;
+			ypos := 2;
+		21:
+			xpos := -2;
+			ypos := -2;
+		22: 
+			xpos := -2;
+			ypos := -1;
+		23:
+			xpos := -2;
+			ypos := 0;
+		24:	 
+			xpos := -2;
+			ypos := 1;
+		25:	
+			xpos := -2;
+			ypos := 2;
+		default:
+			return 0;
+	endcase
+	formx := GetObjProperty(leader,"myx") + xpos;
+	formy := GetObjProperty(leader,"myy") + ypos;
+	if (formx and formy)
+		var gif := 0;
+		while (me.x != formx or me.y != formy and gif < 11 )
+			gif := gif + 1;
+			me.stamina := me.maxstamina+5;
+			if (GetObjProperty(leader,"takingdamage"))
+				WalkTowardLocation(formx, formy);
+			else
+				RunTowardLocation(formx, formy);
+			endif
+		endwhile
+		if (gif > 9)
+			MoveCharacterToLocation( me, formx, formy, me.z, 0);
+		endif
+	endif
+endfunction

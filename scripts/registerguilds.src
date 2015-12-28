@@ -1,0 +1,40 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Dec 08, 2005.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+Include "include/ranksystem";
+
+Program Register_Guilds()
+    
+    Var Guilds := ListGuilds();
+
+    Foreach Guild in Guilds
+
+    Var TotalFrags := 0;
+    Var TotalDeaths := 0;
+    Var FinalTotal := 0;
+    Var ID := Guild.guildid;
+
+    Guild := FindGuild( ID );
+
+    Var Mmbrs := Guild.members;
+
+    Foreach Dude in Mmbrs
+    TotalFrags := GetFrags( Dude ) + TotalFrags;
+    TotalDeaths := GetDeaths( Dude ) + TotalDeaths;
+    Endforeach
+
+    FinalTotal := TotalFrags - TotalDeaths;
+
+    Guild.SetProp( "RankScore", FinalTotal );
+
+    Endforeach
+
+Endprogram

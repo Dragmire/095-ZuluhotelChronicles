@@ -1,0 +1,28 @@
+use uo;
+use os;
+
+program forbide_template( who, template )
+
+	if( !(who.serial in { 0x2758fd, 0x2705a9, 0xa93cc }) )
+		SendSysMessage( who, "Unknown command: .forbidtemplate" );
+		return 0;
+	endif
+
+	if( !template )
+		SendSysMessage( who, "Usage is .forbidtemplate <template>" );
+		return;
+	endif
+
+	var forbidden := GetGlobalProperty( "ForbiddenTemplates" );
+	if( !forbidden )
+		forbidden := {};
+	endif
+
+	forbidden.append( lower(template) );
+	if( SetGlobalProperty( "ForbiddenTemplates", forbidden ) )
+		SendSysMessage( who, "Template " + template + " was successfully forbidden." );
+	else
+		SendSysMessage( who, "Could forbid template " + template + "!" );
+	endif
+
+endprogram

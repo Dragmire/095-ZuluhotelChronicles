@@ -1,0 +1,34 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+include "include/attributes";
+
+Program Test( Who )
+
+ Var Dude := Target( Who );
+ Var Version := Dude.clientversion;
+ Var Point1 := Version[1];
+ Var Point3 := Version[3];
+ Var Point5 := Version[5];
+ Var NewVrs := Hex( Point1 + Point3 + Point5 );
+ 
+    SendSysMessage( Who, "Client: " + Point1 + Point3 + Point5 );
+    SendSysMessage( Who, "Client: " + NewVrs );
+    /*
+    If( Dude.clientversion != 2.0.3 )
+    SendSysMessage( Who, "Nah: " + Dude.clientversion );
+    Else
+    SendSysMessage( Who, "Yeah: " + Dude.clientversion );
+    Endif
+    */
+ 
+
+Endprogram

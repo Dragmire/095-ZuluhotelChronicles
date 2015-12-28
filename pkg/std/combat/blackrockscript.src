@@ -1,0 +1,62 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+include "include/damages";
+include "include/spelldata";
+include "include/dotempmods";
+include "include/attributes";
+
+
+program blackrockscript(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var targ;
+	var cursed := GetObjProperty( weapon , "Cursed" );
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage + 15);
+	
+	if( cursed )
+		SetMana(attacker, 0);
+		SetStamina(attacker,  GetStamina(attacker) - 5);
+		if( GetStamina(attacker) > GetMaxStamina(attacker) )
+			SetStamina( attacker, 0);
+		endif
+	else
+		SetMana( defender, 0);
+		SetMana( attacker, 0);;
+	endif
+
+	var summoned := GetObjProperty( defender, "summoned" );
+	var animated := GetObjProperty( defender, "animated" );
+	if( summoned )
+		if( !cursed )
+    			PlayObjectCenteredEffect( defender, FX_SPELL_MANA_VAMPIRE, 7,7);
+			PlaySoundEffect( attacker , SFX_SPELL_MANA_VAMPIRE );
+			PlayStationaryEffect( defender.x, defender.y, defender.z, FX_SPELL_SUMMON_CREATURE, 0xA, 0xA );
+			MoveCharacterToLocation(defender,5288 , 1176 , 0, MOVECHAR_FORCELOCATION);
+			ApplyTheDamage( defender , attacker , GetMaxHP(defender) + 3 , DMGID_MAGIC );
+		else
+			PlayObjectCenteredEffect( attacker, FX_SPELL_MANA_VAMPIRE, 7,7);
+			PlaySoundEffect( defender , SFX_SPELL_MANA_VAMPIRE );
+			ApplyTheDamage( attacker , attacker , GetMaxHP(defender) + 3 , DMGID_MAGIC );
+		endif
+
+	elseif( animated )
+		if( !cursed )
+    			PlayObjectCenteredEffect( defender, FX_SPELL_MANA_VAMPIRE, 7,7);
+			PlaySoundEffect( attacker , SFX_SPELL_MANA_VAMPIRE );
+			ApplyTheDamage( defender , attacker , GetMaxHP(defender) + 3 , DMGID_MAGIC );
+		else
+			PlayObjectCenteredEffect( attacker, FX_SPELL_MANA_VAMPIRE, 7,7);
+			PlaySoundEffect( defender , SFX_SPELL_MANA_VAMPIRE );
+			ApplyTheDamage( attacker , attacker , GetMaxHP(defender) + 3 , DMGID_MAGIC );
+		endif
+	else
+		/*WipeMods( defender );
+		if( !defender.dead )
+			defender.graphic := defender.trueobjtype;
+		endif*/
+		DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+	endif
+
+endprogram
+

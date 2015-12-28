@@ -1,0 +1,74 @@
+use os;
+use uo;
+
+include "include/spelldata";
+include "include/client";
+include "include/damages";
+include "include/res";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_REVIVE;
+const SPELL_EFFECT_ID		:= FX_SPELL_REVIVE;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_REVIVE;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_REVIVE;
+
+program spell_resurrect( parms )
+
+	var circle := 8;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_REVIVE ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_NEUTRAL + TGTOPT_CHECK_LOS );
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+
+
+	if( !fromhit )
+		detach();
+		cast_on := Reflected( caster , cast_on , circle );
+	else
+		PlayObjectCenteredEffect(cast_on,SPELL_EFFECT_ID, SPELL_EFFECT_SPEED, SPELL_EFFECT_LOOP);
+	endif
+			
+	PlaySoundEffect(caster, SFX_SPELL_REVIVE);
+	PlaySoundEffect(cast_on, SFX_SPELL_REVIVE);
+
+	if( GetObjProperty( cast_on , "Type" ) == "Undead" )
+		var circle_mult := ModifyWithMagicEfficiency( caster , 8 );
+		if( !CheckSkill( cast_on , SKILLID_MAGICRESISTANCE , ( circle * circle_mult ) , 0 ) )
+			ApplyTheDamage( cast_on , caster , Cint( GetVital( cast_on, "life" ) + 3) , DMGID_MAGIC );
+		else
+			ApplyTheDamage( cast_on , caster , Cint( GetVital( cast_on, "life" ) / 2 ) , DMGID_MAGIC );
+		endif
+		return;
+	endif
+
+	if( cast_on.dead )
+		ResurrectMobile( cast_on , caster );
+    //SetHp(cast_on, GetMaxHp(cast_on));
+    //SetMana(cast_on, GetMaxMana(cast_on));
+    //SetStamina(cast_on, GetMaxStamina(cast_on));
+	else
+		SendSysMessage( caster , "That isn't dead!" );
+	endif
+	EraseObjProperty( caster , "#Casting" );
+endprogram

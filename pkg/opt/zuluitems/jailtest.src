@@ -1,0 +1,62 @@
+use os;
+use uo;
+
+include "include/random";
+include "include/attributes";
+
+var layout := {
+	"page 0",
+	"noclose",
+	"nomove",
+	"nodispose",
+	"gumppic 200 200 2500",
+	"button 280 310 2128 2129 1 0 1",
+	"text 235 225 995 0",
+	"text 235 240 995 1",
+	"text 235 255 995 2",
+	"text 235 270 995 3",
+	"text 235 285 995 4",
+};
+
+var data := {
+	"This is a check for",
+	"macroing. You have",
+	"5 minutes to press",
+	"'ok' before you will",
+	"be jailed for 1 day.",
+};
+
+program warn_gump(who)
+
+	var x:=220+Random(200);
+	var y:=140+Random(200);
+
+	layout[ 5]:="gumppic "+x+" "+y+" 2500";
+	layout[ 6]:="button "+(x+80)+" "+(y+110)+" 2128 2129 1 0 1";
+	layout[ 7]:="text "+(x+35)+" "+(y+25)+" 995 0";
+	layout[ 8]:="text "+(x+35)+" "+(y+40)+" 995 1";
+	layout[ 9]:="text "+(x+35)+" "+(y+55)+" 995 2";
+	layout[10]:="text "+(x+35)+" "+(y+70)+" 995 3";
+	layout[11]:="text "+(x+35)+" "+(y+85)+" 995 4";
+
+	SendSysMessage( who, "Select the person to macro test with jail feature:" );
+
+	var player:=Target(who, TGTOPT_NOCHECK_LOS);
+
+	if (player.isA(POLCLASS_NPC)) return; endif
+
+	if(!player || !GetStrength(player)) SendSysMessage( who, "Invalid selection." ); return; endif
+
+	SetObjProperty(player,"starttime",ReadGameClock());
+	start_script(":zuluitems:macrojail", player);
+	SendDialogGump( player, layout, data );
+
+	if (!GetObjProperty(player,"starttime"))
+	return;
+	else
+	EraseObjProperty(player,"starttime");
+	endif
+
+	PlayLightningBoltEffect( player );
+
+endprogram

@@ -1,0 +1,37 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/attributes";
+include "include/spelldata";
+include "include/rituals";
+
+
+program rrestoration( parms )
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_RESTORATION, HAVE_HP );
+	if( !result )
+		return;
+	endif
+
+
+	var item	:= result[1];
+
+	item.hp := item.maxhp;
+	SendSysMessage( caster, "This " + item.desc + " is now in perfect state." );
+
+
+endprogram

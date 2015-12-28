@@ -1,0 +1,162 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use http;
+Use uo;
+Use os;
+
+Include "include/ranksystem";
+Include "include/sorting";
+
+Program players()
+
+    GenerateStandingsList();
+    
+    WriteHtml( "<html><head><title>Unreal Legends</title>"
+    +"<style>"
+    +"table, tr, td {background-color: #000000;border: 1px solid #000066;}"
+    +"font {font-family: tahoma;font-size: 11px;}"
+    +"</style>"
+    +"</head>"
+    +"<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=CBA300 vlink=CBA300 alink=CBA300>"
+    );
+    
+    Var Players := ComposeTop10();
+    Players.Reverse();
+    Players.Shrink( 20 );
+    
+    WriteHtml(
+    "<table width=450 border=1 align=center cellpadding=0 cellspacing=0>"
+    +"<tr>"
+    +"<td width=50><div align=center><strong><font size=2>Standing</font></strong></div></td>"
+    +"<td width=150><div align=center><strong><font size=2>Player Name</font></strong></div></td>"
+    +"<td width=150><div align=center><strong><font size=2>Guild Name</font></strong></div></td>"
+    +"<td width=100><div align=center><strong><font size=2>Score</font></strong></div></td>"
+    +"</tr>"
+    );
+    
+    Var Place := 0;
+
+    Foreach Player in Players
+    Player := SystemFindObjectBySerial( Player[1], SYSFIND_SEARCH_OFFLINE_MOBILES );
+    Place := Place + 1;
+    
+    Var Frags := GetFrags( Player );
+    Var Deaths := GetDeaths( Player );
+    Var TotalScore := Frags - Deaths;
+    
+    Var GuildID := GetObjProperty( Player, "guild_id" );
+    Var Guild := FindGuild( GuildID );
+    Var GuildName := Guild.GetProp( "guildname" );
+    GuildID := Guild.guildid;
+    
+    Var CatchGuild := "<a href=http://www.montuz.com/viewguild.php?gid=" + GuildID + ">" + GuildName + "</a>";
+    
+    If( !GuildName )
+    CatchGuild := "None";
+    GuildID := 0;
+    Endif
+    
+    Var rnkimg := GetObjProperty( Player, RANKID_IMAGE );
+    If( !rnkimg )
+    rnkimg := "blank";
+    Endif
+    
+    Var color;
+    If( Player.murderer )
+    color := "FF0000";
+    Elseif( Player.criminal )
+    color := "666666";
+    Else
+    color := "00CCFF";
+    Endif
+    
+    WriteHtml(
+    "<tr>"
+    +"<td width=50><center><font size=2>" + Place + "</font></center></td>"
+    +"<td width=150 nowrap='nowrap'>&nbsp;<img style='vertical-align: middle;' src=http://www.montuz.com/images/" + rnkimg + ".gif width=18 height=18><strong><font color='" + color + "'>&nbsp;" + Player.name + "</font></strong></td>"
+    +"<td width=50><center><font size=2>" + CatchGuild + "</font></center></td>"
+    +"<td width=100><center><strong><font color='00CCFF'>" + TotalScore + "</font></strong></center></td>"
+    +"</tr>"
+    );
+    
+    Endforeach
+
+    WriteHtml(
+    "</table>"
+    +"</body></html>"
+    );
+    
+EndProgram
+
+Function ComposeTop10()
+
+    Var RankListFile := ReadConfigFile( "RankingList" );
+    Var Players := GetConfigIntKeys( RankListFile );
+    Var Frags, Deaths, TotalScore;
+    Var data := array;
+    
+    Foreach Player in Players
+    
+    Player := SystemFindObjectBySerial( Player, SYSFIND_SEARCH_OFFLINE_MOBILES );
+    
+    Frags := GetFrags( Player );
+    
+    Deaths := GetDeaths( Player );
+    
+    TotalScore := Frags - Deaths;
+    
+    Var holder := array;
+    holder.append( Player.serial );
+    holder.append( TotalScore );
+    data.append( holder );
+    Endforeach
+    
+    UnloadConfigFile( "RankingList" );
+
+    Return bubble_sort_array( data, 2 );
+    
+Endfunction
+
+Function GenerateStandingsList( )
+
+    Var Count := 0;
+
+
+    Foreach Player in EnumerateOnlineCharacters()
+    Var Frags := GetFrags( Player );
+    Var Deaths := GetDeaths( Player );
+    Var TotalScore := Frags - Deaths;
+    
+    If( ( !Player.cmdlevel ) && ( TotalScore > 0 ) )
+        If( AddToList( Player ) )
+        Count := Count + 1;
+        Endif
+    Endif
+    
+    Endforeach
+
+Endfunction
+
+Function AddToList( Who )
+
+    Var datafile := ReadConfigFile( "RankingList" );
+    Var Serial := FindConfigElem( datafile, Who.serial );
+    Var Count := 0;
+
+    If( Serial )
+    Return 0;
+    Else
+    Var elem;
+    elem := { };
+    elem.append( { "Name", Who.name } );
+
+    AppendConfigFileElem( "RankingList", "Player", Who.serial, elem );
+    UnloadConfigFile( "RankingList" );
+    Endif
+
+Endfunction

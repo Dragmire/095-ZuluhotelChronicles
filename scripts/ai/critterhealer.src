@@ -1,0 +1,106 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  daves_healer.src: Fight hostiles, heal/cure/res players
+//
+//  Healers will wander and defend themselves from attack, tho somewhat
+//  more passively. They will only heal/cure/res if the mobile is not an
+//  npc, they have LOS, they need the heal/cure/res, and neither the healer
+//  nor the healee have any hostiles on them.
+//
+//  Author: Racalac
+//
+//  Created: who knows; Modified: 7/5/99
+//                      Modified: 8/12/99: Commented out healing hp. Was being
+//                                         used as a cheap battle tactic.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+use npc;
+use os;
+use uo;
+
+include "include/myutil";
+include "include/npcbackpacks";
+include "include/eventid";
+include "include/randname";
+include "include/npcutil";
+include "include/objtype";
+include "include/npccast";
+include "include/anchors";
+include "ai/main/killpcsloop";
+include "ai/combat/fight";
+include "ai/combat/healercombatevent";
+include "ai/setup/modsetup";
+include "ai/setup/setup";
+include "ai/main/loot";
+include "ai/main/sleepmode";
+
+const HALT_THRESHOLD := 8; // how close before he attacks?
+Const SOUND_EFFECT_RES := 0x215;
+Const ACTION_EFFECT_CAST2 := 0x11;
+Const REACT_THRESHOLD := 2;
+
+var runaway := 0;
+
+program HealerAI()
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	SetWarMode( 0 );
+
+	main_AI_loop();
+
+endprogram
+
+
+function CloseDistance( opponent )
+
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+
+//	return 1 if we DON'T need to move
+//	return 0 if we DO need to move
+
+	var d:=distance(me,opponent);
+	if ( d > 10 )
+		WalkToward( opponent );
+		Sleepms(sleepdelay);
+		return 0;
+	endif
+
+    case d
+
+        1:              // the most likely, so first 
+        0:
+		if ( runaway < 15 )
+			if (me.mana > (me.maxmana/3))
+				WalkAwayFrom( opponent );
+				Sleepms(sleepdelay);
+				return 3;
+			endif
+			runaway := runaway + 1;
+		endif
+            	return 1;
+	default:
+		runaway := 0;
+		if (me.mana < (me.maxmana/3))
+			WalkToward( opponent );
+			Sleepms(sleepdelay);
+			return 0;
+		elseif (!CheckLineOfSight( me, opponent) )
+			if (runrandom(opponent))
+			Sleepms(sleepdelay);
+				return 2;
+			else
+				spellattack(opponent);
+			endif
+		endif
+		return 1;
+    endcase
+
+endfunction
+

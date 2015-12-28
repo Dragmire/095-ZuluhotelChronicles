@@ -1,0 +1,25 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+include "include/attributes";
+
+Program Test( Who )
+
+    Var Player := Target( Who );
+
+    Foreach Attr in GetAttributeIds()
+    SendSysMessage( Who, "Skill: " + Attr + " " + ( GetAttributeTemporaryMod( Player, Attr ) / 10 )  );
+    Var Result := AlterAttributeTemporaryMod( Player, Attr, Cint( 0 - GetAttributeTemporaryMod( Player, Attr ) ) );
+    Endforeach
+
+    RecalcVitals( Who );
+
+Endprogram

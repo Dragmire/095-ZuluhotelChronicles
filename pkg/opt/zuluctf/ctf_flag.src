@@ -1,0 +1,101 @@
+/////////////////////////////////////////////////////////////////////////////
+// CTF II version 2.4
+//   created by Zulu (zulu@zuluhotel.com)
+//
+//   ctf flag file created April 19, 2000
+//   last update November 22, 2000
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/eventid";
+include "include/client";
+include "ctf1";
+include "ctf2";
+
+program controlflag(who,flag)
+
+if ((not Accessible(who,flag)) || (Distance(who,flag)>4)) return; endif
+
+var phand:=GetEquipmentByLayer(who,LAYER_HAND2);
+var theflag:=phand.objtype;
+var team:=GetObjProperty(who,"team");
+
+if (flag.serial==phand.serial)
+  if ((team=="BLUE") && (theflag==0x7111))
+    fix_flag(who,"RED");
+    DestroyItem(phand);
+    SetGlobalProperty("ctfredloc","drop");
+    messagectf(who.name+" dropped the red flag",33);
+  elseif ((team=="RED") && (theflag==0x7112))
+    fix_flag(who,"BLUE");
+    DestroyItem(phand);
+    SetGlobalProperty("ctfblueloc","drop");
+    messagectf(who.name+" dropped the blue flag",300);
+  endif
+  return;
+endif
+
+var msgcolor:=33,itemtype:=flag.objtype;
+var bluex:=6119,bluey:=358,redx:=6038,redy:=358;
+var rfhome:={6038,358,44},bfhome:={6119,358,-22};
+ 
+if (team=="BLUE")
+if ((flag.x==bluex) && (flag.y==bluey) && (theflag==0x7111))
+    game_capture(who,msgcolor);
+    DestroyItem(phand);
+    return;
+elseif ((flag.x==bluex) && (flag.y==bluey) && (!phand))
+    return;
+elseif (itemtype == 0x7112)
+    DestroyItem(flag);
+    fix_flag(bfhome,"BLUE");
+    SetGlobalProperty("ctfblueloc","home");
+    messagectf(who.name+" returned the blue flag",300,9);
+    fixlight(who);
+    return;
+endif
+endif
+
+if (team=="RED")
+msgcolor:=300;
+if ((flag.x==redx) && (flag.y==redy) && (theflag==0x7112))
+    game_capture(who,msgcolor);
+    DestroyItem(phand);
+    return;
+elseif ((flag.x==redx) && (flag.y==redy) && (!phand))
+    return;
+elseif (itemtype == 0x7111)
+    DestroyItem(flag);
+    fix_flag(rfhome,"RED");
+    SetGlobalProperty("ctfredloc","home");
+    messagectf(who.name+" returned the red flag",33,10);
+    fixlight(who);
+    return;
+endif
+endif
+
+var msgsnd:=8,flagcolor:="red";
+
+if (team=="RED")
+SetGlobalProperty("ctfblueloc","play");
+flagcolor:="blue";
+msgsnd:=7;
+else
+SetGlobalProperty("ctfredloc","play");
+endif
+
+messagectf(who.name+" got the "+flagcolor+" flag.",msgcolor,msgsnd);
+flag.movable:=1;
+EquipItem(who,flag);
+flag.movable:=0;
+flag.color:=msgcolor;
+fixlight(who);
+endprogram
+
+function fixlight(who)
+foreach item in ListItemsNearLocation( who.x,who.y,who.z,10)
+  if (item.objtype==0x2d13) DestroyItem(item); endif
+endforeach
+endfunction

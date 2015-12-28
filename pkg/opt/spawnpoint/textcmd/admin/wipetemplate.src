@@ -1,0 +1,65 @@
+use uo;
+use os;
+
+include "include/yesno";
+include "include/attributes";
+
+program wipe_template( who, wanted )
+
+	if( !wanted )
+		SendSysMessage( who, "Usage is .wipetemplate <template>." );
+		return;
+	endif
+
+	wanted := SplitWords( wanted );
+	wanted := wanted[1];
+	if( !wanted )
+		SendSysMessage( who, "Bug in the command" );
+		return;
+	endif
+
+	if( !YesNo( who, "Wipe " + wanted ) )
+		SendSysMessage( who, "Canceled." );
+		return;
+	endif
+
+	var x;
+	var y;
+	var z;
+	var timer	:= 0;
+	var killed	:= 0;
+	var clock	:= ReadGameClock();
+	
+	SendSysMessage( who, "Starting " + wanted + " wiping, please wait..." );
+
+	for( x := 6144; x > 16; x := x - 32 )
+		for( y := 16; y < 4096; y := y + 32 )
+			for( z := -60; z <= 60; z := z + 30 )
+				foreach npc in ListMobilesNearLocation( x, y, z, 32 )
+					if( npc.npctemplate == wanted )
+						RevokePrivilege( npc, "invul" );
+						SetObjProperty(  npc, "guardkill", 1 );
+						ApplyRawDamage(  npc, CInt(GetHp(npc) + 3) );
+						killed := killed + 1;
+					endif
+				
+					sleepms( 5 );
+					timer := timer + 5;
+	
+					if( timer >= 30000 )
+						timer := timer - 30000;
+						SendSysMessage( who, "Wiping is still in progress, be patient..." );
+					endif
+				endforeach
+			endfor
+		endfor
+	endfor
+
+	if( killed )
+		SendSysMessage( who, "Wiping completed, took " + CStr( ReadGameClock() - clock ) + " seconds to complete." );
+		SendSysMessage( who, "A total of " + killed + " npcs have been wiped." );
+	else
+		SendSysMessage( who, "Wiping failed || there wasn't any npc with this template." );
+	endif
+
+endprogram

@@ -1,0 +1,269 @@
+use npc;
+use os;
+use uo;
+
+include "include/eventid";
+include "include/randname";
+include "include/speech";
+include "include/anchors";
+
+include "ai/main/mainloopgood";
+include "ai/combat/warriorcombatevent";
+include "ai/combat/fight";
+include "ai/main/loot";
+include "include/animal";
+include "include/vetement";
+include "include/npcutil";
+include "include/objtype";
+include "ai/main/sleepmode";
+include "include/skilllists";
+include "include/npcbackpacks";
+
+const HALT_THRESHOLD := 2;
+
+var cost;
+var following;
+var waittime;
+var escortee;
+var next_wander := ReadGameClock() + 10;
+var ev;
+var txt;
+var killtime := 0;
+var master;
+var spells := {};
+var me := self();
+var cast_pct;
+var num_casts;
+var count_casts ;
+var summons := 3;
+var graphics;
+var num_changes;
+var will_cast;
+var will_breathe;
+var flee_point;
+
+var npccfg := readconfigfile("npcdesc");
+var speechelem := npccfg[me.npctemplate];
+spells := GetConfigStringArray(speechelem, "spell");
+cast_pct := speechelem.cast_pct;
+num_casts  := speechelem.num_casts;
+count_casts  := speechelem.count_casts;
+if(!cast_pct)
+  cast_pct := 10;
+endif
+flee_point := speechelem.flee_point;
+if(!flee_point)
+  flee_point := 10;
+endif
+
+program CastleGuard()
+  Expand_Stats(me);
+  run_script_to_completion("npckeeper", me);
+  drop_anchor();
+  EnableEvents(SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED);
+  EnableEvents(SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, HALT_THRESHOLD);
+  EnableEvents(SYSEVENT_OPPONENT_MOVED + SYSEVENT_ITEM_GIVEN);
+  if(getobjproperty(me, "frozen"))
+	me.frozen := 1;
+  endif
+  SetWarMode( 0 );
+  set_priority(10);
+  var ev;
+  var looter := GetObjProperty( me, "looter");
+  var next_wander := ReadGameClock() + 10;
+  var txt;
+  var ph := SplitWords(me.name);
+  var myname := lower(ph[1]);
+  cost := GetObjProperty(me, "HireCost");
+  while (1)
+    ev := os::wait_for_event(120);
+    case(ev.type)
+      SYSEVENT_SPEECH:      var tspeech := process_text(ev.text, "default","default");
+                        txt := lower(ev.text);
+                        if(tspeech)
+                          say(tspeech);
+                        elseif(txt[myname] and (txt["train"] or txt["teach"]))
+                          TurnToward(ev.source);
+                          MerchantTrain(me, ev.source, ev.text);
+                        elseif(txt[myname] and (txt["hire"] or txt["work"]))
+                          TurnToward(ev.source);
+                          SetObjProperty(ev.source, "Hire", me.serial);
+                          say("I am available for hire for " + cost + " gold coins per day.");
+                        endif
+      SYSEVENT_ENGAGED:     Fight(ev.source);
+      SYSEVENT_DAMAGED:     if(ev.source)
+                          Fight(ev.source);
+                        else
+                          say("What sinister force is this!");
+                        endif
+      SYSEVENT_ITEM_GIVEN:  TrainSkill(me, ev.source, ev.item);
+      SYSEVENT_ENTEREDAREA:
+      SYSEVENT_LEFTAREA:
+    endcase
+	if(ReadGameClock() >= next_wander)
+      wander();
+	  if(looter)
+		grabloot();
+	  endif
+      next_wander := ReadGameClock() + 10;
+    endif
+  endwhile
+endprogram
+
+function CloseDistance( opponent )
+  case Distance( me, opponent )
+    1:
+    0:       return 1;
+    default: RunToward( opponent );
+             return 0;
+  endcase
+endfunction
+
+function MerchantTrain(me, who, text)
+  var totaltrain := 0;
+  var words := SplitWords(text);
+  var skill := words[3];
+  if(!skill)
+    var trainable := "";
+    var holder := "";
+    foreach thing in getskilllist(me)
+      if(holder = "")
+        holder := thing;
+      else
+        holder := holder + ", " + thing;
+      endif
+      totaltrain := totaltrain + 1;
+    endforeach
+    trainable  := trainable + holder;
+    if(totaltrain > 0)
+      say("I can train thee in the following skills:");
+      say(trainable);
+    else
+      say("I can not train thee.");
+    endif
+  else
+    skill := lower(skill);
+    var npclevel := 33;
+    var pclevel;
+    foreach thing in getskilllist(me)
+      if(lower(thing) = skill)
+        skill := FindSkillId(skill);
+        pclevel := GetAttribute(who, skill);
+        if(pclevel > npclevel)
+          say("I cannot teach you anymore.");
+          return;
+        else
+          var trainmaxcost := GoldForSkillGain(npclevel, pclevel, thing);
+          say("I will train thee " + thing + " for " + trainmaxcost + " gold.");
+          SetObjProperty(who, "TrainMaxCost", trainmaxcost);
+          SetObjProperty(who, "TrainSkillID", skill);
+          return;
+        endif
+      endif
+    endforeach
+    say("I know not of that skill.");
+  endif
+endfunction
+
+function hireme(me, who, item)
+  var amt := item.amount;
+  if(amt < cost)
+    Say("I will not work for any less than " + cost + " gold coins per day.");
+    MoveItemToContainer(who.backpack, item);
+  else
+    EraseObjProperty(who, "Hire");
+    var days := amt / cost;
+    Say("I will work for you for " + days + " days.");
+    DestroyItem(item);
+    SetObjProperty(me, "master", who.serial);
+    SetObjProperty(me,"script", me.script);
+    days := days * 10800;
+    SetObjProperty(me, "Timer", (ReadGameClock() + days));
+    me.script := "employed";
+    RestartScript(me);
+    return;
+  endif
+endfunction
+
+function TrainSkill(me, who, item)
+  var variance := 0;
+  var NPC_level := 0;
+  var PC_level := 0;
+  var GoldReceived := 0;
+  var New_Level := 0;
+  var CurrentNPCCost := 0;
+  if((item.objtype = 0xeed) and (item.amount != 0))
+    var TrainMaxCost := GetObjProperty(who, "TrainMaxCost");
+    var TrainSkillID := GetObjProperty(who, "TrainSkillID");
+    EraseObjProperty(who, "TrainSkillID");
+    if(!TrainMaxCost or (TrainSkillID = error))
+      if(GetObjProperty(who, "Hire") = me.serial)
+        hireme(me, who, item);
+        return;
+      else
+        say("I don't know what this is for, but thanks!");
+        DestroyItem(item);
+        return;
+      endif
+    endif
+    var check := 0;
+    foreach thing in getskilllist(me)
+      if(FindSkillId(lower(thing)) = TrainSkillID)
+        check := 1;
+      endif
+    endforeach
+    if(check = 1)
+      NPC_level    := 33;
+      PC_level     := GetAttribute(who, TrainSkillID);
+      GoldReceived := item.amount;
+      variance     := NPC_level - PC_level;
+      CurrentNPCCost := GoldForSkillGain(NPC_level, PC_level, TrainSkillID);
+      if(PC_level < NPC_level)
+        if(CurrentNPCCost != TrainMaxCost)
+          if(CurrentNPCCost > TrainMaxCost)
+            NPC_Level := SkillGainForGold(NPC_level, PC_level, TrainSkillID, TrainMaxCost);
+            variance  := NPC_level - PC_level;
+          else
+            if(GoldReceived > CurrentNPCCost)
+              say("I can not train thee to that level.");
+              MoveItemToContainer(who.backpack , item);
+              return;
+            else
+              TrainMaxCost := CurrentNPCCost;
+            endif
+          endif
+        endif
+        if(TrainMaxCost <= GoldReceived)
+          New_Level := (NPC_level * 10);
+          EraseObjProperty( who , "TrainMaxCost" );
+          EraseObjProperty( who , "TrainSkillID" );
+        else
+          New_Level := ((PC_level + CInt((CDbl(variance) * (CDbl(GoldReceived) / CDbl(TrainMaxCost))))) * 10);
+          SetObjProperty( who , "TrainMaxCost" , TrainMaxCost-GoldReceived );
+        endif
+        say("Let me show you how it's done.");
+        SetBaseSkillBaseValue(who, TrainSkillID , new_level);
+        DestroyItem(item);
+        SendSysmessage(who, "Your skill increases.");
+      else
+        say("I'm not as good as thee.  Please find another to train thee.");
+        MoveItemToContainer(who.backpack, item);
+      endif
+    else
+      Say("I don't know that skill. Why don't you ask me what i can train you in?");
+      MoveItemToContainer(who.backpack, item);
+    endif
+  else
+    say("Bah, I have no use for this. Be off with ye.");
+    MoveItemToContainer(who.backpack, item);
+  endif
+endfunction
+
+function GoldForSkillGain(NPC_Skill, PC_Skill, skillid)
+  var maxskill := NPC_Skill - PC_Skill;
+  return maxskill*10;
+endfunction
+
+function SkillGainForGold(NPC_level, PC_level, TrainSkillID, GoldReceived)
+  return (GoldReceived/10) + PC_Level;
+endfunction

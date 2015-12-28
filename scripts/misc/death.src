@@ -1,0 +1,152 @@
+use uo;
+use cfgfile;
+use os;
+
+include "include/starteqp";
+include "include/npcbackpacks";
+include "include/eventid";
+include "../../pkg/opt/karmafame/karmafame";
+include "include/dismount";
+include "include/managers";
+
+program npcdeath(corpse)
+
+	set_script_option( SCRIPTOPT_NO_RUNAWAY , 1 );
+
+        var npctemplate := GetObjProperty(corpse,"npctemplate");
+	dismount( corpse );
+
+	set_critical(1);
+
+	WarnManagerOfNpcDeath(corpse);
+
+//Check if corpse was a townraider spawn v0.7
+	if ( GetGlobalProperty("raidsonnow") )
+		var rpId := GetObjProperty( corpse, "#townraider" );
+		if (rpId)
+			set_critical(1);
+				SetGlobalProperty("raiddead"+rPiD, GetGlobalProperty("raiddead"+rpId) + 1);
+			set_critical(0);
+		endif
+	endif
+/*
+	//Check if corpse was a townraider spawn
+	if ( GetGlobalProperty("raidname") )
+		if (GetObjProperty( corpse, "townraider" ))
+			var deaddudes := GetGlobalProperty("raiddead");
+			deaddudes := deaddudes + 1;
+			SetGlobalProperty("raiddead", deaddudes);
+			var killer:=getobjproperty(corpse,"KilledBy");
+			foreach chr in EnumerateOnlineCharacters()
+				if(chr.name=killer) CreateItemInBackpack(chr,0xeed,GetObjProperty(corpse,"killamount")); break; endif
+			endforeach
+		endif
+	endif
+*/
+	if (GetObjProperty(corpse, "rise"))
+		start_script("misc/rise", corpse);
+	endif
+
+	if (corpse.truecolor) corpse.color:=corpse.truecolor; endif
+
+	if (GetObjProperty(corpse,"color"))
+		corpse.color := Cint(GetObjProperty(corpse,"color"));
+	endif
+
+    	MoveBackpackToCorpse( corpse );
+	var heart;
+	var resnum;
+	var masterserial;
+	var master;
+	if (GetObjProperty(corpse,"WarriorForHire") and GetObjProperty(corpse,"npctemplate") = "warriorforhire")
+		resnum := GetObjProperty(corpse,"resnum");
+		if (!resnum)
+			resnum := 0;
+		endif
+		resnum := resnum + 1;
+		if (resnum < 99999 and GetObjProperty(corpse,"master") != 0) 
+			masterserial := GetObjProperty(corpse,"master");
+			master := SystemFindObjectBySerial(masterserial);
+			heart := CreateItemAtLocation(corpse.x,corpse.y,corpse.z,0x1ae2,1);
+			heart.graphic := 7405;	
+			heart.color := 1172;
+			heart.usescript := "";
+			heart.newbie := 1;
+			heart.name := "The Heart of "+GetObjProperty(corpse,"Name");
+			SetObjProperty(heart,"Str",GetObjProperty(corpse,"Str"));
+			SetObjProperty(heart,"Int",GetObjProperty(corpse,"Int"));
+			SetObjProperty(heart,"Dex",GetObjProperty(corpse,"Dex"));
+			SetObjProperty(heart,"Name",GetObjProperty(corpse,"Name"));
+			SetObjProperty(heart,"resnum",resnum);
+			SetObjProperty(heart,"Sex",GetObjProperty(corpse,"Sex"));
+			SetObjProperty(heart,"master",GetObjProperty(corpse,"master"));
+			SetObjProperty(heart,"wfhscript",GetObjProperty(corpse,"wfhscript"));
+			MoveItemToContainer(heart,master.backpack);
+		endif
+	endif
+	var nocorpse  := GetObjproperty(corpse,"nocorpse");
+	var summoned  := GetObjproperty(corpse,"summoned");
+	var guardkill := GetObjproperty(corpse,"guardkill");
+
+	foreach item in EnumerateItemsInContainer( corpse )
+		if( GetObjProperty( item, "noloot" ) )
+			DestroyItem(item);
+		elseif( item.container = corpse )
+			if( GetObjProperty( item, "dropitem" ) )
+				EraseObjProperty( item, "dropitem" );
+				MoveItemToLocation( item, corpse.x, corpse.y, corpse.z, MOVEITEM_NORMAL );
+			// elseif( nocorpse || summoned || guardkill )
+				//MoveItemToLocation( item, corpse.x, corpse.y, corpse.z, MOVEITEM_NORMAL ); DONT keep putting this in.  It wrecks the townraid where they drop all their stuff
+				// I DONT want that, plus there is something called dropitem, which is looted items.
+				// The above line causes a shit load of extra items and lag.
+				moveitemtocontainer( item, corpse); //This line is useless and prevent some monsters from giving their loot back.
+			endif
+		endif
+	endforeach
+
+    	set_critical(0);
+
+	var npc_cfg	:= ReadConfigFile( "::npcdesc" );
+	var soundFx	:= npc_cfg[npctemplate].deathsnd;
+	if (soundFx) PlaySoundEffect( corpse, soundFx ); endif
+
+	if( guardkill || summoned )
+		return DestroyItem(corpse);
+	endif
+	
+        AdviseAttackers( corpse );
+
+    	if( GetObjProperty( corpse, "noloot"))
+	 	return;
+    	else
+       		MakeLoot(corpse);
+    	endif
+    	
+    	if( nocorpse )
+    		foreach item in EnumerateItemsInContainer( corpse )
+    			if( item.container = corpse )
+    				MoveItemToLocation( item, corpse.x, corpse.y, corpse.z, MOVEITEM_NORMAL );	
+    			endif
+    		endforeach
+    		DestroyItem(corpse);
+    	endif
+    	
+
+endprogram
+
+
+function zapstorageareas(me)
+
+	var myserial:=getobjproperty(me,"serial");
+	if (!myserial) return; endif
+
+	var storage := FindStorageArea( "Merchant Storage" );
+	if (DestroyRootItemInStorageArea( storage, myserial + " FS"))
+		DestroyRootItemInStorageArea( storage, myserial + " PB");
+		DestroyRootItemInStorageArea( storage, myserial + " 1C");
+	endif
+
+	storage := FindStorageArea( "Tamed Storage" );
+	DestroyRootItemInStorageArea( storage, "Bankbox  " + HEX(myserial));
+
+endfunction

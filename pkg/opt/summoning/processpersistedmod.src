@@ -1,0 +1,117 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+
+program processpersistedmods( parms )
+
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+	var who	:= parms[1];
+	var prop	:= parms[2];
+	var new_val	:= parms[3];
+	var old	:= parms[4];
+	var duration	:= CInt(parms[5]);
+	var serial	:= who.serial;
+
+	Detach();
+
+	if( (!who.poisoned) )
+		// this person should not be poisoned
+		if ( GetHpRegenRate(who) != BaseRegenRate(who) )
+			SetHpRegenRate(who , ( BaseRegenRate(who)) * 12);
+			who.SetPoisoned(0);
+		endif
+	endif
+
+	set_critical(1);
+
+	var allmods	:= GetObjProperty( who, "mods" );
+	if (!allmods)
+		allmods := {};
+	endif
+
+	var mmod := {};
+	mmod[1] := prop;
+	mmod[2] := old;
+
+	var pos := AddToPersistedMods( allmods, mmod );
+	if( !pos )
+		return;
+	endif
+
+	case( prop )
+        	"title_prefix":
+			who.title_prefix := new_val;
+        	"title_suffix":
+			who.title_suffix := new_val;
+        	"name":
+			who.name := new_val;
+		"graphic":
+			dismount( who, 0 );
+			who.graphic := CInt(new_val);
+		"color":
+			who.color := CInt(new_val);
+		"gender":
+			who.gender := CInt(new_val);
+		"spiritspeak":
+			GrantPrivilege( who, "hearghosts" );
+			who.enable( "hearghosts" );
+		"hair":
+			DestroyItem( GetEquipmentByLayer( who, LAYER_HAIR ) );
+			if( new_val )
+				var newhair := CreateItemAtLocation( 5288, 1176, 0, CInt(new_val), 1 );
+				newhair.color := RandomHairColor();
+				EquipItem( who, newhair );
+			endif
+		"beard":
+			DestroyItem( GetEquipmentByLayer( who, LAYER_BEARD ) );
+			if( new_val )
+				var newhair := CreateItemAtLocation( 5288, 1176, 0, CInt(new_val), 1 );
+				newhair.color := GetObjProperty( who,"beardcolor" );
+				EquipItem( who, newhair );
+			endif
+	endcase
+
+	SetObjProperty( who, "mods", allmods );
+
+	set_critical(0);
+
+	sleep(duration);
+
+	if( !who )
+		who := SystemFindObjectBySerial( serial, SYSFIND_SEARCH_OFFLINE_MOBILES );
+	endif
+
+	if( who )
+		set_critical(1);
+		allmods := GetObjProperty( who, "mods" );
+
+		if( !allmods )
+			set_critical( 0 );
+			return;
+		endif
+
+		var newmods := {};
+		var i;
+		for( i := 1; i <= len(allmods); i := i + 1 )
+			if( allmods[i][1] == prop )
+				UndoTheMod( who, allmods[i][1], allmods[i][2] );
+			else
+				newmods.append( allmods[i] );
+			endif
+		endfor
+
+		if( len(newmods) )
+			SetObjProperty( who, "mods", newmods );
+		else
+			EraseObjProperty( who, "mods" );
+		endif
+
+		set_critical( 0 );
+	endif
+
+endprogram

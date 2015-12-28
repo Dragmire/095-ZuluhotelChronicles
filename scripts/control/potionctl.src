@@ -1,0 +1,46 @@
+/////////////////////////////////////////////////
+//
+//      Author Dream Weaver, 6/4/99
+//
+//      Description: if a potion is created by a player (that is, it's created in his backpack), it should be named 
+//      correctly. Otherwise it shoudl only be identified by color
+//
+/////////////////////////////////////////////////
+
+
+
+use os;
+use uo;
+use cfgfile;
+include "include/random";
+var items := ReadConfigFile("itemdesc");
+
+program create_potion( potion )
+
+var item  := potion;
+var lastcontainer;
+
+while (item.container)
+    item := item.container;
+endwhile
+
+
+
+if ((item.objtype == 0x0e75) || (item.objtype == 0x190 ) || (item.objtype == 0x191 ) )//if it's a backpack
+        return;
+endif
+
+var hname := items[potion.objtype];
+if (hname)
+        potion.name := hname;
+endif
+
+
+if (Random(15) == 1)
+        SetObjProperty(potion, "poison_level", Random(5) + 1);
+endif
+
+
+
+
+endprogram

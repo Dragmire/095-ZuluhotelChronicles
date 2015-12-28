@@ -1,0 +1,43 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+program rbloodseeking( parms )
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_BLOODSEEKING, IS_A_WEAPON + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+
+	//Apply the enchantment if there wasn't one more powerful already
+	var previous := item.dmg_mod;
+	if( !previous )
+		item.dmg_mod := power * 5;
+		SendSysMessage( caster, "This " + item.desc + " is now sharper than ever." );
+		SetNameByEnchant( item );
+	else
+		SendSysMessage( caster, "There's already a stronger enchantment on this item." );
+	endif
+
+
+endprogram

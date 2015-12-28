@@ -1,0 +1,30 @@
+use uo;
+
+include "include/dotempmods";
+
+program walkon_spiderweb( character, web )
+
+	if( character.concealed )
+		return;
+	endif
+
+	if(character.dead)
+		return;
+	endif
+	
+	var prot	:= GetObjProperty( character, "FreeAction" );
+	var duration	:= 10;
+
+	if( prot == 1)
+		return;
+	
+	elseif( prot == -1 )
+		duration := duration * 2;
+	endif
+
+	if( CanMod( character, "p" ) )
+		SendSysMessage( character, "You are trapped in a spider web!" );
+		DoTempMod( character, "p", 1, duration );
+	endif
+
+endprogram

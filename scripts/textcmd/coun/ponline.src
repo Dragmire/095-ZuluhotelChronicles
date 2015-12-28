@@ -1,0 +1,22 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+include "include/time";
+
+Program Test( Who )
+
+    Var Player := Target( Who, TGTOPT_NOCHECK_LOS );
+
+    Var Seconds := GetObjProperty( Player, "OnlineTimeCount" );
+ 
+    SendSysMessage( Who, "Total Time: " + GetUpTimeString( Seconds ) );
+
+Endprogram

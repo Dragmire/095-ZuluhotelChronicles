@@ -1,0 +1,27 @@
+use os;
+use uo;
+
+program questreg (who)
+	Detach ();
+	var running_quest := Cint(GetGlobalProperty("RunningQuest"));
+	var tme := ReadGameClock();
+	var lastreg := GetObjProperty(who,"noquest");
+	if (!lastreg)
+		lastreg := 0;
+	endif
+	lastreg := lastreg + 21600;
+	if (tme > lastreg )
+		if (who.strength < 90 and who.intelligence < 90 and who.dexterity < 90)
+			SendSysmessage(who,"Sorry, your stats are not high enough to register.");
+			return;
+		endif
+		SetObjProperty(who, "noquest",ReadGameClock());
+		SetObjProperty(who, "questprize", 1);
+		SendSysmessage(who,"You are now registered for this quest.");
+		SetObjProperty( who, "OnQuest", running_quest );
+	else
+		SendSysmessage( who, "You cant re-register for this quest." ); 
+	endif
+	sleep (1);
+endprogram
+	

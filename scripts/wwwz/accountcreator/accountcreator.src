@@ -1,0 +1,53 @@
+use uo;
+use os;
+
+program MakeAccount(connection)
+  var message := "";
+  var ev := wait_for_event(5);
+  if(ev)
+    var uname := SplitWords(ev.value);
+    var pword := uname[2];
+    var ip := uname[3];
+    var email := uname[4];
+    var info := "";
+    if(!uname[1])
+      return;
+    endif
+    if(uname[1] == "exists?")
+      pword := uname[3];
+      ip := uname[4];
+      email := uname[5];
+      uname := uname[2];
+      info := "exists?";
+    else
+      uname := uname[1];
+    endif
+    if(info != "exists?")
+      var act := CreateAccount(uname, pword, 1);
+      if(act.errortext)
+        if(act.errortext == "Account already exists")
+          message := "&exists=1";
+        else
+          message := "&cancelled=1";
+        endif
+      else
+        message := "&done=1";
+        act.SetProp("CreatedIP", ip);
+        if(email)
+          act.SetProp("email", email);
+        endif
+      endif
+    else
+      foreach acct in ListAccounts()
+        if(lower(acct) == lower(uname))
+          message := "1";
+          break;
+        endif
+      endforeach
+      if(!message)
+        message := "0";
+      endif
+    endif
+    connection.transmit(message);
+  endif
+endprogram

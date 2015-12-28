@@ -1,0 +1,25 @@
+use uo;
+
+var gumplayout := {
+	"page 0",
+	"nodispose",
+	"button 0 0 247 249 1 0 2"
+};
+
+var gumpdata := {
+};
+
+program MysticStone( who, stone )
+
+	PrintTextAbovePrivate( stone, "Hi there!!", who );
+	PrintTextAbovePrivate( stone, "I'm a Mystic Stone", who );
+	if( who.cmdlevel > 3 )
+		SendSysMessage( who, "Be ready to select a target." );
+		SendDialogGump( who, gumplayout, gumpdata );
+		var tgt := Target( who, TGTOPT_NOCHECK_LOS );
+		if( tgt )
+			SetObjProperty( stone, "target", tgt.serial );
+		endif
+	endif
+
+endprogram

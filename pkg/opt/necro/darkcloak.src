@@ -1,0 +1,30 @@
+use uo;
+
+include "include/client";
+include "include/spelldata";
+include "include/client";
+
+program use_darkcloak(who, cloak)
+
+	var options := "NOREGS NODELAY NOMANA NOSKILL";
+	var charges := CInt(GetObjProperty(cloak, "charges"));
+
+	if (charges == 0)
+		SendSysMessage(who, "Nothing happens.");
+		return;
+	endif
+
+	charges := charges - 1;
+
+	var mobile;
+
+	foreach mobile in ListMobilesNearLocation(who.x, who.y, who.z, 5)
+		if (mobile.serial != who.serial)
+			PlaySoundEffect(mobile, SFX_SPELL_NIGHT_SIGHT);
+        		PlayObjectCenteredEffect(mobile, FX_BLESS_EFFECT, 10,10);
+	        	mobile.setlightlevel(30, 60);
+		endif
+	endforeach
+
+	SetObjProperty(cloak, "charges", CInt(charges));
+endprogram

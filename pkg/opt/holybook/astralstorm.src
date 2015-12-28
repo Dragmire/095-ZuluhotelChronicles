@@ -1,0 +1,131 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_ASTRAL_STORM;
+const SPELL_EFFECT_ID		:= FX_SPELL_ASTRAL_STORM;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_ASTRAL_STORM;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_ASTRAL_STORM;
+
+program cast_HOLY_BOLT( parms )
+
+	var circle := GetCircle( SPELLID_ASTRAL_STORM );
+	var element := HOLY;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on , caster , SPELLID_ASTRAL_STORM );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_ASTRAL_STORM ) != SUCCESS )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster , circle , TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+		
+		if( !cast_on )
+			EraseObjProperty( caster , "#Casting" );
+			return;
+		endif
+	endif
+	
+	if( !fromhit )
+		EraseObjProperty( caster , "#Casting" );
+		cast_on := Reflected( caster , cast_on , circle );
+	endif
+	PlaySoundEffect( cast_on , SFX_SPELL_ASTRAL_STORM );
+			
+	var immunity := IsProtected( caster , cast_on , circle );
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster , "#Casting" );
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+	var makesnow;
+	var snow;
+	var snow2;
+	var snow3;
+	var snow4;
+	var snow5;
+	var snow6;
+	var snow7;
+	var snow8;
+	var snow9;
+	if (!GetObjProperty(cast_on, "FreeAction"))
+		cast_on.frozen :=1;
+		makesnow := 1;
+		snow := CreateItemAtLocation(cast_on.x, cast_on.y, cast_on.z, 0x17bd, 1);
+		snow.movable := 0;
+		snow2 := CreateItemAtLocation(cast_on.x-1, cast_on.y, cast_on.z, 0x17ca, 1);
+		snow2.movable := 0;
+		snow3 := CreateItemAtLocation(cast_on.x+1, cast_on.y, cast_on.z, 0x17cc, 1);
+		snow3.movable := 0;
+		snow4 := CreateItemAtLocation(cast_on.x, cast_on.y+1, cast_on.z, 0x17c9, 1);
+		snow4.movable := 0;
+		snow5 := CreateItemAtLocation(cast_on.x, cast_on.y-1, cast_on.z, 0x17cb, 1);
+		snow5.movable := 0;
+		snow6 := CreateItemAtLocation(cast_on.x-1, cast_on.y+1, cast_on.z, 0x17c8, 1);
+		snow6.movable := 0;
+		snow7 := CreateItemAtLocation(cast_on.x-1, cast_on.y-1, cast_on.z, 0x17c5, 1);
+		snow7.movable := 0;
+		snow8 := CreateItemAtLocation(cast_on.x+1, cast_on.y-1, cast_on.z, 0x17c6, 1);
+		snow8.movable := 0;
+		snow9 := CreateItemAtLocation(cast_on.x+1, cast_on.y+1, cast_on.z, 0x17c7, 1);
+		snow9.movable := 0;
+	else
+		SendSysMessage(caster, cast_on.name + " is protected from paralyzing effects!");
+		SendSysMessage(cast_on,  "You are protected from paralyzing effects!");
+	endif
+	EraseObjProperty( caster , "#Casting" );
+	Detach();
+	sleep(2);
+	var dmg := (CalcSpellDamage( caster ,cast_on , circle )/8 );
+	PlayObjectCenteredEffect(cast_on, 0x374a,10, 10);
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+	ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	sleep(2);
+	PlayObjectCenteredEffect(cast_on, 0x374a,10, 10);
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+	ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	sleep(2);
+	PlayObjectCenteredEffect(cast_on, 0x374a,10, 10);
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+	ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	sleep(2);
+	PlayObjectCenteredEffect(cast_on, 0x374a,10, 10);
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+	ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	sleep(2);
+	PlayObjectCenteredEffect(cast_on, 0x374a,10, 10);
+	PlaySoundEffect( cast_on , SFX_SPELL_HOLY_BOLT );
+	ApplyElementalDamage( caster , cast_on , circle , dmg , element );
+	sleep (1);
+	cast_on.frozen := 0;
+	if (makesnow)
+		DestroyItem(snow);
+		DestroyItem(snow2);
+		DestroyItem(snow3);
+		DestroyItem(snow4);
+		DestroyItem(snow5);
+		DestroyItem(snow6);
+		DestroyItem(snow7);
+		DestroyItem(snow8);
+		DestroyItem(snow9);
+	endif
+endprogram

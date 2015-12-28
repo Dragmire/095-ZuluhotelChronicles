@@ -1,0 +1,4 @@
+use os;
+program Start_OreCore()
+  start_script("orecore");
+endprogram

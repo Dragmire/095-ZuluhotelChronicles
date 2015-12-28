@@ -1,0 +1,16 @@
+use os;
+use uo;
+
+program questprize (who)
+	Detach ();
+	var giveprize := GetObjProperty(who,"questprize");
+	if (giveprize)
+		SendSysmessage( who, "Congratulations! You won a quest token." ); 
+		CreateItemInBackpack( who, 0xa396, 1);
+		EraseObjProperty(who,"questprize");
+	else
+		SendSysmessage( who, "Sorry, you can't claim a prize." ); 
+	endif
+	sleep (1);
+endprogram
+	

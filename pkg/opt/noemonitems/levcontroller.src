@@ -1,0 +1,153 @@
+use uo;
+use os;
+use cfgfile;
+
+include "lever";
+include "include/client";
+include "include/random";
+
+const FX_POISON_GAS := 0x113a;
+
+var layout := array(
+	"page 0                            ",
+	"gumppic   0   0  1140              ",
+    "text    130  20  900    0         ",
+
+    "page 1                            ",
+	"button   65  50 2117 2118 1  0  2 ",
+	"button   65  80 2117 2118 1  0  3 ",
+	"button   65 110 2117 2118 1  0  4 ",
+	/*"button   25 140 2117 2118 1  0  4 ",
+	"button   25 170 2117 2118 1  0  5 ",
+	"button   25 200 2117 2118 0  0  1 ",
+	"button   25 230 2117 2118 0  0  1 ",
+	"button   25 260 2117 2118 0  4  0 ",
+	"button   25 290 2117 2118 0  2  0 ",*/
+    "text     85  48  500    1         ",
+    "text     85  78  500    2         ",
+    "text     85 108  500    3         ",
+    /*"text     45 138  500    4         ",
+    "text     45 168  500    5         ",
+    "text     45 198  500    6         ",
+    "text     45 228  500    7         ",
+    "text     45 258  500    8         ",
+    "text     45 288  500    9         ",
+    "text     45 318  500   10         ",*/
+
+    "page 2                            ",
+    "text    155  50  900   11         ",
+	"tilepic 105 120 4237              ",
+	"tilepic 355 120 4244              ",
+	"tilepic 105 270 4240              ",
+	"tilepic 355 270 4241              ",
+	"button   85 130  210  211 1  0 20 ",
+	"button  345 130  210  211 1  0 21 ",
+	"button   85 270  210  211 1  0 22 ",
+	"button  345 270  210  211 1  0 23 ",
+	"button   45 350 2453 2454 0  1  0 ",
+
+    "page 3                            ",
+	"gumppic  25  58 1141              ",
+	"gumppic  25  88 1141              ",
+    "textentry 32 60  250 60 910 12 12 ",  //Cprop entry box
+    "textentry 32 90  250 90 910 13 13 ",  //Cprop entry box
+    "text    302  60  500   14         ",  //prop name text
+    "text    302  90  500   15         ",  //prop value text
+    "button  200 250 1149 1148 1  0 24 ",  //Accept Cprop Entry
+
+    "page 4                            ",
+    "text    155  50  900   16         ",
+	"tilepic 105 120 4347              ",
+	"tilepic 355 120 4414              ",
+	"tilepic 105 270 4401              ",
+	"tilepic 355 270 8128              ",
+	"button   85 130  210  211 1  0 15 ",
+	"button  345 130  210  211 1  0 16 ",
+	"button   85 270  210  211 1  0 17 ",
+	"button  345 270  210  211 1  0 18 ",
+	"button   45 350 2453 2454 0  1  0 ",
+);
+
+var data := array(
+    "Lever Controller",              //0
+    "Select Switchs or Levers",      		//1
+    "Create New random combination",		//2
+    "Unlock Door(s)",            				//3
+    "Bind Lights to Switch",                //4
+    "Teleport Switch",                      //5
+    "unused",                               //6
+    "unused",                               //7
+    "Create Trapped Switch",                //8
+    "change the lever's graphic",           //9
+    "Test it",    							//10
+    "Choose the new graphic",               //11
+    "",                                     //12  Cprop name
+    "",                                     //13  Cprop value
+    "Property Name",                        //14
+    "Property value",                       //15
+    "Choose the trap type",                 //16
+);
+
+program LevController(who, item)
+	if(GetObjProperty(item, "#inuse") == 1)
+		SendSysMessage(who,"that switch is in use");
+		return;
+	endif
+
+	if(who.cmdlevel>1)
+		var res := SendDialogGump( who, layout, data );
+	
+		case(res[0])
+			2: SelectTargets(who,item);
+			3: CreateNewCombination(who, item);
+			4: CreateLinksToDoors(who, item);
+
+		endcase
+	endif
+endprogram
+
+
+
+function SelectTargets(who,item)
+
+
+	var arrayoftargets := {};
+	SendSysMessage(who,"Target Switchs or Levers. cancel to end");
+	var trg;
+	while(1)
+		trg := Target(who, TGTOPT_NOCHECK_LOS);
+		if(!trg)
+			break;
+		endif
+		arrayoftargets.Append(trg.serial);
+
+	
+		SetObjProperty(trg,"LevCntr",item.serial); //Create a link to Controller
+		SendSysMessage(who,"Selected.");
+		SendSysMessage(who,"Target Switchs or Levers. cancel to end");
+	endwhile
+
+	SetObjProperty(item,"AllLevers",arrayoftargets); //Stores All Switch Serial 
+
+
+endfunction
+
+
+function CreateLinksToDoors(who, item)
+	var newarray := {};
+	SendSysMessage(who,"Target the door you wish to link this Controller to. cancel to end");
+	var trg;
+	while(1)
+		trg := Target(who);
+		if(!trg)
+			break;
+		endif
+		newarray.append(trg.serial);
+	endwhile
+	SetObjProperty(item,"function", "door");
+	SetObjProperty(item,"ds", newarray);
+	SetObjProperty(item, "STime",CInt(RequestInput( who, who.backpack, "ReLock after (Min) :" ))*60 );
+
+
+	SendSysMessage(who,"the Controller has successfully been linked to the door(s)");
+endfunction

@@ -1,0 +1,222 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  daves_healer.src: Fight hostiles, heal/cure/res players
+//
+//  Healers will wander and defend themselves from attack, tho somewhat
+//  more passively. They will only heal/cure/res if the mobile is not an
+//  npc, they have LOS, they need the heal/cure/res, and neither the healer
+//  nor the healee have any hostiles on them.
+//
+//  Author: Racalac
+//
+//  Created: who knows; Modified: 7/5/99
+//                      Modified: 8/12/99: Commented out healing hp. Was being
+//                                         used as a cheap battle tactic.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+use npc;
+use os;
+use uo;
+
+include "include/npccast";
+include "include/npcbackpacks";
+include "include/randname";
+include "include/eventid";
+include "include/anchors";
+include "include/speech";
+include "include/res";
+include "ai/setup/modsetup";
+
+Const SOUND_EFFECT_RES := 0x215;
+Const ACTION_EFFECT_CAST2 := 0x11;
+Const REACT_THRESHOLD := 2;
+
+var speech := 99;
+var me:= self();
+var summons := 1;
+var saywords := 1;
+if( me.name["<random>"] )
+	SetName ( me , RandomName( me ) );
+	var parms := {};
+	parms[1]:= me;
+	parms[2]:= "mage";
+	start_script("::/misc/dressme", parms);
+endif
+
+program HealerAI()
+
+	GrantPrivilege( me, "seeghosts" );
+	me.enable( "seeghosts" );
+	GrantPrivilege( me, "hearghosts" );
+	me.enable( "hearghosts" );
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	drop_anchor();
+	SetAnchor( me.x, me.y, 5, 20 );
+	var next_wander := ReadGameClock() + 10;
+
+    EnableEvents( SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED );
+    EnableEvents( SYSEVENT_ENTEREDAREA, REACT_THRESHOLD );
+    DisableEvents( SYSEVENT_SPEECH );
+    EnableEvents( SYSEVENT_ITEM_GIVEN );
+
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+    SetWarMode( 0 );
+
+    var ev;
+    while (1)
+        ev := os::wait_for_event( 10 );
+
+        repeat
+            // print( "event type: " + ev.type );
+            case (ev.type)
+            SYSEVENT_SPEECH:
+		next_wander := readgameclock()+60;
+                check_speech(ev.text, ev.source);
+		HealerStuff(ev.source);
+
+                SYSEVENT_ENGAGED:
+                SYSEVENT_DAMAGED:
+                    if (ev.source)
+                        Fight( ev.source );
+                    endif
+
+                SYSEVENT_ENTEREDAREA:
+                    if ( !ev.source.npctemplate )
+                        HealerStuff(ev.source);
+                    endif
+                SYSEVENT_ITEM_GIVEN:
+		    next_wander := readgameclock()+60;
+		    TakeItem(ev.source,ev.item);
+            endcase
+
+        until (! (ev := os::wait_for_event(4)) );
+        if (ReadGameClock() >= next_wander)
+                wander();
+                next_wander := ReadGameClock() + 10;
+        endif
+    endwhile
+endprogram
+
+
+function Fight( opponent )
+
+    var oldprio := set_priority(50);
+    DisableEvents( /*SYSEVENT_ENTEREDAREA + */ SYSEVENT_LEFTAREA );
+    SetOpponent( opponent );
+
+    var waittime;
+outer:
+    while (opponent and not (opponent.dead or opponent.hidden or opponent.concealed) and (distance(me,opponent) < 15))
+        waittime := CloseDistance( opponent ) * 15;
+
+        var ev := wait_for_event( waittime );
+
+        //print( "event type: " + ev.type );
+        repeat
+            case (ev.type)
+                SYSEVENT_DISENGAGED:
+                SYSEVENT_ENGAGED:
+                SYSEVENT_DAMAGED:
+			if ( GetHP(me) < (GetMaxHP(me)/2) )			
+                    		CastSpell( me , me, "gheal");
+			endif
+                SYSEVENT_OPPONENT_MOVED:
+                    break; // just waking up is enough
+                SYSEVENT_ENTEREDAREA:
+                    if ( !ev.source.npctemplate )
+                        HealerStuff(ev.source);
+                    endif
+            endcase
+        until (! (ev := wait_for_event(0)) );
+    endwhile
+
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_LEFTAREA, REACT_THRESHOLD );
+    SetWarMode( 0 );
+    set_priority( oldprio );
+endfunction
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CloseDistance - close the distance between self and an opponent.
+//  Returns: 1 if distance is 0 or 1 (no move necessary)
+//           0 if distance is >= 2 (may still need to move)
+//
+//  This is a .EM-file candidate.
+//
+/////////////////////////////////////////////////////////////////////////////
+function CloseDistance( opponent )
+
+  var sleepdelay := 300 - (CInt(me.dexterity) * 1.5);
+  if (sleepdelay < 0) sleepdelay := 0; endif
+
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        
+        2:
+            WalkToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+
+        default:
+            RunToward( opponent );
+            Sleepms(sleepdelay);
+            return 0;
+    endcase
+
+endfunction
+
+
+function HealerStuff(mobile)
+
+
+
+	if ( (!mobile.warmode) and (mobile.dead) )
+		say("You must manifest so that I can see you, ghost.");
+		return;
+	endif
+
+    if( len(ListHostiles(me)) > 0 )
+      Say("I cannot help thee until I escape this danger!");
+    else
+	if( mobile.dead )
+		if( CheckLineOfSight(me,mobile))
+			//Bring up Res choice gump
+	   			TurnToward(mobile);
+				if(!mobile.multi )
+	   				Say( "Live again by the Virtues!" );
+	   				PerformAction( me, ACTION_EFFECT_CAST2 );
+	   				PlaySoundEffect( me, SOUND_EFFECT_RES );
+	   				ResurrectMobile( mobile , me );
+				else
+					Say( "I will not res you inside a house!");
+				endif
+		endif
+	
+
+	elseif( (mobile.poisoned) and (CheckLineOfSight(me,mobile)) and (!len(ListHostiles(mobile))))
+		if( !mobile.multi )
+			TurnToward(mobile);
+			Say("Sacrifice Purifies the Body and Soul!");
+			CastSpell( me , mobile, "archcure" );
+		endif
+	elseif( (GetHP(mobile) < GetMaxHP(mobile)) and CheckLineOfSight(me,mobile) and (!len(ListHostiles(mobile))) )
+		if( !mobile.multi )
+			TurnToward(mobile);
+			Say("Compassion heals all!");
+			CastSpell( me , mobile, "gheal" );
+		endif
+	endif
+    endif
+endfunction

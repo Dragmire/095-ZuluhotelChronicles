@@ -1,0 +1,141 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/camouflage";
+
+const DIFFICULTY:=100;
+const POINTS:=300;
+
+program camouflage_kit( thief, kit)
+
+
+var time := GetObjProperty(thief, "#cmftime");
+
+if (time)
+        if (time > ReadGameClock())
+                SendSysMessage(thief, "You must wait to camouflage again!");
+                return;
+        endif
+endif
+
+SetObjProperty(thief, "#cmftime", ReadGameClock() + 30);
+
+
+	if (GetObjProperty(thief, "cmfc")) //he's hidden, and wants to change back
+
+	        RemoveCamouflage( thief );
+
+		PrintTextAbovePrivate(thief,"You remove your camouflage", thief);
+		sleep(2);
+		PrintTextAbovePrivate(thief,"You are now " + thief.name + ", again.", thief);
+
+		return;
+	endif
+
+	SendSysMessage(thief, "Who would u like to camouflage as?");
+
+	var what := Target(thief, TGTOPT_CHECK_LOS);
+
+	if(!what)
+	        return;
+	endif
+
+	if (what.graphic != 0x190 && what.graphic != 0x191)
+	        SendSysMessage(thief, "That's not human!");
+	        return;
+	endif
+
+	if (what.serial == thief.serial)
+	        SendSysMessage(thief, "That must be a tough disguise, eh?");
+       		return;
+	endif
+
+	PrintTextAbovePrivate(thief,"Now find a safe place to camouflage...", thief);
+	sleep(10);
+
+	foreach npc in ListMobilesNearLocation( thief.x, thief.y, thief.z, 15 )
+		if( npc.serial != thief.serial )
+			PrintTextAbovePrivate(thief,"You can't camouflage with people around you!", thief);
+			sleep(2);
+			PrintTextAbovePrivate(thief,"You should find a safer place next time...", thief);
+			return;
+		endif
+	endforeach
+
+	PrintTextAbovePrivate(thief,"You start to camouflage...", thief);
+	thief.hidden := 1;
+	sleep( 20 - CInt(GetEffectiveSkill( thief, SKILLID_HIDING )/10 ) );
+       
+	foreach npc in ListMobilesNearLocation( thief.x, thief.y, thief.z, 15 )
+		if( npc.serial != thief.serial )
+
+			PrintTextAbovePrivate(thief,"Someone interrupted you!", thief);
+			sleep(2);
+			PrintTextAbovePrivate(thief,"He may have noticed you...", thief);
+
+			if(!npc.isA(POLCLASS_NPC))
+				SendSysMessage( npc, "You notice " + thief.name + " trying to camouflage..." );
+			endif
+			return;
+		endif
+	endforeach
+
+	if(!thief.hidden)
+		PrintTextAbovePrivate(thief,"You have to remain hidden!", thief);
+		sleep(2);
+		PrintTextAbovePrivate(thief,"You wasted the kit...", thief);
+		DestroyItem(kit);
+		return;
+	endif
+
+	if(!CheckSkill(thief, SKILLID_HIDING, DIFFICULTY, POINTS))
+		PrintTextAbovePrivate(thief,"You fail the camouflage attempt and waste the kit...", thief);
+		thief.hidden := 0;
+		DestroyItem(kit);
+		return;
+	endif
+
+	var storage := findsa(thief);
+       
+	SetObjProperty(thief, "cmfc", thief.color);
+	SetObjProperty(thief, "cmfg", thief.graphic);
+	SetObjProperty(thief, "cmfn", thief.name);
+
+	thief.name := what.name;
+	thief.color := what.color;
+	thief.graphic := what.graphic;
+
+	var hair := GetEquipmentByLayer(thief, LAYER_HAIR );
+	MoveItemToContainer(hair, storage);
+
+	hair := GetEquipmentByLayer(thief, LAYER_BEARD);
+	MoveItemToContainer(hair, storage);
+
+	var hair2 := GetEquipmentByLayer(what, LAYER_HAIR);
+	var it := CreateItemInContainer(storage, hair2.objtype, 1);
+	it.color := hair2.color;
+	EquipItem(thief, it);
+
+	hair2 := GetEquipmentByLayer(what, LAYER_BEARD);
+	it := CreateItemInContainer(storage, hair2.objtype, 1);
+	it.color := hair2.color;
+	EquipItem(thief, it);
+
+	PrintTextAbovePrivate(thief,"You have disguised yourself well", thief);
+	sleep(2);
+	PrintTextAbovePrivate(thief,"You are now " + thief.name, thief);
+
+	Detach();
+	set_critical(1);
+	sleep( 180 * CInt(GetEffectiveSkill( thief, SKILLID_HIDING )/10 ) );
+
+	RemoveCamouflage( thief );
+	DestroyItem(kit);
+
+	PrintTextAbovePrivate(thief,"Your disguise has worn out...", thief);
+	sleep(2);
+	PrintTextAbovePrivate(thief,"You are now " + thief.name + ", again.", thief);
+       
+endprogram

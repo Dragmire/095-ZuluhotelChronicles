@@ -1,0 +1,447 @@
+use uo;
+use os;
+use math;
+use cfgfile;
+
+include "include/client";
+include "include/gumps";
+
+const LOCKING_VALUE	:= 9999;
+
+program set_var_multiplierss( who )
+
+	var text_entries := array;
+	var multipliers  := GetGlobalProperty( "SkillPointsMultiplier" );
+	if( !multipliers )
+		multipliers := array;
+	endif
+
+
+	XGFReset();
+	GFSetRef( 50, 50 );
+
+	// Background
+	GFPage(0);
+	GFNoDispose();
+	GFResizePic( 0, 0, BKGND_SCROLL, 320, 285 );
+
+	GFTextLine( 75, 10, 603, "var Multipliers" );
+
+	GFGumpPic( 25, 40, 2091 );
+	GFGumpPic( 25, 230, 2091 );
+
+	var close_button := GFButtonID( 130, 279, 2095, 2094, 1 );
+
+	// Page 1
+	GFPage(1);
+	GFTextLine( 45, 50, 603, "Bard" );
+	GFTextLine( 45, 70, 603, "Crafter" );
+	GFTextLine( 45, 90, 603, "Mage" );
+	GFTextLine( 45, 110, 603, "Ranger" );
+	GFTextLine( 45, 130, 603, "Thief" );
+	GFTextLine( 45, 150, 603, "Warrior" );
+	GFTextLine( 45, 170, 603, "Others" );
+
+	// Bard line
+	GFGumpPic( 85, 60, 2101 );
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Crafter line
+	GFGumpPic( 100, 80, 2101 );
+	GFGumpPic( 115, 80, 2101 );
+	GFGumpPic( 130, 80, 2101 );
+	GFGumpPic( 145, 80, 2101 );
+	GFGumpPic( 160, 80, 2101 );
+	GFGumpPic( 175, 80, 2101 );
+	GFGumpPic( 190, 80, 2101 );
+	GFGumpPic( 205, 80, 2101 );
+	GFGumpPic( 220, 80, 2101 );
+
+	// Mage line
+	GFGumpPic( 92, 100, 2101 );
+	GFGumpPic( 100, 100, 2101 );
+	GFGumpPic( 115, 100, 2101 );
+	GFGumpPic( 130, 100, 2101 );
+	GFGumpPic( 145, 100, 2101 );
+	GFGumpPic( 160, 100, 2101 );
+	GFGumpPic( 175, 100, 2101 );
+	GFGumpPic( 190, 100, 2101 );
+	GFGumpPic( 205, 100, 2101 );
+	GFGumpPic( 220, 100, 2101 );
+
+	// Ranger line
+	GFGumpPic( 100, 120, 2101 );
+	GFGumpPic( 115, 120, 2101 );
+	GFGumpPic( 130, 120, 2101 );
+	GFGumpPic( 145, 120, 2101 );
+	GFGumpPic( 160, 120, 2101 );
+	GFGumpPic( 175, 120, 2101 );
+	GFGumpPic( 190, 120, 2101 );
+	GFGumpPic( 205, 120, 2101 );
+	GFGumpPic( 220, 120, 2101 );
+
+	// Thief line
+	GFGumpPic( 92, 140, 2101 );
+	GFGumpPic( 100, 140, 2101 );
+	GFGumpPic( 115, 140, 2101 );
+	GFGumpPic( 130, 140, 2101 );
+	GFGumpPic( 145, 140, 2101 );
+	GFGumpPic( 160, 140, 2101 );
+	GFGumpPic( 175, 140, 2101 );
+	GFGumpPic( 190, 140, 2101 );
+	GFGumpPic( 205, 140, 2101 );
+	GFGumpPic( 220, 140, 2101 );
+
+	// Warrior line
+	GFGumpPic( 115, 160, 2101 );
+	GFGumpPic( 130, 160, 2101 );
+	GFGumpPic( 145, 160, 2101 );
+	GFGumpPic( 160, 160, 2101 );
+	GFGumpPic( 175, 160, 2101 );
+	GFGumpPic( 190, 160, 2101 );
+	GFGumpPic( 205, 160, 2101 );
+	GFGumpPic( 220, 160, 2101 );	 
+		 
+	// Others
+	GFGumpPic( 100, 180, 2101 );
+	GFGumpPic( 115, 180, 2101 );
+	GFGumpPic( 130, 180, 2101 );
+	GFGumpPic( 145, 180, 2101 );
+	GFGumpPic( 160, 180, 2101 );
+	GFGumpPic( 175, 180, 2101 );
+	GFGumpPic( 190, 180, 2101 );
+	GFGumpPic( 205, 180, 2101 );
+	GFGumpPic( 220, 180, 2101 );
+
+	// Page buttons  
+	GFButtonPage( 25, 52, 2087, 2086, 2 );
+	GFButtonPage( 25, 72, 2087, 2086, 3 );
+	GFButtonPage( 25, 92, 2087, 2086, 4 );
+	GFButtonPage( 25, 112, 2087, 2086, 5 );
+	GFButtonPage( 25, 132, 2087, 2086, 6 );
+	GFButtonPage( 25, 152, 2087, 2086, 7 );
+	GFButtonPage( 25, 172, 2087, 2086, 8 );
+		
+
+	// Page 2
+	GFPage(2);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Bard"	);
+	GFTextLine( 50, 70, 0, "Begging"	);
+	GFTextLine( 50, 90, 0, "Cartography" );
+	GFTextLine( 50, 110, 0, "Enticement"	);
+	GFTextLine( 50, 130, 0, "Herding"	);
+	GFTextLine( 50, 150, 0, "Musicianship");
+	GFTextLine( 50, 170, 0, "Peacemaking" );
+	GFTextLine( 50, 190, 0, "Provocation" );
+	GFTextLine( 50, 210, 0, "Taste Identification" );
+		 
+	// Bard line
+	GFGumpPic( 85, 60, 2101 );
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_BEGGING+1]		:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_BEGGING	) );
+	text_entries[SKILLID_CARTOGRAPHY+1]	:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_CARTOGRAPHY	) );
+	text_entries[SKILLID_ENTICEMENT+1]	:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ENTICEMENT	) );
+	text_entries[SKILLID_HERDING+1]		:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_HERDING	) );
+	text_entries[SKILLID_MUSICIANSHIP+1]	:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MUSICIANSHIP	) );
+	text_entries[SKILLID_PEACEMAKING+1]	:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_PEACEMAKING	) );
+	text_entries[SKILLID_PROVOCATION+1]	:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_BEGGING	) );
+	text_entries[SKILLID_TASTEID+1]		:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TASTEID	) );
+
+
+	// Page 3
+	GFPage(3);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Crafter"	);
+	GFTextLine( 50, 70, 0, "Arms Lore"	);
+	GFTextLine( 50, 90, 0, "Blacksmithy" );
+	GFTextLine( 50, 110, 0, "Bowcraft"	);
+	GFTextLine( 50, 130, 0, "Carpentry"	);
+	GFTextLine( 50, 150, 0, "Lumberjacking");
+	GFTextLine( 50, 170, 0, "Mining"	);
+	GFTextLine( 50, 190, 0, "Tailoring"	);
+	GFTextLine( 50, 210, 0, "Tinkering"	);
+		 
+	// Crafter line
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_ARMSLORE+1]	:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ARMSLORE	) );
+	text_entries[SKILLID_BLACKSMITHY+1]	:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_BLACKSMITHY	) );
+	text_entries[SKILLID_BOWCRAFT+1]	:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_BOWCRAFT	) );
+	text_entries[SKILLID_CARPENTRY+1]	:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_CARPENTRY	) );
+	text_entries[SKILLID_LUMBERJACKING+1]	:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_LUMBERJACKING	) );
+	text_entries[SKILLID_MINING+1]		:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MINING		) );
+	text_entries[SKILLID_TAILORING+1]	:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TAILORING	) );
+	text_entries[SKILLID_TINKERING+1]	:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TINKERING	) );
+
+
+	// Page 4
+	GFPage(4);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Mage"	);
+	GFTextLine( 50, 70, 0, "Alchemy"	);
+	GFTextLine( 50, 90, 0, "Evaluating Intelligence" );
+	GFTextLine( 50, 110, 0, "Inscription"	);
+	GFTextLine( 50, 130, 0, "Item Identification"	);
+	GFTextLine( 50, 150, 0, "Magery"	);
+	GFTextLine( 50, 170, 0, "Meditation"	);
+	GFTextLine( 50, 190, 0, "Resisting Spells"	);
+	GFTextLine( 50, 210, 0, "Spirit Speak");
+		 
+	// Mage line
+	GFGumpPic( 92, 60, 2101 );
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_ALCHEMY+1]		:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ALCHEMY	) );
+	text_entries[SKILLID_EVALINT+1]		:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_EVALINT	) );
+	text_entries[SKILLID_INSCRIPTION+1]	:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_INSCRIPTION	) );
+	text_entries[SKILLID_ITEMID+1]		:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ITEMID		) );
+	text_entries[SKILLID_MAGERY+1]		:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MAGERY		) );
+	text_entries[SKILLID_MEDITATION+1]	:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MEDITATION	) );
+	text_entries[SKILLID_MAGICRESISTANCE+1]	:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MAGICRESISTANCE) );
+	text_entries[SKILLID_SPIRITSPEAK+1]	:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_SPIRITSPEAK	) );
+
+
+	// Page 5 
+	GFPage(5);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Ranger"	);
+	GFTextLine( 50, 70, 0, "Animal Lore"	);
+	GFTextLine( 50, 90, 0, "Animal Taming" );
+	GFTextLine( 50, 110, 0, "Archery"	);
+	GFTextLine( 50, 130, 0, "Camping"	);
+	GFTextLine( 50, 150, 0, "Cooking"	);
+	GFTextLine( 50, 170, 0, "Fishing"	);
+	GFTextLine( 50, 190, 0, "Tracking"	);
+	GFTextLine( 50, 210, 0, "Veterinary"	);
+		 
+	// Ranger line
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 ); 
+
+	// Text entries
+	text_entries[SKILLID_ANIMALLORE+1]	:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ANIMALLORE	) );
+	text_entries[SKILLID_TAMING+1]		:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TAMING		) );
+	text_entries[SKILLID_ARCHERY+1]		:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ARCHERY	) );
+	text_entries[SKILLID_CAMPING+1]		:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_CAMPING	) );
+	text_entries[SKILLID_COOKING+1]		:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_COOKING	) );
+	text_entries[SKILLID_FISHING+1]		:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_FISHING	) );
+	text_entries[SKILLID_TRACKING+1]	:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TRACKING	) );
+	text_entries[SKILLID_VETERINARY+1]	:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_VETERINARY	) );
+
+
+	// Page 6
+	GFPage(6);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Thief"	);
+	GFTextLine( 50, 70, 0, "Detecting Hidden"	);
+	GFTextLine( 50, 90, 0, "Hiding" 	);
+	GFTextLine( 50, 110, 0, "Lockpicking"	);
+	GFTextLine( 50, 130, 0, "Poisoning"	);
+	GFTextLine( 50, 150, 0, "Remove Trap"	);
+	GFTextLine( 50, 170, 0, "Snooping"	);
+	GFTextLine( 50, 190, 0, "Stealing"	);
+	GFTextLine( 50, 210, 0, "Stealth"	);
+		 
+	// Thief line
+	GFGumpPic( 92, 60, 2101 );
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_DETECTINGHIDDEN+1]	:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_DETECTINGHIDDEN) );
+	text_entries[SKILLID_HIDING+1]		:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_HIDING		) );
+	text_entries[SKILLID_LOCKPICKING+1]	:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_LOCKPICKING	) );
+	text_entries[SKILLID_POISONING+1]	:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_POISONING	) );
+	text_entries[SKILLID_REMOVETRAP+1]	:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_REMOVETRAP	) );
+	text_entries[SKILLID_SNOOPING+1]	:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_SNOOPING	) );
+	text_entries[SKILLID_STEALING+1]	:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_STEALING	) );
+	text_entries[SKILLID_STEALTH+1]		:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_STEALTH	) );
+
+
+	// Page 7
+	GFPage(7);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Warrior"	);
+	GFTextLine( 50, 70, 0, "Anatomy"	);
+	GFTextLine( 50, 90, 0, "Fencing" 	);
+	GFTextLine( 50, 110, 0, "Healing"	);
+	GFTextLine( 50, 130, 0, "Mace Fighting"	);
+	GFTextLine( 50, 150, 0, "Parrying"	);
+	GFTextLine( 50, 170, 0, "Swordsmanship"	);
+	GFTextLine( 50, 190, 0, "Tactics"	);
+	GFTextLine( 50, 210, 0, "Wrestling"	);
+		 
+	// Warrior line
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_ANATOMY+1]		:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_ANATOMY	) );
+	text_entries[SKILLID_FENCING+1]		:= GFTextEntry( 210, 90, 50, 20, 0, GetMultiplier( multipliers, SKILLID_FENCING	) );
+	text_entries[SKILLID_HEALING+1]		:= GFTextEntry( 210, 110, 50, 20, 0, GetMultiplier( multipliers, SKILLID_HEALING	) );
+	text_entries[SKILLID_MACEFIGHTING+1]	:= GFTextEntry( 210, 130, 50, 20, 0, GetMultiplier( multipliers, SKILLID_MACEFIGHTING	) );
+	text_entries[SKILLID_PARRY+1]		:= GFTextEntry( 210, 150, 50, 20, 0, GetMultiplier( multipliers, SKILLID_PARRY		) );
+	text_entries[SKILLID_SWORDSMANSHIP+1]	:= GFTextEntry( 210, 170, 50, 20, 0, GetMultiplier( multipliers, SKILLID_SWORDSMANSHIP	) );
+	text_entries[SKILLID_TACTICS+1]		:= GFTextEntry( 210, 190, 50, 20, 0, GetMultiplier( multipliers, SKILLID_TACTICS	) );
+	text_entries[SKILLID_WRESTLING+1]	:= GFTextEntry( 210, 210, 50, 20, 0, GetMultiplier( multipliers, SKILLID_WRESTLING	) );
+
+
+	// Page 8
+	GFPage(8);
+
+	// Text lines
+	GFTextLine( 45, 50, 603, "Others"	);
+	GFTextLine( 50, 70, 0, "Forensic Evaluation"	);
+		 
+	// Others line
+	GFGumpPic( 100, 60, 2101 );
+	GFGumpPic( 115, 60, 2101 );
+	GFGumpPic( 130, 60, 2101 );
+	GFGumpPic( 145, 60, 2101 );
+	GFGumpPic( 160, 60, 2101 );
+	GFGumpPic( 175, 60, 2101 );
+	GFGumpPic( 190, 60, 2101 );
+	GFGumpPic( 205, 60, 2101 );
+	GFGumpPic( 220, 60, 2101 );
+
+	// Button to main page
+	GFButtonPage( 25, 52, 2086, 2087, 1 );
+
+	// Text entries
+	text_entries[SKILLID_FORENSICS+1]	:= GFTextEntry( 210, 70, 50, 20, 0, GetMultiplier( multipliers, SKILLID_FORENSICS	) );
+
+
+	// Send the gump;
+	var keyret := GFSendGump( who );
+
+
+	// Store the new info
+	var i;
+	var mult;
+
+	for( i := 1; i <= len( text_entries ); i := i + 1 )
+		mult := GFExtractData( text_entries[i].keyid, keyret );
+		if( !CDbl( mult ) )
+			mult := LOCKING_VALUE;
+		else
+			mult := CDbl( mult );
+		endif
+		multipliers[i] :=  mult;
+	endfor
+
+	SetGlobalProperty( "SkillPointsMultiplier", multipliers );
+
+endprogram
+
+
+function GetMultiplier( the_multipliers, skillid )
+
+	var multiplier := CDbl( the_multipliers[skillid+1] );
+	if( !multiplier )
+		multiplier := "1.00";
+	elseif( CInt( multiplier ) == LOCKING_VALUE )
+		multiplier := "0.00";
+	elseif( CInt( multiplier ) >= 0 )
+		var units	:= CInt( multiplier );
+		var decimals	:= CInt( CInt( multiplier * 100 ) - CInt( units * 100 ) );
+		if( !decimals )
+			decimals := "00";
+		elseif( decimals < 10 )
+			decimals := "0" + decimals;
+		endif
+		multiplier := units + "." + decimals;
+	else
+		var units	:= Abs(CInt( multiplier ));
+		var decimals	:= Abs(CInt( CInt( multiplier * 100 ) - CInt( units * 100 ) ));
+		if( !decimals )
+			decimals := "00";
+		elseif( decimals < 10 )
+			decimals := "0" + decimals;
+		endif
+		multiplier := "-" + units + "." + decimals;
+	endif
+
+	return multiplier;
+
+endfunction

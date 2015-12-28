@@ -1,0 +1,107 @@
+// radio march 25, 2001
+// zulu (zulu@zuluhotel.com)
+
+use uo;
+use os;
+
+var chatlayout :=
+{
+"nomove",
+"nodispose",
+"page 0",
+"resizepic 160 35 5054 260 130",
+"text 200 45 5 0",
+"text 200 70 300 1",
+"text 200 90 300 2",
+"text 200 110 300 3",
+
+"text 180 140 0 4",
+"button 350 115 4023 4024 1 0 2000",
+
+"radio 170 70 210 211 0 1",
+"radio 170 90 210 211 0 2",
+"radio 170 110 210 211 0 3",
+};
+var chatdata :={
+"Select your radio options",
+"Play for full team",
+"Play for players near",
+"Just send messages",
+"use .radio # to send a message"
+};
+
+
+program use_radio_chat(who,text)
+
+var team:=GetObjProperty(who,"team");
+
+if (!team) return; endif
+
+var radio:=GetObjProperty(who,"radio");
+
+if (text=="" && radio!="")
+var hear,choose,box:=SendDialogGump(who,chatlayout,chatdata);
+
+if(box[0]!=2000) return; endif
+
+  foreach k in (box.keys)
+    if(k>0 && k<1000)
+      choose:=k;
+      break;
+    endif
+  endforeach
+
+if(!choose) return; endif
+
+SetObjProperty(who,"radio",choose);
+SendSysMessage(who,chatdata[choose+1]+".",3,70);
+
+else
+
+var cmd:=CInt(text);
+
+if (cmd>0 && cmd<13)
+var maleradio :={191,295,247,246,195,194,193,192,291,183,182,248};
+var femaleradio :={249,294,256,255,254,253,252,293,290,292,181,257};
+var msgradio :={
+
+"affirmative","i need health","i need escort to base",
+"incoming","get our flag","get enemy flag",
+"defend base","our base is underattack",
+"we need more attackers","we need more defense",
+"lost the flag","im on your team"
+};
+
+// 250 double 293
+var msgcolor:=33;
+if (team=="BLUE") msgcolor:=300; endif
+
+if (radio==2) PlaySoundEffect(who,maleradio[cmd]); endif
+
+var chr,i,ctfplyr:=GetGlobalProperty("#ctfplyr"),csize:=ctfplyr.size();
+
+  for (i:=1;i<=csize;i:=i+1)
+    chr:=SystemFindObjectBySerial(CInt(ctfplyr[i]));
+
+    if (GetObjProperty(chr,"ctfloc")>0 && GetObjProperty(chr,"team")==team)
+
+      if (radio==1)
+        if (who.gender==0)
+          PlaySoundEffectPrivate(chr,maleradio[cmd],chr);
+        else
+          PlaySoundEffectPrivate(chr,femaleradio[cmd],chr);
+        endif // male or female
+      endif
+
+      SendSysMessage(chr,who.name+": "+msgradio[cmd]+".",3,msgcolor);
+
+    endif // if ctf player and in same team
+
+  endfor
+
+else
+SendSysMessage(who,"Error: No such radio command.",3,33);
+endif // check for cmd is 1 to 9
+endif
+
+endprogram

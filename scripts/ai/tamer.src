@@ -1,0 +1,432 @@
+use npc;
+use os;
+use uo;
+use cfgfile;
+
+include "include/myutil";
+include "include/speech";
+include "include/client";
+include "include/eventid";
+include "include/randname";
+include "include/anchors";
+include "ai/combat/fight";
+include "ai/combat/defaultcombatevent";
+include "include/npcbackpacks";
+include "include/yesno";
+include "ai/main/npcinfo";
+include "include/time";
+include "include/time";
+include "include/dotempmods";
+include "include/managers";
+
+
+include "ai/setup/modsetup";
+include "include/random";
+
+var configfile := ReadConfigFile("::npcdesc");
+var flee_point := 0;
+var oktokill;
+var elem;
+var icount;
+const UACTION_LOOK_AROUND   := 0x05;
+const UACTION_SALUTE        := 0x21;
+const HALT_THRESHOLD := 10; // how close before he barks?
+
+var speech := 49;
+var me := Self();
+
+program CastleGuard()
+	if (me.x >= 1385 and me.x <= 1414 and 
+	    me.y >= 3729 and me.y <= 3758)
+		Killme();
+	endif
+
+
+	if( me.name["<random>"] )
+		SetMeUp();
+	endif
+
+	FixStuff();
+	me.dexterity_mod := 5000;
+	if (getobjproperty(me, "frozen"))
+		me.frozen := 1;
+	endif
+
+	EnableMainEvents();
+
+	var ev;
+	var next_wander := ReadGameClock() + 2;
+	var wanders := 9;
+	var hal;
+	var bots;
+	var botlist := {};
+	var loop := 0;
+	var ok := 1;
+	while (1)
+		look_around();
+		if (ReadGameClock() >= next_wander)
+			wanders:=wanders+1;
+			wander();
+			next_wander := ReadGameClock() + 2;
+			if (wanders>10)
+				ev := sleepmode();
+				wanders := 0;
+			else
+				ev := os::wait_for_event(5);
+			endif
+		else
+			ev := os::wait_for_event(5);
+		endif
+
+		if (ev) ProcessEvents(ev, wanders, next_wander); endif
+
+	endwhile
+
+endprogram
+
+function CloseDistance( opponent )
+	
+    case Distance( me, opponent )
+        1:              // the most likely, so first 
+        0:
+            return 1;
+        default:
+            RunToward( opponent );
+            return 0;
+    endcase
+endfunction
+
+function look_around()
+	var hal;
+	var gx :=GetObjProperty(me,"guardx");
+	var gy :=GetObjProperty(me,"guardy");
+	var gz :=GetObjProperty(me,"guardz");
+	var wr :=GetObjProperty(me,"WanderRange");
+	var difficulty;
+	var conf := ReadConfigFile( ":*:npcdesc" );
+	if (!wr)
+		wr := 10;
+	endif
+	if (me.x < (gx-wr) or me.x > (gx+wr) or me.y < (gy-wr) or me.y > (gy+wr))
+		WalkTowardLocation(gx,gy);
+		WalkTowardLocation(gx,gy);
+		WalkTowardLocation(gx,gy);
+	endif
+	var lastcheck := GetObjProperty(me,"lastcheck");
+	if (!lastcheck)
+		SetObjProperty(me,"lastcheck",(ReadGameClock()+20));
+		lastcheck := ReadGameClock() + 20;
+	endif
+	if (ReadGameClock() > lastcheck)
+		if (me.x < (gx-wr) or me.x > (gx+wr) or me.y < (gy-wr) or me.y > (gy+wr))
+			MoveCharacterToLocation(me, gx, gy, gz, 0);
+		endif
+		EraseObjProperty(me,"lastcheck");
+	endif
+	if (me.hp < me.maxhp)
+		me.hp := me.maxhp;
+	endif
+	foreach critter in listmobilesnearlocation(me.x, me.y, me.z, 20)
+		oktokill := 1;
+		if ((critter.npctemplate) and (critter.script != "tamed") and critter !=me and critter.npctemplate !="townguard")
+		elem := FindConfigElem( conf , critter.npctemplate );
+		difficulty := GetConfigInt( elem , "tameskill" );
+		if (!difficulty)
+			oktokill := 0;
+		endif
+				if (oktokill == 1)
+					Slam(critter);
+				endif
+
+		endif
+	endforeach
+
+endfunction
+
+function sleepmode()
+
+	foreach critter in ListMobilesNearLocation( me.x,me.y,me.z, 32 )
+          if (!critter.npctemplate)
+		return 0;
+          endif
+	endforeach
+
+	var ev;
+
+	while (1)
+		ev := os::wait_for_event( 120 );
+
+		repeat
+		if (ev)
+		case (ev.type)
+                	SYSEVENT_ENGAGED:
+			SYSEVENT_DAMAGED:
+				return ev;
+			SYSEVENT_ENTEREDAREA:
+				if (!ev.source.npctemplate)
+					return ev;
+				endif
+		endcase
+		endif
+		until (! (ev := os::wait_for_event(120)) );
+
+	endwhile      
+
+endfunction       
+
+
+
+function cleareventque()
+
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+
+endfunction
+
+function EnableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_LEFTAREA + SYSEVENT_DISENGAGED + SYSEVENT_OPPONENT_MOVED );
+    EnableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED, HALT_THRESHOLD );
+    EnableEvents( SYSEVENT_SPEECH, 3 );
+    EnableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function DisableMainEvents()
+
+    cleareventque();
+    DisableEvents( SYSEVENT_ENTEREDAREA + SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DAMAGED );
+    DisableEvents(SYSEVENT_ITEM_GIVEN);
+
+endfunction
+
+function SetMeUp()
+	SetObjProperty(me,"guardx",me.x);
+	SetObjProperty(me,"guardy",me.y);
+	SetObjProperty(me,"guardz",me.z);
+	SetObjProperty(me,"WanderRange",10);
+	me.name := "<random>";
+	me.gender := Random(2);
+	me.graphic := 400+me.gender;
+
+	me.name := RandomName( me );
+	me.title_suffix := " the ranger";
+
+	EquipFromTemplate( me , "Bowyer" );
+	foreach thing in listequippeditems(me)
+		SetObjProperty(thing, "noloot",1);
+	endforeach
+	if (!me.backpack)
+		var newbackpack := CreateItemAtLocation(5288 , 1176 , 0, 0xe75,1);
+		EquipItem(me, newbackpack);
+	endif
+
+	me.title_suffix := " the Ranger";
+	setobjproperty(me,"guardtype",3);
+		
+endfunction
+
+function ProcessEvents(byref ev, byref wanders, byref next_wander)
+	var hal;
+	case (ev.type)
+	SYSEVENT_SPEECH:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		var evtext := lower(ev.text);
+
+		if ( (evtext["guards"]) or (evtext["guards!"]) )
+			look_around();
+		elseif (evtext["range"])	
+			if (ev.source.cmdlevel > 2)
+				var rnge := SplitWords( evtext );
+				if (!rnge[2] or rnge[2] =="")
+					say("syntax is : range <1-50>");
+				else
+					var rint := CInt(rnge[2]);
+					if (rint < 1)
+						rint := 1;
+					elseif (rint > 50)
+						rint := 50;
+					endif
+					Say("Wander Range is now : "+rint);
+					SetObjProperty(me,"WanderRange",rint);
+				endif
+			endif
+		endif
+
+	SYSEVENT_ENGAGED:
+	SYSEVENT_DAMAGED:
+		wanders := 0;
+		next_wander := readgameclock()+60;
+		foreach character in EnumerateOnlineCharacters()
+			if( character.cmdlevel > 0 )
+				SendSysmessage( character, ev.source.name+" is attacking an Invuln NPC at "+me.x+","+me.y+","+me.z, 3 ,130  );	
+			endif
+		endforeach
+	SYSEVENT_ENTEREDAREA:
+		wanders := 0;
+		PerformAction( me, UACTION_LOOK_AROUND );
+		look_around();
+	SYSEVENT_ITEM_GIVEN:
+		wanders := 0;
+		next_wander := readgameclock()+10;
+		TakeItem(ev.source,ev.item);
+	endcase
+
+endfunction
+
+function FixStuff()
+
+	me.graphic := 400+me.gender;
+
+	if ( me.name[" the "] ) me.name := splitwords(me.name)[1]; endif
+
+	var guardtype := Getobjproperty(me,"guardtype");
+	if (!guardtype)
+		me.title_suffix := " the Ranger";
+		return;
+	endif
+	me.title_suffix := " the Ranger";
+	
+endfunction
+
+function killme()
+	MoveCharacterToLocation(me, 5445,1153,0, MOVECHAR_FORCELOCATION);
+	RevokePrivilege( me, "invul" );
+	setobjproperty(me,"guardkill",1);
+	applyrawdamage(me,me.maxhp+3);
+
+endfunction
+
+function Slam (victim)
+	sleepms(25);
+	var failsafe := ReadGameClock() + 30;
+	var nd := ReadGameClock() + 5;
+	var steps := 0;
+		while (victim and ReadGameClock() < failsafe and !victim.dead and !GetObjProperty(victim,"#rangertamed"))
+		steps := 0;
+		while(steps < 30 and ReadGameClock() < nd and !victim.dead and !GetObjProperty(victim,"#rangertamed"))
+			RunToward(victim);
+			RunToward(victim);
+			RunToward(victim);
+			if (Distance(me,victim) < 2 and !victim.dead and !GetObjProperty(victim,"#rangertamed"))
+				Tame(victim);
+			endif
+			steps := steps + 1;	
+		endwhile
+		MoveCharacterToLocation(me,victim.x,victim.y,victim.z,0);
+		if (!victim.dead and !GetObjProperty(victim,"#rangertamed"))
+			Tame(victim);
+		endif
+		sleepms(50);
+	endwhile
+	me.warmode := 0;
+	EraseObjProperty(me,"lastcheck");
+	return;
+endfunction	
+
+function Tame(victim)
+	if (!victim)
+		return;	
+	endif
+	var thename := GetName( victim.name );
+	if (!thename)
+		return;
+	endif
+	if(GetObjProperty(victim, "#rangertamed"))
+		return;
+	endif
+	sleepms(500);
+	SetObjProperty(victim,"#rangertamed",1);
+	var foundmerc := 0;
+	var loops := 0;
+	var merc;
+	Say("What a nice "+thename);
+	Sleep(2);
+	Say("I've always wanted a "+thename+" like you");
+	Sleep(2);
+	Say(thename+" will you be my friend?");
+	Sleep(2);
+	SetObjProperty(victim, "originalscript", victim.script);
+	SetObjProperty( victim ,"master" , me.serial );
+	victim.setmaster(victim );
+	victim.script := "npctamed";
+	SetObjProperty( victim , "PreviouslyTamed" , 1 );
+	sleep(3);
+	Say(victim.name+" follow me");
+	RestartScript(victim );
+	sleep(2);
+	victim.dexterity_mod := 5000;
+	//find and sell to merchant
+	foreach critter in listmobilesnearlocation(me.x, me.y, me.z, 20)
+		if ((critter.npctemplate) and critter !=me and critter.npctemplate =="AnimalTrainer" and foundmerc == 0)
+			foundmerc := 1;
+			merc := critter;
+		endif
+	endforeach
+	loops := 0;
+	if (foundmerc == 1)
+ 		while (Distance(me,merc) > 2 and loops < 30)
+  			RunToward(merc);
+			loops := loops + 1;
+		endwhile
+		if ( Distance(me,merc) > 2 )
+			MoveCharacterToLocation(me,merc.x,merc.y,merc.z,0);	
+		endif
+		sleep(1);
+		if (victim.hp > 0 ) // in case victim was killed by something
+			Say("sell");
+			SetObjProperty(victim,"#sold",1);
+			sleep(1);
+			PrintTextAbove(merc,"What pet would you like to sell?");
+			sleep(1);
+			PrintTextAbove(merc,"a "+thename+" is worth "+victim.strength);
+			KillPet(victim);
+			sleep(3);
+		endif
+	endif
+	if (foundmerc == 0)
+		PlayLightningBoltEffect( victim );
+		PlaySoundEffect( victim , 0x0207 );
+		KillPet(victim);
+	endif	
+	
+	
+			
+endfunction
+
+function GetName( thename )
+
+	if (find(thename, "an ",1) == 1)
+		var i;
+		var tempname;
+
+		tempname := thename[4,len(thename)];
+		return tempname;
+	elseif (find(thename, "a ",1) == 1)
+		var i;
+		var tempname;
+
+		tempname := thename[3,len(thename)];
+		return tempname;
+	else
+		return thename;
+	endif
+
+endfunction
+
+function KillPet(victim)
+	if (victim.name == me.name)
+		return;
+	endif
+	victim.frozen := 1;
+  	var originalscript := GetObjProperty(victim, "originalscript");
+	victim.script := originalscript;
+  	RestartScript(victim);
+	MoveCharacterToLocation(victim, 5445,1153,0, MOVECHAR_FORCELOCATION);
+	RevokePrivilege( victim, "invul" );
+	setobjproperty(victim,"guardkill",1);
+	applyrawdamage(victim,victim.maxhp+3);
+endfunction		

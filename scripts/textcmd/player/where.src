@@ -1,0 +1,16 @@
+// command .where  started June 19, 2000
+// Zulu (zulu@zuluhotel.com)
+// last updated June 25, 2000
+
+use uo;
+
+include "include/findcity";
+
+program textcmd_where( who )
+
+    Var Standing := FindCity(who);
+    
+    PrintTextAbovePrivate(who, "( "+ Standing +" )", who);
+    PrintTextAbovePrivate(who, "("+who.x+", "+who.y+", "+who.z+")", who);
+
+endprogram

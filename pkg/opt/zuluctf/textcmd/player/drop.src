@@ -1,0 +1,87 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated: Zulu April 19, 2000
+//
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+
+include "include/client";
+include "../pkg/opt/zuluctf/ctf1";
+
+program dropflag(who,item)
+
+var team:=GetObjProperty(who,"team");
+if (!team||!item) return; endif
+
+if (item=="f" || item=="flag")
+
+var playerhand:=GetEquipmentByLayer(who,LAYER_HAND2);
+var theflag:=playerhand.objtype;
+
+  if ((team=="BLUE") && (theflag==0x7111))
+    fixredflag(who);
+    DestroyItem(playerhand);
+    SetGlobalProperty("ctfredloc","drop");
+    messagectf( who.name + " dropped the red flag",33);
+  elseif ((team=="RED") && (theflag==0x7112))
+    fixblueflag(who);
+    DestroyItem(playerhand);
+    SetGlobalProperty("ctfblueloc","drop");
+    messagectf( who.name + " dropped the blue flag",4);
+  endif
+
+return;
+
+elseif (item=="t" || item=="tech")
+
+var tech,fixtech:=0;
+
+case (GetObjProperty(who,"#ctftech"))
+
+"armor": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech1")));
+	  fixtech:=1;
+"disrupt": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech2")));
+	 fixtech:=1;
+"haste": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech3")));
+	 fixtech:=1;
+"inviso": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech4")));
+         fixtech:=1;
+"strength": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech5")));
+	 fixtech:=1;
+"magic": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech6")));
+	 fixtech:=1;
+"quad": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech7")));
+         fixtech:=1;
+"regen": tech:=SystemFindObjectBySerial(CInt(GetGlobalProperty("#tech8")));
+	 fixtech:=1;
+
+endcase
+if (fixtech)
+	tech.movable:=1;
+	MoveItemToLocation( tech, who.x, who.y, who.z, MOVEITEM_FORCELOCATION );
+	 SetObjProperty(tech,"user",who.serial);
+	 tech.movable:=0;
+	 tech.invisible:=0;
+endif
+
+EraseObjProperty(who,"#ctftech");
+start_script(":zuluctf:hud",who);
+endif
+
+endprogram
+
+function fixredflag(who)
+var redflag:=CreateItemAtLocation(who.x,who.y,who.z,0x7111,1);
+CreateItemAtLocation(who.x,who.y,who.z,0x2d13,1);
+SetGlobalProperty("#rflag",redflag.serial);
+SetObjProperty(redflag,"r",1);
+endfunction
+
+function fixblueflag(who)
+var blueflag:=CreateItemAtLocation(who.x,who.y,who.z,0x7112,1);
+CreateItemAtLocation(who.x,who.y,who.z,0x2d13,1);
+SetGlobalProperty("#bflag",blueflag.serial);
+SetObjProperty(blueflag,"b",1);
+endfunction

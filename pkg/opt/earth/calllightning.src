@@ -1,0 +1,71 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_CALL_LIGHTNING;
+const SPELL_EFFECT_ID		:= 0;
+const SPELL_EFFECT_SPEED	:= 0;
+const SPELL_EFFECT_LOOP		:= 0;
+
+program cast_call_lightning( parms )
+
+	var circle := GetCircle( SPELLID_CALL_LIGHTNING );
+	var element := AIR;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+ 	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+		Send_Attack( cast_on, caster, SPELLID_CALL_LIGHTNING );
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_CALL_LIGHTNING ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_HARMFUL + TGTOPT_CHECK_LOS );
+	
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayLightningBoltEffect( cast_on );
+		PlaySoundEffect( cast_on, SFX_SPELL_CALL_LIGHTNING );
+		PlayLightningBoltEffect( cast_on );
+		PlaySoundEffect( cast_on, SFX_SPELL_CALL_LIGHTNING );
+	endif
+
+	var immunity := IsProtected( caster, cast_on, circle );
+
+	if( immunity == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( immunity == CURSED )
+		circle := circle * 2;
+	endif
+
+	var dmg := CalcSpellDamage( caster,cast_on, circle );
+	ApplyElementalDamage( caster, cast_on, circle, dmg, element );
+
+	EraseObjProperty( caster, "#Casting" );
+
+endprogram

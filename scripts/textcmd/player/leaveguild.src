@@ -1,0 +1,78 @@
+Use uo;
+
+Include "include/yesno";
+
+Program TextCMD_RemoveGuild( Who )
+
+    If( YesNo( Who, "Leave Guild?" ) )
+    RemoveGuild( Who );
+    SendSysMessage( Who , "You successfully left your guild.");
+    Else
+    SendSysMessage( Who , "Cancelled.");
+    Endif
+
+Endprogram
+
+function removeguild( client )
+
+    var guild_id:=cint(getobjproperty( client,"guild_id"));
+    var guild:=FindGuild(guild_id);
+
+    var gm:=findgm(guild);
+
+    if (client.serial==gm[2]) guild.setprop("gm",0); endif
+    guild.removemember(client);
+    eraseobjproperty(client,"guild_id");
+    eraseobjproperty(client,"fealty");
+    fixnameguild(client);
+    client.title_guild:="";
+    eraseobjproperty(client,"abv");
+    eraseobjproperty(client,"talkchat");
+    eraseobjproperty(client,"hearchat");
+
+    SendSysMessage(client,"You are no longer a member of "+guild.getprop("guildname")+".",3,70);
+    var i,all:=guild.members;
+
+    if (all.size()==0)
+    all:=guild.allyguilds;
+
+    if (all.size()<>0)
+    for(i:=1;i<=all.size();i:=i+1)
+    guild.removeallyguild(all[i]);
+    endfor
+    endif
+
+    all:=guild.enemyguilds;
+
+    if (all.size()<>0)
+    for(i:=1;i<=all.size();i:=i+1)
+    guild.removeenemyguild(all[i]);
+    endfor
+    endif
+
+    DestroyGuild(guild);
+
+    SendSysMessage(client,"You will need to delete the old guildstone.",3,34);
+    Endif
+
+Endfunction
+
+function fixnameguild(who)
+var abv:=getobjproperty(who,"abv"),result:=find(who.name," ["+abv+"]",1),name:=who.name;
+
+result:=result-1;
+name:=name[1,result];
+who.name:=name;
+endfunction
+
+function findgm(guild)
+
+var returninfo:={"In Vote","0"},i,all:=guild.members,gm:=guild.getprop("gm");
+
+for(i:=1;i<=all.size();i:=i+1)
+if (all[i].serial==gm) returninfo[1]:=all[i].name; returninfo[2]:=all[i].serial; returninfo[3]:=all[i]; endif
+endfor
+
+return returninfo;
+
+endfunction

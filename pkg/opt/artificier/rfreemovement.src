@@ -1,0 +1,46 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+
+
+program rfreemovement( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_FREE_MOVEMENT, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+	if( CInt(power) >= 6 )
+		power := 2;
+	else
+		power := 1;
+	endif
+
+	if( GetObjProperty( item, "FreeAction" ))
+		SendSysMessage( caster, "This item already have a more powerful enchantment on it." );
+	else
+		SetObjProperty( item, "FreeAction", power );
+		SendSysMessage( caster, "This " + item.desc + " will now protect his wearer from paralysis" );
+		SetNameByEnchant( item );
+
+	endif
+
+endprogram

@@ -1,0 +1,42 @@
+use uo;
+Use cfgfile;
+
+program textcmd_createstack( who, text )
+    var params := SplitWords( text );
+    var objtype := params[1];
+    var amount := CInt( params[2] );
+
+    if (CInt(objtype))
+        objtype := CInt(objtype);
+    endif
+
+    if (!amount)
+        amount := 1;
+    endif
+if((objtype==0xe77) or (objtype==0xfae))
+return;
+endif
+
+    var what := CreateItemInBackpack( who, objtype, amount );
+    if (what)
+        PrintTextAbovePrivate( who, "Created " + what.desc + " in my backpack.", who );
+
+    Var datafile:=ReadConfigFile("logging_created");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Item Serial",    hex(what.serial) });
+    elem.append({ "Item Amount",    what.amount });
+
+    AppendConfigFileElem("logging_created", "Item", "Created " + what.desc, elem);
+    UnloadConfigFile("logging_created");
+    EndIf
+
+    else
+        PrintTextAbovePrivate( who, "Couldn't create that: " + what.errortext, who );
+    endif
+endprogram

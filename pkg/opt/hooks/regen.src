@@ -1,0 +1,110 @@
+Use uo;
+
+Include "include/attributes";
+
+Var npcdesccfg := ReadConfigFile("::npcdesc");
+
+program regen()
+	return 1;
+endprogram
+
+
+exported function GetLifeRegenRateExported(mob)
+	var rate := GetObjProperty(mob, CPROP_NAME_PREFIX_REGEN_RATE+VITALID_LIFE);
+	if( rate != error )
+		rate := Cint(rate);
+		if( rate != error )
+			return rate;
+		endif
+	endif
+	
+	return 1200;
+endfunction
+
+/*
+   Edited: Unreal (MontuZ@Gmail.com) Dec 10, 2005.
+   PS: HIT/STAM/MANA is NOT used anymore to determain a NPC's max life/mana/stam.
+   NPC_STAT_MULTIPLIER * Npc's Str/Int/Dex == Max Life/Mana/Stam.
+*/
+
+exported Function GetLifeMaximumValueExported( mob )
+
+    Var maxlife := ( GetAttribute( mob, ATTRIBUTEID_STRENGTH ) * 100 );
+
+    If( mob.npctemplate )
+    
+    Var lifestat := ( maxlife * NPC_STAT_MULTIPLIER );
+    
+        If( lifestat or ( lifestat == 0 ) )
+        maxlife := CInt( lifestat );
+        Endif
+
+    Endif
+
+    Return ( maxlife );
+ 
+Endfunction
+
+
+exported function GetStaminaRegenRateExported(mob)
+	var rate := GetObjProperty(mob, CPROP_NAME_PREFIX_REGEN_RATE+VITALID_STAMINA);
+	if( rate != error )
+		rate := Cint(rate);
+		if( rate != error )
+			return rate;
+		endif
+	endif
+	
+	return 1200;
+endfunction
+
+
+exported function GetStaminaMaximumValueExported(mob)
+
+    Var maxstam := ( GetAttribute( mob, ATTRIBUTEID_DEXTERITY ) * 100 );
+    
+    If( mob.npctemplate )
+    
+    Var stamstat := ( maxstam * NPC_STAT_MULTIPLIER );
+
+        If( stamstat or ( stamstat == 0 ) )
+        maxstam := CInt( stamstat );
+        Endif
+
+    Endif
+ 
+    Return ( maxstam );
+ 
+endfunction
+
+
+exported function GetManaRegenRateExported(mob)
+	var rate := GetObjProperty(mob, CPROP_NAME_PREFIX_REGEN_RATE+VITALID_MANA);
+	if( rate != error )
+		rate := Cint(rate);
+		if( rate != error )
+			return rate;
+		endif
+	endif
+	
+	return 1200;
+endfunction
+
+
+exported function GetManaMaximumValueExported(mob)
+
+    Var maxmana := ( GetAttribute( mob, ATTRIBUTEID_INTELLIGENCE ) * 100 );
+    
+    If( mob.npctemplate )
+
+    Var manastat := ( maxmana * NPC_STAT_MULTIPLIER );
+    
+        If( manastat or ( manastat == 0 ) )
+        maxmana := CInt( manastat );
+	Endif
+
+    Endif
+    
+    Return ( maxmana );
+    
+endfunction

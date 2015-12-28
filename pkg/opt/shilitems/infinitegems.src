@@ -1,0 +1,46 @@
+use uo;
+use os;
+
+include "include/itemutil";
+include "include/objtype";
+
+const DELAY_BETWEEN_REFILL	:= 3600;
+const GEM_AMOUNT		:= 500;
+
+
+var gems := { 0x0f0f, 0x0f10, 0x0f11,
+		 0x0f13, 0x0f15, 0x0f16,
+		 0x0f18, 0x0f25, 0x0f30 };
+		
+var the_x := { 50, 32, 29, 29, 75, 47, 58, 78, 83 };
+		 
+var the_y := { 43, 105, 77, 46, 77, 76, 99, 42, 103 };
+
+program infinitenormals( bag )
+
+	while( 1 && bag )
+		var i;
+		for( i := 1; i <= len(gems); i := i + 1 )
+			set_critical(1);
+		
+			var found_it := FindItemInContainer( bag, gems[i] );
+			if( !found_it )
+				found_it := CreateItemInContainer( bag, gems[i], GEM_AMOUNT );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			elseif( found_it.amount < GEM_AMOUNT )
+				var to_create := GEM_AMOUNT - found_it.amount;
+				found_it := CreateItemInContainer( bag, gems[i], to_create );
+				found_it.movable := 1;
+				MoveItemToContainer( found_it, bag, the_x[i], the_y[i] );
+				found_it.movable := 0;
+			endif
+		
+			set_critical(0);
+		endfor
+	
+		sleep( DELAY_BETWEEN_REFILL );
+	endwhile
+
+endprogram

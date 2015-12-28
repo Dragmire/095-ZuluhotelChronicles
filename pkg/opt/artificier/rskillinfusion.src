@@ -1,0 +1,121 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/random";
+
+program rskillinfusion( parms )
+
+	var layout := array(
+				"page 0",
+				"resizepic 50  0   2600 250 450",
+				"resizepic 100 405 5100 150 25",
+				"text 125 30 5 0",
+							);
+			
+	var data := array(
+				"Select a skill"
+							);
+						
+	var cfg := ReadConfigFile( ":combat:modenchantdesc" );
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 17;
+	var y 	:= 55;
+	var i;
+
+	layout.append( "page " + page );
+	if( SKILLID__HIGHEST > perpage )
+		layout.append( "button 200 406 5540 5541 0 " + (page + 1) );
+	endif
+
+	for( i := 1; i <= SKILLID__HIGHEST+1; i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 55;
+		
+			layout.append( "page " + page );
+			layout.append( "button 130 406 5537 5538 0 " + (page - 1) );
+			if( SKILLID__HIGHEST > (count + perpage) )
+				layout.append( "button 200 406 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+	
+		layout.append( "text 75 " + y + " 0 " + len(data) );
+		layout.append( "button 250 " + (y + 5) + " 2118 2117 1 0 " + i );
+		data.append( cfg[i-1].Skill );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_SKILL_INFUSION, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+
+	var item	:= result[1];
+	var power	:= result[2];
+	var skill;
+	var avail_skills := GetObjProperty( item, "AvailSkills" );
+
+	if( !avail_skills )
+		//Ask for the skillid
+		SendSysMessage( caster, "Select a skill." );
+		skill := SendDialogGump( caster, layout, data );
+		if( !skill[0] )
+			SendSysMessage( caster, "The ritual is aborted" );
+			return;
+		endif
+	else
+		var skill_index := Random( len(avail_skills) )+1;
+		skill := CInt( avail_skills[skill_index] );
+		if( !skill )
+			skill := SendDialogGump( caster, layout, data );
+			if( !skill[0] )
+				SendSysMessage( caster, "The ritual is aborted" );
+				return;
+			endif
+		endif
+	endif
+
+
+	//Apply the enchantment if there wasn't one more powerful already
+	var previous	:= GetObjProperty( item, "skilladvamount" );
+	var mult	:= CInt( GetObjProperty( item, "SpecMult" ) );
+	if( mult )
+		power := power * mult;
+	elseif( item.isa( POLCLASS_WEAPON ) )
+		power := power * 5;
+		SetObjProperty( item, "WeapAdv", 1 );
+	endif
+
+	if( !previous )
+		SetObjProperty( item, "skilladv", skill[0]-1 );
+		SetObjProperty( item, "skilladvamount", power );
+		SendSysMessage( caster, "This " + item.desc + " will now raise the skill of the wearer." );
+		SetNameByEnchant( item );
+	else
+		SendSysMessage( caster, "There's already a stronger enchantment on this item." );
+	endif
+
+endprogram

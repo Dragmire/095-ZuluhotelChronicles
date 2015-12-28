@@ -1,0 +1,290 @@
+use uo;
+use os;
+use basic;
+
+include "include/eventid";
+include "include/attributes";
+include "include/itemutil";
+include "include/objtype";
+include "setup";
+
+var bans, owns; // updated by CacheData
+
+program SignListener( sign )
+
+	var signserial := CInt(GetObjProperty( sign, "house_serial" ));
+
+	var ev, i, who, cache;
+	var house := SystemFindObjectBySerial( signserial );
+
+	if( !house ) return; endif
+
+	if(GetObjProperty(sign,"#Z")!=1) addsign(sign); endif
+	/* FIXME: SOMETHING STRANGE... decay is a string!
+	if (DECAY)
+		if (ReadGameClock() > GetObjProperty(sign, "decay"))
+			Demolish(house, sign);
+			return;
+		endif
+	endif */
+
+	CacheData( house );
+	cache := 0;
+
+        // -> RegisterForSpeechEvents(sign, 30);
+        // -> EnableEvents(SYSEVENT_SPEECH, 12);
+
+        while (sign)
+		// check if cached data is to be reloaded
+		cache := cache + 1;
+		if( cache >= CACHE_RELOAD)
+			CacheData( house );
+			cache := 0;
+		endif
+		// checks for banner people
+		foreach mobile in ( house.mobiles )
+			if( mobile.serial in bans )
+				ApplyRawDamage( mobile, GetMaxHp(mobile) + 5 );
+			endif
+		endforeach
+
+                sleep(5 * 60);
+
+                // handle events
+
+                // -> ev := wait_for_event( EVENT_TIMEOUT );
+                // -> if( ev )
+                // ->         if( ev.type = SYSEVENT_SPEECH )
+                // ->                 who := ev.source;
+                // ->                 if( who.serial in owns )
+                // ->                         if (who.multi.serial = house.serial)
+                // ->                                 handle_speech( ev, house );
+                // ->                         elseif( ( house.objtype = 0x6070 ) or ( house.objtype = 0x6072 ) )
+                // ->                                 if( InsideTent( who, house ) )
+                // ->                                         handle_speech( ev, house );
+                // ->                                 endif
+                // ->                         endif
+                // ->                 endif
+                // ->         endif
+                // -> endif
+
+                // clear event queue (in case of lag)
+                // -> repeat
+                // -> until (! os::wait_for_event(0) );
+	endwhile
+
+endprogram
+
+function handle_speech( event, house )
+
+	var text := lower( event.text );
+	if( text["i wish to lock this down"] )
+		HouseFunctionLock( house, event, 1 );
+	elseif( text["i wish to unlock this"] )
+		HouseFunctionLock( house, event, 2 );
+	elseif( text["i wish to add secure east"] )
+		HouseFunctionSecure( house, event, 1 );
+	elseif( text["i wish to add secure south"] )
+		HouseFunctionSecure( house, event, 2 );
+	elseif( text["i wish to delete secure"] )
+		HouseFunctionSecure( house, event, 3 );
+	endif
+
+endfunction
+
+
+function HouseFunctionLock( house, event, num )
+
+	var itemt := Target( event.source, TGTOPT_NOCHECK_LOS );
+
+	if(!itemt)
+		SendSysMessage( event.source, "Canceled." );
+		return;
+	endif
+
+	var inside := 0;
+	var parent_locked :=0;
+
+	foreach item in ( house.items )
+		if ( GetObjProperty( item, "lockeddown" ) && (itemt.x == item.x) && ( itemt.y == item.y))
+			parent_locked := 1;
+		endif
+		if (( itemt.serial == item.serial ) || ( parent_locked ))
+			inside := 1;
+		endif
+	endforeach
+
+	if( !inside)
+		if( InsideTent( itemt, house ) )
+			inside := 1;
+		endif
+	endif
+
+	if( inside )
+		if( num == 1 )
+			if(( GetObjProperty( house, "numlockdowns" ) > 0 ) && (itemt.movable))
+
+				if( IsCarpet( itemt ) )
+					MoveItemToLocation(itemt, CInt(itemt.x), CInt(itemt.y), CInt(itemt.z)+1, MOVECHAR_FORCELOCATION);
+				endif
+					itemt.movable := 0;
+					SetObjProperty( house, "numlockdowns", GetObjProperty( house, "numlockdowns") - 1 );
+					SetObjProperty( itemt, "lockeddown", 1 );
+					SendSysMessage( event.source, "Locked Down" );
+
+			elseif (GetObjProperty( itemt, "lockeddown" ))
+				SendSysMessage( event.source, "That is already locked down." );
+			else
+				SendSysMessage( event.source, "The house has no more lockdowns remaining." );
+			endif
+		else
+			if(GetObjProperty( itemt, "lockeddown" ))
+				itemt.movable := 1;
+				EraseObjProperty( itemt, "lockeddown" );
+				SetObjProperty( house, "numlockdowns", GetObjProperty( house, "numlockdowns") + 1 );
+				SendSysMessage( event.source, "Released" );
+			else
+				SendSysMessage( event.source, "You can't release this." );
+			endif
+		endif
+	else
+		SendSysMessage( event.source, "That is not inside the building." );
+	endif
+
+endfunction
+
+function HouseFunctionSecure( house, event, num )
+
+	var itemt;
+	if( num == 3 ) // num = 3 (delete)
+		itemt := Target( event.source );
+		if( !itemt )
+			SendSysMessage( event.source, "Canceled." );
+			return;
+		endif
+		if(GetObjProperty( itemt, "houseserial" ) == house.serial)
+			DestroyItem(itemt);
+			SetObjProperty( house, "numsecure", CInt(GetObjProperty( house, "numsecure") + 1) );
+			SendSysMessage( event.source, "Secure Off." );
+			return;
+		else
+			SendSysMessage( event.source, "This is a secure container." );
+			return;
+		endif
+	else // num = 1, 2 (add secure east, south)
+		itemt := TargetCoordinates( event.source );
+		if( !itemt )
+			SendSysMessage( event.source, "Canceled." );
+			return;
+		endif
+		if( GetObjProperty( house, "numsecure" ) )
+			var itemid;
+			if( num == 1 )
+				itemid := 0xe41;
+			else
+				itemid := 0xe40;
+			endif
+			var box := CreateItemAtLocation( itemt.x, itemt.y, itemt.z, itemid, 1 );
+			var inside := 0;
+			foreach item in (house.items)
+				if( box.serial == item.serial )
+					inside := 1;
+				endif
+			endforeach
+			if( !inside)
+				if( InsideTent( itemt, house ) )
+					inside := 1;
+				endif
+			endif
+			if (inside)
+				var newbox := CreateItemInContainer( box, itemid, 1);
+				box.movable := 0;
+				SetObjProperty( box, "boxserial", CInt( newbox.serial ) );
+				SetObjProperty( box, "houseserial", CInt( house.serial ) );
+				box.usescript := ":housing:securecont";
+				SetObjProperty( house, "numsecure", CInt( GetObjProperty( house, "numsecure") - 1 ) );
+				SendSysMessage( event.source, "Secure On." );
+			else
+				DestroyItem(box);
+				SendSysMessage( event.source, "That is not inside the building.");
+			endif
+		else
+			SendSysMessage( event.source, "The house has no more secure containers remaining." );
+		endif
+	endif
+
+endfunction
+
+function CacheData( house )
+
+	var i, t;
+	bans := {};
+	owns := { CInt(GetObjProperty(house, "ownerserial")) };
+	for(i := 1; i <= MAX_BANNED; i := i + 1)
+		t := CInt(GetObjProperty( house, "Banned" + i ));
+		if( t )
+			if( len( bans) )
+				bans.append( t );
+			else
+				bans := { t };
+			endif
+		endif
+	endfor
+
+        //-> for(i := 1; i <= MAX_CO_OWNERS; i := i + 1)
+        //->        t := CInt(GetObjProperty( house , "Co-owner" + i ));
+        //->        if( t )
+        //->                 owns.append( t );
+        //->        endif
+        //-> endfor
+
+endfunction
+
+function Demolish(house, sign)
+
+	var addonitem,founditem;
+
+	foreach item in (house.components)
+		DestroyItem(item);
+	endforeach
+
+	foreach item in (house.items)
+		DestroyItem(item);
+	endforeach
+
+	addonitem := CInt(GetObjProperty( house, "component1" ));
+	if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+	addonitem := CInt(GetObjProperty( house, "component2" ));
+	if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+	addonitem := CInt(GetObjProperty( house, "component3" ));
+	if (addonitem) DestroyItem(SystemFindObjectBySerial(addonitem)); endif
+
+	addonitem := CInt(GetObjProperty( house, "builtdeed" ));
+	if (addonitem)
+		founditem := DestroyItem(SystemFindObjectBySerial(addonitem));
+		if (founditem!=1) founditem:=DestroyItem(SystemFindObjectBySerial(addonitem,1)); endif
+		if (founditem!=1) DestroyItem(SystemFindObjectBySerial(addonitem,2)); endif
+	endif
+
+	if (house.objtype==0x608d)
+		foreach items in ListItemsNearLocation( sign.x, sign.y, 0, 8 )
+			if((items.objtype==0x177d) || (items.objtype==0xb41) || (items.objtype==0xb42))
+				DestroyItem(items);
+			endif
+		endforeach
+	endif
+	DestroyMulti( house );
+
+endfunction
+
+function InsideTent(who,house)
+
+	if (who.x<=house.x+3 && who.x>=house.x-2 && who.y<=house.y+3 && who.y>=house.y-2)
+		return 1;
+	else
+		return 0;
+	endif
+
+endfunction

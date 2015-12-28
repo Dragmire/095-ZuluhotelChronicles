@@ -1,0 +1,41 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+include "include/constants";
+
+Program textcmd_mount( Who )
+
+	Var I;
+
+	SendSysMessage(Who, "Starting.");
+	SendSysMessage(Who, "Starting.");
+	SendSysMessage(Who, "Starting.");
+	Detach();
+
+	foreach Thing in ListObjectsInBox( 0, 0, -128, 6142, 4094, 128 )
+		If ( Thing )
+			If ( Thing.IsA(POLCLASS_ITEM) )
+				If( !GetObjProperty( Thing, PROPID_SPAWNPOINT_SETTING ) )
+					DestroyItem(Thing);
+				Endif
+			Endif
+		Endif
+		SleepMS( 2 );
+	Endforeach
+
+	Print("Finished.");
+	Print("Finished.");
+	Print("Finished.");
+	Print("Finished.");
+	Print("Finished.");
+Endprogram

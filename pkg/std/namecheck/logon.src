@@ -1,0 +1,9 @@
+use os;
+use uo;
+use cfgfile;
+
+program namecheckatlogon( who )
+
+	start_script ("namecheck", who );
+
+endprogram

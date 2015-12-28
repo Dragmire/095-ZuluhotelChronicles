@@ -1,0 +1,73 @@
+use os;
+use uo;
+use http;
+
+include "include/myutil";
+
+WriteHtml("<html><head><title>Chaotic Realm Second Age</title>" );
+WriteHtml("<body bgcolor=000000 background=http://www.montuz.com/images/I_central_fundo.jpg text=FFFFFF link=666666 vlink=666666 alink=666666>
+
+<style>
+table, tr, td {
+	background-color: #000000;
+	border: 1px solid #000066;
+}
+
+font {
+    font-family: tahoma;
+    font-size: 11px;
+}
+
+</style>
+
+</head>
+<center>
+" );
+
+
+var merchantserial := CINT (queryparam ("vs"));
+var merchant := SystemFindObjectBySerial (merchantserial);
+if (!merchant)
+	WriteHTML ("<font size=2>That merchant no longer exists.</body></html>");
+	return;
+endif
+
+var x := CINT (merchant.x/8.125);
+var y := CINT (merchant.y/8.008);
+
+WriteHTML ("<font size=2>" + merchant.name );
+WriteHTML ("<br>Located at " + merchant.x + ", " + merchant.y + "</font>");
+
+    Writehtml("<br>");
+    Writehtml("<table width=400 border=1 align=center cellpadding=0 cellspacing=0>");
+    Writehtml("<tr>");
+    Writehtml("<td width=200><div align=center><strong><font size=2>Item</font></strong></div></td>");
+    Writehtml("<td width=200><div align=center><strong><font size=2>Price</font></strong></div></td>");
+    Writehtml("</tr>");
+    Writehtml("<tr>");
+
+
+var storage := FindStorageArea( "Merchant Storage" );
+if (!storage)
+	WriteHTML ("<font size=2>Error opening merchant storage!</font></body></html>");
+	return;
+endif
+
+var inv_fs := FindRootItemInStorageArea (storage, merchantserial + " 1C");
+if (!inv_fs)
+	WriteHTML ("<font size=2>Error finding merchant storage</font>");
+else
+	var items_for_sale := EnumerateItemsInContainer (inv_fs);
+	foreach item in ListRootItemsInContainer (inv_fs)
+		if ( item.amount > 1 )
+			WriteHTML ( "<tr><td><div align=center><font size=2>" + item.desc + "</font></td><td><div align=center><font size=2>" + item.sellprice + " each</font></td></tr>");
+		else
+			WriteHTML ( "<tr><td><div align=center><font size=2>" + item.desc + "</font></td><td><div align=center><font size=2>" + item.sellprice + "</font></td></tr>" );
+		endif
+	endforeach
+endif
+
+
+
+
+WriteHTML ("</center></table></body></html>");

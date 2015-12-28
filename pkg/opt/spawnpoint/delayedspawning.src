@@ -1,0 +1,15 @@
+use os;
+use uo;
+
+program delayed_spawning( parameter )
+	var delay := Cint(parameter[2]);
+	if( delay == error )
+		return 0;
+	else	
+		Sleep(delay+15);
+	
+		if( parameter[1] )
+			return Start_Script("checkpoint", parameter[1]);
+		endif
+	endif
+endprogram

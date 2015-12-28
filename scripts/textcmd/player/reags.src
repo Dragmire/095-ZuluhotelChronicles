@@ -1,0 +1,181 @@
+//----------------------------------------------------------------------------
+//
+// 13/3/2001
+//
+// Reagents Counter by Jaleem[rMn] - ZuluHotel Italy
+//
+// Location:  \pol\scripts\textcmd\player
+//
+// This simple script counts how many reagents are carried by a player, giving
+// a graphical overview of the amount of each reagent. It should be very
+// useful especially for mages, since it's a common mistake to remain without
+// a particular reagent in the middle of the battle :). It's also possibile to
+// set a "warning level": the amounts of those reagents that are under the
+// warning level value will be displayed in red.
+//
+//
+//----------------------------------------------------------------------------
+use uo;
+//----------------------------------------------------------------------------
+const	REAG_BP := 3962;
+const	REAG_BM := 3963;
+const	REAG_GA := 3972;
+const	REAG_GI := 3973;
+const	REAG_MR := 3974;
+const	REAG_NS := 3976;
+const	REAG_SA := 3980;
+const	REAG_SS := 3981;
+//----------------------------------------------------------------------------
+var gid_reags := {0, 0, 0, 0, 0, 0, 0, 0};
+//----------------------------------------------------------------------------
+function ShowReagsDialog(me)
+
+	if (CInt(GetObjProperty(me, "##reags_view")) > ReadGameClock()) // is already open?
+		return; // then exit
+	else
+		SetObjProperty(me, "##reags_view", ReadGameClock() + 600); // else set a 10 minutes timeout (just in case the script doesn't complete)
+	endif
+
+	var layout := {
+		"page 0",
+		"nodispose",
+		"gumppic 0 0 2080",
+		"gumppic 16 37 2081",
+		"gumppic 16 90 2082",
+		"gumppic 16 143 2083",
+
+		"tilepic 30 40  3962",  //black pearl
+		"tilepic 30 70  3963",  //blood moss
+		"tilepic 30 100 3972",  //garlic
+		"tilepic 30 130 3973",  //ginseng
+
+		"tilepic 150 40  3974", //mandrake root
+		"tilepic 150 70  3976", //nightshade
+		"tilepic 150 100 3980", //sulfurous ash
+		"tilepic 150 130 3981", //spider silk
+
+		"button   45 155 2104 2103 1 0 1",
+
+		"text 90   5  20 0",    //title
+		"text 60 151   0 1"     //text button
+  };
+
+	var layout_qty := {
+		"text  70  35 ", //quantity bp
+		"text  70  65 ", //quantity bm
+		"text  70  95 ", //quantity ga
+		"text  70 125 ", //quantity gg
+
+		"text 190  35 ", //quantity mr
+		"text 190  65 ", //quantity ns
+		"text 190  95 ", //quantity sa
+		"text 190 125 "  //quantity ss
+	};
+
+
+	var data := {
+		"Reagents List",
+		"Set warning level",
+		0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	/**** reagents amount ****/
+	var n;
+	for (n := 1; n < 9; n := n + 1)
+		data[n+2] := gid_reags[n];
+	endfor
+
+	/**** now we take the warning level ****/
+	var reags_warning_level := CInt(GetObjProperty (me, "reags_warning_level"));
+	if ( !reags_warning_level )
+		reags_warning_level := 20; //default value
+	endif
+
+	/**** colors update ****/
+	var color;
+	for (n := 1; n < 9; n := n + 1)
+		if (gid_reags[n] > reags_warning_level)
+			color := 100;
+		else
+			color := 32;
+		endif
+		layout_qty[n] := layout_qty[n] + color + " " + (n+1);
+		layout.append (layout_qty[n]);
+	endfor
+
+	var result := SendDialogGump(me, layout, data);
+
+	if (result[0] == 1)
+		var qty := CInt(SendTextEntryGump(me, "Enter a value (1-1000)", TE_CANCEL_ENABLE, TE_STYLE_NORMAL));
+		if ((qty > 0) && (qty <= 1000))
+			SetObjProperty(me, "reags_warning_level", qty);
+		else
+			SendSysMessage(me, "Incorrect value.");
+		endif
+	endif
+
+	EraseObjProperty(me, "#reags_view");
+
+endfunction
+//----------------------------------------------------------------------------
+function is_reag (what)
+	if ((what.objtype >= 0x0f78) && (what.objtype <= 0x0f91))
+		return 1;
+	else
+		return 0;
+	endif
+endfunction
+//----------------------------------------------------------------------------
+function is_a_backpack (what)
+	if ((what.objtype == 0x0E75) || (what.objtype == 0x190) || (what.objtype == 0x191))
+		return 1;
+	else
+		return 0;
+	endif
+endfunction
+//----------------------------------------------------------------------------
+function store_reags (who, reag)
+
+	case (reag.objtype)
+		REAG_BP: gid_reags[1] := gid_reags[1] + reag.amount; break;
+		REAG_BM: gid_reags[2] := gid_reags[2] + reag.amount; break;
+		REAG_GA: gid_reags[3] := gid_reags[3] + reag.amount; break;
+		REAG_GI: gid_reags[4] := gid_reags[4] + reag.amount; break;
+		REAG_MR: gid_reags[5] := gid_reags[5] + reag.amount; break;
+		REAG_NS: gid_reags[6] := gid_reags[6] + reag.amount; break;
+		REAG_SA: gid_reags[7] := gid_reags[7] + reag.amount; break;
+		REAG_SS: gid_reags[8] := gid_reags[8] + reag.amount; break;
+	endcase
+
+endfunction
+//----------------------------------------------------------------------------
+function count_reags (who, container, byref reags_counted)
+
+	foreach j in EnumerateItemsInContainer(container)
+		if (is_reag(j))
+			store_reags (who, j);
+			reags_counted := 1;	//Ok
+		endif
+	endforeach
+
+endfunction
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+program HowManyReags (who, text)
+
+	var item, reags_count;
+
+	reags_count := 0;
+	foreach item in ListEquippedItems (who)
+		if (is_a_backpack(item))
+			count_reags (who, item, reags_count);
+		endif
+	endforeach
+
+	if (reags_count == 0)
+		SendSysMessage (who, "You have no more reagents!");
+	else
+		ShowReagsDialog(who);
+	endif
+
+endprogram

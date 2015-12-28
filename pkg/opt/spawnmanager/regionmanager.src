@@ -1,0 +1,243 @@
+////////////////////////////////////////////////////////////////////
+////	This script is responsible to managing regions issues	////
+////	  like actual num and boundaries.			////
+////	This file is highly integrated with others in the pkg,	////
+////	  so try to keep it updated.				////
+////	Bug reports, questions on its functionality,		////
+////		Adriano Iank, <aiank@convoy.com.br>		////
+////////////////////////////////////////////////////////////////////
+
+use datafile;
+use uo;
+use os;
+use util;
+include "specialeventid";
+
+var actual_npc_num;
+var total_npc_num;
+var time;
+var respawn_timer array;
+var to_respawn;
+var region_groups;
+var total_groups;
+var groupmanager;
+var region_num;
+var my_pid;
+var manager_enabled;
+
+program regionmanager(manager)
+
+	manager.movable := 0;
+	manager.invisible := 1;
+	my_pid := GetPid();
+	
+	repeat
+		sleepms(10);
+		groupmanager := Cint(GetGlobalProperty("#groupmanagerpid"));
+		groupmanager := getprocess(groupmanager);
+	until(groupmanager);
+	
+	repeat
+		sleepms(10);
+		region_num := CInt(GetObjProperty( manager, "RegionNum" ));
+	until(region_num);
+	SetProps();
+	
+	local boundaries := get_region_definitions(manager);
+	
+	EnableEvents( EV_TEMPLATE+EV_UPDATE+EV_NPCDEATH+EV_ENABLE_DISABLE+EV_REGION_DELETED );
+	
+	local ev;
+	while (manager)
+		ev := wait_for_event(30);
+		case(ev.type)
+			EV_NPCDEATH: 
+				add_to_respawn_queue(manager);
+			EV_UPDATE: 
+				boundaries := get_region_definitions(manager);
+			EV_TEMPLATE: 
+				make_respawn(manager, ev);
+			EV_ENABLE_DISABLE: 
+				set_enabled_disabled(manager, ev.source);
+			EV_REGION_DELETED: 
+				Syslog("[Region Manager #"+region_num+"] Delete event received.");
+				local done := DeleteItem(manager, boundaries);
+				if(done)
+					Syslog("[Region Manager #"+region_num+"] Manager destroyed.");
+				else
+					Syslog("[Region Manager #"+region_num+"] Could not destroy manager: "+done.errortext);
+				endif
+		endcase
+		if(to_respawn>0) 
+			if ((respawn_timer[1] < ReadGameClock()) and manager_enabled)
+				make_request(boundaries, manager);
+			endif
+		endif 
+	endwhile
+	
+endprogram
+
+function SetProps()
+
+	SetGlobalProperty("#regiondefs"+region_num, my_pid);
+	
+endfunction
+
+function set_enabled_disabled(manager, who)
+
+	manager_enabled := 1 - manager_enabled;
+	SetObjProperty(manager, "Enabled", manager_enabled);
+	local desc;
+	if(manager_enabled)
+		desc := "enabled";
+	else
+		desc := "disabled";
+	endif
+	SendSysMessage(who, "Region #"+region_num+" is now "+desc);
+	Syslog("[Region Manager #"+region_num+"] Region is now "+desc);
+	
+endfunction
+
+function get_region_definitions(manager)
+
+	set_critical(1);
+	
+	manager_enabled := Cint(GetObjProperty(manager, "Enabled"));
+	Syslog("[Region Manager #"+region_num+"] Reading data file...");
+	local regionfile := OpenDataFile("regions");
+	if(!regionfile)
+		Syslog("Could not open regions.txt: "+regionfile.errortext);
+	endif
+	local region := regionfile.FindElement(region_num);
+	total_npc_num := region.GetProp("ToSpawn");
+	
+	time := region.GetProp("RespawnTime");
+	time := time * 60;
+	
+	actual_npc_num := Cint(GetObjProperty( manager, "ActualNum" ));
+	to_respawn := total_npc_num - actual_npc_num;
+	if(to_respawn > 0)
+		local aux;
+		local auxarray array;
+		local clock := ReadGameClock();
+		for (aux := 1; aux <= to_respawn; aux := aux + 1)
+			auxarray.append((time*aux) + clock);
+		endfor
+		respawn_timer := auxarray;
+	endif
+	
+	region_groups := region.GetProp("Group");
+	total_groups := len(region_groups);
+	
+	local region_name := region.GetProp("Name");
+	SetName(manager, region_name+" manager");
+	
+	local boundaries := struct;
+	boundaries.+fromx;
+	boundaries.+fromy;
+	boundaries.+tox;
+	boundaries.+toy;
+	boundaries.fromx := region.GetProp("FromX");
+	boundaries.fromy := region.GetProp("FromY");
+	boundaries.tox := region.GetProp("ToX");
+	boundaries.toy := region.GetProp("ToY");
+	
+	set_critical(0);
+	
+	return(boundaries);
+		
+endfunction
+
+function add_to_respawn_queue(manager)
+
+	Syslog("[Region Manager #"+region_num+"] Npc death event received at time: "+ReadGameClock() );
+	actual_npc_num := actual_npc_num - 1;
+	if(actual_npc_num < total_npc_num)
+		if(actual_npc_num > -1)
+			SetObjProperty(manager, "ActualNum", actual_npc_num);
+			to_respawn := to_respawn + 1;
+			respawn_timer.append( ReadGameClock()+time );
+		else
+			actual_npc_num := 0;
+			Syslog("[Region Manager #"+region_num+"] Not a valid event, region had no valid spawn, ignoring.");
+		endif
+	else
+		Syslog("[Region Manager #"+region_num+"] Respawn queue is full, ignoring event." );
+	endif
+	
+endfunction
+	
+function make_respawn(manager, ev)
+	
+	local npc := CreateNpcFromTemplate(Cstr(ev.template), manager.x, manager.y, manager.z, 0);
+	if(npc)
+		SetObjProperty(npc, "regionnum", region_num);
+		actual_npc_num := actual_npc_num + 1;
+		SetObjProperty(manager, "ActualNum", actual_npc_num);
+	else
+		Syslog("[Region Manager #"+region_num+"] Could not create npc "+ev.template);
+		to_respawn := to_respawn + 1;
+		respawn_timer.append( ReadGameClock()+time );
+	endif
+	
+endfunction
+		
+function make_request(boundaries, manager)
+	
+	local xrange := boundaries.tox - boundaries.fromx + 1;
+	local yrange := boundaries.toy - boundaries.fromy + 1;
+	local xrdm;
+	local yrdm;
+	local newz;
+	manager.movable := 1;
+	repeat
+		xrdm := boundaries.fromx + RandomInt(xrange);
+		yrdm := boundaries.fromy + RandomInt(yrange);
+		newz := GetWorldHeight(xrdm,yrdm);
+	until (MoveItemtoLocation( manager, xrdm, yrdm, newz, MOVEITEM_NORMAL ) or !manager);
+	manager.movable := 0;
+	
+	local ev := struct;
+	ev.+type;
+	ev.+text;
+	ev.+source;
+	ev.type := EV_TEMPLATE;
+	ev.text := region_groups[RandomInt(total_groups)+1];
+	ev.source := my_pid;
+	Syslog("[Region Manager #"+region_num+"] Requesting template at time "+ReadGameClock());
+	groupmanager.SendEvent(ev);
+	to_respawn := to_respawn - 1;
+	respawn_timer.erase( 1 );
+	
+endfunction	
+
+function DeleteItem(manager, boundaries)
+
+	local center := struct;
+	center.+x;
+	center.+y;
+	center.+z;
+	
+	center.x := Cint((boundaries.fromx + boundaries.tox)/2);
+	center.y := Cint((boundaries.fromy + boundaries.toy)/2);
+	center.z := GetWorldHeight(center.x, center.y);
+	
+	local maxdist := boundaries.tox - boundaries.fromx;
+	if(maxdist < (boundaries.toy-boundaries.fromy))
+		maxdist := boundaries.toy - boundaries.fromy;
+	endif
+	maxdist := maxdist + 100;
+	
+	foreach npc in ListMobilesNearLocationEx(center.x, center.y, center.z, maxdist, 0x3)
+		if(GetObjProperty(npc,"regionnum") = region_num)
+			EraseObjProperty(npc,"regionnum");
+			SetObjProperty(npc, "guardkill", 1);
+			ApplyRawDamage(npc, npc.maxhp+3);
+		endif
+	endforeach
+	
+	SetObjProperty(manager, "destroyed", 1);
+	EraseGlobalProperty("#regiondefs"+region_num);
+	return DestroyItem(manager);
+
+endfunction

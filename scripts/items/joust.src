@@ -1,0 +1,533 @@
+use os;
+use uo;
+
+include "include/time";
+include "include/constants/propids";
+include "include/yesno";
+
+program pvp (who)
+	var ref;
+	var lkarma;
+	var lfame;
+	Detach();
+	var magic := GetEffectiveSkill(who, SKILLID_FENCING)+20;
+	if (who.x < 4957 or who.x > 4978 or who.y > 2612 or who.y < 2605)
+		SendSysMessage( who, "Cancelled, you are not in the arena." );
+		return;
+	endif
+	if (magic < 50)
+		SendSysMessage( who, "Cancelled, your Fencing is not high enough." );
+		return;
+	endif
+	if (GetObjProperty(who,"CWBanned"))
+		SendSysMessage( who, "Cancelled, you are Banned from the Jousting Arena." );
+		return;
+	endif
+	var alreadymounted := GetEquipmentByLayer( who.serial, 25 );
+	if (!alreadymounted)
+		SendSysmessage(who,"You must be mounted to Joust.");
+		return;
+	endif
+	if (who.strength < 90 )
+		SendSysmessage(who,"You must have at least 90 strength to joust.");
+		return;
+	endif
+	var hasequipped := 0;
+	foreach worn in ListEquippedItems ( who )
+		if ((worn and worn !=who.backpack and worn != alreadymounted) & (worn.objtype < 0x2030 ||				worn.objtype > 0x2060))	
+			hasequipped := 1;
+		endif
+	endforeach
+	if (hasequipped)	
+		SendSysmessage(who,"You must unequip all items to Joust");
+		return;
+	endif
+	var notempty := 0;
+	foreach item in EnumerateItemsInContainer( who.backpack )
+		notempty := 1;
+	endforeach
+	if (notempty)	
+		SendSysmessage(who,"You must empty your backpack to Joust.");
+		return;
+	endif
+	if (GetGlobalProperty("JoustArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+		return;
+	endif
+	SendSysMessage( who, "Select your opponent." );
+
+	var player:=target(who, TGTOPT_NOCHECK_LOS);
+
+	if (player.npctemplate) 
+		SendSysMessage( who, "Cancelled" );
+		return; 
+	endif
+	if (GetObjProperty(player,"CWBanned")) 
+		SendSysMessage( who, "Cancelled. "+player.name+" is banned from the Jousting Arena" );
+		return; 
+	endif
+	magic := GetEffectiveSkill(player, SKILLID_FENCING)+20;
+	if (magic < 50)
+		SendSysMessage( who, "Cancelled, their Fencing is not high enough." );
+		return;
+	endif
+
+	if(!player or !player.strength or player.dead or player.name == who.name )
+		SendSysmessage( who, "Invalid selection." ); 
+		return;
+ 	endif
+	if (player.x < 4957 or player.x > 4978 or player.y > 2612 or player.y < 2605)
+		SendSysMessage( who, "Cancelled, they are not in the arena." );
+		return;
+	endif
+	alreadymounted := GetEquipmentByLayer( player.serial, 25 );
+	if (!alreadymounted)
+		SendSysmessage(who,"Cancelled. "+player.name+" is not mounted.");
+		SendSysmessage(player,"You must be mounted to joust.");
+		return;
+	endif
+	hasequipped := 0;
+	foreach worn in ListEquippedItems ( player )
+		if ((worn and worn !=player.backpack and worn != alreadymounted)  && (worn.objtype < 0x2030 || 					worn.objtype > 0x2060))	
+			hasequipped := 1;
+		endif
+	endforeach
+	if (hasequipped)	
+		SendSysmessage(who,"Cancelled. "+player.name+" is wearing items.");
+		SendSysmessage(player,"You must unequip all items to Joust.");
+		return;
+	endif
+	notempty := 0;
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		notempty := 1;
+	endforeach
+	if (notempty)	
+		SendSysmessage(who,"Cancelled."+player.names+"'s backpack is not empty.");
+		SendSysmessage(player,"You must empty your backpack to Joust.");
+		return;
+	endif
+	SendSysmessage( player, who.name + " is challenging you to Joust - accept?" ); 
+	var answer:=YesNo(player,"Joust?");
+
+	if (!answer)
+		SendSysMessage(player,"You have refused the challenge.");
+		SendSysMessage(who,player.name + " has not accepted.");
+		return;
+	endif
+	SendSysMessage(player,"You have accepted the challenge.");
+	SendSysMessage(who,player.name + " has accepted.");
+	if (GetGlobalProperty("JoustArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+		return;
+	endif
+	SetGlobalProperty("JoustArenaInUse", 1 );
+	who.frozen := 1;
+	MoveCharacterToLocation( who, 4978, 2601, -31, 0);
+	DressMage(who,1171);
+	player.frozen := 1;
+	MoveCharacterToLocation( player, 4957, 2603, -31, 0);
+	DressMage(player,1172);
+	lkarma := GetObjProperty(player, "Karma");
+	lfame := GetObjProperty(player, "Fame");
+	SetObjProperty(player, "lkarma", lkarma);
+	SetObjProperty(player, "lfame", lfame);
+	lkarma := GetObjProperty(who, "Karma");
+	lfame := GetObjProperty(who, "Fame");
+	SetObjProperty(who, "lkarma", lkarma);
+	SetObjProperty(who, "lfame", lfame);
+	SetObjProperty(player, "pvping", 1);
+	SetObjProperty(who, "pvping", 1);
+	SetObjProperty(who,"JoustScore",0);
+	SetObjProperty(player,"JoustScore",0);
+	var pvpcrim := who.criminal;
+	var pvpmurd := who.murderer;
+	if (!pvpcrim)
+		pvpcrim := 0;
+	endif
+	if (!pvpmurd)
+		pvpmurd := 0;
+	endif
+	SetObjProperty(who,"PvPCriminal",pvpcrim);
+	SetObjProperty(who,"PvPMurderer",pvpmurd);
+	pvpcrim := player.criminal;
+	pvpmurd := player.murderer;
+	if (!pvpcrim)
+		pvpcrim := 0;
+	endif
+	if (!pvpmurd)
+		pvpmurd := 0;
+	endif
+	SetObjProperty(player,"PvPCriminal",pvpcrim);
+	SetObjProperty(player,"PvPMurderer",pvpmurd);
+	var IsRef;
+	foreach mobile in ListMobilesNearLocation( who.x, who.y, who.z, 20 )
+		IsRef:= GetObjProperty( mobile, "referee");
+		if (IsRef)
+			ref := mobile;
+		endif
+	endforeach
+	Sleep(10);
+	PrintTextAbove( ref, "Get ready to joust in 10 seconds." );
+	sleep(5);
+	PrintTextAbove( ref, "5 seconds..." );
+	sleep(5);
+	PrintTextAbove( ref, "FIGHT!!!! :)" );
+	who.frozen := 0;
+	player.frozen := 0;	
+	var tme := ReadGameClock() ;
+	var ponline := 0;
+	var wonline := 0;
+	var running := 1;
+	var booted;
+	var toolong := 0;
+	var leftarena ;
+	var pded;
+	var wded;
+	var wscore := 0;
+	var pscore := 0;
+	player.hp := player.maxhp;
+	who.hp := who.maxhp;
+	player.stamina := player.maxstamina;
+	who.stamina := who.maxstamina;
+	CheckAbusers();
+	while (running)
+		sleep(1);
+		toolong := toolong + 1;
+		if (toolong > 600 )
+			running := 0;
+		endif
+		pded := GetObjProperty(player, "pvping");
+		wded := GetObjProperty(who, "pvping");
+		if (pded and wded)
+			CheckAbusers();
+		endif
+		if (!pded or !wded)
+			if (!pded)
+				who.frozen := 1;
+				wscore := GetObjProperty(who,"JoustScore");
+				if (!wscore)
+					wscore := 0;
+				endif
+				wscore := wscore + 1;
+				SetObjProperty(who,"JoustScore",wscore);
+				MoveCharacterToLocation( who, 4978, 2601, -31, 0);
+				MoveCharacterToLocation( player, 4957, 2603, -31, 0);
+				sleep(3);
+				player.hp := player.maxhp;
+				who.hp := who.maxhp;
+				player.stamina := player.maxstamina;
+				SetObjProperty(player,"pvping",1);
+				foreach worn in ListEquippedItems ( player )
+					if (worn.desc == "a Robe")
+						DestroyItem(worn);
+					endif
+				endforeach
+				foreach item in EnumerateItemsInContainer( player.backpack )
+					EquipItem(player,item);
+				endforeach
+				who.frozen := 0;
+			endif
+			if (!wded)
+				player.frozen := 1;
+				pscore := GetObjProperty(player,"JoustScore");
+				if (!pscore)
+					pscore := 0;
+				endif
+				pscore := pscore + 1;
+				SetObjProperty(player,"JoustScore",wscore);
+				MoveCharacterToLocation( who, 4978, 2601, -31, 0);
+				MoveCharacterToLocation( player, 4957, 2603, -31, 0);
+				sleep(3);
+				player.hp := player.maxhp;
+				who.hp := who.maxhp;
+				who.stamina := who.maxstamina;
+				SetObjProperty(who,"pvping",1);
+				foreach item in EnumerateItemsInContainer( who.backpack )
+					EquipItem(who,item);
+				endforeach
+				foreach worn in ListEquippedItems ( who )
+					if (worn.desc == "a Robe")
+						DestroyItem(worn);
+					endif
+				endforeach
+				player.frozen := 0;
+			endif
+			PrintTextAbove(ref,"Score :");
+			PrintTextAbove(ref,who.name+": "+wscore);
+			PrintTextAbove(ref,player.name+": "+pscore);			
+		endif
+		if (pscore > 2 or wscore > 2)
+			running := 0;
+		endif
+		foreach char in EnumerateOnlineCharacters()
+			if (char == player )
+				ponline := 1;
+			endif
+			if (char == who)
+				wonline := 1;
+			endif
+		endforeach
+		if (!ponline or !wonline)
+			running := 0;
+			if (ponline)
+				booted := who.name;
+			else
+				booted := player.name;
+			endif
+		endif
+		ponline := 0;
+		wonline := 0;
+		if (who.x < 4957 or who.x > 4978 or who.y > 2612 or who.y < 2601 or who.z != -31)
+			leftarena := who.name;
+			running := 0;
+		endif
+		if (player.x < 4957 or player.x > 4978 or player.y > 2612 or player.y < 2601 or player.z != -31)
+			leftarena := player.name;
+			running := 0;
+		endif
+	endwhile	
+	player.frozen := 1;
+	who.frozen := 1;
+	var tmenow := ReadGameClock() ;
+	var length := tmenow - tme;
+	var cont;
+	var serial;	
+	var score ;
+	sleep (2);
+	ref.hidden := 0;
+	if (!pded and GetObjProperty(player,"JoustScore")==3 and !wded and GetObjProperty(who,"JoustScore")==3 )
+		PrintTextAbove( ref, "It was a draw!" );
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,who.name+" & "+player.name+" drew in the Jousting arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (!pded and wded)
+		PrintTextAbove( ref, who.name + " is the winner!" );
+		score := GetObjProperty (who, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (who, "pvpwins",score);
+		score := GetObjProperty(player,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(player,"pvplosses",score);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,who.name+" defeated "+player.name+" in the Jousting arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (!wded and pded)
+		PrintTextAbove( ref, player.name + " is the winner!" );
+		score := GetObjProperty (player, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (player, "pvpwins",score);
+		score := GetObjProperty(who,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(who,"pvplosses",score);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,player.name+" defeated "+who.name+" in the Jousting arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (booted)
+		PrintTextAbove( ref, booted + " disconnected. Jousting is cancelled." );	
+	endif
+	if (leftarena)
+		PrintTextAbove( ref, leftarena + " has left the arena. Jousting is cancelled." );	
+	endif
+	if (toolong > 600)
+		PrintTextAbove( ref, "10 minutes is up. Jousting is cancelled." );	
+	endif
+	player.frozen := 0;
+	who.frozen := 0;
+	sleep (3);	
+	StripPlayer(who);
+	StripPlayer(player);
+	lkarma := GetObjProperty(player, "lkarma");
+	lfame := GetObjProperty(player, "lfame");
+	SetObjProperty(player, "Karma", lkarma);
+	SetObjProperty(player, "Fame", lfame);
+	lkarma := GetObjProperty(who, "lkarma");
+	lfame := GetObjProperty(who, "lfame");
+	SetObjProperty(who, "Karma", lkarma);
+	SetObjProperty(who, "Fame", lfame);
+	Sleep (2);
+	PrintTextAbove( ref, "Teleporting you out.." );	
+	sleep (3);
+	MoveCharacterToLocation( who, 4965, 2598, -26, 0);
+	MoveCharacterToLocation( player, 4969, 2598, -26, 0);
+	EraseObjProperty( player, "pvping" );
+	EraseObjProperty( who, "pvping" );
+	EraseGlobalProperty("JoustArenaInUse");
+	EraseObjProperty( who, "lkarma" );
+	EraseObjProperty( who, "lfame" );
+	EraseObjProperty( player, "lkarma" );
+	EraseObjProperty( player, "lfame" );
+	EraseObjProperty( player, "JoustScore");
+	EraseObjProperty( who, "JoustScore");
+	var nibble := GetObjproperty(who,"pvpcrim");
+	if (!nibble)
+		nibble := 0;
+	endif
+	who.criminal := nibble;
+	nibble := GetObjproperty(who,"pvpmurd");
+	if (!nibble)
+		nibble := 0;
+	endif
+	who.murderer := nibble;
+	nibble := GetObjproperty(player,"pvpcrim");
+	if (!nibble)
+		nibble := 0;
+	endif
+	player.criminal := nibble;
+	nibble := GetObjproperty(player,"pvpmurd");
+	if (!nibble)
+		nibble := 0;
+	endif
+	player.murderer := nibble;
+	CheckAbusers();
+endprogram
+
+function DressMage( player, ccode )	
+	var acc	:= player.acct;
+	var accname := acc.name;
+    	var arms := CreateItemInBackpack( player, 0x1410, 1);
+	arms.color := ccode;    	
+	SetObjProperty(arms,"CW",1);
+	SetObjProperty(arms,"OwnerAcct",accname);
+	SetObjProperty(arms,"OwnerName",player.name);
+	EquipItem(player,arms);
+    	var legs := CreateItemInBackpack( player, 0x1411, 1);
+	legs.color := ccode;    
+	SetObjProperty(legs,"CW",1);
+	SetObjProperty(legs,"OwnerAcct",accname);
+	SetObjProperty(legs,"OwnerName",player.name);
+	EquipItem(player,legs);
+    	var helm := CreateItemInBackpack( player, 0x1412, 1);
+	helm.color := ccode;    
+	SetObjProperty(helm,"CW",1);
+	SetObjProperty(helm,"OwnerAcct",accname);
+	SetObjProperty(helm,"OwnerName",player.name);
+	EquipItem(player,helm);
+    	var gorg := CreateItemInBackpack( player, 0x1413, 1);
+	gorg.color := ccode;    
+	SetObjProperty(gorg,"CW",1);
+	SetObjProperty(gorg,"OwnerAcct",accname);
+	SetObjProperty(gorg,"OwnerName",player.name);
+	EquipItem(player,gorg);
+    	var glove := CreateItemInBackpack( player, 0x1414, 1);
+	glove.color := ccode;
+	SetObjProperty(glove,"CW",1);    
+	SetObjProperty(glove,"OwnerAcct",accname);
+	SetObjProperty(glove,"OwnerName",player.name);
+	EquipItem(player,glove);
+	var bp := CreateItemInBackpack( player, 0x1415, 1);
+	bp.color := ccode;   
+	SetObjProperty(bp,"CW",1);
+	SetObjProperty(bp,"OwnerAcct",accname);
+	SetObjProperty(bp,"OwnerName",player.name);
+	EquipItem(player,bp);
+	var spear := CreateItemInBackpack( player, 0xf63, 1);
+	spear.color := ccode;
+	SetObjProperty(spear,"CW",1);
+	SetObjProperty(spear,"OwnerAcct",accname);
+	SetObjProperty(spear,"OwnerName",player.name);
+	spear.dmg_mod := 20;
+	spear.name := "Spear of Power";
+	EquipItem(player,spear);
+endfunction
+
+function StripPlayer(player)
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	foreach worn in ListEquippedItems (player )
+		checkcw := GetObjProperty( worn, "CW" );
+		if ( checkcw )
+			EraseObjProperty(worn,"Cursed");
+			MoveItemToContainer(worn, player.backpack);
+			checkcw := 0;
+		endif
+	endforeach
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		checkcw := GetObjProperty( item, "CW" );
+		if ( checkcw or item)
+			found := found + 1;
+			cwitem[found] := item;
+			checkcw := 0;
+		endif
+	endforeach
+	while ( loop < found )
+		loop := loop + 1;	
+		DestroyItem(cwitem[loop]);
+	endwhile
+endfunction
+
+function spellok ( what )
+
+	case( what )
+		0x1f40	  :		
+		0x1f44  :	
+		0x1f48  :
+		0x1f4d  :
+		0x1f53  :
+		0x1f5b  :
+		0x1f5e  :
+		0x1f4c  :
+		0x1f60  :
+		0x1f64  :
+		0x1f54  :		
+		0xf7a   :	return 0; 	
+
+		default:	return 1;
+	endcase
+
+endfunction
+
+function CheckAbusers()
+	var players := ListMobilesNearLocation(4966, 2614, -31, 10);
+	var owner;
+	var owneracct;
+	foreach dude in players
+		if (!GetObjProperty(dude,"pvping") and !dude.npctemplate)
+			foreach item in EnumerateItemsInContainer( dude.backpack )
+				if (GetObjProperty(item,"CW"))
+					owner := GetObjProperty(item,"OwnerName");
+					owneracct := GetObjProperty(item,"OwnerAcct");
+					foreach guy in EnumerateOnlineCharacters()
+				       	if  (guy.cmdlevel)	
+							SendSysMessage(guy,dude.name+" is in illegal possession of CW equipment.",3,130);
+							SendSysMessage(guy,"Type : "+item.desc,3,130);
+							SendSysMessage(guy,"Original Owner : "+owner,3,130);
+							SendSysMessage(guy,"Owner's Account: "+owneracct,3,130);
+						endif
+					endforeach
+					DestroyItem(item);
+					if (!GetObjProperty(dude,"CWBanned"))
+						BanPlayer(dude);
+					endif
+				endif
+			endforeach
+		endif
+	endforeach
+endfunction
+
+function BanPlayer(player)
+	SetObjProperty(player,"CWBanned",1);
+	SendSysMessage(player,"You have been banned from the Jousting Arena.");
+	SendSysMessage(player,"Staff have been notified of your abuse.");
+	foreach guy in EnumerateOnlineCharacters()
+      	if  (guy.cmdlevel)	
+			SendSysMessage(guy,player.name+" has been banned from the Jousting Arena.",3,130);
+		endif
+	endforeach
+endfunction

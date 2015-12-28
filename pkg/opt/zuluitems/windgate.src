@@ -1,0 +1,22 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+include "include/attributes";
+
+const magicrequired := 70;
+
+
+program windgate (who)
+
+if (GetEffectiveSkill( who, 25 )>=magicrequired )
+MoveCharacterToLocation( who, 5169, 242, 15 );
+SendSysMessage( who, "Welcome to Wind!");
+else
+SendSysMessage( who, "You are not a worthy mage to enter Wind!");
+endif
+
+endprogram

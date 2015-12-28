@@ -1,0 +1,12 @@
+use os;
+
+include "include/random";
+
+program textcmd_testNormal(who, params)
+	SendSysMessage(who, "Start");
+	for i:=1 to 100
+		print(RandomStandardNormal());
+		sleepms(1);
+	endfor
+	SendSysMessage(who, "OK (see console for results)");
+endprogram

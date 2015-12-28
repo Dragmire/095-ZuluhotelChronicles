@@ -1,0 +1,32 @@
+use uo;
+use os;
+
+include "include/hitscriptinc";
+
+program mainhit(attacker, defender, weapon, armor, basedamage, rawdamage)
+
+	var teamcolor:=33,fixit:=0;
+
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage );
+
+	if (getobjproperty(attacker,"#ctftech") ="quadUSED")
+	  rawdamage:=rawdamage*3;
+	  PlaySoundEffect(attacker,262);
+	endif
+
+	if (getobjproperty(defender,"#ctftech") ="disrupt")
+	  if (random(4)>=2)
+	    if(Getobjproperty(defender,"team")="BLUE") teamcolor:=4; endif
+	    fixit:=1;
+	    colorstuff(defender,70);
+	    rawdamage:=rawdamage/2;
+	    PlaySoundEffect(defender,305);
+	    sleepms(500);
+	  endif
+	endif
+
+	DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+
+	if (fixit) colorstuff(defender,teamcolor); endif
+
+endprogram

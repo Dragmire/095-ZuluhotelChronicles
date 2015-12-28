@@ -1,0 +1,111 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/random";
+program poisondamage (creature)
+
+    if (GetObjProperty(creature, "#poisonisrunning"))
+	if ( CInt(GetObjProperty(creature, "poison_level")) )
+		return;
+	endif
+    endif
+
+	SetObjProperty(creature, "#poisonisrunning",1);
+
+    var poison_level := CInt(GetObjProperty(creature, "poison_level"));
+
+    if (poison_level)
+	if (!creature.npctemplate)
+		creature.poisoned := 1;
+	endif
+    else
+	return;
+    endif
+
+    while (1)
+        poison_level := CInt(GetObjProperty(creature, "poison_level"));
+		if (!CInt(GetObjProperty(creature, "poison_level")))
+			cureplayer(creature);
+			if (!creature.isA(POLCLASS_NPC))
+				creature.poisoned := 0;
+			endif
+			return;
+		endif
+	    if (poison_level < 1)
+			cureplayer(creature);
+			if (!creature.isA(POLCLASS_NPC))
+				creature.poisoned := 0;
+			endif
+			return;
+		elseif (poison_level > 10)
+			poison_level := 10;
+        endif
+        SendSysMessage(creature, "Poison Damage!");
+        PlaySoundEffect(creature, SFX_SPELL_POISON);
+        poison_level := poison_level -1;
+        SetObjProperty(creature, "poison_level",CInt(poison_level));
+        ApplyRawDamage(creature, Random((3 * poison_level))+1);
+        if(creature.dead)
+			EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+        endif
+        sleep( 2 );
+    	if(!creature.dead && GetHp(creature) == 0)
+    		SetHp(creature, 1);
+    		ApplyRawDamage(creature, 10);
+    		EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+		endif    	
+        sleep( 2 );
+    	if(!creature.dead && GetHp(creature) == 0)
+    		SetHp(creature, 1);
+    		ApplyRawDamage(creature, 10);
+    		EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+		endif    	
+        sleep( 2 );
+    	if(!creature.dead && GetHp(creature) == 0)
+    		SetHp(creature, 1);
+    		ApplyRawDamage(creature, 10);
+    		EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+		endif    	
+        sleep( 2 );
+    	if(!creature.dead && GetHp(creature) == 0)
+    		SetHp(creature, 1);
+    		ApplyRawDamage(creature, 10);
+    		EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+		endif    	
+        sleep( 2 );
+    	if(!creature.dead && GetHp(creature) == 0)
+    		SetHp(creature, 1);
+    		ApplyRawDamage(creature, 10);
+    		EraseObjProperty(creature,"poison_level");
+	    	EraseObjProperty(creature, "#poisonisrunning");
+	    	creature.poisoned := 0;
+			return;      
+		endif    	
+    endwhile
+
+endprogram
+
+function cureplayer(who)
+
+EraseObjProperty(who, "#poisonisrunning");
+SendSysMessage(who, "The poison has run its course");
+CurePoison(who);
+
+endfunction

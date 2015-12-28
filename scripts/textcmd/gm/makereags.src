@@ -1,0 +1,35 @@
+use os;
+use uo;
+Use file;
+
+Include "include/time";
+
+program makeregs( who )
+
+    var backpack := CreateItemInBackpack( who , "bagofinfinitereagents" , 1 );
+    backpack.color := 2600;
+    LogEditing( Who, backpack );
+
+endprogram
+
+Function LogEditing( Who, Item )
+
+    If( !Who || !Item )
+    Return 0;
+    Endif
+
+    Var TEXT_Logged := Array;
+    Var Seconds := PolCore().SysTime;
+    Var Date := GetDateString( Seconds ) + " :: " + GetTimeString( Seconds );
+
+    TEXT_Logged.Append( "Created " + Date );
+    TEXT_Logged.Append( "Staff     " + Who.name + " [" + Hex( Who.serial ) + "] - [" + Who.ip + "]" );
+    TEXT_Logged.Append( "Item      " + Item.desc + " [" + Hex( Item.serial ) + "]" );
+    TEXT_Logged.Append( "" );
+    TEXT_Logged.Append( "" );
+
+    AppendToFile( "data/logging/Created_Items.txt", TEXT_Logged );
+
+    Return 1;
+
+Endfunction

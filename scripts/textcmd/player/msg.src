@@ -1,0 +1,197 @@
+
+use uo;
+use os;
+
+
+program textcmd_goto( character , parm )
+	if(getobjproperty(character , "##MSG"))
+		sendsysmessage(character , "Already sending msg!");
+		return;
+	endif
+if(lower(parm) == "off")
+	if(getobjproperty(character , "MsgIsOff"))
+
+	sendsysmessage(character,"Messages are already being ignored!");
+		else
+		sendsysmessage(character , "Right! Will ignore messages from now and on!");
+		setobjproperty(character , "MsgIsOff",1);
+	endif
+	return;
+elseif(lower(parm) == "on")
+if(getobjproperty(character , "MsgIsOff"))
+
+	sendsysmessage(character,"From now and on i will receive messages!!!");
+		eraseobjproperty(character , "MsgIsOff");
+		else
+	sendsysmessage(character , "You are already receiving messages!");
+		
+	endif
+	return;
+endif
+setobjproperty(character , "##MSG" , 1);
+		
+	
+	var chr := MakeAndProcessGump( character,parm);
+	if( chr )
+		if(Getobjproperty(chr , "MsgIsOff" ))
+			sendsysmessage(character , "He isn't in the mood to receive any msg!",3,0x0026);
+			eraseobjproperty(character, "##MSG");
+			return;
+		else
+			var msg1 :=RequestInput( character, character.backpack, "What message would you like to send to "+chr.name+"?" );
+			if(!msg1)
+				sendsysmessage(character , "Canceled!");
+				eraseobjproperty(character, "##MSG");
+				return;
+			else
+				if(getobjproperty(character, "realname"))
+					sendsysmessage(chr , getobjproperty(character, "realname")+": "+msg1, 3, 1176);
+					if(!character.cmdlevel)
+					setobjproperty(chr , "LastMSG" , character.serial);
+					endif
+					else
+					sendsysmessage(chr , character.name+": "+msg1, 3, 1176);
+					if(!character.cmdlevel)
+					setobjproperty(chr , "LastMSG" , character.serial);
+					endif
+				endif
+				sendsysmessage(character, "Message sent to "+chr.name+".");
+			endif
+		endif
+				
+	endif
+	eraseobjproperty(character , "##MSG");
+endprogram
+
+
+function MakeAndProcessGump( who , parm)
+
+	var layout	:= array( "page 0",
+				  "resizepic 50 0 2520 300 450",
+				  
+				  "text 155 10 85 0",
+				  "text 125 35 90 1");
+				
+	
+
+	var playername;
+	var LastIndex:=0;
+	
+	var players	:= EnumerateOnlineCharacters();
+	var length := len(players);
+	var how_many:= 0;
+	foreach player3 in players
+		if(!player3.cmdlevel)
+		how_many := how_many + 1;
+		endif
+	endforeach
+	if(!how_many > 0)
+		sendsysmessage(who , "There isn't any other player online!");
+		return;
+	endif
+	foreach player in players
+		if(lower(player.name) == lower(parm) and !player.cmdlevel)
+			if(player.serial == who.serial)
+			sendsysmessage(who , "You can't message yourself!");
+			return 0;
+			else
+			
+			return player;
+			endif
+		endif
+		
+	endforeach
+		var data	:= array( "MSG Menu",	
+				 	how_many+" Players on-line"
+				);
+	if(parm)
+	 sendsysmessage(who , "Couldn't find that player!!!");
+		return 0;
+	endif
+	var start	:= 1;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 15;
+	var y 	:= 70;
+	var i;
+	var j;
+	var UHunter;
+	var scolor := 81;
+	var color := scolor;
+	layout.append( "page 1" );
+
+	for( i := start ; i <= len(players) ; i := i + 1 )
+		UHunter:=CInt(GetObjProperty(players[i],"UHunter"));
+		playername:=Upper(players[i].name);
+
+
+		if (( (UHunter==0)OR ( who.cmdlevel>3 ) ))
+			if( done == perpage )
+				done 	:= 0;
+				page 	:= page + 1;
+				y 	:= 70;
+			
+				layout.append( "button 250 381 5540 5541 0 " + (page ) ); 
+				layout.append( "page " + page );
+				layout.append( "button 125 381 5537 5538 0 " + (page - 1) ); 
+			endif
+		
+			if (!players[i].cmdlevel > 0 and players[i].serial != who.serial )
+			 
+			
+			  layout.append( "text 105 " + y + " "+color+" " + len(data) );
+				if(color < scolor + 5)
+				color := color+ 1;
+				else
+				color := color - 5;
+			endif
+ 
+			layout.append( "button 85 " + (y+5) + " 2104 2103 1 0 " + i );
+			data.append( players[i].name );
+
+			y 	:= y + 20;
+			done 	:= done + 1;
+			count := count + 1;
+			LastIndex:=i;
+			endif
+		endif
+	endfor
+
+	if (count>0)
+		var result;
+		
+			result := SendDialogGump( who , layout , data );
+			
+			if( !result[0] )
+				eraseobjproperty(who , "##MSG");
+				return;
+				
+			endif
+			result := Cint( result[0] );
+		
+
+		return players[result];
+	else
+
+	var cnt;
+	foreach player2 in players
+		if(!player2.cmdlevel and player2.serial != who.serial)
+			cnt := 1;
+		endif
+	endforeach
+		if(cnt == 1)
+		SendSysMessage(who, "Couldn't find that player.");
+		
+		eraseobjproperty(who , "##MSG");
+		return ;
+		else
+		SendSysMessage(who, "There is no player on!");
+		
+		eraseobjproperty(who , "##MSG");
+		return ;
+		endif
+	endif 
+endfunction
+
+

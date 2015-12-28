@@ -1,0 +1,47 @@
+// .unban <accountname>
+//
+use uo;
+Use cfgfile;
+
+program textcmd_ban( who, param )
+
+    if ( !param)
+        SendSysMessage( who, ".ban <accountname>" );
+        return;
+    endif
+
+    var acct := FindAccount( param );
+    if ( !acct )
+        SendSysMessage( who, "No such account." );
+        return;
+    endif
+
+    if ( acct.banned == 1 )
+        SendSysMessage( who, "That account is banned." );
+        return;
+    endif
+
+    acct.ban();
+    SendSysMessage( who, "Account '"+acct.name+"' banned." );
+    
+/*
+    Logging System Added.
+*/
+
+    Var datafile:=ReadConfigFile("logging_banned");
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  who.name });
+    elem.append({ "Staff Serial",  hex(who.serial) });
+    elem.append({ "Account",    acct.name });
+
+    AppendConfigFileElem("logging_banned", "Banned", "Account", elem);
+    UnloadConfigFile("logging_banned");
+    EndIf
+
+    return;
+
+endprogram

@@ -1,0 +1,29 @@
+use os;
+use uo;
+use util;
+use basic;
+
+
+program iptest( who, client );
+
+	SendSysMessage( who, "Select the person to IP test:" );
+
+	var tgt := target(who, TGTOPT_NOCHECK_LOS);
+
+	var iptest := tgt.ip;
+	var number := 0;
+
+   	foreach player in EnumerateOnlineCharacters()
+        	if (player.cmdlevel == 0)
+			if( player.ip == iptest)
+				number := number + 1;
+			endif	
+		endif
+	endforeach
+
+	SendSysMessage( who, "That person has "+number+" clients connected!" );
+	SendSysMessage( who,  "The IP is: "+iptest);
+
+
+
+endprogram

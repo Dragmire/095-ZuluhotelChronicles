@@ -1,0 +1,19 @@
+use uo;
+use os;
+
+program apagaprop(who)
+
+SendSysMessage (who, "Apagar a prop de quem ?");
+var alvo := Target(who);
+var conta := alvo.acct;
+var sucesso := conta.eraseprop("JaTemCasa");
+if (!sucesso)
+SendSysMessage (who, "Falha no sistema. Sua íngua, selecione apenas jogadores !");
+return;
+else
+SendSysMessage (who, "Sucesso !");
+endif
+endprogram
+
+
+

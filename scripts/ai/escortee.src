@@ -1,0 +1,204 @@
+use npc;
+use os;
+use uo;
+
+include "include/eventid";
+include "include/randname";
+include "include/speech";
+include "include/anchors";
+include "ai/main/mainloopgood";
+include "ai/combat/warriorcombatevent";
+include "ai/combat/fight";
+include "ai/main/loot";
+include "include/animal";
+include "include/vetement";
+include "include/npcutil";
+include "include/npcbackpacks";
+include "include/objtype";
+include "ai/main/sleepmode";
+include "include/skilllists";
+include "include/vetement";
+include "include/random";
+const HALT_THRESHOLD := 2;
+Const REACT_THRESHOLD := 2;
+var following;
+var waittime;
+var escortee;
+var next_wander := ReadGameClock() + 10;
+var ev;
+var txt;
+var killtime := 0;
+var master;
+var spells := {};
+var me := self();
+var cast_pct;
+var num_casts;
+var count_casts ;
+var summons := 3;
+var graphics;
+var num_changes;
+var will_cast;
+var will_breathe;
+var flee_point;
+
+var npccfg := readconfigfile("npcdesc");
+var speechelem := npccfg[me.npctemplate];
+spells := GetConfigStringArray(speechelem, "spell");
+cast_pct := speechelem.cast_pct;
+num_casts  := speechelem.num_casts;
+count_casts  := speechelem.count_casts;
+if(!cast_pct)
+  cast_pct := 10;
+endif
+flee_point := speechelem.flee_point;
+if(!flee_point)
+  flee_point := 10;
+endif
+
+program CastleGuard()
+  Expand_Stats(me);
+  run_script_to_completion("npckeeper", me);
+  drop_anchor();
+  EnableEvents( SYSEVENT_SPEECH + SYSEVENT_ENGAGED + SYSEVENT_DISENGAGED + SYSEVENT_DAMAGED );
+  EnableEvents(SYSEVENT_OPPONENT_MOVED,REACT_THRESHOLD);
+  if(getobjproperty(me, "frozen"))
+	me.frozen := 1;
+  endif
+  SetWarMode( 0 );
+  set_priority(10);
+  var ph := SplitWords(me.name);
+  var myname := lower(ph[1]);
+  var destination := GetObjProperty(me, "Dest");
+  SetObjProperty(me, "Waiting", 1);
+  waittime := 120;
+  escortee := 0;
+  var arrived := 0;
+  while (1)
+    ev := os::wait_for_event(waittime);
+    case(ev.type)
+      SYSEVENT_SPEECH:      txt := lower(ev.text);
+                        if(txt["destination"])
+                          TurnToward(ev.source);
+                          say("I am waiting for my escort to " + destination + ". Will you take me?");
+                        elseif(txt["i will take thee"])
+                          if(!escortee)
+                            TurnToward(ev.source);
+                            escortee := ev.source;
+                            SetObjProperty(me, "Escortee", (ev.source).serial);
+                            say("Lead on. You will recieve your payment when we reach " + destination);
+                            killtime := ReadGameClock() + 1800;
+                            following := 1;
+                            waittime := 0;
+                          endif
+                        endif
+      SYSEVENT_ENGAGED:     say("Aaahhh! Help! Help!  I'm being oppressed!");
+                        Fight(ev.source);
+      SYSEVENT_DAMAGED:     if(ev.source)
+                          Fight(ev.source);
+                        else
+                          say( "What sinister force is this!" );
+                        endif
+    endcase
+	if((ReadGameClock() >= next_wander) and (!GetObjProperty(me, "Waiting")))
+      wander();
+      next_wander := ReadGameClock() + 10;
+    elseif((ReadGameClock() > killtime) and (killtime != 0))
+      //MoveCharacterToLocation(me, 5555, 1111, 0, MOVECHAR_FORCELOCATION);
+      SetObjProperty(me, "guardkill", 1);
+      ApplyRawDamage(me, me.hp + 100);
+      break;
+    endif
+    if(escortee)
+      arrived := checkdestination(me, destination);
+      if(arrived = 1)
+        idleloop();
+      endif
+    endif
+    if(following = 1)
+      waittime := 0;
+      Follow();
+    else
+      waittime := 120;
+    endif
+  endwhile
+endprogram
+
+function checkdestination(me, destination);
+  var coords := SplitWords(GetObjProperty(me, "Coords"));
+  var x1 := Cint(coords[1]);
+  var y1 := Cint(coords[2]);
+  var x2 := Cint(coords[3]);
+  var y2 := Cint(coords[4]);
+  if((me.x >= x1) and (me.x <= x2))
+    if((me.y >= y1) and (me.y <= y2))
+      say("We have arrived at " + destination + ". Here is your pay");
+      case(GetObjProperty(me, "Type"))
+        "peasant1":  CreateItemInContainer(escortee.backpack, 0xeed, Random(50) + 200);
+        "Mage":      CreateItemInContainer(escortee.backpack, 0xeed, Random(150) + 250);
+        "seeker":    CreateItemInContainer(escortee.backpack, 0xeed, Random(150) + 350);
+        "peasant2":  CreateItemInContainer(escortee.backpack, 0xeed, Random(150) + 500);
+      endcase
+      return 1;
+    endif
+  endif
+  return 0;
+endfunction
+
+function idleloop()
+  while (1)
+    ev := os::wait_for_event(10);
+    case(ev.type)
+      SYSEVENT_SPEECH:      txt := lower(ev.text);
+                        if(txt["destination"])
+                          TurnToward(ev.source);
+                          say("I do not wish to go anywhere");
+                        elseif(txt["i will take thee"])
+                          TurnToward(ev.source);
+                          say("I do not wish to go anywhere.");
+                        endif
+      SYSEVENT_ENGAGED:     say("Aaahhh! Help! Help!  I'm being oppressed!");
+                        Fight(ev.source);
+      SYSEVENT_DAMAGED:     if(ev.source)
+                          Fight(ev.source);
+                        endif
+    endcase
+	if(ReadGameClock() >= next_wander)
+      wander();
+      grabloot();
+      next_wander := ReadGameClock() + 10;
+    elseif((ReadGameClock() > killtime) and (killtime != 0))
+      //MoveCharacterToLocation(me, 5555, 1111, 0, MOVECHAR_FORCELOCATION);
+      SetObjProperty(me, "guardkill", 1);
+      ApplyRawDamage(me, me.hp + 100);
+      break;
+    endif
+  endwhile
+endfunction
+
+function Follow()
+  var d := Distance(me, escortee);
+  if(d > 15)
+    escortee := 0;
+	following := 0;
+    say("My escort seems to have abandoned me.");
+    waittime := 120;
+  elseif(d <= 2)
+    waittime := 1;
+  else
+    if(GetObjProperty(me, "Pause"))
+      waittime := 2;
+    else
+	  walkToward(escortee);
+      waittime := 0;
+    endif
+  endif
+endfunction
+
+function CloseDistance( opponent )
+  case Distance( me, opponent )
+    1:
+    0:       return 1;
+    default: RunToward( opponent );
+             return 0;
+  endcase
+endfunction

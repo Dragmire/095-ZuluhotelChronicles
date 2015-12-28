@@ -1,0 +1,56 @@
+use uo;
+
+program reconnect( who )
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	var lfame;
+	var lkarma;
+	var payback;
+    	SendSysMessage( who, "Reconnected." );
+	if (getobjproperty(who,"starttime"))
+		Eraseobjproperty(who,"starttime");
+	endif
+	if (GetObjProperty(who,"cwarring") and !GetObjProperty(who,"cwprize") and !GetGlobalProperty("cwarsinit"))
+		EraseObjProperty(who,"cwarring");
+		EraseObjProperty(who,"cwcolor");
+		EraseObjProperty(who,"cwprize");
+		lfame := GetObjProperty(who,"cwfame");
+		lkarma:= GetObjProperty(who,"cwkarma");
+		who.name := GetObjProperty(who,"cwname");
+		SetObjProperty(who,"Fame",lfame);
+		SetObjProperty(who,"Karma",lkarma);
+		EraseObjProperty(who,"cwfame");
+		EraseObjProperty(who,"cwkarma");
+		MoveCharacterToLocation( who, 5544, 1107, 0 );
+		SendSysMessage( who, "You were disqualified from Color Wars." );
+		foreach worn in ListEquippedItems (who )
+			checkcw := GetObjProperty( worn, "CW" );
+			if ( checkcw )
+				EraseObjProperty(worn,"Cursed");
+				MoveItemToContainer(worn, who.backpack);
+				checkcw := 0;
+			endif
+		endforeach
+		foreach item in EnumerateItemsInContainer( who.backpack )
+			checkcw := GetObjProperty( item, "CW" );
+			if ( checkcw )
+				found := found + 1;
+				cwitem[found] := item;
+				checkcw := 0;
+			endif
+		endforeach
+		while ( loop < found )
+			loop := loop + 1;	
+			DestroyItem(cwitem[loop]);
+		endwhile
+		if(!who.dead)
+			payback := GetGlobalProperty("cwfee");
+			if(!payback)
+				payback := 5000;
+			endif
+			CreateItemInBackpack( who, 0xeed, payback);
+		endif
+	endif
+endprogram

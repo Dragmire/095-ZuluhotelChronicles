@@ -1,0 +1,75 @@
+///////////////////
+//  This program is called when you use a new beehive.  It creates a brand new hive and starts
+//  the beehive control script for the hive.  When the activated beehive is used, it produces honey
+//  and wax.
+///////////////////
+
+use uo;
+use os;
+
+include "include/yesno";
+include "include/checkcity";
+
+program harvest_honey (character, newbeehive)
+
+	//reserve the hive, give them a message, and let them place the hive
+	if(!ReserveItem(newbeehive)) return; endif
+
+	if (newbeehive.container)
+		SendSysMessage(character, "The hive cannot be used in a container.");
+		return;
+	endif
+
+	if ( newbeehive.x>=5120 && newbeehive.y>=0 && newbeehive.x<=6128 && newbeehive.y<=1992)
+    	  	SendSysMessage(character, newbeehive.name + " can't be placed in dungeons");
+		return;
+	endif
+
+	if (CheckCity(newbeehive)==1)
+		SendSysMessage(character, newbeehive.name + " can't be placed in town");
+		return;
+	endif
+
+	if (len( ListItemsNearLocationOfType( newbeehive.x, newbeehive.y, newbeehive.z, 1, 0x091a ) ) > 0 )
+		SendSysMessage(character, "There is another hive too close.");
+		return;
+	endif
+
+	//ask the player if they're sure this is where they want it
+	SendSysMessage(character, "Are you sure you want to put the hive here?");
+	var sure := YesNo(character, "Place here?");
+
+	//if they are sure, create a working beehive, set it's honey and wax levels to 0, destroy
+	//the unusedhive and exit
+	if ( sure )
+		var beehive := CreateItemAtLocation(newbeehive.x, newbeehive.y, newbeehive.z, 0x091a, 1);
+		SetObjProperty(beehive, "Wax", 100);
+		SetObjProperty(beehive, "Honey", 100);
+		DestroyItem(newbeehive);
+		SendSysMessage(character, "You place the beehive.");
+		return;
+	else
+		SendSysMessage(character, "canceled.");
+		return;
+	endif
+endprogram
+
+
+
+
+
+///////////////////
+//  This function checks to make sure that the location that was targetted is accessible to the character.
+///////////////////
+
+function is_accessible(character, targetted)
+	var xdifference := character.x - targetted.x;
+	if (xdifference < -2 || xdifference > 2)
+		return 0;
+	endif
+	var ydifference := character.y - targetted.y;
+	if (ydifference < -2 || ydifference > 2)
+		return 0;
+	endif
+	return 1;
+endfunction

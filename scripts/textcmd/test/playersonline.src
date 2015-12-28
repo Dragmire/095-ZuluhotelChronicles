@@ -1,0 +1,213 @@
+/*
+   Author: Unreal (MontuZ@Gmail.com) Nov 12, 2004.
+   Version: 1.0
+   Core: 095
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use file;
+Use uo;
+Use os;
+
+Include "include/classes";
+Include "include/ranksystem";
+Include "include/time";
+
+Const BYTES_IN_KILO	:= 1024.0;
+Const BYTES_IN_MEG	:= 1048576.0;
+
+Program players(who)
+
+    Var HTML_Page := Array{};
+
+    Var MostOnline := GetGlobalProperty( "MostOnline" );
+    Var players := EnumerateOnlineCharacters();
+    Var totalplayers :=len(players);
+    Var many;
+    
+    If( totalplayers >= MostOnline )
+    SetGlobalProperty( "MostOnline", totalplayers );
+    Endif
+    
+    If( totalplayers > 1 )
+    many := "s";
+    Else
+    many := "";
+    Endif
+
+    HTML_Page.Append("<table class='border' width=100% align=center cellpadding=0 cellspacing=0>");
+    HTML_Page.Append("<tr>");
+    HTML_Page.Append("<td class='capmain' width=50%><div align=center><strong>Name</strong></div></td>");
+    HTML_Page.Append("<td class='capmain' width=30%><div align=center><strong>Classe</strong></div></td>");
+    HTML_Page.Append("<td class='capmain' width=10%><div align=center><strong>Kills</strong></div></td>");
+    HTML_Page.Append("<td class='capmain' width=10%><div align=center><strong>Deaths</strong></div></td>");
+    HTML_Page.Append("</tr>");
+
+	var doit := 0;
+    
+    Foreach chr in players
+    If( !chr.cmdlevel )
+
+    Var cls := GetObjProperty( chr, "Classe" );
+    If( !cls )
+    cls := "None";
+    Endif
+
+    Var color := "000000";
+
+    Var rnkimg := GetObjProperty( chr, RANKID_IMAGE );
+    If( !rnkimg )
+    rnkimg := "blank";
+    Endif
+
+	var tab := "tbl1";
+
+	if ( doit == 0 )
+	tab := "tbl1";
+	doit := 1;
+	else
+	tab := "tbl2";
+	doit := 0;
+	endif
+
+    HTML_Page.Append("<tr>");
+    HTML_Page.Append("<td nowrap='nowrap' class='"+tab+"'><img style='vertical-align: middle;' src=http://www.unreal-legends.com/images/" + rnkimg + ".gif width=18 height=18>&nbsp;<strong><font color='" + color + "' class='custext'>" + chr.name + "</strong></td>");
+    HTML_Page.Append("<td class='"+tab+"'><div align=center><font class='custext'>" + cls + "</div></td>");
+    HTML_Page.Append("<td class='"+tab+"'><div align=center><font class='custext'>" + GetFrags( chr ) + "</div></td>");
+    HTML_Page.Append("<td class='"+tab+"'><div align=center><font class='custext'>" + GetDeaths( chr ) + "</div></td>");
+    HTML_Page.Append("</tr>");
+    
+    Else
+    totalplayers := totalplayers - 1;
+    Endif
+/*
+    SleepMS( 10 );
+*/
+    Endforeach
+    
+    HTML_Page.Append("</table>");
+    HTML_Page.Append("<br><br><center><font class='custext'>" + totalplayers + " player" + many + " online.<br>");
+    HTML_Page.Append("Most users online at once was " + MostOnline + ".</center>");
+    HTML_Page.Append("</body></html>");
+
+	Var Result := WriteFile( "data/web/playersonline.html", HTML_Page );
+	UpdateServerStats();
+
+	SendSysMessage(Who, "Result: "+Result);
+    
+EndProgram
+
+Function UpdateServerStats()
+
+    Var system := PolCore();
+    Var itemcount := PolCore().itemcount;
+    Var mobcount := PolCore().mobilecount;
+    Var load := system.load;
+    Var totalplayers, players;
+    Var Seconds := system.systime;
+    Var Uptim      := system.uptime;
+    
+    Var LongestTime := GetGlobalProperty( "LongestUptime" );
+    If( Uptim > LongestTime )
+    SetGlobalProperty( "LongestUptime", Uptim );
+    LongestTime := GetGlobalProperty( "LongestUptime" );
+    Endif
+
+    Var vers := system.version;
+    Var Accts    := ListAccounts( );
+    Var TotalAccts    := Len( Accts );
+    Var Guilds    := ListGuilds( );
+    Var TotalGuilds    := Len( Guilds );
+    Var Uptime     := PolCore().uptime;
+
+
+	Var Html_Page := Array{};
+    
+    Html_Page.Append("<table width=100% class='border' align=center cellpadding=0 cellspacing=0>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Accounts</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" + TotalAccts + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200  class='tbl2'><div align=center>Guilds</div></td>");
+    Html_Page.Append("<td width=200  class='tbl2'><div align=center>" + TotalGuilds + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>NPC Count</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" +  mobcount + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Item Count</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>" + itemcount + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Megabits Sent/Received</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" + FormatBytes( system.bytes_sent ) + "/" + FormatBytes( system.bytes_received ) + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Uptime</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>" + GetUpTimeString( Uptim ) + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Longest Uptime</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" + GetUpTimeString( LongestTime ) + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Core Version</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>" + vers + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Scripts Base</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Zuluhotel 3.0</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Scripts Version</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>UL2.3.96 Beta</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Server Started</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Sept 16, 2005</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Server Date</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>" + GetDateString( Seconds ) + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Server Load</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" + CStr( system.sysload ) + "%</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Timezone</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>(GMT-5:00) Eastern Time (US & Canada)</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>Time</div></td>");
+    Html_Page.Append("<td width=200 class='tbl1'><div align=center>" + GetTimeString( Seconds ) + "</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("<tr>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>Location</div></td>");
+    Html_Page.Append("<td width=200 class='tbl2'><div align=center>NJ, USA</div></td>");
+    Html_Page.Append("</tr>");
+    Html_Page.Append("</table></center>");
+
+	WriteFile( "data/web/serverstats.html", HTML_Page );
+
+Endfunction
+
+Function FormatBytes( bytes )
+
+    Var mb := CDbl( bytes ) / BYTES_IN_MEG;
+    Var type := "MB";
+
+    If( mb < 1.0 )
+    mb := CDbl(bytes) / BYTES_IN_KILO;
+    type := "KB";
+        If( mb < 1.0 )
+        mb := bytes;
+        type := "B";
+        Endif
+    Endif
+
+    Return CStr( mb ) + "" + type;
+
+Endfunction

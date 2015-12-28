@@ -1,0 +1,52 @@
+use uo;
+
+include "include/spelldata";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING := MOVING_SPELL_LIGHTNING;
+
+program lightning(parms)
+/*
+	var cast_on := parms[1];
+	var caster := parms[2];
+	var dmg := parms[3];
+	var fromhit;
+	var circle := 4;
+
+	var who;
+	PlaySoundEffect( who, SFX_SPELL_LIGHTNING  );
+
+	if( !fromhit )
+		detach();
+		cast_on := Reflected( caster , cast_on , circle );
+		if( !cast_on )
+			return;
+		endif
+	endif
+	PlaySoundEffect( who, SFX_SPELL_LIGHTNING  );
+	var dmg := CalcSpellDamage( caster , cast_on , circle );
+
+	if (wears_metallic(who))
+		ApplyRawDamage( cast_on, Resisted( caster , cast_on , circle , dmg ) );
+      else
+		ApplyRawDamage( cast_on, Resisted( caster , cast_on , circle , dmg ) );
+	endif
+*/
+endprogram
+
+
+function wears_metallic(who)
+/*
+	var cfg := readconfigfile(":combat:itemdesc");
+	var item;
+
+	foreach item in ListEquippedItems(who)
+      	if ((cfg[item.objtype].blockcircle) && (cfg[item.objtype].blockcircle <= 2) && (item.layer > 2) ) 
+            	print (who.name + " was wearing metallic armor, and is gonna be fried");
+                	return 1;
+      	endif
+	endforeach
+
+	return 0;
+*/
+endfunction

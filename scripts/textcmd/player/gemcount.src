@@ -1,0 +1,18 @@
+
+Include "include/resourceutil";
+
+Program TextCMD_GemCount( who )
+
+    Var item, gems_count;
+
+    gems_count := 0;
+
+    Foreach item In ListEquippedItems( who )
+    If ( is_a_backpack( item ) )
+    count_gems ( who, item, gems_count );
+    Endif
+    Endforeach
+
+    ShowGemsDialog( who );
+                                                                                                                
+EndProgram

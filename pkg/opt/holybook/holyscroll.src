@@ -1,0 +1,25 @@
+use uo;
+use os;
+
+include "include/spelldata";
+
+program use_scroll( who , scroll )
+
+	set_critical(1);
+	if (scroll.amount)
+		var SpellID := GetObjProperty(scroll, "SpellID");
+		SpellID := Cint(SpellID);
+		SubtractAmount(scroll, 1);
+		SetObjProperty(who, "CastingOpts", "NOREGS");
+		
+		var spell := GetScript( SpellID );
+		SetObjProperty( who , "#Casting" , 1 );
+	
+		Start_Script( spell , who );
+		
+		while( GetObjProperty( who , "#Casting" ) )
+			Sleepms( 250 );
+		endwhile
+	endif
+	
+endprogram

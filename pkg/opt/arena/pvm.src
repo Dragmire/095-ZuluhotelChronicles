@@ -1,0 +1,520 @@
+use os;
+use uo;
+include "include/client";
+include "include/time";
+include "include/classes";
+include "include/dotempmods";
+include "include/constants/propids";
+include "include/yesno";
+
+program gauntlet (player)
+	detach();
+	var ev := struct;
+	ev.+ type;
+	ev.+ source;
+	var ref;
+	var lkarma;
+	var lfame;
+	var hc;
+	var hscore := GetGlobalProperty("GauntletHighScore");
+	if (!hscore)
+		hscore := 0;
+		SetGlobalProperty("GauntletHighScore",0);
+	endif
+	var diff := GetGlobalProperty("PvMDifficulty");
+	var pvmnum := GetGlobalProperty("PvMNumber");
+	var pvmtype := GetGlobalProperty("PvMType");
+	var trophy;
+	if (GetGlobalProperty("PvMArenaInUse"))
+		SendSysMessage( player, "Cancelled, the arena is in use" );
+		return;
+	endif
+	SetGlobalProperty("PvMArenaInUse", 1 );
+	if (pvmtype = "challenge")
+		SendSysMessage(player,"PvM Challenge Started!");
+	endif
+	MoveCharacterToLocation( player, 1387, 3753, -21, 0);
+	lkarma := GetObjProperty(player, "Karma");
+	lfame := GetObjProperty(player, "Fame");
+	SetObjProperty(player, "lkarma", lkarma);
+	SetObjProperty(player, "lfame", lfame);
+	SetObjProperty(player, "pvping", 1);
+	sleep(4);
+	SendSysMessage( player, "Get ready !" );
+	sleep(2);
+	var monster;
+	var smonster := {};
+	var monsternum := 0;
+	var kills := -1;
+	var running := 1;
+	var online;
+	var rte;
+	while (running = 1)
+		sleep(1);
+		if (!GetObjProperty(player, "pvping"));
+			running := 0;
+			rte := "died";
+		endif
+		online := SystemFindObjectBySerial(player.serial);
+		if (!online)
+			running := 0;
+			rte := "logged";
+		endif
+		if (player.x < 1385 or player.x > 1412 or player.y > 3758 or player.y < 3729)
+			running := 0;
+			rte := "left";
+		endif
+		if (player.hidden and monster.warmode and pvmtype = "challenge")
+			ev.source	:= player;
+			ev.type		:= EVID_PEACEMADE;
+			SendEvent( monster, ev );
+		elseif (!player.hidden and !monster.warmode and pvmtype = "challenge")		
+			ev.source	:= player;
+			ev.type		:= SYSEVENT_DAMAGED;
+			SendEvent(monster, ev);
+		endif
+		if (monster and pvmtype = "challenge")
+			hc := 0;
+			foreach mob in ListHostiles( player, 20, 0 );
+				if (mob.serial = monster.serial)
+					hc := 1;
+				endif
+			endforeach
+			if (hc = 0 and !monster.warmode)
+				ev.source	:= player;
+				ev.type		:= SYSEVENT_DAMAGED;
+				SendEvent(monster, ev);
+			endif
+		endif
+		if (!monster and running = 1 and pvmtype = "challenge")
+			monsternum := monsternum + (Random(3)+1);
+			if (monsternum > 150)
+				running := 0;
+				rte := "done";
+			else
+				kills := kills + 1;
+				sleep(2);
+				sleep(2);
+				monster := SpawnMonster(monsternum);
+				monsternum := 3 +(kills*3);
+				SetObjProperty( monster, "untamable", 1 );
+				SetObjProperty( monster, "guardkill", 1 );
+				SetObjProperty( monster, "noloot", 1 );
+				SetObjProperty( monster, "nocut", 1 );
+				SetObjProperty( monster, "tmonster", 1 );
+				SetObjProperty( monster, "mountspawn", "null" );
+				ev.source := player;
+				ev.type	:= SYSEVENT_DAMAGED;
+				SendEvent(monster, ev);
+				sleep(2);
+			endif
+		endif
+		if (!monster and running = 1 and pvmtype = "many" and kills = -1)
+			sleep(2);
+			diff:= ((diff * 8) + Random(11))*3;
+			ref := 1;
+			while (ref <= pvmnum)
+				smonster[ref] := SpawnMonster(diff);
+				SetObjProperty( smonster[ref], "untamable", 1 );
+				SetObjProperty( smonster[ref], "guardkill", 1 );
+				SetObjProperty( smonster[ref], "noloot", 1 );
+				SetObjProperty( smonster[ref], "nocut", 1 );
+				SetObjProperty( smonster[ref], "tmonster", 1 );
+				SetObjProperty( smonster[ref], "mountspawn", "null" );
+				ev.source := player;
+				ev.type	:= SYSEVENT_DAMAGED;
+				SendEvent(smonster[ref], ev);
+				sleepms(250);
+				ref := ref + 1;
+			endwhile
+			kills := 0;
+		endif
+		if(pvmtype = "many" and !smonster[1] and !smonster[2] and !smonster[3])
+			running := 0;
+			rte := "done";
+		endif
+	endwhile
+	if (monster)
+		ApplyRawDamage( monster, Cint(monster.hp+3) );
+	endif
+	sleep(2);
+	if(pvmtype = "many")
+		ref := 0;
+		while (ref <= pvmnum)
+			ref := ref + 1;
+			if (smonster[ref])
+				ApplyRawDamage( smonster[ref], Cint(smonster[ref].hp+3) );
+			endif	
+		endwhile
+	endif
+	if ( pvmtype ="challenge" and (rte = "died" or rte = "done"))
+		if (rte = "done")
+			SendSysMessage(player,"wtf.. you completed The PvM Challenge...");
+		else
+			SendSysMessage(player,"Your Score is : "+kills);
+			SetGlobalProperty("LastPvMScore",kills);
+		endif
+		if (kills >= hscore)
+			PrintTextAbove(ref,"You are the new champion!");
+			SetGlobalProperty("GauntletHighScore",kills);
+			foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,player.name+" is the PvM Challenge champion with "+kills+" kills" ,3 ,130 );	
+		endforeach
+		trophy := ListItemsNearLocation(player.x,player.y,player.z,30 );
+			foreach item in trophy
+				if (GetObjProperty(item,"pvmtrophy"))
+					item.name := "PvM Champion : "+player.name+ " : " + kills+ "kills";
+				endif
+			endforeach
+		endif
+	endif
+	if (pvmtype ="many")
+		if ( rte = "died")
+			SendSysMessage(player,"Better luck next time!");
+		elseif ( rte = "done")
+			SendSysMessage(player,"Well done!");			
+		endif
+	endif
+	Sleep (5);
+	lkarma := GetObjProperty(player, "lkarma");
+	lfame := GetObjProperty(player, "lfame");
+	SetObjProperty(player, "Karma", lkarma);
+	SetObjProperty(player, "Fame", lfame);
+	EraseObjProperty( player, "pvping" );
+	MoveCharacterToLocation( player, 1380, 3744, 20, 0);
+	EraseGlobalProperty("PvMArenaInUse");
+	EraseObjProperty( player, "lkarma" );
+	EraseObjProperty( player, "lfame" );
+	if (pvmtype = "challenge")
+		UpdateScores(player, kills);
+	endif
+endprogram
+
+function SpawnMonster (number)
+	var mn;
+	case (number)
+		1:	mn := "mongbat";
+		2:	mn := "headless";
+		3:	mn := "zombie";
+		4:	mn := "ratman1";
+		5:	mn := "ratman2";
+		6:	mn := "ratman3";
+//
+		7:	mn := "ogre";
+		8:	mn := "ettin";
+		9:	mn := "boneknight";
+//
+		10:	mn := "orc1";
+		11:	mn := "orc2";
+		12:	mn := "orc3";
+//
+		13:	mn := "lizardman1";
+		14:	mn := "lizardman2";
+		15:	mn := "lizardman3";
+//
+		16:	mn := "troll1";
+		17:	mn := "troll2";
+		18:	mn := "troll3";
+//
+		19:   	mn := "spider";
+		20:	mn := "scorp";
+		21:	mn := "giantserpent";
+//
+		22:	mn := "ghost";
+		23:	mn := "valkyrie";
+		24:	mn := "doppelganger";
+//
+		25:	mn := "gargoyle";
+		26:	mn := "liche";
+		27:	mn := "beholder";
+//
+		28:	mn := "imp";
+		29:	mn := "shade";
+		30:	mn := "hellhound";
+//
+		31:	mn := "bewitchedbardiche";
+		32: 	mn := "bewitchedgauntlets";
+		33: 	mn := "bewitchedarmor";
+//
+		34:	mn := "revenant";
+		35:	mn := "brigand1";
+		36:	mn := "evilmage";
+//
+		37:	mn := "bloodliche";
+		38:	mn := "necromancer";
+		39:	mn := "bonewarlock";
+//
+		40:	mn := "waterelemental";
+		41:	mn := "fireelemental";
+		42:	mn := "airelemental";
+//
+		43:	mn := "earthelementallord";
+		44:	mn := "waterelementallord";
+		45:	mn := "airelementallord";
+//
+		46:	mn := "terathanwarrior";
+		47:	mn := "terathanavenger";
+		48:	mn := "terathanmatriarch";
+//
+		49:	mn := "ophidianwarrior";
+		50:	mn := "ophidianzealot";
+		51:	mn := "ophidianavenger";
+//
+		52:	mn := "daemon";
+		53:	mn := "daemonknight";
+		54:	mn := "lichelord";
+//
+		55:	mn := "wingedavenger";
+		56:	mn := "evilspellbook";
+		57:	mn := "daemonlieutenant";
+//
+		58:	mn := "ogrelord";
+		59:	mn := "orcdefender";
+		60:	mn := "lizardmandefender";
+
+		61:	mn := "darkspawn";
+		62:	mn := "icefiend";
+		63:	mn := "ent";
+//
+		64:	mn := "trollking";
+		65:	mn := "ogrelord";
+		66:	mn := "lizardmanking";
+//
+		67:	mn := "skeletalwarrior";
+		68:	mn := "titan";
+		69:	mn := "djinn";
+//
+		70:	mn := "drake1";
+		71:	mn := "drake2";
+		72:	mn := "drake2";
+//
+		73:	mn := "frostdrake";
+		74:	mn := "spectraldrake";
+		75:	mn := "earthdrake";
+//
+		76:	mn := "poisondrake";
+		77:	mn := "undeaddrake";
+		78:	mn := "firedrake";
+//
+		79:	mn := "airdrake";
+		80:	mn := "waterdrake";
+		81:	mn := "wyvern";
+//	
+		
+		82:	mn := "dracula";
+		83: 	mn := "koboldmercenary";
+		84:	mn := "twistedbramble";
+//
+		85:	mn := "earthmag";
+		86:	mn := "airmag";
+		87:	mn := "watermag";
+//
+		88:	mn := "dragon1";
+		89:	mn := "dragon2";
+		90:	mn := "dragon1";
+//
+		91:	mn := "frostdragon";
+		92:	mn := "tidaldragon";
+		93:	mn := "rockdragon";
+//
+		94:	mn := "wyrm";
+		95:	mn := "goldendrake";
+		96:	mn := "heavenlydrake";
+//
+		97:	mn := "stormdragon";
+		98:	mn := "infernodragon";
+		99:	mn := "poisondragon";
+//
+		100:	mn := "magestalker";
+		101:	mn := "brigandranger";
+		102:	mn := "darkranger";
+//
+		103:	mn := "darkwarrior";
+		104:	mn := "taintedwarrior1";
+		105:	mn := "taintedwarrior2";
+//
+		106:	mn := "sanddragon";
+		107:	mn := "frankenstein";
+		108:	mn := "darkmage";
+//	
+		109:	mn := "taintedmage";
+		110:	mn := "taintedranger";
+		111:	mn := "darkthief";
+//
+		112:	mn := "nightmare";
+		113:	mn := "undeadmare1";
+		114:	mn := "terramental";
+//
+		115:	mn := "ebonyhorror";
+		116:	mn := "shadowlord";
+		117:	mn := "shadowelemental";
+//
+		118:	mn := "corruptedshadow";
+		119:	mn := "corruptcouncy";
+		120:	mn := "dragonlord";
+//
+		121:	mn := "umbralflicker";
+		122:	mn := "bane";
+		123:	mn := "magusbane";
+//
+		124:	mn := "earthmaster";
+		125:	mn := "deathbringer";
+		126:	mn := "darkthief";
+//
+		127:	mn := "balron";
+		128:	mn := "behemoth";
+		129:	mn := "stomp";
+//
+		130:	mn := "balrog";
+		131:	mn := "fallenangel";
+		132:	mn := "flamingbalron";
+//
+		133:	mn := "ancientwyrm";
+		134:	mn := "ancientwyrm";
+		135:	mn := "ancientwyrm";
+//		
+		136:	mn := "nemesis";
+		137:	mn := "nemesis";
+		138:	mn := "nemesis";
+//
+		139:	mn := "archangel";
+		140:	mn := "archangel";
+		141:	mn := "archangel";
+//
+		142:	mn := "greatwyrm";
+		143:	mn := "greatwyrm";
+		144:	mn := "greatwyrm";
+//
+		145: 	mn := "silverdragon";
+		146: 	mn := "silverdragon";
+		147: 	mn := "silverdragon";
+//
+		148: 	mn := "goldendragon";
+		149:	mn := "goldendragon";
+		150:	mn := "goldendragon";
+//
+	endcase
+	return	CreateNPCfromTemplate( mn , 1396 , 3746 , -21 );
+endfunction
+
+Function UpdateScores(who, score);
+
+	var WhoScore := score;
+	
+	var TOP10 array;
+	TOP10.+Name:={};
+	TOP10.+Score:={};
+	TOP10.+Serial:={};
+
+	var TempArray, Temp, i,k;
+
+	//Incialize Variables
+	For (i:=1;i<=10;i:=i+1)
+	  Top10.Name[i]:="";
+	  Top10.Score[i]:=0;
+	  Top10.Serial[i]:=0;
+	endfor
+
+//	Print("Scores:"+Top10.Score);
+//	Print("Names:"+Top10.Name);
+//	Print("Serials:"+Top10.serial);
+	
+	//Take Names, Serial and Scores  of the Actual TOP 10 List
+	Top10.Name:=GetGlobalProperty("PvMNames");
+//	Print("Top10.Name:"+Top10.Name);
+	
+//	Print("Top10.Serial:"+Top10.Serial);
+
+	//Take Scores of the Actual TOP 10 List	
+	Top10.Score:=GetGlobalProperty("PvMScores");
+//	Print("Top10.Score:"+Top10.Score);
+	
+	If (Top10.Name="NONE")
+	    Top10.Name:={};
+	    Top10.Serial:={};
+	    Top10.Score:={};
+	    For (i:=1;i<=10;i:=i+1)
+	      Top10.Name[i]:="";	    
+	      Top10.Serial[i]:=0;	      
+	      Top10.Score[i]:=0;	      
+	    endfor
+	endif
+	
+//	Print("Scores:"+Top10.Score);
+//	Print("Names:"+Top10.Name);
+//	Print("Seirals:"+Top10.Serial);	
+	
+	//See is player is already in list
+	
+	For (i:=1;i<=10;i:=i+1);
+	  //If player in the list, update his info
+	  If (TOP10.Name[i]=Cint(who.Name))
+	    TOP10.Score[i]:=WhoScore;
+	    TOP10.Name[i]:=who.name;
+	    break;
+	  endif
+	endfor
+	
+	
+	If (i>10) // Player is Not in List
+	  // See if there's a Free Space in the list
+//	   Print("Not in List");	  
+	  For (i:=1;i<=10;i:=i+1);
+	    If (!TOP10.name[i]);
+	      TOP10.name[i]:=who.name;
+	      TOP10.score[i]:=WhoScore;
+	      break;
+	    endif
+	  Endfor
+//	  Print("Names:"+Top10.Name); 
+//	  Print("Scores:"+Top10.Score);	  
+	  Top10:=SortTop10(TOP10);
+//	  Print("Scores:"+Top10.Score);
+	  
+	  // If Player ISN'T in The list, but has a score bigger than the someone in the list
+	  // Add him to the list and sort the list again
+	  If ( (Top10.score[10]<WhoScore) and (i>10)) 
+	      TOP10.serial[10]:=who.serial;
+	      TOP10.name[10]:=who.name;
+	      TOP10.score[10]:=WhoScore;
+	      Top10:=SortTop10(Top10);
+	  endif
+	  else // Player is In List
+//	    Print("In List");
+	    Top10:=SortTop10(Top10);
+	endif
+
+	SetGlobalProperty("PvMNames", Top10.Name);
+	SetGlobalProperty("PvMScores", Top10.Score);
+EndFunction
+
+//Sorts Top10 Array
+Function SortTop10(Top10);
+  var Limit :=9;
+  var Changed;
+  var i;
+  var Aux;
+  repeat
+    Changed:=0;
+    For (i:=1;i<=Limit;i:=i+1)
+      If (Top10.Score[i]<Top10.Score[i+1])
+      
+        Aux:=Top10.Score[i];
+        Top10.Score[i]:=Top10.Score[i+1];
+        Top10.Score[i+1]:=Aux;
+
+        Aux:=Top10.Name[i];
+        Top10.Name[i]:=Top10.Name[i+1];
+        Top10.Name[i+1]:=Aux;
+        
+        Aux:=Top10.Serial[i];
+        Top10.Serial[i]:=Top10.Serial[i+1];
+        Top10.Serial[i+1]:=Aux;
+                
+        limit:=i;
+        Changed:=1;
+      endif
+    endfor
+  until (!Changed);
+  Return Top10;
+endfunction

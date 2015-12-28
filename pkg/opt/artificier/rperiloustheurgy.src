@@ -1,0 +1,133 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+include "include/itemutil";
+
+
+program rperiloustheurgy( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_PERILOUS_THEURGY, CAN_BE_EQUIPPED + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+	power := power - 1;
+	if( !power )
+		power := 1;
+	endif
+	power := power * 2;
+
+	ResetAllHitscriptPropsExcep( item );
+	SetAnEffectScriptFromList( caster, item, power );
+	SetNameByEnchant( item );
+
+endprogram
+
+
+function SetAnEffectScriptFromList( who, item, power )
+
+	var layout2 := array(
+				"page 0",
+				"resizepic 50  0   2600 250 300",
+				"resizepic 100 255 5100 150 25",
+				"text 115 30 5 0"
+							);
+			
+	var data2 := array(
+				"Select an effect"
+							);
+						
+	var cfg;
+	if( item.ar )
+		cfg	:= ReadConfigFile( ":combat:onhitscriptdesc" );
+	else
+		cfg	:= ReadConfigFile( ":combat:hitscriptdesc" );
+	endif
+
+	var amount	:= cfg["data"].NbEffect;
+	var start	:= cfg["data"].NbSpell + cfg["data"].NbSlayer + 1;
+	var last	:= start + amount;
+	var count	:= 0;
+	var done	:= 0;
+	var page	:= 1;
+	var perpage	:= 9;
+	var y 	:= 60;
+	var i;
+
+	layout2[len(layout2)+1] := "page " + page;
+	if( amount > perpage )
+		layout2[len(layout2)+1] := "button 190 256 5540 5541 0 " + (page + 1);
+	endif
+
+	for( i := start; i < last; i := i + 1 )
+		if( done == perpage )
+			done 	:= 0;
+			page 	:= page + 1;
+			y 	:= 60;
+		
+			layout2.append( "page " + page );
+			layout2.append( "button 125 256 5537 5538 0 " + (page - 1) );
+			if( amount > (count + perpage) )
+				layout2.append( "button 200 256 5540 5541 0 " + (page + 1) );
+			endif
+		endif
+	
+		layout2.append( "text 85 " + y + " 0 " + len(data2) );
+		layout2.append( "button 250 " + (y + 5) + " 2118 2117 1 0 " + i );
+		data2.append( cfg[i].Name );
+
+		y 	:= y + 20;
+		done 	:= done + 1;
+		count 	:= count + 1;
+	endfor
+		
+
+	SendSysMessage( who, "Select an effect." );
+	var result := SendDialogGump( who, layout2, data2 );
+	if( !result[0] )
+		SendSysMessage( who, "Canceled" );
+		return 0;
+	endif
+
+	if( item.ar )
+		SetObjProperty( item, "OnHitScript", cfg[result[0]].OnHitscript );
+		SetObjProperty( item, "OnHitscriptNumber", result[0] );
+	else
+		item.hitscript := cfg[result[0]].hitscript;
+		SetObjProperty( item, "HitscriptNumber", result[0] );
+	endif
+
+	var cprop := cfg[result[0]].CProp;
+	if( cprop )
+		var cpropval := cfg[result[0]].CPropVal;
+		if( !cpropval )
+			var mult := cfg[result[0]].Multiplier;
+			if( !mult )
+				cpropval := power;
+			else
+				cpropval := CInt( power * mult );
+			endif
+		endif
+		SetObjProperty( item, cprop, cpropval );
+	endif
+
+endfunction

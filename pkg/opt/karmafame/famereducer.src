@@ -1,0 +1,10 @@
+use os;
+use uo;
+include "karmafame";
+
+const MINS_BETWEEN_CHECKS	:= 60;
+const LOSS_PERCENTAGE		:= 2;
+
+program fameReducer()
+
+endprogram

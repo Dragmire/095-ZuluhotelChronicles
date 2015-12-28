@@ -1,0 +1,111 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) April 21, 2006.
+   Version: 1.9
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/time";
+Include "include/gumps";
+Include "include/arrays";
+Include "include/yesno";
+
+Program Test( Who, Text )
+
+    If( !Who.ip )
+    Return Error;
+    Endif
+
+    Var X := 40;
+    Var Y := 40;
+
+    Var Place := 1;
+    Var Page := 1;
+    Var Count := 0;
+    Var Account := Who.acct;
+
+    GFInitGump();
+    GFResizePic( 25, 25, 9270, 600, 260 ); // 9270 3600 5100 2600 5170 2620 3000 3500 5054
+    GFTextLine( X, Y, 1935, "Players Online" );
+/*
+    GFButtonID( ( X + 350 ), Y + 3, 2117, 2118, 1, 666 );
+    GFTextLine( ( X + 370 ), Y, 1935, "Erase Notes" );
+    GFButtonID( ( X + 465 ), Y + 3, 2117, 2118, 1, 1337 );
+    GFTextLine( ( X + 485 ), Y, 1935, "Add Note" );
+
+    Var Jailed := GetJailTime( Player );
+    If( Jailed != Error )
+    GFTextLine( 215, 250, 1935, Jailed[1] + " days, " + Jailed[2] + " hours, " + Jailed[3] + " minutes, " + Jailed[4] + " seconds left in jail." );
+    Endif
+*/
+    GFPage( Page );
+
+    Foreach Player in EnumerateOnlineCharacters()
+    Y := Y + 20;
+    GFButtonID( X, Y + 3, 2117, 2118, 1, Player.serial );
+    GFTextLine( ( X + 20 ), Y, 2633, Player.name );
+    GFTextLine( X + 120, Y, 1935, CStr(Player.clientversion) );
+
+
+    Place := Place + 1;
+    Count := Count + 1;
+
+    If( Count > 7 )
+    GFButtonPage( 40, 228 + 20, 2117, 2118, Page + 1 );
+    GFTextLine( 60, 225 + 20, 1935, "Next" );
+    Page := Page + 1;
+    GFPage( Page );
+    GFButtonPage( 40, 228, 2117, 2118, Page - 1 );
+    GFTextLine( 60, 225, 1935, "Previous" );
+    Count := 0;
+    Y := 40;
+    Endif
+    SleepMS( 10 );
+    Endforeach
+
+    Var Result := GFSendGump( Who );
+    Result := Result[0];
+
+    If( !Result )
+    Return 0;
+	Endif
+
+	Var Dudette := SystemFindObjectBySerial( Result );
+	If( Dudette )
+	MoveCharacterToLocation( who, Dudette.x, Dudette.y, Dudette.z );
+	Endif
+
+Endprogram
+
+Function GetJailTime( Who )
+
+    Var Account := Who.acct;
+
+    Var Release := Account.GetProp( "Release" );
+
+    If( !Release )
+    Release := 0;
+    Endif
+
+    Var Seconds := CInt( Release - PolCore().Systime );
+
+    If( Seconds < 0 )
+    Return Error;
+    Endif
+
+    Var Days := ( Seconds / TIMEID_SECONDS_PER_DAY );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_DAY;
+
+    Var Hours := ( Seconds / TIMEID_SECONDS_PER_HOUR );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_HOUR;
+
+    Var Minutes := ( Seconds / TIMEID_SECONDS_PER_MINUTE );
+    Seconds  := Seconds % TIMEID_SECONDS_PER_MINUTE;
+
+    Return { CInt( Days ), CInt( Hours ), CInt( Minutes ), CInt( Seconds ) };
+
+Endfunction

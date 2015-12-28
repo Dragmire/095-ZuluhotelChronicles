@@ -1,0 +1,11 @@
+Use uo;
+
+Program On_Remove( Who, Spellbook, Item )
+
+    If( !Who.cmdlevel )
+    Return 0;
+    Else
+    SendSysMessage( Who, "You take the spell out of the book." );
+    Endif
+
+Endprogram

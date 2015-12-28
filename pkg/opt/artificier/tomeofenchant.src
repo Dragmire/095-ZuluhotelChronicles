@@ -1,0 +1,199 @@
+use uo;
+use os;
+use math;
+use basic;
+
+include "include/bitwise";
+include "include/spelldata";
+
+
+var layout	:= array( "page 0", "gumppic 0 0 2201" );
+var data	:= array();
+
+var leftbuttonlayout := {
+	"button 30 40  2104 2103 1 0 ",
+	"button 30 60  2104 2103 1 0 ",
+	"button 30 80  2104 2103 1 0 ",
+	"button 30 100 2104 2103 1 0 ",
+	"button 30 120 2104 2103 1 0 ",
+	"button 30 140 2104 2103 1 0 ",
+	"button 30 160 2104 2103 1 0 ",
+	"button 30 180 2104 2103 1 0 "};
+
+var rightbuttonlayout := {
+	"button 190 40  2104 2103 1 0 ",
+	"button 190 60  2104 2103 1 0 ",
+	"button 190 80  2104 2103 1 0 ",
+	"button 190 100 2104 2103 1 0 ",
+	"button 190 120 2104 2103 1 0 ",
+	"button 190 140 2104 2103 1 0 ",
+	"button 190 160 2104 2103 1 0 ",
+	"button 190 180 2104 2103 1 0 "};
+
+var lefttextlayout := {
+	"text 50 35  0 ",
+	"text 50 55  0 ",
+	"text 50 75  0 ",
+	"text 50 95  0 ",
+	"text 50 115 0 ",
+	"text 50 135 0 ",
+	"text 50 155 0 ",
+	"text 50 175 0 "};
+
+var righttextlayout := {
+	"text 210 35  0 ",
+	"text 210 55  0 ",
+	"text 210 75  0 ",
+	"text 210 95  0 ",
+	"text 210 115 0 ",
+	"text 210 135 0 ",
+	"text 210 155 0 ",
+	"text 210 175 0 "};
+
+var c1spellarray := { 97, 98, 99, 100, 101, 102, 103, 104 };
+var c2spellarray := { 105, 106, 107, 108, 109, 110, 111, 112 };
+var c3spellarray := { 113, 114, 115, 116, 117, 118, 119, 120 };
+var c4spellarray := { 121, 122, 123, 124, 125, 126, 127, 128 };
+
+var c1spelldata := {
+	"Channel Mana",
+	"Consecration",
+	"Free Movement",
+	"Quick Healing",
+	"Colouration",
+	"Resilience",
+	"Restoration",
+	"Venom Bane"	};
+
+var c2spelldata := {
+	"Cursing",
+	"Disenchantment",
+	"Elemental Ward",
+	"Mana Flux",
+	"Planar Ward",
+	"Sanctifying",
+	"Skill Infusion",
+	"Venom Mastery" };
+
+var c3spelldata := {
+	"Bloodseeking",
+	"Hardening",
+	"Mana Dimissal",
+	"Physical Ward",
+	"Protective Aura",
+	"Spell Bouncing",
+	"Spell Warding",
+	"Vital Infusion"};
+
+var c4spelldata := {
+	"Advanced Theurgy",
+	"Attunement",
+	"Basic Theurgy",
+	"Enhancement",
+	"Immutability",
+	"Perilous Theurgy",
+	"Purification",
+	"Racial Theurgy"};
+  
+
+
+program TomeOfEnchant( who, tome )
+
+	set_script_option( SCRIPTOPT_NO_RUNAWAY, 1 );
+
+	var pagecount	:= 0;
+	var percircle := 8;
+
+	var	c1flag := GetObjProperty( tome, "Circle1" ),
+		c2flag := GetObjProperty( tome, "Circle2" ),
+		c3flag := GetObjProperty( tome, "Circle3" ),
+		c4flag := GetObjProperty( tome, "Circle4" );
+	
+	var 	circles := {	{ c1flag, c1spellarray, c1spelldata,
+				  c2flag, c2spellarray, c2spelldata },
+				
+				{ c3flag, c3spellarray, c3spelldata,
+				  c4flag, c4spellarray, c4spelldata }	};
+			
+
+	foreach circle in circles
+
+		var i		:= 1;
+	
+		var lefttotal	:= 0;
+		var righttotal := 0;
+	
+		var leftflag	:= circle[1];
+		var leftarray	:= circle[2];
+		var leftdata	:= circle[3];
+	
+		var rightflag	:= circle[4];
+		var rightarray := circle[5];
+		var rightdata	:= circle[6];
+		
+		pagecount := pagecount + 1;
+		layout.append( "page " + pagecount );
+		if( pagecount != 1 )
+			layout.append( "button 24 5 2235 2235 0 " + ( pagecount-1 ) );
+		endif
+	
+		if( pagecount != len(circles) )
+			layout.append( "button 294 4 2236 2236 0 " + ( pagecount + 1 ) );
+		endif
+	
+		case( pagecount )
+			1:	layout.append( "text 45  10 5 " + len(data) );
+				data.append( "Lesser Ritual" );
+				layout.append( "text 205 10 5 " + len(data) );
+				data.append( "Adept Ritual" );
+				break;
+		
+			2:	layout.append( "text 45  10 5 " + len(data) );
+				data.append( "Greater Ritual" );
+				layout.append( "text 205 10 5 " + len(data) );
+				data.append( "Master Ritual" );
+				break;	
+		endcase
+
+		while( i <= percircle )
+			if( FlagCheck( leftflag, i ) == 1 )
+				lefttotal := lefttotal + 1;
+				layout.append( leftbuttonlayout[lefttotal] + leftarray[i] );
+				layout.append( lefttextlayout[lefttotal] + len(data) );
+				data.append( leftdata[i] );
+			endif
+		
+			if( FlagCheck( rightflag, i ) == 1 )
+				righttotal := righttotal + 1;
+				layout.append( rightbuttonlayout[righttotal] + rightarray[i] );
+				layout.append( righttextlayout[righttotal] + len(data) );
+				data.append( rightdata[i] );
+			endif
+		
+			i := i + 1;
+		endwhile
+
+	endforeach
+
+	SendSysMessage(who, "Select Spell.");
+
+	var res := SendDialogGump( who, layout, data );			
+	if( !res[0] )
+		return;
+	endif
+
+	var spell := TruncPkgName( GetScript( res[0] ) );
+
+	if( GetObjProperty( tome, "CastingOpts" ) )
+		SetObjProperty( who, "CastingOpts", GetObjProperty( tome, "CastingOpts" ) );
+	endif
+
+	SetObjProperty( who, "#Casting", 1 );
+
+	start_script( spell, who );
+	
+	while( GetObjProperty( who, "#Casting" ) )
+		sleep( 5 );
+	endwhile
+
+endprogram

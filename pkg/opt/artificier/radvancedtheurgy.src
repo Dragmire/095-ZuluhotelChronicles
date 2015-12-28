@@ -1,0 +1,81 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+include "include/namingbyenchant";
+include "include/itemutil";
+include "include/eventid";
+
+
+program radvancedtheurgy( parms )
+
+	var caster;
+	var result;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+	else
+		caster := parms;
+	endif
+
+
+	//Try to perform the ritual
+	result := TryToPerformRitual( caster, SPELLID_RITUAL_OF_ADVANCED_THEURGY, IS_A_WEAPON + CANNOT_BE_CURSED );
+	if( !result )
+		return;
+	endif
+
+	var item	:= result[1];
+	var power	:= result[2];
+
+	ChangeToNewForm( caster, item );
+	SetNameByEnchant( item );
+
+endprogram
+
+
+function ChangeToNewForm( who, item )
+
+	var cfg  := ReadConfigFile( ":*:itemdesc" );
+	var name := cfg[item.objtype].Name;
+
+	var current_type := GetObjProperty( item, "Enchanted" );
+	var new_name;
+	var length := len(name);
+
+	case( current_type )
+		"Stygian":	SendSysMessage( who, "This item is already in his strongest form..." );
+				break;
+			
+		"Swift":
+		"Mystical":	new_name := name[2,length-1];
+				new_name := "Stygian" + new_name;
+				break;
+			
+		default:	new_name := name;
+				if( Random(1) )
+					new_name := "S" + new_name;
+				else
+					new_name := "M" + new_name;
+				endif
+	endcase
+
+	var objtype := GetObjtypeByName( new_name );
+	if( !objtype )
+		SendSysMessage( who, "This can't be improved..." );
+		return;
+	endif
+
+	var newitem := CreateItemInBackpack( who, objtype );
+	if( newitem )
+		DupeItem( item, newitem );
+		DestroyItem( item );
+		SendSysMessage( who, "The weapon improved to a new power level..." );
+	else
+		SendSysMessage( who, "The weapon could not be transmuted!" );
+	endif
+
+endfunction

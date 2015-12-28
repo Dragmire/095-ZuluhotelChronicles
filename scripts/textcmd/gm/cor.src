@@ -1,0 +1,287 @@
+/////////////////////////////////////////////////////////////
+// SETPROP.SRC
+//
+// Author: DC
+// Date: 2/14/99
+//
+// Description: An GM text command that changes the value
+//	  of the given inherent property. Note that
+//	  mobiles have more props than items and
+//	  some properties are read-only.
+//
+// Syntax: .setprop <propname> <value>
+// program textcmd_setprop: params: character using
+//				  text
+//			  Splits the param text into 2
+//			  strings (propname and value)
+//					  passes the given prop and
+//			  value to SetObjctProp and
+//			  prints the old and new values
+//			  if the write was successful.
+//
+// function SetObjctProp: Matches the given text to one of
+//			the known properties of the
+//			targetted object. If the prop
+//			name could not be matched, it
+//			throws an uninitialized error
+//			which the main program catches.
+//			only writable props are listed.
+//
+// TODO: Give access to props setable only with
+//   "SetObjectProperty" function.
+//
+//   ********
+//   **NOTE**: to change an object's name, use "rename" cmd
+//   ********
+// updated by zulu (zulu@cadvision.com)
+/////////////////////////////////////////////////////////////
+
+use uo;
+use basic;
+use os;
+use cfgfile;
+include "include/time";
+include "include/all";
+
+program textcmd_setprop( who, text )
+
+	var props := SplitWords( text );
+	if( !props[1] )
+		SendSysmessage( who , "Syntax: .setprop [propname] [amount]" );
+	elseif( !props[2] )
+		SendSysmessage( who , "Syntax: .setprop [propname] [amount]" );
+	endif
+
+	var propname	 := props[1];
+	var amount	 := Cint( props[2] );
+	var amount_str := Cstr( text - (propname + " ") );
+
+	if( !amount )
+		amount := 0;
+	elseif( amount == 9999 )
+		amount := 0;
+		amount_str := "";
+	endif
+
+	SendSysMessage( who, "Select an object" );
+
+	var obj := Target( who, TGTOPT_NOCHECK_LOS );
+	if( obj )
+
+		var value;
+		var newvalue;
+
+		value := GetObjctProp( obj , propname );
+		SendSysmessage( who , propname + " was: " + value );
+
+		if( SetObjctProp( obj , propname , amount, amount_str ) );
+			newvalue := GetObjctProp( obj , propname );
+				
+			if( newvalue == value )
+				SendSysmessage( who , "Property unchanged." );
+			elseif(newvalue)
+				SendSysmessage( who , propname + " now: " + newvalue );
+                                setname(obj, newvalue);
+			else
+				SendSysmessage( who , "Error occured." );
+			endif
+   LogEditing( Who, obj, propname, newvalue );
+
+		else
+			SendSysmessage( who , "Could not write to " + propname + "." );
+		endif
+
+	else
+		SendSysMessage(who, "Cancelled.");
+	endif
+
+endprogram
+
+
+function GetObjctProp( obj , propname)
+
+	var retstr := 0;
+
+	case (propname)
+		"x": 		retstr := obj.x;	break;
+		"y": 		retstr := obj.y;	break;
+		"z": 		retstr := obj.z;	break;
+		"objtype": 	retstr := hex(obj.objtype);	break;
+		"color": 	retstr := obj.color;            break;
+		"serial": 	retstr := hex(obj.serial);	break;
+		"height": 	retstr := obj.height;	break;
+		"facing": 	retstr := obj.facing;	break;
+		"name":		retstr := obj.name;	break;
+		"desc":		retstr := obj.desc;	break;
+		"warmode":	retstr := obj.warmode;	break;
+		"gender":	retstr := obj.gender;	break;
+		"truecolor":	retstr := obj.truecolor;	break;
+		"hp":		retstr := obj.hp;	break;
+		"maxhp":	retstr := obj.maxhp;	break;
+		"mana":		retstr := obj.mana;	break;
+		"maxmana":	retstr := obj.maxmana;	break;
+		"stamina":	retstr := obj.stamina;	break;
+		"maxstamina":	retstr := obj.maxstamina;	break;
+		"strength":	retstr := obj.strength;	break;
+		"dexterity":	retstr := obj.dexterity;	break;
+		"intelligence":	retstr := obj.intelligence;	break;
+		"dead":		retstr := obj.dead;	break;
+		"ar":		retstr := obj.ar;	break;
+		"strength_mod":	retstr := obj.strength_mod;	break;
+		"intelligence_mod": retstr := obj.intelligence_mod;	break;
+		"dexterity_mod": retstr := obj.dexterity_mod;	break;
+		"ar_mod":	retstr := obj.ar_mod;	break;
+		"graphic":	retstr := obj.graphic;	break;
+		"usescript":	retstr := obj.usescript;	break;
+		"equipscript":	retstr := obj.equipscript;	break;
+		"unequipscript": retstr := obj.unequipscript;	break;
+		"newbie":	retstr := obj.newbie;	break;
+		"movable":	retstr := obj.movable;	break;
+		"decayat":	retstr := obj.decayat;	break;
+		"maxhp_mod":	retstr := obj.maxhp_mod;	break;
+		"quality":	retstr := obj.quality;	break;
+		"ar_base":	retstr := obj.ar_base;	break;
+		"hitscript":	retstr := obj.hitscript;	break;
+		"dmg_mod":	retstr := obj.dmg_mod;	break;
+		"skillid":	retstr := obj.skillid;	break;
+		"locked":	retstr := obj.locked;	break;
+		"trueobjtype":	retstr := obj.trueobjtype;	break;
+		"poisoned":	retstr := obj.poisoned;	break;
+		"paralyzed":	retstr := obj.paralyzed;	break;
+		"hidden":	retstr := obj.hidden;	break;
+		"concealed":	retstr := obj.concealed;	break;
+		"frozen":	retstr := obj.frozen;	break;
+		"stealthsteps":	retstr := obj.stealthsteps;	break;
+		"squelched":	retstr := obj.squelched;	break;
+		"lightlevel":	retstr := "Current value is unknown";	break;
+		"script":	retstr := obj.script;	break;
+		"controlscript": retstr := obj.controlscript;	break;
+		"walkonscript":	retstr := obj.walkonscript;	break;
+		"invisible":	retstr := obj.invisible;	break;
+		"title_guild":	retstr := obj.title_guild;	break;
+		"title_prefix":	retstr := obj.title_prefix;	break;
+		"title_suffix":	retstr := obj.title_suffix;	break;
+		"title_race":	retstr := obj.title_race;	break;
+		"buyprice":	retstr := obj.buyprice;	break;
+		"criminal":	retstr := obj.criminal;	break;
+		"murderer":	retstr := obj.murderer;	break;
+		"hp_regen_rate":	retstr := obj.hp_regen_rate;	break;
+		"mana_regen_rate":	retstr := obj.mana_regen_rate;	break;
+		"stamina_regen_rate":	retstr := obj.stamina_regen_rate;	break;
+		default:
+	endcase
+
+	return Cstr(retstr);
+	
+endfunction
+
+// amount_str is only used if the value isn't really an integer
+function SetObjctProp( obj , propname , amount, amount_str )
+
+	var retstr := 1;
+	var splited := SplitWords( amount_str );
+	if( !amount )
+		amount := 0;
+	endif
+	
+	case (propname)
+		"x":		MoveItemtoLocation( obj , amount , obj.y , obj.z, MOVEITEM_FORCELOCATION );
+				MoveCharacterToLocation( obj , amount , obj.y , obj.z , MOVECHAR_FORCELOCATION );
+				break;
+				
+		"y":		MoveItemtoLocation( obj , obj.x , amount , obj.z, MOVEITEM_FORCELOCATION );
+				MoveCharacterToLocation( obj , obj.x , amount , obj.z , MOVECHAR_FORCELOCATION );
+				break;
+				
+		"z":		MoveItemtoLocation( obj , obj.x , obj.y , amount , MOVEITEM_FORCELOCATION );
+				MoveCharacterToLocation( obj , obj.x , obj.y , amount , MOVECHAR_FORCELOCATION );
+				break;
+		
+		"objtype": 	obj.objtype		:= amount;	break;
+		"color": 	obj.color		:= amount;      break;
+		"facing": 	obj.facing		:= amount;	break;
+		"warmode":	obj.warmode		:= amount;	break;
+		"gender":	obj.gender		:= amount;	break;
+		"truecolor":	obj.truecolor		:= amount;	break;
+		"hp":		obj.hp			:= amount;	break;
+		"mana":		obj.mana		:= amount;	break;
+		"stamina":	obj.stamina		:= amount;	break;
+		"strength":	obj.setstr( amount );			break;
+		"dexterity":	obj.setdex( amount );			break;
+		"intelligence":	obj.setint( amount );			break;
+		"strength_mod":	obj.strength_mod	:= amount;	break;
+		"intelligence_mod": obj.intelligence_mod := amount;	break;
+		"dexterity_mod": obj.dexterity_mod	:= amount;	break;
+		"ar_mod":	obj.ar_mod		:= amount;	break;
+		"graphic":	obj.graphic		:= amount;	break;
+		"usescript":	obj.usescript		:= amount_str;	break;
+		"equipscript":	obj.equipscript		:= amount_str;	break;
+		"unequipscript": obj.unequipscript	:= amount_str;	break;
+		"newbie":	obj.newbie		:= amount;	break;
+		"movable":	obj.movable		:= amount;	break;
+		"decayat":	obj.decayat		:= amount;	break;
+		"maxhp_mod":	obj.maxhp_mod		:= amount;	break;
+		"quality":	obj.quality		:= Cdbl( amount_str );	break;
+		"hitscript":	obj.hitscript		:= amount_str;	break;
+		"dmg_mod":	obj.dmg_mod		:= amount;	break;
+		"locked":	obj.locked		:= amount;	break;
+		"trueobjtype":	obj.trueobjtype		:= amount;	break;
+		"poisoned":	obj.SetPoisoned(amount);		break;
+		"paralyzed":	obj.SetParalyzed(amount);		break;
+		"hidden":	obj.hidden := amount;			break;
+		"concealed":	obj.concealed := amount;		break;
+		"frozen":	obj.frozen := amount;			break;
+		"stealthsteps":	obj.stealthsteps := amount;		break;
+		"squelched":	obj.squelch(amount);			break;
+		"name":		SetName( obj , amount_str );		break;
+		"lightlevel":	obj.setlightlevel( Cint(splited[1]) , Cint(splited[2]) );	break;
+		"script":	obj.script := amount_str;	break;
+		"name":		obj.name := amount_str;	break;
+		"desc":		obj.desc := amount_str;	break;
+		"controlscript":	obj.controlscript := amount_str;	break;
+		"walkonscript":	obj.walkonscript := amount_str;	break;
+		"invisible":	obj.invisible := amount;	break;
+		"title_guild":	obj.title_guild := amount_str;	break;
+		"title_prefix":	obj.title_prefix := amount_str;	break;
+		"title_suffix":	obj.title_suffix := amount_str;	break;
+		"title_race":	obj.title_race := amount_str;	break;
+		"buyprice":	obj.buyprice := amount;		break;
+		"criminal":	obj.SetCriminal(amount);	break;
+		"murderer":	obj.SetMurderer(amount);	break;
+		"hp_regen_rate":	obj.hp_regen_rate := amount;	break;
+		"mana_regen_rate":	obj.mana_regen_rate := amount;	break;
+		"stamina_regen_rate":	obj.stamina_regen_rate := amount;	break;
+                "kills":	SetObjProperty( obj, "Kills", amount );	break;
+		default:	retstr := 0;
+	endcase
+
+	return retstr;
+	
+endfunction
+
+Function LogEditing( Who, Item, Edited, EditAmt )
+
+    Var datafile := ReadConfigFile("logging_EditedRecords");
+
+    If( datafile == error )
+    SendSysMessage( Who, "File Error " + datafile.errortext );
+    Return 0;
+    Endif
+
+    If (datafile)
+
+    Var elem;
+    elem:={ };
+    elem.append({ "Staff Name",  Who.name });
+    elem.append({ "Staff Serial",  Hex( Who.serial) });
+    elem.append({ "Item Name", Item.name });
+    elem.append({ "Item Serial",    Hex( Item.serial ) });
+    elem.append({ "EditedProp",  Edited });
+    elem.append({ "PropAmount",  EditAmt });
+    elem.append({ "TimeOfEdit", GetDateString( polcore().systime ) });
+
+    AppendConfigFileElem( datafile, "ItemEdited", "" , elem );
+    UnloadConfigFile( datafile );
+    EndIf
+
+Endfunction

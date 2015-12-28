@@ -1,0 +1,35 @@
+//  CTF by Zulu  zulu@zuluhotel.com  created February 15, 2000
+//  update: November 14, 2000
+
+use os;
+use uo;
+include "ctf1";
+include "include/random";     
+include "include/attributes";
+
+program joinctfgate(who)
+
+if (who.title_race!="ZuluCTF")
+MoveCharacterToLocation(who,1417,1715,20);
+SendSysMessage(who,"You are not allowed to be here!",3,34);
+return;
+endif
+
+if (not GetGlobalProperty("#ctfgame"))
+SendSysMessage(who,"Capture the Flag has not started!",3,55);
+return;
+endif
+
+var ctfloc:=GetObjProperty(who,"ctfloc");
+
+if ((ctfloc==2 || ctfloc==3) && (GetGlobalProperty("#ctfgame")==0))
+SendSysMessage(who,"Capture the Flag has ended and a new game will start soon!",3,55);
+SetObjProperty(who,"ctfloc",1);
+endif
+
+if (ctfloc==3) SendSysMessage(who,"You have to wait 30 seconds!",3,34); return; endif
+if (ctfloc==2) SendSysMessage(who,"You have to wait to go back in!",3,34); return; endif
+
+putinplayer(who);
+
+endprogram

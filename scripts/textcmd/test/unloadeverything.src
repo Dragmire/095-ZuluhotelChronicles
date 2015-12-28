@@ -1,0 +1,183 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use cfgfile;
+Use polsys;
+Use os;
+Use uo;
+
+Program textcmd_mount( Who )
+
+    Var StartTime := PolCore().systime;
+
+    Var CONFIG_FILES := {
+    ":*:animxlate",
+    ":*:armrdesc",
+    ":*:armrzone",
+    ":*:bannedips",
+    ":*:boats",
+    ":*:bowcraft",
+    ":*:circles",
+    ":*:cloth",
+    ":*:cmds",
+    ":*:combat",
+    ":*:console",
+    ":*:corpses",
+    ":*:days",
+    ":*:dyeitems",
+    ":*:equip",
+    ":*:food",
+    ":*:golocs",
+    ":*:guardedareas",
+    ":*:incognito",
+    ":*:innlocation",
+    ":*:itemdesc",
+    ":*:menus",
+    ":*:movecost",
+    ":*:mrcspawn",
+    ":*:multis",
+    ":*:names",
+    ":*:nlootgroup",
+    ":*:npcdesc",
+    ":*:RankingList",
+    ":*:repsys",
+    ":*:servers",
+    ":*:servspecopt",
+    ":*:sets",
+    ":*:skills",
+    ":*:songs",
+    ":*:speechgroup",
+    ":*:spells",
+    ":*:starteqp",
+    ":*:startloc",
+    ":*:teleporters",
+    ":*:traveling",
+    ":*:use_stuff",
+    ":*:watch",
+    ":*:wepndesc",
+    ":*:xlate",
+    ":aspoxitems:itemdesc",
+    ":botanik:itemdesc",
+    ":botanik:tree",
+    ":chests:itemdesc",
+    ":chests:lockpicking",
+    ":commcrystals:itemdesc",
+    ":decorations:itemdesc",
+    ":delayfixes:itemdesc",
+    ":doors:itemdesc",
+    ":doors:door",
+    ":dundee:itemdesc",
+    ":dundee:dragonspeak",
+    ":dundee:codex",
+    ":dyteitems:itemdesc",
+    ":dyteitems:dyeitems",
+    ":guildstone:itemdesc",
+    ":lighting:itemdesc",
+    ":lockboxes:itemdesc",
+    ":omnibind:itemdesc",
+    ":omnibind:binding",
+    ":races:itemdesc",
+    ":runebook:itemdesc",
+    ":shilitems:itemdesc",
+    ":shilitems:usescriptdesc",
+    ":training:itemdesc",
+    ":treasuremap:itemdesc",
+    ":treasuremap:guardians",
+    ":treasuremap:treasure",
+    ":ulitems:itemdesc",
+    ":traps:itemdesc",
+    ":zulugames:itemdesc",
+    ":artificier:itemdesc",
+    ":artificier:rituals",
+    ":earth:shapeshift",
+    ":holybook:itemdesc",
+    ":necro:itemdesc",
+    ":songbook:itemdesc",
+    ":zulumagic:itemdesc",
+    ":alchemy:itemdesc",
+    ":alchemy:alchemy",
+    ":alchemyplus:itemdesc",
+    ":alchemyplus:alchemyplus",
+    ":blacksmithy:itemdesc",
+    ":blacksmithy:blacksmithy",
+    ":camping:itemdesc",
+    ":carpentry:itemdesc",
+    ":carpentry:carpentry",
+    ":cartography:itemdesc",
+    ":cooking:cooking",
+    ":cooking:itemdesc",
+    ":cooking:grinding",
+    ":fishing:itemdesc",
+    ":fishing:sosarea",
+    ":healing:healing",
+    ":healing:itemdesc",
+    ":herding:itemdesc",
+    ":inscription:inscription",
+    ":lumberjacking:itemdesc",
+    ":mining:itemdesc",
+    ":musicianship:itemdesc",
+    ":snooping:itemdesc",
+    ":snooping:stealme",
+    ":stealing:itemdesc",
+    ":tailoring:tailoring",
+    ":tailoring:itemdesc",
+    ":tinkering:itemdesc",
+    ":tinkering:tinker",
+    ":tracking:tracking",
+    ":areas:itemdesc",
+    ":areas:areas",
+    ":auction:itemdesc",
+    ":boat:itemdesc",
+    ":combat:itemdesc",
+    ":combat:enchantableitems",
+    ":combat:hitscriptdesc",
+    ":combat:modenchantdesc",
+    ":combat:onhitscriptdesc",
+    ":donators:itemdesc",
+    ":donators:npcdesc",
+    ":farming:itemdesc",
+    ":farming:plants",
+    ":hooks:attributes",
+    ":hooks:checkskill",
+    ":hooks:skillsdef",
+    ":hooks:syshook",
+    ":hooks:uoclient",
+    ":hooks:uoskills",
+    ":hooks:vitals",
+    ":housing:itemdesc",
+    ":loot:itemdesc",
+    ":spawnpoint:itemdesc",
+    ":spawnregion:spawngroups"
+    };
+
+    Foreach Effing_CFG in CONFIG_FILES
+    UnloadConfigFile( Effing_CFG );
+    Endforeach
+    
+    Var i;
+    For( i := 0; i <= CONFIG_FILES.size(); i := i + 1 )
+    UnloadConfigFile( CONFIG_FILES[i] );
+    Endfor
+    
+    Unload_Scripts();
+    ReloadConfiguration();
+    
+    Foreach thing in ListObjectsInBox( 0, 0, -128, 6142, 4094, 128 )
+    If( thing.npctemplate )
+    RestartScript( thing );
+    Endif
+    SleepMS( 10 );
+    Endforeach
+    
+    Var EndTime := PolCore().systime;
+    
+    Var CompletionTime := ( EndTime - StartTime );
+    
+    SendSysMessage( Who, "Took: " + CompletionTime );
+
+Endprogram

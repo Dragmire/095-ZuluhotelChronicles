@@ -1,0 +1,222 @@
+#
+#  GUILDS.TXT: Guild Data
+#
+
+General
+{
+	NextGuildId	10
+}
+
+Guild
+{
+	GuildId	1
+	Member	0x367c
+	Member	0x3770
+	Member	0x38bd
+	Member	0x3a7f
+	Member	0x3c5c
+	Member	0x5b6d
+	Member	0x8600
+	CProp	abrvtime i17128474
+	CProp	gc a1:S4:NONE
+	CProp	gm i13948
+	CProp	guildabv s177
+	CProp	guildicon i5545
+	CProp	guildname sSpice Girls
+	CProp	movetime i18295336
+	CProp	nametime i17984557
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	2
+	Member	0x4480
+	Member	0x4aa0
+	Member	0x4c5b
+	Member	0x4da0
+	Member	0x4db0
+	Member	0x4e24
+	Member	0x507c
+	Member	0x50e9
+	Member	0x582b
+	Member	0x5be2
+	Member	0x5c2d
+	CProp	abrvtime i17142551
+	CProp	gc a1:S4:NONE
+	CProp	gm i22571
+	CProp	guildabv svVv
+	CProp	guildicon i5545
+	CProp	guildname sveni Vidi vici
+	CProp	movetime i17988451
+	CProp	nametime i17142547
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	3
+	Member	0x3682
+	Member	0x3685
+	Member	0x36bf
+	Member	0x36e6
+	Member	0x36f9
+	Member	0x3768
+	Member	0x378b
+	Member	0x3c4c
+	Member	0x3c4d
+	Member	0x3dae
+	Member	0x411a
+	Member	0x440a
+	Member	0x4e13
+	Member	0x523a
+	Member	0x530e
+	Member	0x5e2d
+	Member	0x7ddb
+	Member	0x12028
+	Member	0x13d42
+	CProp	abrvtime i17375757
+	CProp	gc a11:S20:zhcroa.proboards.comS1:.S70:Remember to set your guildchat to 'Talk to own guild' by typing .c andS27:making the correct choices.S1:.S71:Combat characters might want to 'toggle off' their guild titles becauseS68:it tends to make you a bigger target for PKs if you're ever involvedS64:in PvP.  [RoA] is much a much smaller target than the full guildS25:name [Realm of Anchises].S1:.S64:Register and visit the guild forums often (zhcroa.proboards.com)
+	CProp	gm i13954
+	CProp	guildabv sRoA
+	CProp	guildicon i5557
+	CProp	guildname sRealm of Anchises
+	CProp	movetime i18219187
+	CProp	nametime i17375752
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	5
+	Member	0x3681
+	Member	0x38dc
+	Member	0x38e2
+	Member	0x39f9
+	Member	0x3a4a
+	Member	0x3b74
+	Member	0x3b9e
+	Member	0x3bcc
+	Member	0x3be6
+	Member	0x3ee0
+	Member	0x4344
+	Member	0x462e
+	CProp	abrvtime i17461315
+	CProp	gc a1:S4:NONE
+	CProp	gm i14922
+	CProp	guildabv sTAA
+	CProp	guildicon i5545
+	CProp	guildname sThe Anarchy Angels
+	CProp	movetime i17461313
+	CProp	nametime i18127322
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	6
+	Member	0x367f
+	Member	0x3680
+	Member	0x36dc
+	Member	0x3a22
+	Member	0x3a59
+	Member	0x3a9e
+	Member	0x5c79
+	Member	0x7dfe
+	Member	0xca8b
+	CProp	abrvtime i17735729
+	CProp	gc a1:S4:NONE
+	CProp	gm i13952
+	CProp	guildabv sToP
+	CProp	guildicon i5545
+	CProp	guildname sThe Only Pain
+	CProp	movetime i17735722
+	CProp	nametime i17735722
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	7
+	Member	0x37e6
+	Member	0x38da
+	Member	0x3917
+	Member	0x539f
+	Member	0x5677
+	Member	0x5682
+	Member	0x5977
+	Member	0x5ff5
+	Member	0x65bd
+	Member	0x6775
+	Member	0x6804
+	Member	0x6fa6
+	Member	0x7031
+	Member	0x706a
+	Member	0x8f83
+	Member	0x927e
+	Member	0xa66f
+	Member	0xd30a
+	Member	0xf29f
+	Member	0xf990
+	Member	0x11a9d
+	Member	0x11f41
+	Member	0x144b5
+	CProp	abrvtime i17765503
+	CProp	gc a1:S4:NONE
+	CProp	gm i22146
+	CProp	guildabv sOLN
+	CProp	guildicon i5557
+	CProp	guildname sOminous Latin Name
+	CProp	movetime i17765494
+	CProp	nametime i17765494
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	8
+	Member	0x6206
+	Member	0x7421
+	Member	0x7de3
+	Member	0x846d
+	Member	0x8aea
+	Member	0x9113
+	Member	0xe126
+	Member	0xf4a3
+	CProp	abrvtime i18083333
+	CProp	gc a1:S4:NONE
+	CProp	gm i25094
+	CProp	guildabv sSaS
+	CProp	guildicon i5545
+	CProp	guildname sSaints and Sinners
+	CProp	movetime i18083324
+	CProp	nametime i18083324
+	CProp	recruits a1:S4:NONE
+}
+
+Guild
+{
+	GuildId	9
+	Member	0x367a
+	Member	0x367b
+	Member	0x36b2
+	Member	0x3975
+	Member	0x3d17
+	Member	0x44ae
+	Member	0x4f62
+	Member	0x75b3
+	Member	0x857a
+	Member	0xb096
+	Member	0xedbb
+	Member	0x12b27
+	CProp	abrvtime i18358658
+	CProp	gc a1:S4:NONE
+	CProp	gm i17582
+	CProp	guildabv sI
+	CProp	guildicon i5585
+	CProp	guildname sInvincible
+	CProp	movetime i18358652
+	CProp	nametime i18358652
+	CProp	recruits a1:S4:NONE
+}
+

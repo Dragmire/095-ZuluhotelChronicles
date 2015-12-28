@@ -1,0 +1,13 @@
+Use uo;
+
+
+Program TextCMD_EraseGlobalProperty( who, propertyname )
+
+    Var res := EraseGlobalProperty( propertyname );
+    If( res != error )
+    SendSysMessage( who, "Property " + propertyname + " erased." );
+    Else
+    SendSysMessage( who, "Error erasing property: " + res.errortext );
+    Endif
+
+Endprogram

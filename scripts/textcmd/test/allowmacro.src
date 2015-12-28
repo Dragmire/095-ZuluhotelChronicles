@@ -1,0 +1,16 @@
+use uo;
+use os;
+
+include "include/objtype";
+include "include/yesno";
+
+program macro( who )
+
+
+
+	Var tgt := Target( who );
+
+	SetObjProperty( tgt, "#allowmacro", 1 );
+
+
+endprogram

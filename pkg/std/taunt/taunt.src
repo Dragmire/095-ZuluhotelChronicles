@@ -1,0 +1,59 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/client";
+include "include/attributes";
+include "include/myutil";
+include "include/eventid";
+include "ai/main/npcinfo";
+
+program taunt( who )
+  
+	if (CInt(GetObjProperty(who, "#taunt")) > ReadGameClock())
+		SendSysMessage(who, "Too soon!"); return;
+	endif
+
+	SetObjProperty(who, "#taunt",ReadGameClock()+10);
+
+	SendSysMessage( who, "Taunt what?" );
+	var subject := Target(who, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+	if (!subject || who.serial==subject.serial) return; endif
+
+	if (!CheckSkill(who,SKILLID_ENTICEMENT,-1,200) )
+		SendSysMessage( who, "They don't seem very impressed." );
+		return;
+	endif
+
+	var range := 15 - CInt(GetAttribute(who,ATTRIBUTEID_ENTICEMENT)/10);
+	if (range < 2) range := 2; endif
+
+	var ev := {};
+	ev.+source := who;
+	ev.+type := EVID_PEACEMADE;
+
+	//first taunt the target:
+	if (CheckSkill(who,SKILLID_ENTICEMENT,-1,100) )
+		ev.type := EVID_PEACEMADE;
+		SendEvent(subject,ev);
+	endif
+	ev.type := SYSEVENT_DAMAGED;
+	SendEvent(subject,ev);
+
+	//then taunt everything around it, because u suk
+	foreach mob in ListMobilesInLineOfSight( subject, range )
+		if (	(IsHostile(mob)) && (mob.warmode) )
+			if (CheckSkill(who,SKILLID_ENTICEMENT,-1,100) )
+				ev.type := EVID_PEACEMADE;
+				SendEvent(mob,ev);
+			endif
+			ev.type := SYSEVENT_DAMAGED;
+			SendEvent(mob,ev);
+		endif
+	endforeach
+
+	Detach();
+	sleep(10);
+	EraseObjProperty(who, "#taunt");
+
+endprogram

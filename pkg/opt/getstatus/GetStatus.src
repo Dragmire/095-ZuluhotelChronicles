@@ -1,0 +1,83 @@
+
+
+
+
+use os;
+use uo;
+use file;
+use util;
+use basic;
+use basicio;
+
+program Install()
+
+	Print("Loaded: GetStatus...");
+	return 1;
+
+endprogram
+
+const RQST_TYPE_STATS := 0x04;
+const RQST_TYPE_SKILLS := 0x05;
+const OFFSET_REQUEST_TYPE := 0x05;
+const OFFSET_MOB_SERIAL := 0x06;
+
+exported function OnGetStatus(mobile, byref packet)
+
+	var request_type := packet.GetInt8(OFFSET_REQUEST_TYPE);
+
+	case ( request_type )
+		RQST_TYPE_STATS:
+			var mob_serial := packet.GetInt32(OFFSET_MOB_SERIAL);
+			var mob_lookup := SystemFindObjectBySerial(mob_serial);
+			if ( mob_lookup )
+				if ( mobile.Serial != mob_lookup.Serial )
+					if ( mob_lookup.Concealed )
+						if ( mobile.CMDLevel )
+							return 0;
+						else
+							UUOLog(mobile, mob_lookup, "Defender: Concealed");
+							return 1;
+						endif
+					elseif ( mob_lookup.Hidden )
+						if ( mobile.CMDLevel )
+							return 0;
+						else
+							UUOLog(mobile, mob_lookup, "Defender: Hidden");
+							return 1;
+						endif
+					elseif ( Distance(mobile, mob_lookup) > 23 )
+						if ( mobile.CMDLevel )
+							return 0;
+						else
+							UUOLog(mobile, mob_lookup, "Defender Distance: "+Distance(mobile, mob_lookup));
+							return 1;
+						endif
+					endif
+				endif
+			endif
+		default:
+			return 0;
+	endcase
+
+	return 0;
+
+endfunction
+
+function UUOLog(attacker, defender, description)
+
+	if ( defender.IsA(POLCLASS_NPC) )
+		return 1;
+	endif
+
+	var date := StrFormatTime("%m/%d/%y at %I:%M:%S %p");
+	var text_log := Array{};
+	text_log.Append("UUOGetStatus - "+date);
+	text_log.Append("	Attacker	"+attacker.name+" ["+attacker.acctname+"]"+" ["+attacker.ip+"]");
+	text_log.Append("	Defender	"+defender.name+" ["+defender.acctname+"]"+" ["+defender.ip+"]");
+	text_log.Append("	Action		"+description);
+	text_log.Append("");
+	text_log.Append("");
+
+	var result := AppendToFile(":UUOGetStatus:UUOGetStatus.txt", text_log);
+
+endfunction

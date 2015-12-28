@@ -1,0 +1,75 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/damages";
+include "include/random";
+include "include/client";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_HEAL;
+const SPELL_EFFECT_ID		:= FX_SPELL_HEAL;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_HEAL;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_HEAL;
+
+program cast_heal( parms )
+
+	var circle := 1;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		cast_on := CanTargetSpell(caster, circle, TGTOPT_NEUTRAL + TGTOPT_CHECK_LOS );
+		if (!cast_on)
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		Detach();
+		cast_on := Reflected( caster, cast_on, circle );
+	endif
+		PlayObjectCenteredEffect(cast_on,
+                                         SPELL_EFFECT_ID,
+                                         SPELL_EFFECT_SPEED,
+                                         SPELL_EFFECT_LOOP);
+	PlaySoundEffect( cast_on, SFX_SPELL_HEAL );
+
+	var die_string := "3d2";
+	var healed := RandomDiceStr( die_string );
+	var max := 20;
+	if( GetObjProperty( caster, CLASSEID_MAGE ) )
+		max := CInt( max * CLASSE_BONUS );
+	endif
+
+	healed := ModifyWithMagicEfficiency( caster, healed + CInt( GetEffectiveSkill(caster, SKILLID_MAGERY)/20)+5 );
+	if (healed > max)
+		healed := max;
+	endif
+
+	var bonus := GetObjProperty( cast_on, "HealingIncrease" );
+	if( bonus )
+		healed := healed + CInt(healed * bonus * 10 / 100);
+	endif
+
+	if( GetObjProperty(cast_on, "Type" ) == "Undead" )
+		ApplyTheDamage( cast_on, caster, healed, DMGID_MAGIC );
+	else
+		HealTheDamage( cast_on, healed );
+		SendSysMessage( caster, "You healed " + healed + " damage." );
+	endif
+
+endprogram

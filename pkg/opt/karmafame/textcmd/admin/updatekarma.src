@@ -1,0 +1,14 @@
+use uo;
+
+include "../../karmafame";
+
+program textcmd_updatekf( who )
+
+	var tgt := TargetCoordinates( who );
+	if( tgt.mobile )
+		var mob := tgt.mobile;
+		SetNewNotoName( mob );
+		SendSysMessage( who, "Setting " + mob.name + " right title: " + mob.title_prefix + " K:"+ GetKarma( mob ));
+	endif
+
+endprogram

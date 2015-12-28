@@ -1,0 +1,77 @@
+////////////////////////////////////////////////////////////////////
+////	This script is responsible to managing groups issues,	////
+////	  like group number and template.			////
+////	This file is highly integrated with others in the pkg,	////
+////	  so try to keep it updated.				////
+////	Bug reports, questions on its functionality,		////
+////		Adriano Iank, <aiank@convoy.com.br>		////
+////////////////////////////////////////////////////////////////////
+
+use datafile;
+use uo;
+use os;
+use util;
+include "specialeventid";
+
+var groups array;
+
+program groupmanager()
+
+	SetGlobalProperty("#groupmanagerpid", getpid());
+	load_groups();
+
+	var ev;
+	Syslog("[Group manager] Listening for events.");
+	
+	EnableEvents( EV_TEMPLATE+EV_UPDATE );
+	
+	while (1)
+		ev := wait_for_event(5);
+		if(ev)
+			case(ev.type)
+				EV_TEMPLATE: answer_request(ev);
+				EV_UPDATE: load_groups();
+			endcase
+		endif 
+	endwhile
+	
+endprogram
+
+function load_groups()
+
+	Syslog("[Group Manager] Reading data base.");
+	set_critical(1);
+	
+	local groupfile := OpenDataFile("datagroups");
+	local keys := groupfile.Keys();
+	local group := struct;
+	group.+template;
+	
+	foreach key in keys
+		group.template := groupfile.FindElement(key).GetProp("spawn");
+		groups[key] := group;
+	endforeach
+	
+	set_critical(0);
+	
+endfunction
+
+function answer_request(event)
+
+	Syslog("[Group Manager] Request for group #"+event.text+" received from : "+event.source);
+	local ev := struct;
+	ev.+type;
+	ev.+template;
+	
+	local group := Cint(event.text);
+	local pos := len(groups[group].template);
+	pos := RandomInt(pos) + 1;
+	
+	Syslog("[Group Manager] Template chosen was "+groups[group].template[pos]);
+	local process := GetProcess(Cint(event.source));
+	ev.type := EV_TEMPLATE;
+	ev.template := groups[group].template[pos];
+	
+	process.SendEvent(ev);
+	
+endfunction

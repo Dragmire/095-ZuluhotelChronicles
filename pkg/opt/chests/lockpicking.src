@@ -1,0 +1,109 @@
+// Locking Spawning Chest system  version .1
+// by Zulu (zulu@zuluhotel.com)   July 5, 2000
+
+use uo;
+use os;
+use cfgfile;
+
+include "include/chests";
+include "include/starteqp";
+include "include/skillpoints";
+
+program pick( me, lockpick )
+
+	if (!ReserveItem(lockpick)) return; endif
+
+	SendSysMessage(me, "Pick what?");
+	var chest := Target(me);
+	if (!chest) return; endif
+
+	if (!ReserveItem(chest)) return; endif
+
+	if ( (not Accessible(me,chest)) || (not Accessible(me,lockpick)) )
+		SendSysMessage(me, "Can't reach it!");
+		return;
+	endif
+
+	if (!chest.locked)
+		SendSysMessage(me,"That doesn't appear to be locked.");
+		return;
+	endif
+
+	if ( Distance(me, chest) > 2 )
+		SendSysMessage(me, "Can't reach it!");
+		return;
+	endif
+
+	if (GetObjProperty(chest, "#U"))
+        	if (GetObjProperty(chest, "#U") > ReadGameClock())
+                	SendSysMessage(me,"You must wait to pick this lock!");
+                	return;
+        	endif
+	endif
+
+	if (!canpick(chest))
+        	SendSysMessage(me,"The Gods frown on picking this door!");
+        	PlayLightningBoltEffect(me);
+        	return;
+	endif
+
+	var lvl:=finddiff(chest);
+
+	if(!lvl)
+		SendSysMessage(me,"You have no chance of picking that lock!");
+		return;
+	endif
+
+	if (LockPickTheThing(me,chest,lvl,lockpick))
+		if (TypeOf(GetObjProperty(chest,"spawnchest"))=="Integer")
+			SpawnTheChest(chest);
+		endif
+	endif
+
+endprogram
+
+function SpawnTheChest(chest)
+
+	var level:=CInt(GetObjProperty(chest,"spawnchest"));
+
+	if(level)
+	  MakeLoot(chest,level+109);
+	  addchest(chest);
+	endif
+
+endfunction
+
+function LockPickTheThing(me,chest,lvl,lockpick)
+
+	PlaySoundEffect(chest,SFX_242);
+	sleep(2);
+		lvl:=CInt(lvl/2);
+
+	var mobs:=ListHostiles(me,4);
+	if (len(mobs))
+		SendSysMessage(me,mobs[1].name+" breaks your concentration!");
+		return 0;
+	endif
+
+	var skillpoints := get_default_points(SKILLID_LOCKPICKING);
+
+	if ( CheckSkill(me,SKILLID_LOCKPICKING,lvl,skillpoints) )
+		PlaySoundEffect(chest,SFX_200);
+		PrintTextAbovePrivate(chest,"*Unlocked!*",me);
+		SetObjProperty(chest, "L", me.name);
+		chest.locked := 0;
+		return 1;
+	else
+		PrintTextAbovePrivate(chest,"You fail to pick the lock.",me);
+		SetObjProperty(me, "#U", ReadGameClock() + 30);
+		if (!CheckSkill(me,SKILLID_LOCKPICKING,lvl,skillpoints) )
+			PlaySoundEffect(me,0xef);
+			SendSysMessage(me,"Your pick breaks!");
+			SubtractAmount(lockpick,1);
+		else
+			PlaySoundEffect(chest,SFX_11F);
+		endif
+		return 0;
+	endif
+
+endfunction

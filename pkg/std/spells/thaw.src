@@ -1,0 +1,13 @@
+use uo;
+use os;
+program thaw(parms);
+
+var who := parms[1];
+var duration := CInt(parms[2]);
+
+
+while (who.frozen)
+        sleep(duration);
+        who.frozen := 0;
+endwhile
+endprogram

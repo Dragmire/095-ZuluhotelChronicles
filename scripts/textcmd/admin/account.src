@@ -1,0 +1,50 @@
+use os;
+use uo;
+
+program textcmd_account( who, text )
+
+    var params := SplitWords( text );
+
+    if (len(params)<1)
+        SendSysMessage( who, ".account <accountname> ban|unban|enable|disable" );
+        return;
+    endif
+
+    var acct := FindAccount( params[1] );
+    if ( !acct )
+        SendSysMessage( who, "No such account." );
+        return;
+    endif
+
+    var status1,status2;
+
+    if (len(params) < 2)
+        if ( acct.enabled == 1 )
+         status1:="enabled";
+        else
+         status1:="disabled";
+	endif
+        if ( acct.banned == 1 )
+         status2:="baned";
+        else
+         status2:="unbaned";
+	endif
+	SendSysMessage( who, "Account '"+acct.name+"' is "+status1+" and "+status2+"." );
+        return;
+    endif
+
+    if ( params[2]==lower("ban") )
+    acct.ban();
+    SendSysMessage( who, "Account '"+acct.name+"' banned." );
+    elseif ( params[2]==lower("unban") )
+    acct.unban();
+    SendSysMessage( who, "Account '"+acct.name+"' unbanned." );
+    elseif ( params[2]==lower("enable") )
+    acct.enable();
+    SendSysMessage( who, "Account '"+acct.name+"' Enabled." );
+    elseif ( params[2]==lower("disable") )
+    acct.disable();
+    SendSysMessage( who, "Account '"+acct.name+"' Disabled." );
+    endif
+
+endprogram

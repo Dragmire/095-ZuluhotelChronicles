@@ -1,0 +1,105 @@
+///////////////////
+//  This program is called when you double click a beehive.  It produces honey and wax
+///////////////////
+
+use uo;
+use os;
+
+include "include/yesno";
+include "include/client";
+
+const ITEM_WAX			:= 0x1422;
+const ITEM_HONEY		:= 0x09ec;
+const ITEM_SWARM		:= 0x091b;
+const SOUND_SCRUNCH		:= 0x58;
+
+program harvest_honey (character, beehive)
+
+
+	//this is the amount of honey and wax that is harvested on each successful attempt
+	var harvest_wax_per_try := 5;
+	var harvest_honey_per_try := 5;
+
+	var hive_wax_amount := GetObjProperty(beehive, "Wax");
+	var hive_honey_amount := GetObjProperty(beehive, "Honey");
+
+	//if there's no honey or wax, ask the user if they want to destroy the hive
+	if (hive_wax_amount < 1 && hive_honey_amount < 1)
+		SendSysMessage(character, "The hive is empty.");
+		SendSysMessage(character, "Do you want to destroy the beehive?");
+
+		if (YesNo(character,"Destroy?"))
+			CreateItemAtLocation(beehive.x, beehive.y, beehive.z, ITEM_SWARM, 1);
+			DestroyItem(beehive);
+			SendSysMessage(character, "You destroy the hive.  The bees are very angry.");
+			return;
+		else
+			return;
+		endif
+	else
+		SendSysMessage(character, "You begin harvesting.");
+		var characterx := character.x;
+		var charactery := character.y;
+		repeat
+
+			//action, sound, and time delay
+			PlaySoundEffect( character, SOUND_SCRUNCH );
+			PerformAction( character, ANIM_BOW );
+			sleep(2);
+			PlaySoundEffect( character, SOUND_SCRUNCH );
+			PerformAction( character, ANIM_BOW );
+			sleep(3);
+	
+			// if they fail they can still get stuff, but bees get angry :P
+			if ( !CheckSkill(character, SKILLID_ANIMALLORE, -1, 0) )
+				SendSysMessage(character, "The bees get angry for your intrusion!");
+				CreateItemAtLocation(beehive.x, beehive.y, beehive.z, ITEM_SWARM, 1);
+			endif
+
+			//do a skill check
+			if ( CheckSkill(character, SKILLID_ANIMALLORE, -1, 0) )
+
+				//if it was successful, give the character some wax, decrease the wax counter set the hive
+				if (hive_wax_amount < harvest_wax_per_try)
+					CreateItemInBackpack(character, ITEM_WAX, hive_wax_amount);
+					hive_wax_amount := 0;
+					SetObjProperty(beehive, "Wax", 0);
+				else
+					CreateItemInBackpack(character, ITEM_WAX, harvest_wax_per_try);
+					hive_wax_amount := hive_wax_amount - harvest_wax_per_try;
+					SetObjProperty(beehive, "Wax", hive_wax_amount );
+				endif
+
+				//do the same for honey
+				if (hive_honey_amount < harvest_honey_per_try)
+					CreateItemInBackpack(character, ITEM_HONEY, hive_honey_amount);
+					hive_honey_amount := 0;
+					SetObjProperty(beehive, "Honey", 0);
+				else
+					CreateItemInBackpack(character, ITEM_HONEY, harvest_honey_per_try);
+					hive_honey_amount := hive_honey_amount - harvest_honey_per_try;
+					SetObjProperty(beehive, "Honey", hive_honey_amount);
+				endif
+
+				//nice message
+				SendSysMessage(character, "You place the items in your backpack.");
+
+				//if we're out of both wax and honey, send a mesage and end
+				if (hive_wax_amount < 1 && hive_honey_amount < 1)
+					SendSysMessage(character, "The hive is empty.  Harvest again to destroy.");
+					return;
+				endif
+
+				//time delay
+				PlaySoundEffect( character, SOUND_SCRUNCH );
+				PerformAction( character, ANIM_BOW );
+				sleep(5);
+			else
+				SendSysMessage(character, "You fail to get any honey or wax.");
+
+				//stuff
+			endif
+		until (character.x != characterx || character.y != charactery);
+		SendSysMessage(character, "You stop harvesting.");
+	endif
+endprogram

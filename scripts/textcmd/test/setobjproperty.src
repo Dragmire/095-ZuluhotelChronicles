@@ -1,0 +1,165 @@
+use uo;
+
+program addobjproperty( who , text )
+
+	var parms := SplitWords( text );
+	if( !len(parms) )
+		SendSysMessage( who , "Structure is : .setobjproperty <prop_name> <prop_type> <prop_val>" );
+		return;
+	endif
+
+	var prop_name := parms[1];
+	var prop_type	:= parms[2];
+	var prop_val	:= parms[3];
+	
+	if( !prop_name or !prop_type )
+		SendSysMessage( who , "Structure is : .setobjproperty <prop_name> <prop_type> <prop_val>" );
+		return;
+	endif
+
+	if( !prop_val and prop_type == "serial" )
+		SendSysMessage( who , "Set the serial of who/what?" );
+		var object2 := Target( who );
+		if( !object2 )
+			SendSysMessage( who , "You must target the object from which you want to use the serial number." );
+			return;
+		endif
+		
+		prop_val := object2.serial;
+		if( !prop_val )
+			SendSysMessage( who , "That don't have a serial number." );
+			return;
+		endif
+		
+	elseif( !prop_val and prop_type == "array" )
+		prop_val := ProcessArrayProp( who );
+		if( !prop_val )
+			SendSysMessage( who , "That isn't a valid array." );
+			return;
+		endif
+	endif
+	
+	if( !prop_val )
+		SendSysMessage( who , "Structure is : .setobjproperty <prop_name> <prop_type> <prop_val>" );
+		return;
+	endif
+	
+	var i := 4;
+	case( prop_type )
+		"int":		prop_val := Cint( prop_val );
+				break;
+			
+		"dbl":		prop_val := Cdbl( prop_val ); 
+				break;
+			
+		"string":	while( parms[i] )
+					prop_val := prop_val + " " + parms[i];
+					i := i + 1;
+				endwhile
+				break;
+		
+		"hex":		prop_val := Hex( prop_val );
+				break;
+				
+		"serial":	break;
+		
+		"array":	break;
+		
+		default:	SendSysMessage( who , "The valid prop_types are 'int' , 'dbl' , 'string' , 'hex' , 'serial' and 'array'." );
+				return;
+	endcase
+		
+	SendSysMessage( who , "Set the property on what?" );
+	var object := Target( who );
+
+	if( prop_val )
+		if( SetObjProperty( object , prop_name , prop_val ) )
+			SendSysMessage( who , "Property " + prop_name + " was successfully set to " + prop_val + " as a " + prop_type + " on the target." );
+		else
+			SendSysMessage( who , "Couldn't write the cprop." );
+		endif
+	endif
+         
+endprogram
+
+
+function ProcessArrayProp( who )
+
+	var array_length;
+	var counter  := 1;
+	var prop_val := {};
+	
+	array_length := Cint( RequestInput( who , who.backpack , "What is the length of the array?" ) );
+	if( !array_length )
+		return 0;
+	endif
+	
+	while( counter <= array_length )
+		var data	:= RequestInput( who , who.backpack , "What is the data for the element #" + counter + "?" );
+		var splited	:= Splitwords( data );
+		var type	:= splited[1];
+		var val	:= splited[2];
+
+		if( !type )
+			SendSysMessage( who , "The valid prop_types are 'int' , 'dbl' , 'string' , 'hex' , 'serial' and 'array'." );
+			continue;
+		endif
+
+		if( !val and type == "serial" )
+			SendSysMessage( who , "Set the serial of who/what?" );
+			var object := Target( who );
+			if( !object )
+				SendSysMessage( who , "You must target the object from which you want to use the serial number." );
+				continue;
+			endif
+		
+			val := object.serial;
+			if( !val )
+				SendSysMessage( who , "That don't have a serial number." );
+				continue;
+			endif
+		elseif( !val and type == "array" )
+			val := ProcessArrayProp( who );
+			if( !val )
+				SendSysMessage( who , "That isn't a valid array." );
+				continue;
+			endif
+		endif
+	
+		if( !val )
+			SendSysMessage( who , "Structure is : <type> <val>" );
+			continue;
+		endif
+	
+		var i := 3;
+		case( type )
+			"int":		val := Cint( val );
+					break;
+			
+			"dbl":		val := Cdbl( val ); 
+					break;
+				
+			"string":	while( splited[i] )
+						val := val + " " + splited[i];
+						i := i + 1;
+					endwhile
+					break;	
+			
+			"hex":		val := Hex( val );
+					break;
+					
+			"serial":	break;
+			
+			"array":	break;
+			
+			default:	SendSysMessage( who , "The valid types are 'int' , 'dbl' , 'string' , 'hex' , 'serial' and 'array'." );
+					continue;
+		endcase
+		
+		prop_val.append( val );
+		counter := counter + 1;
+	endwhile
+	
+	return prop_val;
+	
+endfunction

@@ -1,0 +1,187 @@
+use cfgfile;
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/classes";
+include "include/eventid";
+include "include/client";
+include "include/random";
+
+const SPELL_EFFECT_TYPE_MOVING 	:= MOVING_SPELL_SPELLBIND;
+const SPELL_EFFECT_ID		:= FX_SPELL_SPELLBIND;
+const SPELL_EFFECT_SPEED	:= SPEED_SPELL_SPELLBIND;
+const SPELL_EFFECT_LOOP		:= LOOP_SPELL_SPELLBIND;
+
+
+program cast_spellbind( parms )
+
+	var circle := GetCircle( SPELLID_SPELLBIND );
+	var plane := NECRO;
+	var caster;
+	var cast_on;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		cast_on := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		if( TryToCast( caster, SPELLID_SPELLBIND ) != SUCCESS )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+		SendSysMessage( caster, "What do you wish to take the control of?" );
+		cast_on := CanTargetSpell( caster, circle, TGTOPT_CHECK_LOS + TGTOPT_HARMFUL );
+		if( !cast_on )
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+	if( !fromhit )
+		EraseObjProperty( caster, "#Casting" );
+		cast_on := Reflected( caster, cast_on, circle );
+	else
+		PlayObjectCenteredEffect( cast_on,
+					  SPELL_EFFECT_ID,
+					  SPELL_EFFECT_SPEED,
+					  SPELL_EFFECT_LOOP );
+	endif
+
+	PlaySoundEffect( cast_on, SFX_SPELL_SPELLBIND );
+
+	var conf	:= ReadConfigFile("::npcdesc");
+	var elem	:= FindConfigElem(conf, cast_on.npctemplate);
+	if (!elem)
+		SendSysMessage(caster, "You cannot take the control of this!");
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+	
+	var difficulty := GetObjProperty( cast_on,"tamableAt" );
+	if( !difficulty )
+		difficulty := elem.tameskill;
+		if( !difficulty )
+			difficulty := CInt( GetStrength(cast_on) / 2 );
+			if( CInt( GetIntelligence(cast_on) / 2 ) > difficulty )
+				difficulty := CInt( GetIntelligence(cast_on) / 2 );
+			endif
+			if( CInt( GetDexterity(cast_on) / 2 ) > difficulty )
+				difficulty := CInt( GetDexterity(cast_on) / 2 );
+			endif
+		endif
+	endif
+
+	var untamable := GetObjProperty( cast_on, "untamable" );
+	if( (!difficulty) || untamable || (elem.Privs == "invul") )
+	  	SendSysMessage(caster, "You can't take the control of that!");
+	  	EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var magery		:= ModifyWithMagicEfficiency( caster, GetEffectiveSkill( caster, SKILLID_MAGERY ) );
+	var eval_int		:= ModifyWithMagicEfficiency( caster, GetEffectiveSkill( caster, SKILLID_EVALINT ) );
+	var victim_resist	:= ModifyWithMagicEfficiency( cast_on, GetEffectiveSkill( cast_on, SKILLID_MAGICRESISTANCE ) );
+	var victim_int	:= GetIntelligence(cast_on);
+	var duration		:= CInt( magery - ( victim_resist / 2 ) );
+	var protected		:= IsProtected( caster, cast_on, circle );
+	if( protected == IMMUNED )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( protected == CURSED )
+		duration	:= duration * 2;
+		victim_int	:= CInt( victim_int / 2 );
+	endif
+
+	var protection := GetResultingPlaneProtection( cast_on, plane );
+	if( protection )
+		if( protection >= 4 )
+			return;
+		else
+			duration := duration - CInt( duration * protection * 0.25 );
+			if( duration <= 0 )
+				return;
+			endif
+		endif
+	endif
+
+	if( magery < difficulty )
+		EraseObjProperty( caster, "#Casting" );
+		SendSysMessage(caster, "The creature's will is too strong!");
+		return;
+	endif
+
+	if( cast_on.script == "tamed" )
+		if( GetObjProperty( cast_on, "master" ) == caster.serial )
+			SendSysMessage(caster, "This creature is already under your control");
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+
+		var owner_serial	:= GetObjProperty( cast_on, "master" );
+		var owner		:= SystemFindObjectBySerial( owner_serial );
+	
+		if( owner )
+			var owner_taming	:= GetEffectiveSkill( owner, SKILLID_TAMING );
+			var owner_magery	:= GetEffectiveSkill( owner, SKILLID_MAGERY );
+			owner_magery := owner_magery * ClasseBonus( owner, CLASSEID_MAGE );
+			owner_taming := owner_taming * ClasseBonus( owner, CLASSEID_RANGER );
+		
+			if( owner_taming > magery || owner_magery > magery )
+				SendSysMessage( caster, "The control of the owner over his pet is stronger than your spell!" );
+				SendSysMessage( owner, caster.name + " tried to take the control of " + cast_on.name + "." );
+				EraseObjProperty( caster, "#Casting" );
+				return;
+			endif
+		endif
+	endif
+ 	
+	if( protected == CURSED )
+		circle := circle * 2;
+	endif
+
+
+	SendSysMessage( caster, "You successfully take control of " + cast_on.name + "'s mind." );
+	SetObjProperty( cast_on,"master", caster.serial );
+	SetObjProperty( cast_on,"charmed", cast_on.script );
+	cast_on.setmaster( caster );
+	cast_on.script := "tamed";
+	RestartScript( cast_on );
+
+	EraseObjProperty( caster, "#Casting" );
+
+	sleep(duration);
+
+	cast_on.setmaster(0);
+	cast_on.script := GetObjProperty( cast_on, "charmed" );
+	EraseObjProperty( cast_on, "master" );
+	EraseObjProperty( cast_on,"charmed" );
+
+	SetObjProperty( cast_on, "tametimer", (ReadGameClock() + 300) );
+	RestartScript( cast_on );
+	if( victim_int > CInt(magery / 2) + 15 )
+		if( ( victim_int >= (magery + 20) ) || ( Random(100)+1 <= CInt( (victim_int - eval_int) / 2) ) )
+			var ev := array;
+			ev.+ type;
+			ev.+ source;
+			ev.type := EVID_PEACEMADE;
+			ev.source := caster;
+			SendEvent( cast_on, ev );
+		
+			ev.type := SYSEVENT_ENGAGED;
+			SendEvent( cast_on, ev );
+		endif
+	endif
+
+endprogram

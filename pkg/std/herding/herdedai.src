@@ -1,0 +1,30 @@
+// herdedai.src was created by Maximilian Scherr
+use uo;
+use npc;
+
+var npc := Self();
+
+program herdedai()
+  var locationx := CInt(GetObjProperty(npc, "locationx"));
+  var locationy := CInt(GetObjProperty(npc, "locationy"));
+  var originalscript := GetObjProperty(npc, "originalscript");
+  if ((!locationx) || (!locationy))
+    EraseObjProperty(npc, "loctionx");
+    EraseObjProperty(npc, "loctiony");
+    EraseObjProperty(npc, "originalscript");
+    npc.script := originalscript;
+    RestartScript(npc);
+  endif
+  var trys := 0;
+  repeat
+    RunTowardLocation(locationx, locationy);
+    if(trys >= 50 )
+    break;
+    endif
+  until ((npc.x == locationx) && (npc.y == locationy));
+  EraseObjProperty(npc, "loctionx");
+  EraseObjProperty(npc, "loctiony");
+  EraseObjProperty(npc, "originalscript");
+  npc.script := originalscript;
+  RestartScript(npc);
+endprogram

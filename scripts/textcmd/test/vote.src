@@ -1,0 +1,64 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) April 21, 2006.
+   Version: 1.9
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+Use polsys;
+
+Include "include/time";
+Include "include/gumps";
+Include "include/arrays";
+Include "include/yesno";
+
+Program Test( Who )
+
+    Var X := 40;
+    Var Y := 40;
+
+    Var Place := 1;
+    Var Page := 1;
+    Var Count := 0;
+
+    GFInitGump();
+    GFResizePic( 25, 25, 9270, 600, 260 ); // 9270 3600 5100 2600 5170 2620 3000 3500 5054
+
+    GFButtonID( X, Y + 3, 2117, 2118, 1, 666 );
+    GFTextLine( ( X + 20 ), Y, 2633, "Would you like to vote for Unreal Legegends" );
+    GFTextLine( ( X + 20 ), Y, 2633, "and help rise up our playerbase?" );
+    GFTextLine( X, Y + 20, 1935, "" );
+
+    Var Result := GFSendGump(Who);
+    Result := Result[0];
+
+    If( !Result )
+    Return 0;
+    Endif
+
+    Case( Result )
+		666:
+			OpenBrowser(Who, "http://www.unreal-legends.com/viewpage.php?page_id=2");
+			Return 1;
+
+		1337:
+			Return 1;
+    Endcase
+
+Endprogram
+
+function OpenBrowser(Who, Link := "")
+
+	var packet;
+
+	packet := CreatePacket(0xA5, MSGLEN_VARIABLE);;
+	packet.SetString(0x03, Link, 1);
+	packet.SetInt16(0x01, packet.GetSize());
+	packet.SendPacket(Who);
+
+	return 1;
+
+endfunction

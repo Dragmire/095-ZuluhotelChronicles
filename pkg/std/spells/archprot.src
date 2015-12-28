@@ -1,0 +1,49 @@
+use uo;
+use os;
+
+include "include/client";
+include "include/attributes";
+include "include/dotempmods";
+include "include/spelldata";
+
+program cast_archprot( parms )
+
+	var circle := 4;
+	var caster;
+	var thetarget;
+	var fromhit;
+
+	if (parms[1] == "#MOB")
+		caster := parms[2];
+		thetarget := parms[3];
+		if (parms[4])
+			circle := parms[4];
+		endif
+		if (parms[5])
+			fromhit := parms[5];
+		endif
+
+	else
+		caster := parms;
+		thetarget := CanTargetArea(caster, circle);
+		if (!thetarget)
+			return;
+		endif
+	endif
+
+	PlaySoundEffect(caster, SFX_SPELL_PROTECTION);
+
+	var magery := GetEffectiveSkill( caster, SKILLID_MAGERY );
+
+	var mod_amount := CInt( GetModAmount( caster ) / 1.5 );
+	var duration := GetModDuration( caster );
+
+	foreach cast_on in ListMobilesNearLocation( thetarget.x,
+	  thetarget.y, thetarget.z, CInt(magery/15) );
+		if (CanMod(cast_on, "ar"))
+			PlayObjectCenteredEffect( cast_on, FX_SPELL_ARCH_PROTECTION, SPEED_SPELL_ARCH_PROTECTION, LOOP_SPELL_ARCH_PROTECTION );
+			DoTempMod(cast_on, "ar", mod_amount, duration);
+		endif
+	endforeach
+
+endprogram

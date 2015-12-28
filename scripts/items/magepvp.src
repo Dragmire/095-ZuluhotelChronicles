@@ -1,0 +1,570 @@
+use os;
+use uo;
+
+include "include/time";
+include "include/constants/propids";
+include "include/yesno";
+
+program pvp (who)
+	var ref;
+	var lkarma;
+	var lfame;
+	Detach();
+	var magic := GetEffectiveSkill(who, SKILLID_MAGERY)+25;
+	if (who.x < 4933 or who.x > 4956 or who.y > 2636 or who.y < 2630 or who.z != -31)
+		SendSysMessage( who, "Cancelled, you are not in the arena." );
+		return;
+	endif
+	if (magic < 80)
+		SendSysMessage( who, "Cancelled, your Magery is not high enough." );
+		return;
+	endif
+	if (GetObjProperty(who,"CWBanned"))
+		SendSysMessage( who, "Cancelled, you are banned from the Mage's Arena." );
+		return;
+	endif
+	var alreadymounted := GetEquipmentByLayer( who.serial, 25 );
+	if (alreadymounted)
+		SendSysmessage(who,"You must dismount to PvP.");
+		return;
+	endif
+	var hasequipped := 0;
+	foreach worn in ListEquippedItems ( who )
+		if ((worn and worn !=who.backpack)  && (worn.objtype < 0x2030 || 							worn.objtype > 0x2060))	
+			hasequipped := 1;
+		endif
+	endforeach
+	if (hasequipped)	
+		SendSysmessage(who,"You must unequip all items to PvP.");
+		return;
+	endif
+	var notempty := 0;
+	foreach item in EnumerateItemsInContainer( who.backpack )
+		notempty := 1;
+	endforeach
+	if (notempty)	
+		SendSysmessage(who,"You must empty your backpack to PvP.");
+		return;
+	endif
+	if (GetGlobalProperty("MageArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+		return;
+	endif
+	SendSysMessage( who, "Select your opponent." );
+
+	var player:=target(who, TGTOPT_NOCHECK_LOS);
+
+	if (player.npctemplate) 
+		SendSysMessage( who, "Cancelled" );
+		return; 
+	endif
+	magic := GetEffectiveSkill(player, SKILLID_MAGERY)+25;
+	if (magic < 80)
+		SendSysMessage( who, "Cancelled, their Magery is not high enough." );
+		return;
+	endif
+	if (GetObjProperty(player,"CWBanned"))
+		SendSysMessage( who, "Cancelled."+player.name+" is banned from the Mage's Arena." );
+		return;
+	endif
+	if(!player or !player.strength or player.dead or player.name == who.name )
+		SendSysmessage( who, "Invalid selection." ); 
+		return;
+ 	endif
+	if (player.x < 4933 or player.x > 4956 or player.y > 2636 or player.y < 2630 or player.z != -31)
+		SendSysMessage( who, "Cancelled, they are not in the arena." );
+		return;
+	endif
+	alreadymounted := GetEquipmentByLayer( player.serial, 25 );
+	if (alreadymounted)
+	SendSysmessage(who,"Cancelled. "+player.name+" is mounted.");
+		return;
+	endif
+	hasequipped := 0;
+	foreach worn in ListEquippedItems ( player )
+		if ((worn and worn !=player.backpack)  && (worn.objtype < 0x2030 || 							worn.objtype > 0x2060))	
+			hasequipped := 1;
+		endif
+	endforeach
+	if (hasequipped)	
+		SendSysmessage(who,"Cancelled. "+player.name+" is wearing items.");
+		return;
+	endif
+	notempty := 0;
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		notempty := 1;
+	endforeach
+	if (notempty)	
+		SendSysmessage(who,"Cancelled."+player.names+"'s backpack is not empty.");
+		return;
+	endif
+	SendSysmessage( player, who.name + " is challenging you to PvP - accept?" ); 
+	var answer:=YesNo(player,"Accept PvP?");
+
+	if (!answer)
+		SendSysMessage(player,"You have refused the challenge.");
+		SendSysMessage(who,player.name + " has not accepted.");
+		return;
+	endif
+	SendSysMessage(player,"You have accepted the challenge.");
+	SendSysMessage(who,player.name + " has accepted.");
+	if (GetGlobalProperty("MageArenaInUse"))
+		SendSysMessage( who, "Cancelled, the arena is in use" );
+		return;
+	endif
+	SetGlobalProperty("MageArenaInUse", 1 );
+	MakeFence ();
+	MoveCharacterToLocation( who, 4938, 2625, -26, 0);
+	DressMage(who,1171);
+	MoveCharacterToLocation( player, 4950, 2625, -26, 0);
+	DressMage(player,1172);
+	lkarma := GetObjProperty(player, "Karma");
+	lfame := GetObjProperty(player, "Fame");
+	SetObjProperty(player, "lkarma", lkarma);
+	SetObjProperty(player, "lfame", lfame);
+	lkarma := GetObjProperty(who, "Karma");
+	lfame := GetObjProperty(who, "Fame");
+	SetObjProperty(who, "lkarma", lkarma);
+	SetObjProperty(who, "lfame", lfame);
+	SetObjProperty(player, "pvping", 1);
+	SetObjProperty(who, "pvping", 1);
+	var pvpcrim := who.criminal;
+	var pvpmurd := who.murderer;
+	if (!pvpcrim)
+		pvpcrim := 0;
+	endif
+	if (!pvpmurd)
+		pvpmurd := 0;
+	endif
+	SetObjProperty(who,"PvPCriminal",pvpcrim);
+	SetObjProperty(who,"PvPMurderer",pvpmurd);
+	pvpcrim := player.criminal;
+	pvpmurd := player.murderer;
+	if (!pvpcrim)
+		pvpcrim := 0;
+	endif
+	if (!pvpmurd)
+		pvpmurd := 0;
+	endif
+	SetObjProperty(player,"PvPCriminal",pvpcrim);
+	SetObjProperty(player,"PvPMurderer",pvpmurd);
+	var IsRef;
+	foreach mobile in ListMobilesNearLocation( who.x, who.y, who.z, 10 )
+		IsRef:= GetObjProperty( mobile, "referee");
+		if (IsRef)
+			ref := mobile;
+		endif
+	endforeach
+	Sleep(10);
+	PrintTextAbove( ref, "Get ready - PvP will start in 10 seconds." );
+	sleep(5);
+	PrintTextAbove( ref, "5 seconds..." );
+	sleep(5);
+	PrintTextAbove( ref, "FIGHT!!!! :)" );
+	DeleteFence(ref);
+	var tme := ReadGameClock() ;
+	var ponline := 0;
+	var wonline := 0;
+	var running := 1;
+	var booted;
+	var toolong := 0;
+	var leftarena ;
+	var pded;
+	var wded;
+	CheckAbusers();
+	while (running)
+		sleep(1);
+		toolong := toolong + 1;
+		if (toolong > 600 )
+			running := 0;
+		endif
+		if (toolong == 3)
+			ref.hidden := 1;
+		endif
+		pded := GetObjProperty(player, "pvping");
+		wded := GetObjProperty(who, "pvping");
+		if (!pded or !wded)
+			running := 0;
+		endif
+		if (pded and wded)
+			CheckAbusers();
+		endif
+		foreach char in EnumerateOnlineCharacters()
+			if (char == player )
+				ponline := 1;
+			endif
+			if (char == who)
+				wonline := 1;
+			endif
+		endforeach
+		if (!ponline or !wonline)
+			running := 0;
+			if (ponline)
+				booted := who.name;
+			else
+				booted := player.name;
+			endif
+		endif
+		ponline := 0;
+		wonline := 0;
+		if (who.x < 4933 or who.x > 4955 or who.y > 2628 or who.y < 2622)
+			leftarena := who.name;
+			running := 0;
+		endif
+		if (player.x < 4933 or player.x > 4955 or player.y > 2628 or player.y < 2622)
+			leftarena := player.name;
+			running := 0;
+		endif
+	endwhile	
+	player.frozen := 1;
+	who.frozen := 1;
+	var tmenow := ReadGameClock() ;
+	var length := tmenow - tme;
+	var cont;
+	var serial;	
+	var score ;
+	sleep (2);
+	ref.hidden := 0;
+	if (!pded and !wded)
+		PrintTextAbove( ref, "It was a draw!" );
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,who.name+" & "+player.name+" both died in the Mage's PvP arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (!pded and wded)
+		PrintTextAbove( ref, who.name + " is the winner!" );
+		score := GetObjProperty (who, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (who, "pvpwins",score);
+		score := GetObjProperty(player,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(player,"pvplosses",score);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,who.name+" defeated "+player.name+" in the Mage's PvP arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (!wded and pded)
+		PrintTextAbove( ref, player.name + " is the winner!" );
+		score := GetObjProperty (player, "pvpwins") ;
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty (player, "pvpwins",score);
+		score := GetObjProperty(who,"pvplosses");
+		if (!score)
+			score := 0;
+		endif
+		score := score + 1;
+		SetObjProperty(who,"pvplosses",score);
+		foreach character in EnumerateOnlineCharacters()
+SendSysMessage( character,player.name+" defeated "+who.name+" in the Mage's PvP arena, in "+length+" secs." );	
+		endforeach
+	endif
+	if (booted)
+		PrintTextAbove( ref, booted + " disconnected. PvP is cancelled." );	
+	endif
+	if (leftarena)
+		PrintTextAbove( ref, leftarena + " has left the arena. PvP is cancelled." );	
+	endif
+	if (toolong > 600)
+		PrintTextAbove( ref, "10 minutes is up. PvP is cancelled." );	
+	endif
+	MakeFence();
+	MoveCharacterToLocation( who, 4938, 2625, -26, 0);
+	MoveCharacterToLocation( player, 4950, 2625, -26, 0);
+	player.frozen := 0;
+	who.frozen := 0;
+	sleep (4);	
+	StripPlayer(who);
+	StripPlayer(player);
+	lkarma := GetObjProperty(player, "lkarma");
+	lfame := GetObjProperty(player, "lfame");
+	SetObjProperty(player, "Karma", lkarma);
+	SetObjProperty(player, "Fame", lfame);
+	lkarma := GetObjProperty(who, "lkarma");
+	lfame := GetObjProperty(who, "lfame");
+	SetObjProperty(who, "Karma", lkarma);
+	SetObjProperty(who, "Fame", lfame);
+	Sleep (3);
+	PrintTextAbove( ref, "Teleporting you out.." );	
+	sleep (5);
+	MoveCharacterToLocation( who, 4945, 2630, -31, 0);
+	MoveCharacterToLocation( player, 4942, 2630, -31, 0);
+	EraseObjProperty( player, "pvping" );
+	EraseObjProperty( who, "pvping" );
+	DeleteFence(ref);
+	EraseGlobalProperty("MageArenaInUse");
+	EraseObjProperty( who, "lkarma" );
+	EraseObjProperty( who, "lfame" );
+	EraseObjProperty( player, "lkarma" );
+	EraseObjProperty( player, "lfame" );
+	var nibble := GetObjproperty(who,"pvpcrim");
+	if (!nibble)
+		nibble := 0;
+	endif
+	who.criminal := nibble;
+	nibble := GetObjproperty(who,"pvpmurd");
+	if (!nibble)
+		nibble := 0;
+	endif
+	who.murderer := nibble;
+	nibble := GetObjproperty(player,"pvpcrim");
+	if (!nibble)
+		nibble := 0;
+	endif
+	player.criminal := nibble;
+	nibble := GetObjproperty(player,"pvpmurd");
+	if (!nibble)
+		nibble := 0;
+	endif
+	player.murderer := nibble;
+	CheckAbusers();
+endprogram
+
+function MakeFence ()
+	var fnc;
+	//Player one fence
+	fnc := CreateItemAtLocation(4938,2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);	
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4937, 2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4939, 2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4939, 2626, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4936,2626, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4936,2625, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4936,2624, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4937,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4938,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4939,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4939,2624, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4939,2625, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4936,2626, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	//Player two fence
+	fnc := CreateItemAtLocation(4951,2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4950,2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);	
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4949, 2626, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4948,2626, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4948,2625, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4948,2624, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4949,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4950,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4951,2623, -31, 2083, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4951,2626, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4951,2625, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+	fnc := CreateItemAtLocation(4951,2624, -31, 2081, 1);
+	SetObjProperty( fnc, "pvpfence",1);
+	fnc.color := 1158;
+endfunction
+
+function DeleteFence ( lee )
+	var Near;
+	var ispvpfence;
+	Near := ListItemsNearLocation( lee.x , lee.y , lee.z , 25 );
+	foreach item in Near
+		ispvpfence := GetObjProperty( item, "pvpfence");
+		if (ispvpfence)
+			DestroyItem(item);
+		endif
+	endforeach
+endfunction
+
+function DressMage( player, ccode )	
+	var ok;
+	var acc	:= player.acct;
+	var accname := acc.name;
+    	var hat := CreateItemInBackpack( player, 0x1718, 1);
+	hat.color := ccode;    	
+	SetObjProperty(hat,"CW",1);
+	SetObjProperty(hat,"OwnerAcct",accname);
+	SetObjProperty(hat,"OwnerName",player.name);
+	SetObjProperty(hat,"Cursed",1);
+	EquipItem( player, hat );
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;    
+	SetObjProperty(robe,"Cursed",1);
+	SetObjProperty(robe,"OwnerAcct",accname);
+	SetObjProperty(robe,"OwnerName",player.name);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	regbag.color := ccode;
+	regbag.movable := 0;
+	SetObjProperty(regbag,"CW",1);
+	SetObjProperty(regbag,"OwnerAcct",accname);
+	SetObjProperty(regbag,"OwnerName",player.name);
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 50);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 50);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 50);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 50);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 50);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 50);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 50);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 50);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	book.movable := 0;
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+endfunction
+
+function StripPlayer(player)
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	foreach worn in ListEquippedItems (player )
+		checkcw := GetObjProperty( worn, "CW" );
+		if ( checkcw )
+			EraseObjProperty(worn,"Cursed");
+			MoveItemToContainer(worn, player.backpack);
+			checkcw := 0;
+		endif
+	endforeach
+	foreach item in EnumerateItemsInContainer( player.backpack )
+		checkcw := GetObjProperty( item, "CW" );
+		if ( checkcw or item)
+			found := found + 1;
+			cwitem[found] := item;
+			checkcw := 0;
+		endif
+	endforeach
+	while ( loop < found )
+		loop := loop + 1;	
+		DestroyItem(cwitem[loop]);
+	endwhile
+endfunction
+
+function spellok ( what )
+
+	case( what )
+		0x1f40	  :		
+		0x1f44  :	
+		0x1f48  :
+		0x1f4d  :
+		0x1f53  :
+		0x1f5b  :
+		0x1f5e  :
+		0x1f4c  :
+		0x1f60  :
+		0x1f64  :
+		0x1f54  :		
+		0xf7a   :	return 0; 	
+
+		default:	return 1;
+	endcase
+
+endfunction
+
+function CheckAbusers()
+	var players := ListMobilesNearLocation(4944, 2625, -31, 15);
+	var owner;
+	var owneracct;
+	foreach dude in players
+		if (!GetObjProperty(dude,"pvping") and !dude.npctemplate)
+			foreach item in EnumerateItemsInContainer( dude.backpack )
+				if (GetObjProperty(item,"CW"))
+					owner := GetObjProperty(item,"OwnerName");
+					owneracct := GetObjProperty(item,"OwnerAcct");
+					foreach guy in EnumerateOnlineCharacters()
+				       	if  (guy.cmdlevel)	
+							SendSysMessage(guy,dude.name+" is in illegal possession of CW equipment.",3,130);
+							SendSysMessage(guy,"Type : "+item.desc,3,130);
+							SendSysMessage(guy,"Original Owner : "+owner,3,130);
+							SendSysMessage(guy,"Owner's Account: "+owneracct,3,130);
+						endif
+					endforeach
+					DestroyItem(item);
+					if (!GetObjProperty(dude,"CWBanned"))
+						BanPlayer(dude);
+					endif
+				endif
+			endforeach
+		endif
+	endforeach
+endfunction
+
+function BanPlayer(player)
+	SetObjProperty(player,"CWBanned",1);
+	SendSysMessage(player,"You have been banned from the Mage's Arena.");
+	SendSysMessage(player,"Staff have been notified of your abuse.");
+	foreach guy in EnumerateOnlineCharacters()
+      	if  (guy.cmdlevel)	
+			SendSysMessage(guy,player.name+" has been banned from the Mage's Arena.",3,130);
+		endif
+	endforeach
+endfunction

@@ -1,0 +1,565 @@
+use uo;
+use os;
+use cfgfile;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/client";
+include "include/namingbyenchant";
+include "include/constants/settings";
+
+const APPRENTICE_SKILL := 1;
+const JOURNEYMAN_SKILL := 2;
+const EXPERT_SKILL     := 3;
+const ADEPT_SKILL      := 4;
+const MASTER_SKILL     := 5;
+const GM_SKILL         := 6;
+
+const WEAPON_MULT      := 5;
+
+program equip( who, it )
+
+	 if(!who)
+          return 0;
+     endif
+
+	if( GetObjProperty( it, "auctionview" ) )
+		PunishForBugAbusing(who,it);
+		return 0;
+	endif
+
+	if( it.objtype == 0x86ef || it.objtype == 0x86df || (GetObjProperty( it, "noloot" ) && !who.npctemplate) )
+		start_script( ":shilitems:itemdestroyer", it );
+		return 0;
+	endif
+
+	if( GetEquipmentByLayer( who, LAYER_HAND2 ).objtype == 0xba28 ||
+		GetEquipmentByLayer( who, LAYER_ROBE ).objtype == 0xba29 )
+		SendSysMessage( who, "You can't equip that while wearing ritual clothes!" );
+		return 0;
+	endif
+
+	if( it.objtype == 0x204f )
+		if (!EquipStaffRobe( who, it ))
+			return 0;
+		endif
+	endif
+
+	if( GetObjProperty( it, "StayEquipped" ) && (GetObjProperty( it, "Cursed" )))
+		EraseObjProperty( it, "StayEquipped" );
+		return 1;
+	endif
+
+	if( !who.cmdlevel )
+		if( IsProhibitedByClasse( who, it ) )
+			SendSysMessage( who, "Your specialisation prevent you from equipping this." );
+			UndoImmunity( who, it );
+			UndoProt( who, it );
+			return 0;
+		endif
+	endif
+	
+	if (GetObjProperty( it, "WasCursed" ))
+		EraseObjProperty( it, "WasCursed" );
+	endif
+
+	if ( NotYours(who,it) )
+		return 0;
+	endif
+
+	if (!it.name)
+		SetName(it, it.desc);
+	endif
+	
+	if (GetObjProperty(it, "Cursed") == 1)
+		ApplyCurse( who, it );
+	endif
+
+	if (!it.hitscript)
+		AssignHitScript(it);
+	endif
+
+	DeathShroudMod( it );
+	DoSkillAdvance( who, it);
+	DoStatMods( who, it);
+	//DoRegenMods( who , it );
+	DoArMods( who, it );
+	//DoEquipSpell( who , it);
+	DoImmunity( who, it );
+	DoProt( who, it );
+	
+
+	if (GetObjProperty( it, "OfBlackrock" ) )
+		SetMana(who, 0);
+	endif
+
+	SetObjProperty( it, "EquippedAlready", 1 );
+
+	return 1;
+
+endprogram
+
+
+function NotYours(who,it)
+
+	var ownerserial := GetObjProperty(it, "ownerserial");
+	var ownername;
+	if (ownerserial)
+		ownername := GetObjProperty(it, "ownername");
+	else
+		return 0;
+	endif
+
+
+	if (who.isA(POLCLASS_NPC))
+		var master := GetObjProperty(who, "master");
+		if  ( ownerserial != master )
+			PrintTextAbovePrivate( who,"I can't use that, it belongs to "+ownername, who );
+			start_script( ":shilitems:itemreturner", it );
+			return 1;
+		else
+			return 0;
+		endif
+	endif
+
+	if  ( ownerserial != who.serial )
+		SendSysMessage(who,"You can't use that, it belongs to "+ownername );
+		start_script( ":shilitems:itemreturner", it );
+		return 1;
+	endif
+
+	return 0;
+
+endfunction
+
+
+function DoStatMods(who,it)
+
+	if ( GetObjProperty(it,"str") )
+	SetStrengthMod(who,  CInt(GetStrengthMod(who)) + CInt(GetObjProperty(it,"str")));
+	endif
+	if ( GetObjProperty(it,"int") )
+		SetIntelligenceMod(who,  CInt(GetIntelligenceMod(who)) + CInt(GetObjProperty(it,"int")));
+	endif
+	if ( GetObjProperty(it,"dex") )
+		SetDexterityMod(who,  CInt(GetDexterityMod(who)) + CInt(GetObjProperty(it,"dex")));
+	endif
+	if ( GetObjProperty(it,"DefaultDex") )
+		SetDexterityMod(who,  CInt(GetDexterityMod(who)) + CInt(GetObjProperty(it,"DefaultDex")));
+	endif
+
+endfunction
+
+
+function DoSkillAdvance(who,it)
+	var skillnum := GetObjProperty(it,"skilladv");
+
+	if( GetObjProperty( it, "EquippedAlready" ))
+		if(!GetSkillTemporaryMod(who, skillnum))
+			return;
+		endif
+	endif
+
+	
+	if ( (skillnum) || (skillnum == 0) )
+
+		var power    := CInt(GetObjProperty( it, "skilladvamount" ));
+	
+		var skillval := GetEffectiveSkill(who, skillnum);
+
+		var skillcap;
+		case( power )
+			APPRENTICE_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL1;
+				break;
+			JOURNEYMAN_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL2;
+				break;
+			EXPERT_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL3;
+				break;
+			ADEPT_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL4;
+				break;
+			MASTER_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL5;
+				break;
+			GM_SKILL:
+				skillcap := SETTING_MAX_SKILL_FOR_SKILL_ITEM_LEVEL6;
+				break;
+			default:
+				skillcap := 0;
+				power    := 0;
+		endcase
+		skillcap := skillcap / 10;
+
+		// Apply Multipliers
+		var multiplier := CInt( GetObjProperty( it, "SpecMult" ) );
+		if( multiplier )
+			power := CInt( power * multiplier );
+		elseif(it.isa(POLCLASS_WEAPON))
+			power := power * 5;
+		endif
+
+		if((power + skillval) > skillcap)
+			power := skillcap - skillval;
+		endif
+		if(power < 0)
+			power := 0;
+		endif
+
+		AlterSkillTemporaryMod( who, skillnum, power);
+		
+		SetObjProperty(who, ("currsk" + Cstr(it.serial)), power);				
+		
+	endif
+
+endfunction
+
+
+function DoRegenMods( who, item )
+
+	if( GetObjProperty( item, "EquippedAlready" ) )
+		return 1;
+	endif
+
+	var hp := GetObjProperty( item, "HpRegen" );
+	if( hp )
+		if( GetObjProperty( who, "baseregen" ) )
+			SetObjProperty( who, "baseregen", GetObjProperty( who, "baseregen" ) + hp );
+		else
+			SetObjProperty( who, "baseregen", hp );
+		endif
+		SetHpRegenRate(who , ( GetHpRegenRate(who) + hp) * 12);
+	endif
+
+	var mana := GetObjProperty( item, "ManaRegen" );
+	if( mana )
+		if( GetObjProperty( who, "basemanaregen" ) )
+			SetObjProperty( who, "basemanaregen", GetObjProperty( who, "basemanaregen" ) + mana );
+		else
+			SetObjProperty( who, "basemanaregen", mana );
+		endif
+		SetManaRegenRate(who , ( GetManaRegenRate(who) + mana) * 12);
+	endif
+
+	var stamina := GetObjProperty( item, "StamRegen" );
+	if( stamina )
+		if( GetObjProperty( who, "basestamregen" ) )
+			SetObjProperty( who, "basestamregen", GetObjProperty( who, "basemanaregen" ) + stamina );
+		else
+			SetObjProperty( who, "basestamregen", stamina );
+		endif
+		SetStaminaRegenRate(who , ( GetStaminaRegenRate(who) + stamina) * 12);
+	endif
+
+endfunction
+
+		
+function DoEquipSpell(who,it)
+
+	var spellname := GetObjProperty(it,"equipspell");
+	if ( spellname )
+		var parms := { };
+		parms[1] := who;
+		parms[2] := it;
+		parms[3] := ReadGameClock();
+		SetObjProperty(it,"equiptime",parms[3]);
+		start_script(":magic:"+spellname, parms);
+	endif
+
+endfunction
+
+
+function DeathShroudMod(it)
+
+	if (it.objtype == 0x204e) it.graphic := 0x204e; endif
+
+endfunction
+
+
+function ApplyCurse( who, item )
+
+	RevealCurse( item );
+	PlaySoundEffect( who, SFX_SPELL_CURSE);
+	PlayObjectCenteredEffect( who, FX_SPELL_CURSE, SPEED_SPELL_CURSE, LOOP_SPELL_CURSE );
+	SendSysMessage(who, "That item is cursed, and reveals itself to be a " + item.desc);
+
+endfunction
+
+
+function AssignHitScript(it)
+
+	var weaponcfg := ReadConfigFile(":*:itemdesc");
+	var hitscript := weaponcfg[it.objtype].hitscript;
+	if( hitscript )
+		it.hitscript := hitscript;
+	endif
+
+endfunction
+
+
+function DoProt( who, item )
+
+	if( GetObjProperty( item, "EquippedAlready" ) )
+		return 1;
+	endif
+
+	var possibles := { "PoisonImmunity",
+			     "MagicImmunity",
+			     "SpellReflect" };
+			
+			
+	foreach prot in possibles
+		if( GetObjProperty( item, prot ) )
+			SetObjProperty( who, prot, item.serial );
+		endif
+	endforeach
+
+	return 1;
+
+endfunction
+
+
+function DoImmunity( who, item )
+
+	if( GetObjProperty( item, "EquippedAlready" ) )
+		return 1;
+	endif
+
+	var possibles := { "PermPoisonImmunity",
+			     "PermMagicImmunity",
+			     "Permmr",
+			     "FireProtection",
+			     "WaterProtection",
+			     "AirProtection",
+			     "EarthProtection",
+			     "FreeAction",
+			     "NecroProtection",
+			     "HolyProtection",
+			     "PhysicalProtection",
+			     "HealingIncrease" };
+
+
+
+	var level;
+
+	foreach prot in possibles
+		level := CInt( GetObjProperty( item, prot ) );
+		if( level )
+			if( CInt(GetObjProperty( who, prot )) < level )
+				SetObjProperty( who, prot, level );
+			endif
+		endif
+	endforeach
+
+	return 1;
+
+endfunction
+
+
+function EquipStaffRobe( who, item )
+
+	var playerlevel := who.cmdlevel;
+
+	case( who.cmdlevel )
+		0:	start_script( ":shilitems:itemdestroyer", item );
+			return 0;
+		
+		1:	item.color := 0x0492;
+			SetBaseStrength(who, 6000);
+			SetBaseDexterity(who, 6000);
+			SetBaseIntelligence(who, 6000);
+			return 1;
+		
+		2:	item.color := 0x0487;
+			SetBaseStrength(who, 6000);
+			SetBaseDexterity(who, 6000);
+			SetBaseIntelligence(who, 6000);			
+			return 1;
+		
+		3:	if( GetObjProperty( who, "head" ) )
+				SetBaseStrength(who, 6000);
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);
+				item.color := 0x050f;
+			else
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);
+				SetBaseStrength(who, 6000);
+				item.color := 0x0494;
+			endif
+			return 1;
+		
+		4:	if( GetObjProperty( who, "head" ) )
+				SetBaseStrength(who, 6000);
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);
+				//item.color := 0x0498;
+			else
+				SetBaseStrength(who, 6000);
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);
+				//item.color := 0x0485;
+			endif
+			return 1;
+
+		5:	if( GetObjProperty( who, "head" ) )
+				SetBaseStrength(who, 6000);
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);	
+				//item.color := 0x0486;
+			else
+				SetBaseStrength(who, 6000);
+				SetBaseDexterity(who, 6000);
+				SetBaseIntelligence(who, 6000);	
+				//item.color := 0x0496;
+			endif
+			return 1;
+
+	endcase
+
+	start_script( ":shilitems:itemdestroyer", item );
+	return 0;
+
+endfunction
+
+
+function DoArMods( who, item )
+
+	var ar := CInt(GetObjProperty( item, "ArBonus" ));
+	if( ar )
+		who.ar_mod := who.ar_mod + ar;
+	endif
+
+endfunction
+
+
+function UndoImmunity( who, item )
+
+	var possibles := { "PermPoisonImmunity",
+			     "PermMagicImmunity",
+			     "Permmr",
+			     "FireProtection",
+			     "WaterProtection",
+			     "AirProtection",
+			     "EarthProtection",
+			     "FreeAction",
+			     "NecroProtection",
+			     "HolyProtection",
+			     "PhysicalProtection",
+			     "HealingIncrease" };
+
+
+
+	var level;
+	var max := struct;
+	max.+item := 0;
+	max.+lvl  := 0;
+
+	foreach prot in possibles
+		level := CInt( GetObjProperty( item, prot ) );
+		if( level )
+			EraseObjProperty( who, prot );
+			foreach thing in ListEquippedItems( who )
+				if( item != thing )
+					level := CInt( GetObjProperty( thing, prot ) );
+					if( level > max.lvl )
+						max.item := thing;
+						max.lvl  := level;
+					endif
+				endif
+			endforeach
+		
+			if( max.item )
+				SetObjProperty( who, prot, max.lvl );
+			endif
+		
+			max.item := 0;
+			max.lvl  := 0;
+		endif
+	endforeach
+
+	return 1;
+
+endfunction
+
+
+function UndoProt( who, item )
+
+	var possibles := { "PoisonImmunity",
+			     "MagicImmunity",
+			     "SpellReflect" };
+			
+			
+	foreach prot in possibles
+		if( GetObjProperty( item, prot ) )
+			if( GetObjProperty( who, prot ) == item.serial )
+				EraseObjProperty( who, prot );
+				foreach thing in ListEquippedItems( who )
+					if( GetObjProperty( thing, prot ) )
+						if( thing != item )
+							SetObjProperty( who, prot, thing.serial );
+							break;
+						endif
+					endif
+				endforeach
+			endif
+		endif
+	endforeach
+
+	return 1;
+
+endfunction
+
+
+//function RefreshQuality( item )
+//
+//	if( GetObjProperty( item, "IsExceptional" ) )
+//		return 1;
+//	endif
+//
+//	var cfg := ReadConfigFile( ":blacksmithy:blacksmithy" );
+//	var ore := GetObjProperty( item, "ForgedWith" );
+//	var new := CDbl( cfg[ore.objtype].quality );
+//	if( !new )
+//		return 1;
+//	endif
+//
+//	if( item.quality > new )
+//		item.quality := new;
+//		if( item.hp > item.maxhp )
+//			item.hp := item.maxhp;
+//		endif
+//	endif
+//
+//endfunction
+
+
+function PunishForBugAbusing( who, it )
+
+	SendSysMessage( who, "You'll be punished for using auction duping bug." );
+	PlayLightningBoltEffect(who);
+
+	var name	:= who.name;
+	var account	:= who.acctname;
+
+	who.title_race := "bug abuser";
+	SetBaseSkill( who, RandomInt(49), 0 );
+	var skillnum := GetObjProperty(it,"skilladv");
+	if( (skillnum) || (skillnum == 0) )
+		SetBaseSkill( who, skillnum, 0 );
+	endif
+
+	foreach mobile in EnumerateOnlineCharacters()
+		if( mobile.cmdlevel )
+			SendSysMessage( mobile,
+					name + " account: " + account + " abused the auction duping bug and was punished for it.",
+					3,
+					33 );
+		endif
+	endforeach
+
+	return 1;
+
+endfunction

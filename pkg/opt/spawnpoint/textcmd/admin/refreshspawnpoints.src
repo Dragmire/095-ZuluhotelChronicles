@@ -1,0 +1,19 @@
+use uo;
+use os;
+
+include "include/managers";
+
+program refreshspawnpoints( who )
+
+	var clock	:= ReadGameClock();
+	var registered	:= SendSpawnPointEvent(EVID_SPAWNPOINT_REFRESH_POINTS);
+
+	if( !registered )
+		SendSysMessage( who, "Error occured : " + registered.errortext );
+		return 0;
+	endif
+
+	SendSysMessage( who, "Refreshing completed, took " + (ReadGameClock() - clock) + " seconds to complete." );
+	SendSysMessage( who, "A total of " + registered + " spawnpoints have been registered." );
+
+endprogram

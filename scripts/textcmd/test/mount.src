@@ -1,0 +1,21 @@
+use uo;
+
+program textcmd_mount( who, text )
+
+   var mounttype := Cint( Text );
+
+    var alreadymounted := GetEquipmentByLayer( who, 25 );
+    if( alreadymounted )
+      SendSysMessage( who , "You are already mounted." );
+      return 0;
+    endif
+    if( mounttype )
+      var mount     := CreateItemAtLocation( who.x, who.y, who.z, 0xF021, 1 );
+      mount.movable := 1;
+      mount.graphic := mounttype;
+      EquipItem( who, mount );
+      mount.movable := 0;
+      SendSysMessage( who, "You mounted the horse." );
+      SetObjProperty( who, "DMount", 1 );
+    endif
+endprogram

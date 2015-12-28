@@ -1,0 +1,39 @@
+// Updated by MontuZ (MontuZ@aol.com) Nov 24, 2003
+// Set items movable or unmovable in the selected area.
+use uo;
+
+program textcmd_setareamovable( who , text )
+
+	var movable := Cint( text );
+	
+	SendSysMessage( who, "Select the starting point" );
+	var start := TargetCoordinates( who );
+	if( !start )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+	
+	SendSysMessage( who , "Select the finishing point" );
+	var ending := TargetCoordinates( who );
+	if( !ending )
+		SendSysMessage( who, "Canceled" );
+		return;
+	endif
+	
+	var x1 := start.x;
+	var y1 := start.y;
+	var z1 := start.z;
+	
+	var x2 := ending.x;
+	var y2 := ending.y;
+	var z2 := ending.z;
+
+	foreach item in ListObjectsInBox( x1 , y1 , z1 , x2 , y2 , z2 )
+		
+		item.movable := movable;
+			
+	endforeach
+
+	SendSysMessage(who,"Done!");
+
+endprogram

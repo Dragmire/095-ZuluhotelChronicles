@@ -1,0 +1,22 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+include "include/client";
+
+program newbiegate (who)
+
+If( who.npctemplate )
+        PlayLightningBoltEffect( who);
+        PlaySoundEffect( who, SFX_SPELL_LIGHTNING  );
+
+
+            RevokePrivilege( who, "invul" );
+            SetObjProperty( who, "guardkill", 1);
+            ApplyRawDamage( who, GetMaxHp(who) );
+endif
+
+endprogram

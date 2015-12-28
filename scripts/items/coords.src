@@ -1,0 +1,6 @@
+use uo;
+include "include/coords";
+
+program get_coords(char, item)
+    PrintTextAbovePrivate(char, ToSextant(char.x, char.y), char);
+endprogram

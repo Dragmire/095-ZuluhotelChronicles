@@ -1,0 +1,246 @@
+use uo;
+use os;
+
+include "include/time";
+include "include/classes";
+include "../../pkg/opt/karmafame/karmafame";
+include "include/dotempmods";
+include "include/constants/vitalids";
+include "include/constants/timeids";
+
+program logon( who )
+
+	//setchat(who);
+
+	var hour := 0;
+	var minutes := 0;
+	var secs := 0;
+
+    If( !GetObjProperty( Who, "ADNSC" ) )
+    CheckName( Who );
+    Endif
+
+
+	If(!who.cmdlevel)
+		if(GetObjProperty( who, "CapOff" ))
+			EraseObjProperty( who, "CapOff" );
+		endif
+	endif
+	
+	var acc := who.acct;
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	var lkarma;
+	var payback;
+	acc.setprop("Login", NowString());
+	acc.setprop("IP", who.ip);
+	SetObjProperty(who, "#logontime", ReadGameClock() );
+	
+	set_critical(1);
+	WipeMods(who);
+	CurePoison(who);
+	SetVitalRegenRate( who, VITALID_STAMINA, 1200 );
+	set_critical(0);
+	
+	if( who.cmdlevel )
+		var gmpages := getglobalproperty("gmpages");
+		var counpages := getglobalproperty("counpages");
+		SendStringAsTipWindow( who, "Welcome to " + ShardName() + "                                                                                   There are " + CInt(gmpages.size()/2) + " page(s).                                              " + "Use .startmacro to start your 10 hours macroing! Can only be used once every 24 hours, and cannot be stopped once started!" );
+	else
+		SendStringAsTipWindow( who, "Welcome to " + ShardName() + "                                                                                   Use .password to change your password to prevent your account from being hacked.                               " + "Use .startmacro to start your 10 hours macroing! Can only be used once every 24 hours, and cannot be stopped once started!" );
+		StartScripts(who);
+		AssignClasse(who);
+		SetNewNotoName(who);
+		//SetNewbieStatus(who);
+		if (getobjproperty(who,"starttime"))
+			Eraseobjproperty(who,"starttime");
+		endif
+		var release := acc.getprop("Release");
+		secs := (((release - ReadGameClock())));
+		if( who.x >= 5272 )
+			if( who.x <= 5310 )
+				if( who.y >= 1160 )
+					if( who.y <= 1190 )
+    					
+   					if( secs < 0 )
+      						secs := 0;
+    					endif
+    					
+    					If( secs > 0 )
+   						 MoveCharacterToLocation( who, 5304, 1184, 15, 0 );
+   						 
+						hour	:= CInt( secs / TIMEID_SECONDS_PER_HOUR );
+						secs	:= secs % TIMEID_SECONDS_PER_HOUR;
+
+						minutes	:= CInt( secs / TIMEID_SECONDS_PER_MINUTE );
+						secs	:= secs % TIMEID_SECONDS_PER_MINUTE;
+
+						SendSysMessage( who , "You have "+hour+" hours, "+minutes+" minutes and "+secs+" seconds left in jail!" );
+   
+    					Elseif( ( ReadGameClock() > release ) && ( release != 0 ))
+    						acc.SetProp( "Release", 0 );
+   						MoveCharacterToLocation( who, 1475, 1645, 20, 0 );
+    						SendSysmessage( who, "You are freed.", FONT_BOLD, 2600 );
+    					Endif
+		 			endif
+		 		endif
+		 	endif
+		endif
+						
+	endif
+
+endprogram
+
+
+function StartScripts(who)
+
+	var process := {};
+	process.append(start_script(":cooking:hunger",who).pid);
+	process.append(start_script(":areas:areaban", who ).pid);
+	SetObjProperty( who, "#RunningScripts", process );
+
+/*
+	var ctf:=getobjproperty(who,"ctfloc");
+
+	if(who.cmdlevel>0) return; endif
+
+	if (ctf<=3 && ctf>=0)
+	MoveCharacterToLocation(who,6083,450,-22);
+	setobjproperty(who,"ctfloc",0);
+	else*/
+
+endfunction
+
+
+function setchat(who)
+
+	while (getglobalproperty("plylock")=1)
+	sleep(10);
+	endwhile
+
+	set_critical(1);
+	setglobalproperty("plylock",1);
+
+	var plychat:=getglobalproperty("plychat"),csize:=plychat.size();
+
+	if (plychat[1]="NONE") csize:=0; endif
+
+	plychat[csize+1]:=who.serial;
+
+	setglobalproperty("plychat",plychat);
+	setglobalproperty("plylock",0);
+	set_critical(0);
+
+endfunction
+
+
+function SetNewbieStatus(player)
+
+	if (player.cmdlevel>0) return 0; endif
+
+	var newbieflag := GetObjProperty(player, "newbie");
+
+	//Make sure we don't tag twice
+	var result:=find(player.name," [New]",1);
+	if (result)
+		if (!newbieflag)
+			SetObjProperty(player,"newbie", 1);
+		endif
+		return 0;
+	endif
+
+	if (newbieflag)
+		return 0;
+	endif
+
+	var gametime := GetObjProperty(player, "onlinetimer");
+
+	if (!gametime or (gametime < 1000000))
+		player.name := player.name + " [New]";
+		SetObjProperty(player,"newbie", 1);
+	endif
+endfunction
+
+
+Function CheckName( Who )
+
+    Var hisname := Lower( who.name );
+    Var cfg := ReadConfigFile( "usednames" );
+    Var elem := FindConfigElem( cfg, hisname );
+
+    If (!elem)
+    SendSysMessage( who, "Name added to the database.", FONT_NORMAL, 2558 );
+    AddName( Who, Lower( Who.name ) );
+    SetObjProperty( Who, "ADNSC", 1);
+    Return 0;
+    Else
+        Var NewName := SendTextEntryGump( who, "The name you choose is already taken.", TE_CANCEL_DISABLE, TE_STYLE_NORMAL, 2595, "Please select a new name" );
+        If( !NewName )
+        SendSysMessage( who, "Try again.", FONT_NORMAL, 2595 );
+        CheckName( Who );
+        Return 0;
+        Endif
+            If( !InvalidChars( Who, NewName ) )
+            CheckName( Who );
+            Return 0;
+            Elseif( ValidChars( Who, NewName ) )
+            SetName( Who, NewName );
+            CheckName( Who );
+            Else
+            CheckName( Who );
+            Endif
+    Endif
+
+Endfunction
+
+Function ValidChars( Who, theName )
+
+    Var validstr := {
+    "a","b","c","d","e","f",
+    "g","h","i","j","k","l",
+    "m","n","o","p","k","r",
+    "s","t","u","v","w","x",
+    "y","z"," ",
+    };
+
+    theName := Lower( theName );
+    Var i;
+
+    For( i := 1; i <= Len( theName ); i := i + 1 )
+    If( !( theName[i] in validstr ) and Len( theName ) >= 17 )
+    SendSysMessage( Who, "Name can contain only letters, no longer than 16 characters.", FONT_NORMAL, 2595 );
+    Return 0;
+    Endif
+    Endfor
+    Return 1;
+
+Endfunction
+
+Function InvalidChars( Who, theName )
+
+    theName := Lower( theName );
+    If( theName[1] == " " and Len( theName ) >= 17 )
+    SendSysMessage( Who, "Name can contain only letters, no longer than 16 characters.", FONT_NORMAL, 2595 );
+    Return 0;
+    Endif
+    Return 1;
+
+Endfunction
+
+Function AddName( Who, nome )
+
+    Var elem := {};
+    Var elems := array;
+    elem.+pname;
+    elem.+pvalue;
+    Var rcfg := ReadConfigFile( "usednames" );
+    elem.pname := "Name";
+    elem.pvalue := nome;
+    elems[1] := elem;
+    AppendConfigFileElem( "usednames" , "Name" , who.name , elems );
+    UnloadConfigFile( "usednames" );
+
+Endfunction
+

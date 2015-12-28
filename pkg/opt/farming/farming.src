@@ -1,0 +1,106 @@
+use uo;
+use cfgfile;
+use os;
+
+include "include/client";
+include "include/objtype";
+include "include/utility";
+include "include/yesno";
+include "include/random";
+
+const UACTION_CHOP := 0x0d;
+
+program use_plant( me, plant)
+
+if (Distance(me, plant) > 3)
+        SendSysMessage(me, "That is too far away!");
+        return;
+endif
+
+var cfg := ReadConfigFile("plants");
+if (!cfg)
+        return;
+endif
+
+var resource_type := cfg[plant.objtype].product;
+if (!resource_type)
+        return;
+endif
+
+var maxamount := cfg[plant.objtype].maxamount;
+var curamount := GetObjProperty(plant, "#amt");
+if (!curamount)
+	curamount := 0;
+endif
+if (curamount >= maxamount)
+        SendSysMessage(me, "That has already been harvested.");
+	DestroyPlant(me, plant);
+        return;
+endif
+
+	var i;
+	var valrandom;
+	var num_chops;
+	var theamount;
+	var distt;
+
+	var difficulty := Random(100);
+
+	var x := me.x;
+	var y:= me.y;
+
+	SendSysMessage(me, "You start harvesting...");
+
+    repeat
+
+        PlaySoundEffect(me, SFX_58);
+	PerformAction( me, ANIM_BOW );
+	sleep(2);
+
+	difficulty := Random(100)+1;
+
+	curamount := CInt(GetObjProperty(plant, "#amt")) + 1;
+	SetObjProperty(plant, "#amt", CInt(curamount) );
+
+	if (CheckSkill(me, SKILLID_LUMBERJACKING, difficulty, 200))
+        	var theroll := Random(100);
+
+		if (theroll == 0)
+			if (HarvestResource( "wood", plant.x, plant.y, 1, 1 ))
+				SendSysMessage(me, "You have found some fertile dirt!");
+				CreateItemInBackpack(me, UOBJ_FERTILE_DIRT, 1);
+			endif
+        	else
+			valrandom:=Random(3)+1; //Fix
+			for (i:=1;i<=valrandom;i:=i+1) //Fix
+				CreateItemInBackpack(me,CInt(cfg[plant.objtype].product), 1); //Fix
+			endfor //Fix
+			SendSysMessage(me, "You put the crops in your pack");
+			if (curamount < maxamount)
+				var parms := {};
+				parms[1] := plant;
+				parms[2] := cfg[plant.objtype].replenishperiod;
+				start_script("regrow", parms);
+				sleep(1);
+			else
+				SendSysMessage(me, "You harvested all you can.");
+				SendSysMessage(me, "Harvest again to destroy the plant.");
+				return 1;
+			endif
+		endif
+	else
+		SendSysMessage(me, "You fail to harvest.");
+
+	endif
+
+    until ( (me.x != x) || (me.y != y) );
+
+	SendSysMessage(me, "You stop harvesting...");
+
+endprogram
+
+function DestroyPlant(me, plant)
+
+if (YesNo(me,"Destroy it?")) DestroyItem(plant); endif
+
+endfunction

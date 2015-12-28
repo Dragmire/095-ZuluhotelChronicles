@@ -1,0 +1,487 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Sept 28, 2005.
+   Version: 1.0
+   Core: 093
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/client";
+Include "util/bank";
+
+Program Test( Who, Text )
+
+    If( !Text )
+    SendSysMessage( Who, "Forgot to enter the Team you want this kid in." );
+    SendSysMessage( Who, "Teams are, 'blue' or 'red' " );
+    Return 0;
+    Endif
+    
+    Var TeamColor;
+    
+    If( Text == "blue" )
+    TeamColor := 1306;
+    Elseif( Text == "red" )
+    TeamColor := 1305;
+    Else
+    SendSysMessage( Who, "Forgot to enter the Team you want this kid in." );
+    SendSysMessage( Who, "Teams are, 'blue' or 'red' " );
+    Return 0;
+    Endif
+    
+    Var Person := Target( Who, TGTOPT_NOCHECK_LOS );
+    
+    If( !Person )
+    Return 0;
+    ENdif
+    
+    Var CleanedOut := 0;
+    
+    If( Person.ip )
+    Var Bag := CreateItemInBackpack( Person, "backpack", 1 );
+        If( Bag )
+        Var bank := FindBankBox( Person );
+	var mount := GetEquipmentByLayer( Person, 25 );
+	var hair := GetEquipmentByLayer(Person, LAYER_HAIR);
+	var beard := GetEquipmentByLayer(Person, LAYER_BEARD);
+	foreach worn in ListEquippedItems( Person )
+		if ( worn and worn != hair and worn != beard and worn != mount and worn != Person.backpack )
+			MoveItemToContainer( worn, Bag );
+		endif
+	endforeach
+	var num := 0;
+	var totalnum := 0;
+	var bp := Person.backpack;
+
+	foreach item in enumerateitemsincontainer(bp)
+		if (item.container.serial == bp.serial)
+			num := num + 1;
+			MoveItemToContainer(item, Bag);
+			sleepms(100);
+		endif
+		totalnum := totalnum + 1;
+	endforeach
+	sendsysmessage(who, "Total items moved: " + totalnum);
+ Var Res := MoveItemToContainer( Bag, Bank );
+ If( Res )
+ CleanedOut := 1;
+ bag.name := "Backpack of " + Person.serial;
+ Endif
+        Endif
+    Endif
+    
+    If( CleanedOut )
+    DressDude( Person, TeamColor );
+    Endif
+
+Endprogram
+
+Function DressDude( Who, TeamColor )
+
+	var cwMage := GetObjProperty (who,"IsMage");
+	var cwWarrior := GetObjProperty (who,"IsWarrior");
+	var cwRanger := GetObjProperty (who,"IsRanger");
+	var cwCrafter := GetObjProperty (who,"IsCrafter");
+	var cwBard := GetObjProperty (who,"IsBard");
+	var cwThief := GetObjProperty (who,"IsThief");
+ 
+	if ( cwBard or cwThief or cwCrafter )
+		SendSysmessage(who,"Sorry, your class is not supported.");
+		return;
+	endif
+ 
+	if (( GetStrength( Who ) < 90 ) && ( GetIntelligence( Who )  < 90 ) && ( GetDexterity( Who ) < 90 ) )
+		SendSysmessage(who,"Sorry, your stats are not high enough.");
+		return;
+	endif
+ 
+	if (cwMage)
+		DressMage(who, TeamColor);
+	elseif (cwWarrior)
+		DressWarrior(who, TeamColor);
+	elseif (cwRanger)
+		DressRanger(who, TeamColor);
+	else
+		DressPP(who, TeamColor);
+	endif
+
+Endfunction
+
+
+function DressMage( player, TeamColor )
+	var ccode := TeamColor;
+    	var hat := CreateItemInBackpack( player, 0x1718, 1);
+	hat.color := ccode;
+	SetObjProperty(hat,"CW",1);
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	regbag.color := ccode;
+	regbag.movable := 0;
+	SetObjProperty(regbag,"CW",1);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 100);
+	bandies.color := ccode;
+	SetObjProperty(bandies,"CW",1);
+	bandies.movable := 0;
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 250);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 250);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 250);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 250);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 250);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 250);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 250);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 250);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+    	var staff := CreateItemInBackpack( player, 0xe8a, 1);
+	staff.color := ccode;
+	SetObjProperty(staff,"CW",1);
+	staff.dmg_mod := 20;
+	staff.name := "a Quarterstaff of Power[CW]";
+	var bow := CreateItemInBackpack( player, 0x7600, 1);
+	bow.color := ccode;
+	SetObjProperty(bow,"CW",1);
+	bow.dmg_mod := 15;
+	bow.name := "Bow of Power[CW]";
+	var arrow := CreateItemInBackpack( player, 0xf3f, 500);
+	arrow.color := ccode;
+	arrow.movable := 0;
+	SetObjProperty(arrow,"CW",1);
+endfunction
+
+function DressWarrior( player, TeamColor )
+	var ccode := TeamColor;
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var arms := CreateItemInBackpack( player, 0x1410, 1);
+	arms.color := ccode;
+	SetObjProperty(arms,"CW",1);
+    	var legs := CreateItemInBackpack( player, 0x1411, 1);
+	legs.color := ccode;
+	SetObjProperty(legs,"CW",1);
+    	var helm := CreateItemInBackpack( player, 0x1412, 1);
+	helm.color := ccode;
+	SetObjProperty(helm,"CW",1);
+    	var gorg := CreateItemInBackpack( player, 0x1413, 1);
+	gorg.color := ccode;
+	SetObjProperty(gorg,"CW",1);
+    	var glove := CreateItemInBackpack( player, 0x1414, 1);
+	glove.color := ccode;
+	SetObjProperty(glove,"CW",1);
+	var bp := CreateItemInBackpack( player, 0x1415, 1);
+	bp.color := ccode;
+	SetObjProperty(bp,"CW",1);
+    	var heater := CreateItemInBackpack( player, 0x1b76, 1);
+	heater.color := ccode;
+	SetObjProperty(heater,"CW",1);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 100);
+	bandies.color := ccode;
+	SetObjProperty(bandies,"CW",1);
+	bandies.movable := 0;
+	var kryss := CreateItemInBackpack( player, 0x1401, 1);
+	kryss.color := ccode;
+	kryss.dmg_mod := 20;
+	SetObjProperty(kryss,"CW",1);
+	kryss.name := "Kryss of Power[CW]";
+    	var mace := CreateItemInBackpack( player, 0xf5c, 1);
+	mace.color := ccode;
+	SetObjProperty(mace,"CW",1);
+	mace.dmg_mod := 20;
+	mace.name := "Mace of Power[CW]";
+    	var sword := CreateItemInBackpack( player, 0xf5e, 1);
+	sword.color := ccode;
+	SetObjProperty(sword,"CW",1);
+	sword.dmg_mod := 20;
+	sword.name := "Broad Sword of Power[CW]";
+    	var spear := CreateItemInBackpack( player, 0xf63, 1);
+	spear.color := ccode;
+	SetObjProperty(spear,"CW",1);
+	spear.dmg_mod := 20;
+	spear.name := "Spear of Power[CW]";
+    	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	regbag.color := ccode;
+	regbag.movable := 0;
+	SetObjProperty(regbag,"CW",1);
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 100);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 100);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 100);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 100);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 100);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 ,100);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 100);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 100);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+	var bow := CreateItemInBackpack( player, 0x7600, 1);
+	bow.color := ccode;
+	SetObjProperty(bow,"CW",1);
+	bow.dmg_mod := 15;
+	bow.name := "Bow of Power[CW]";
+	var arrow := CreateItemInBackpack( player, 0xf3f, 500);
+	arrow.color := ccode;
+	arrow.movable := 0;
+	SetObjProperty(arrow,"CW",1);
+endfunction
+
+function DressRanger( player, TeamColor )
+	var ccode := TeamColor;
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var arms := CreateItemInBackpack( player, 0x13ee, 1);
+	arms.color := ccode;
+	SetObjProperty(arms,"CW",1);
+    	var legs := CreateItemInBackpack( player, 0x13be, 1);
+	legs.color := ccode;
+	SetObjProperty(legs,"CW",1);
+    	var helm := CreateItemInBackpack( player, 0x13c0, 1);
+	helm.color := ccode;
+	SetObjProperty(helm,"CW",1);
+    	var glove := CreateItemInBackpack( player, 0x13f2, 1);
+	glove.color := ccode;
+	SetObjProperty(glove,"CW",1);
+	var bp := CreateItemInBackpack( player, 0x13bf, 1);
+	bp.color := ccode;
+	SetObjProperty(bp,"CW",1);
+	var boots := CreateItemInBackpack( player, 0x170b, 1);
+	boots.color := ccode;
+	SetObjProperty(boots,"CW",1);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 50);
+	bandies.color := ccode;
+	SetObjProperty(bandies,"CW",1);
+	bandies.movable := 0;
+	var bow := CreateItemInBackpack( player, 0x7600, 1);
+	bow.color := ccode;
+	SetObjProperty(bow,"CW",1);
+	bow.dmg_mod := 15;
+	bow.name := "Bow of Power[CW]";
+	var arrow := CreateItemInBackpack( player, 0xf3f, 500);
+	arrow.color := ccode;
+	arrow.movable := 0;
+	SetObjProperty(arrow,"CW",1);
+	var pot;
+	var potloop := 0;
+	while (potloop < 5)
+		potloop := potloop + 1;
+		pot := CreateItemInBackpack (player ,0xdc02, 1);
+		pot.movable := 0;
+		SetObjProperty(pot,"CW",1);
+		SetObjProperty( pot, "noloot" , 1 );
+	endwhile
+    	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	regbag.color := ccode;
+	regbag.movable := 0;
+	SetObjProperty(regbag,"CW",1);
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 100);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 100);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 100);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 100);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 , 100);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 100);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 100);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 100);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+endfunction
+
+function DressPP( player, TeamColor )
+	var ccode := TeamColor;
+    	var robe := CreateItemInBackpack( player, 0x1F03, 1);
+	robe.color := ccode;
+	SetObjProperty(robe,"CW",1);
+	EquipItem( player, robe );
+	SetObjProperty(robe,"CW",1);
+    	var arms := CreateItemInBackpack( player, 0x1410, 1);
+	arms.color := ccode;
+	SetObjProperty(arms,"CW",1);
+    	var legs := CreateItemInBackpack( player, 0x1411, 1);
+	legs.color := ccode;
+	SetObjProperty(legs,"CW",1);
+    	var helm := CreateItemInBackpack( player, 0x1412, 1);
+	helm.color := ccode;
+	SetObjProperty(helm,"CW",1);
+    	var gorg := CreateItemInBackpack( player, 0x1413, 1);
+	gorg.color := ccode;
+	SetObjProperty(gorg,"CW",1);
+    	var glove := CreateItemInBackpack( player, 0x1414, 1);
+	glove.color := ccode;
+	SetObjProperty(glove,"CW",1);
+	var bp := CreateItemInBackpack( player, 0x1415, 1);
+	bp.color := ccode;
+	SetObjProperty(bp,"CW",1);
+    	var heater := CreateItemInBackpack( player, 0x1b76, 1);
+	heater.color := ccode;
+	SetObjProperty(heater,"CW",1);
+	var regbag := CreateItemInBackpack( player, "backpack", 1);
+	SetObjProperty(regbag,"CW",1);
+    	var bandies := CreateItemInBackpack( player, 0xe21, 100);
+	SetObjProperty(bandies,"CW",1);
+	bandies.color := ccode;
+	bandies.movable := 0;
+	regbag.color := ccode;
+	regbag.movable := 0;
+	var reg1 := CreateItemInContainer( regbag, 0xf7a , 100);
+	reg1.movable := 0;
+	SetObjProperty(reg1,"CW",1);
+	var reg2 := CreateItemInContainer( regbag, 0xf7b , 100);
+	reg2.movable := 0;
+	SetObjProperty(reg2,"CW",1);
+	var reg3 := CreateItemInContainer( regbag, 0xf84 , 100);
+	reg3.movable := 0;
+	SetObjProperty(reg3,"CW",1);
+	var reg4 := CreateItemInContainer( regbag, 0xf85 , 100);
+	reg4.movable := 0;
+	SetObjProperty(reg4,"CW",1);
+	var reg5 := CreateItemInContainer( regbag, 0xf86 ,100);
+	reg5.movable := 0;
+	SetObjProperty(reg5,"CW",1);
+	var reg6 := CreateItemInContainer( regbag, 0xf88 , 100);
+	reg6.movable := 0;
+	SetObjProperty(reg6,"CW",1);
+	var reg7 := CreateItemInContainer( regbag, 0xf8c , 100);
+	reg7.movable := 0;
+	SetObjProperty(reg7,"CW",1);
+	var reg8 := CreateItemInContainer( regbag, 0xf8d , 100);
+	reg8.movable := 0;
+	SetObjProperty(reg8,"CW",1);
+	var book := CreateItemInBackpack(player,0x0efa, 1);
+	book.color := ccode;
+	book.newbie := 0;
+	SetObjProperty(book,"CW",1);
+	var i;
+	for (i := 0x1f2d; i <= 0x1f64; i := i + 1)
+		if (spellok ( i )  )
+			CreateItemInContainer(book,  i, 1);
+		endif
+	endfor
+    	var kryss := CreateItemInBackpack( player, 0x1401, 1);
+	kryss.color := ccode;
+	kryss.dmg_mod := 20;
+	kryss.name := "Kryss of Power[CW]";
+	SetObjProperty(kryss,"CW",1);
+    	var mace := CreateItemInBackpack( player, 0xf5c, 1);
+	mace.color := ccode;
+	mace.dmg_mod := 20;
+	mace.name := "Mace of Power[CW]";
+	SetObjProperty(mace,"CW",1);
+    	var sword := CreateItemInBackpack( player, 0xf5e, 1);
+	sword.color := ccode;
+	sword.dmg_mod := 20;
+	sword.name := "Broad Sword of Power[CW]";
+	SetObjProperty(sword,"CW",1);
+    	var spear := CreateItemInBackpack( player, 0xf63, 1);
+	spear.color := ccode;
+	SetObjProperty(spear,"CW",1);
+	spear.dmg_mod := 20;
+	spear.name := "Spear of Power[CW]";
+	var bow := CreateItemInBackpack( player, 0x7600, 1);
+	bow.color := ccode;
+	SetObjProperty(bow,"CW",1);
+	bow.dmg_mod := 15;
+	bow.name := "Bow of Power[CW]";
+	var arrow := CreateItemInBackpack( player, 0xf3f, 500);
+	arrow.color := ccode;
+	arrow.movable := 0;
+	SetObjProperty(arrow,"CW",1);
+endfunction
+
+function spellok ( what )
+
+	case( what )
+		0x1f40	  :
+		0x1f44  :
+		0x1f48  :
+		0x1f4d  :
+		0x1f53  :
+		0x1f5b  :
+		0x1f5e  :
+		0x1f4c  :
+		0x1f60  :
+		0x1f64  :
+		0x1f54  :
+		0xf7a   :	return 0;
+
+		default:	return 1;
+	endcase
+
+endfunction

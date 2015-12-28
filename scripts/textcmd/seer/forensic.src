@@ -1,0 +1,95 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/objtype";
+
+const POINTS := 200;
+
+program forensic( who )
+
+	SendSysMessage( who , "What would you like to inspect?" );
+	var what := Target( who );
+	if( !what )
+		return;
+	endif
+
+	if( what.objtype != UOBJ_CORPSE )
+		SendSysMessage( who , "You can't find anything useful on that." );
+		return;
+	endif
+
+	FaceIt( who , what );
+
+	PrintTextAbove( who , "Let me see..." );
+	PerformAction( who , ANIM_BOW );
+	Sleepms( 1000 );
+	PrintTextAbove( who , "Hmmmm..." );
+	Sleepms( 1000 );
+		var killer  := GetObjProperty( what , "KilledBy" );
+		var chopper := GetObjProperty( what , "ChoppedBy" );
+		var looters := GetObjProperty( what , "LootedBy" );
+		if( !looters )
+			looters := {};
+		endif
+
+		if( killer or chopper or len(looters) )
+			PrintTextAbove( who , "I think I got it..." );
+
+			if( killer )
+				PrintTextAbove( who , "I think it was killed by " + killer + "." );
+				Sleep( 2 );
+			endif
+				PrintTextAbove( who , "I see that it was looted by: " );
+				foreach looter in looters
+					PrintTextAbove( who , looter );
+					Sleep( 1 );
+				endforeach
+
+			if( chopper )
+				PrintTextAbove( who , "Ohh..." );
+				Sleep( 1 );
+				PrintTextAbove( who , "It was brutally chopped by " + chopper + "." );
+			endif
+		else
+			PrintTextAbove( who , "I have no clues..." );
+		endif
+
+endprogram
+
+function FaceIt( who , what )
+
+	var delta_x := who.x - what.x;
+	var delta_y := who.y - what.y;
+	var facing  := who.facing;
+
+	if( delta_x < 0 )
+		if( delta_y < 0 )
+			facing := 3;
+		elseif( delta_y > 0 )
+			facing := 1;
+		else
+			facing := 2;
+		endif
+
+	elseif( delta_x > 0 )
+		if( delta_y < 0 )
+			facing := 5;
+		elseif( delta_y > 0 )
+			facing := 7;
+		else
+			facing := 6;
+		endif
+
+	else
+		if( delta_y < 0 )
+			facing := 4;
+		elseif( delta_y > 0 )
+			facing := 0;
+		endif
+	endif
+
+	who.facing := facing;
+
+endfunction

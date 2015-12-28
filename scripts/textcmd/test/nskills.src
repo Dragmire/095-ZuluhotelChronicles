@@ -1,0 +1,63 @@
+/*
+   Author: MontuZ (MontuZ@Gmail.com) Jan 02, 2005.
+   Version: 1.0
+   Core: 095
+   Bugs: None. Atleast none that I know of..
+   PS: You know it was done by me when it's so clean.
+*/
+
+Use os;
+Use uo;
+
+Include "include/attributes";
+Include "include/gumps";
+
+Program Test( Who, Text )
+
+    Var Skill_Data := GetObjProperty( Who, SKILLSTATE );
+    Var skillid := Cint( Text );
+    Var points := 100;
+    
+    If( !Skill_Data )
+    Var i;
+    Skill_Data := array;
+    For( i := SKILLID_MIN; i <= SKILLID_MAX; i := i + 1 )
+    Skill_Data[i] := SKILLSTATE_NORMAL;
+    Endfor
+    SetObjProperty( Who, SKILLSTATE, Skill_Data );
+    Skill_Data := GetObjProperty( Who, SKILLSTATE );
+    Endif
+    
+    If( Skill_Data[skillid + 1] == SKILLSTATE_LOWER )
+    points := ( 0 - points );
+    Elseif( Skill_Data[skillid + 1] == SKILLSTATE_LOCKED )
+    points := 0;
+    Elseif( Skill_Data[skillid + 1] == SKILLSTATE_NORMAL )
+    points := points;
+    Endif
+    
+    SendSysMessage( Who, "Skill: " + skillid + " Points: " + points );
+
+Endprogram
+
+Function ChangeSkillState( Who, SkillID )
+
+    Var Skill_Data := GetObjProperty( Who, SKILLSTATE );
+    
+    If( Skill_Data[SkillID] == SKILLSTATE_NORMAL )
+    Skill_Data[SkillID] := SKILLSTATE_LOWER;
+    SetObjProperty( Who, SKILLSTATE, Skill_Data );
+    SendSysMessage( Who, GetAttributeIdBySkillId( SkillID - 1 ) + " is now set to Lower." );
+    Elseif( Skill_Data[SkillID] == SKILLSTATE_LOWER )
+    Skill_Data[SkillID] := SKILLSTATE_LOCKED;
+    SetObjProperty( Who, SKILLSTATE, Skill_Data );
+    SendSysMessage( Who, GetAttributeIdBySkillId( SkillID - 1 ) + " is now Locked." );
+    Elseif( Skill_Data[SkillID] == SKILLSTATE_LOCKED )
+    Skill_Data[SkillID] := SKILLSTATE_NORMAL;
+    SetObjProperty( Who, SKILLSTATE, Skill_Data );
+    SendSysMessage( Who, GetAttributeIdBySkillId( SkillID - 1 ) + " is now set to Raise." );
+    Endif
+    
+    Return 1;
+
+EndFunction

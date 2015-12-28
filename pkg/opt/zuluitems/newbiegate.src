@@ -1,0 +1,35 @@
+//
+// updates by Zulu  zuluhotel@home.com  Feb 15 2000
+//  update: 
+
+use os;
+use uo;
+
+const STATCAP := 60;
+
+program newbiegate (who)
+
+var allowed :=1;
+
+var unmod_str := who.strength - who.strength_mod;
+var unmod_dex := who.dexterity - who.dexterity_mod;
+var unmod_int := who.intelligence - who.intelligence_mod;
+
+if (unmod_str > STATCAP)
+	allowed :=0;
+endif
+if (unmod_dex > STATCAP)
+	allowed :=0;
+endif
+if (unmod_int > STATCAP)
+	allowed :=0;
+endif
+
+if (allowed)
+MoveCharacterToLocation( who, 5548, 372, 0 );
+SendSysMessage( who, "Welcome to the newbie dungeon!");
+else
+SendSysMessage( who, "You are not allowed to enter the newbie dungeon.");
+endif
+
+endprogram

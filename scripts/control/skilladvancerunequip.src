@@ -1,0 +1,223 @@
+use uo;
+use os;
+
+include "include/namingbyenchant";
+include "include/attributes";   
+include "include/client";
+
+program unequip( who, it )
+
+	set_critical(1);
+	if (it.graphic == 0x204e)
+		it.graphic := 0x1f03;
+	endif
+
+	if ( CInt(GetObjProperty(it, "Cursed")) == 2)
+		SetObjProperty(it, "StayEquipped", 1 );
+		return 0;
+	endif
+	set_critical(0);
+
+	if ( GetObjProperty( it, "WasCursed"))
+		OpposeEffect( it );
+	endif
+
+	var temp := GetObjProperty( it, "str" );
+	if( temp )
+		SetStrengthMod(who, GetStrengthMod(who) - CInt(temp));
+	endif
+
+	temp := GetObjProperty( it, "int" );
+	if( temp )
+		SetIntelligenceMod(who, GetIntelligenceMod(who) - CInt(temp));
+	endif
+
+	temp := GetObjProperty( it, "dex" );
+	if( temp )
+		SetDexterityMod(who, GetDexterityMod(who) - CInt(temp));
+	endif
+
+	temp := GetObjProperty( it, "DefaultDex" );
+	if( temp )
+		SetDexterityMod(who, GetDexterityMod(who) - CInt(temp));
+	endif
+
+	temp := CInt(GetObjProperty( it, "ArBonus" ));
+	if( temp )
+		who.ar_mod := who.ar_mod - temp;
+	endif
+
+	var skillnum := GetObjProperty(it,"skilladv");
+	if ( (skillnum) || (skillnum == 0) )
+
+		var power := GetObjProperty(who, "currsk" + Cstr(it.serial));	
+			
+		if(power)
+			if(GetSkillTemporaryMod(who, skillnum))			
+				AlterSkillTemporaryMod( who, skillnum, (0 - power ));
+			endif
+			EraseObjProperty(who, "currsk" + Cstr(it.serial)); 
+		endif
+	endif
+
+	var hp := GetObjProperty( it, "HpRegen" );
+	if( hp )
+		SetHpRegenRate(who , ( GetHpRegenRate(who) - hp) * 12);
+		SetObjProperty( who, "baseregen", GetObjProperty( who, "baseregen" ) - hp );
+	endif
+
+	var mana := GetObjProperty( it, "ManaRegen" );
+	if( mana )
+		SetManaRegenRate(who , ( GetManaRegenRate(who) - mana) * 12);
+		SetObjProperty( who, "basemanaregen", GetObjProperty( who, "basemanaregen" ) - mana );
+	endif
+
+	var stamina := GetObjProperty( it, "StamRegen" );
+	if( stamina )
+		SetStaminaRegenRate(who , ( GetStaminaRegenRate(who) - stamina) * 12);
+		SetObjProperty( who, "basestamregen", GetObjProperty( who, "basemanaregen" ) - stamina );
+	endif
+
+	UndoImmunity( who, it );
+	UndoProt( who, it );
+
+	if ( GetObjProperty( it, "WasCursed"))
+		OpposeEffect( it );
+	endif
+
+	if (GetObjProperty( it, "OfBlackrock" ) )
+		SetMana(who, 0);
+	endif
+
+	EraseObjProperty( it, "EquippedAlready" );
+	return 1;
+
+endprogram
+
+
+function UndoImmunity( who, item )
+
+	var equipped_matrix := GetObjProperty( who, "ImmunityMatrix" );
+	if( !equipped_matrix )
+		equipped_matrix := {};
+	endif
+
+	var prots := { "PermPoisonImmunity",
+			 "PermMagicImmunity",
+			 "Permmr",
+			 "FireProtection",
+			 "WaterProtection",
+			 "AirProtection",
+			 "EarthProtection",
+			 "FreeAction",
+			 "NecroProtection",
+			 "HolyProtection",
+			 "PhysicalProtection",
+			 "HealingIncrease" };
+
+
+	var i;
+	for( i := 1; i <= len(prots); i := i + 1 )
+		var protlvl := CInt( GetObjProperty( item, prots[i] ) );
+		if( protlvl )
+			var new_prot_vector := {};
+			if( !equipped_matrix[i] )
+				equipped_matrix[i] := {};
+			endif
+		
+			var j := 1;
+			var removed := 0;
+			while( !removed && j <= len(equipped_matrix[i]) )
+				if( protlvl == CInt( equipped_matrix[i][j] ) )
+					removed := 1;
+				else
+					new_prot_vector.append( CInt(equipped_matrix[i][j]) );
+				endif
+				j := j + 1;
+			endwhile
+		
+			while( j <= len(equipped_matrix[i]) )
+				new_prot_vector.append( CInt(equipped_matrix[i][j]) );
+				j := j + 1;
+			endwhile
+		
+			if( CInt( GetObjProperty( who, prots[i] ) ) == protlvl )
+				var max := 0;
+				var min := 0;
+			
+				foreach lvl in new_prot_vector
+					if( lvl < min )
+						min := lvl;
+					elseif( lvl > max )
+						max := lvl;
+					endif
+				endforeach
+			
+				if( min )
+					SetObjProperty( who, prots[i], min );
+				elseif( max )
+					SetObjProperty( who, prots[i], max );
+				else
+					EraseObjProperty( who, prots[i] );
+				endif
+			endif
+		
+			equipped_matrix[i] := new_prot_vector;
+		endif
+	endfor
+
+	SetObjProperty( who, "ImmunityMatrix", equipped_matrix );
+
+endfunction
+
+
+function UndoProt( who, item )
+
+	var equipped_matrix := GetObjProperty( who, "ProtectionMatrix" );
+	if( !equipped_matrix )
+		equipped_matrix := {};
+	endif
+
+	var prots := { "PoisonImmunity",
+			 "MagicImmunity",
+			 "SpellReflect" };
+			
+	var i;
+	for( i := 1; i <= len(prots); i := i + 1 )
+		if( GetObjProperty( item, prots[i] ) )
+			var new_prot_vector := {};
+			if( !equipped_matrix[i] )
+				equipped_matrix[i] := {};
+			endif
+		
+			foreach serial in (equipped_matrix[i])
+				if( serial != item.serial )
+					new_prot_vector.append( serial );
+				endif
+			endforeach
+		
+			if( len(new_prot_vector) )
+				if( GetObjProperty( who, prots[i] ) == item.serial )
+					SetObjProperty( who, prots[i], CInt(new_prot_vector[len(new_prot_vector)]) );
+				endif
+			else
+				EraseObjProperty( who, prots[i] );
+			endif
+		
+			equipped_matrix[i] := new_prot_vector;
+		endif
+	endfor
+
+	SetObjProperty( who, "ProtectionMatrix", equipped_matrix );
+
+endfunction
+
+function RawToBaseSkill(rawvalue)
+	
+	var scale := Cint(log10(rawvalue) / log10(2));
+	if(scale <= 11)
+		return Cint(rawvalue / 20.48);
+	else
+		return Cint(rawvalue / (Pow(2, scale) + scale - 11) * 100);
+	endif
+endfunction

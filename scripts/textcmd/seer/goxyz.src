@@ -1,0 +1,43 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//  ".goxyz x y [z]" - jump to a location, specifying coordinates.
+//
+//  If Z is not specified, map data will be read.  Note statics and dynamic
+//  items won't be taken into account, except insofar as 
+//  MoveCharacterToLocation does automatically.
+//
+//  Last Modified: 1999/02/06 Syzygy
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+use uo;
+use os;
+
+program textcmd_goxyz( who, text )
+	var params := SplitWords( text );
+    if (len(params) < 3) // didn't pass Z
+        params[3] := GetMapInfo( CInt(params[1]), CInt(params[2]) ).z;
+    endif
+
+	var res := MoveCharacterToLocation( who, CInt(params[1]), CInt(params[2]), CInt(params[3]), MOVECHAR_FORCELOCATION );
+
+    if (!res)
+        SendSysMessage( who, "Unable to go there: " + res.errortext );
+    endif
+    showflame(who);
+
+endprogram
+
+function showflame(who)
+  var coolflame;
+
+  if ((who.cmdlevel>3) and (who.concealed<>1))
+    coolflame := CreateItemAtLocation( who.x, who.y, who.z, 0x3709, 1 );
+    playsoundeffect(who, 0x208);
+    sleep(3);
+    destroyitem(coolflame);
+  endif
+
+endfunction
+

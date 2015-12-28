@@ -1,0 +1,82 @@
+use os;
+use uo;
+include "include/client";
+include "include/math";
+program cwprize (who)
+	Detach ();
+	var cwitem := {};
+	var checkcw := 0;
+	var found := 0;
+	var loop := 0;
+	var lfame;
+	var lkarma;
+	var cwcrim;
+	var cwmurd;
+	var giveprize := GetObjProperty(who,"cwprize");
+	var loops := CInt(giveprize/60000);
+	var diff;
+	if (loops > 0)
+		diff := (giveprize-(loops*60000));
+		loop := 1;
+	else
+		diff := giveprize;
+	endif
+	if (giveprize)
+		SendSysmessage( who, "Congratulations! You won a color wars token." ); 
+		CreateItemInBackpack( who, 0xa395, 1);
+		if (loop ==1)
+			while (loops > 0)
+				loops := loops - 1;
+				CreateItemInBackpack( who, 0xeed, 60000);
+			endwhile
+		endif
+		CreateItemInBackpack( who, 0xeed, diff);
+		EraseObjProperty(who,"cwprize");
+	else
+		SendSysmessage( who, "Sorry, you can't claim a prize." ); 
+	endif
+	loop := 0;
+	foreach worn in ListEquippedItems (who )
+		checkcw := GetObjProperty( worn, "CW" );
+		if ( checkcw )
+			EraseObjProperty(worn,"Cursed");
+			MoveItemToContainer(worn, who.backpack);
+			checkcw := 0;
+		endif
+	endforeach
+	foreach item in EnumerateItemsInContainer( who.backpack )
+		checkcw := GetObjProperty( item, "CW" );
+		if ( checkcw )
+			found := found + 1;
+			cwitem[found] := item;
+			checkcw := 0;
+		endif
+	endforeach
+	while ( loop < found )
+		loop := loop + 1;	
+		DestroyItem(cwitem[loop]);
+	endwhile
+	sleep (2);
+	EraseObjProperty(who,"cwarring");
+	EraseObjProperty(who,"cwcolor");
+	lfame := GetObjProperty(who,"cwfame");
+	lkarma:= GetObjProperty(who,"cwkarma");
+	if (lfame)
+		SetObjProperty(who,"Fame",lfame);
+	endif
+	if (lkarma)
+		SetObjProperty(who,"Karma",lkarma);
+	endif
+	cwcrim := GetObjProperty(who,"cwcrim");
+	if (!cwcrim)
+		cwcrim := 0;
+	endif
+	cwmurd := GetObjProperty(who,"cwmurd");
+	if (!cwmurd)
+		cwmurd := 0;
+	endif
+	who.setmurderer(cwmurd);
+	who.setcriminal(cwcrim);
+	MoveCharacterToLocation( who, 5384, 1179, 0, 0);
+endprogram
+	

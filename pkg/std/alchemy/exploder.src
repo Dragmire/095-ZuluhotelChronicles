@@ -1,0 +1,80 @@
+use uo;
+use cfgfile;
+use os;
+
+
+include "include/checkcity";
+include "include/drinkpotion";
+include "include/spelldata";
+include "include/client";
+include "include/random";
+
+program exploder(parms)
+
+	var explosion_potions := { 0xdc07, 0xdc08, 0xdc09 };
+	var thrower	:= parms[1];
+	var potion	:= parms[2];
+	var where	:= parms[3];
+
+	var power := GetPotionStrength( potion );
+	SubtractAmount( potion, 1 );
+	SetScriptController( thrower );
+
+	if( CheckCity(thrower) )
+		power := power - 1;
+	endif
+
+	if( power < 1 )
+		power := 1;
+	endif
+
+	var lookout := CreateItemAtLocation( CInt(where.x), CInt(where.y), CInt(where.z), 0x0f0d, 1 );
+	lookout.movable := 0;
+
+	PrintTextAbove( lookout, "3");
+	sleep(1);
+	PrintTextAbove( lookout, "2");
+	sleep(1);
+	PrintTextAbove( lookout, "1");
+	sleep(1);
+
+	PlayObjectCenteredEffect( lookout, FX_SPELL_EXPLOSION, SPEED_SPELL_EXPLOSION, LOOP_SPELL_EXPLOSION );
+	DestroyItem( lookout );
+
+	var dmg := (Random(9)+12) * power;
+	foreach critter in ListMobilesNearLocationEx( CInt(where.x),CInt(where.y),CInt(where.z), power, LISTEX_FLAG_NORMAL + LISTEX_FLAG_HIDDEN );
+          If( !critter.multi )
+		PlayObjectCenteredEffect( critter, FX_SPELL_EXPLOSION, SPEED_SPELL_EXPLOSION, LOOP_SPELL_EXPLOSION );
+		PlaySoundEffect( critter, SFX_SPELL_EXPLOSION );
+  If( critter == thrower )
+  ApplyElementalDamageNoResist( critter, thrower, CInt(dmg/3), FIRE );
+  Endif
+		if( critter.isA(POLCLASS_NPC) )
+			ApplyElementalDamageNoResist( critter, thrower, dmg, FIRE );
+		else
+			ApplyElementalDamageNoResist( critter, thrower, CInt(dmg/2), FIRE );
+		endif
+          Endif
+	endforeach
+
+	foreach item in ListItemsNearLocation( CInt(where.x), CInt(where.y), CInt(where.z), power )
+		if( item.objtype in explosion_potions && item.movable )
+			var parms2 := {};
+			var loc := array;
+			loc.+x;
+			loc.+y;
+			loc.+z;
+			loc.x := item.x;
+			loc.y := item.y;
+			loc.z := item.z;
+			parms2[1] := thrower;
+			parms2[2] := item;
+			parms2[3] := loc;
+		
+			start_script( ":alchemy:exploder", parms2 );
+		endif
+	endforeach
+
+endprogram
+
+    

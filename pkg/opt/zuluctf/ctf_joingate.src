@@ -1,0 +1,717 @@
+use uo;
+use os;
+
+include "ctf1";
+include "include/attributes";
+include "include/random";
+
+var layout := {
+"resizepic 0 0 3600 600 450",
+"page 0",
+"noclose",
+"nodispose",
+"nomove",
+"page 1",
+"text 200 25 995 6",
+"text 170 65 995 7",
+"text 170 85 995 8",
+"gumppic 50 50 5536",
+"button 240 120 5587 5588 0 2",
+"button 240 240 5567 5568 0 3",
+"button 340 120 5551 5552 0 4",
+"button 340 240 5585 5586 0 5",
+"button 440 120 5569 5570 0 6",
+"button 440 240 5563 5564 0 7",
+"button 240 370 5507 5509 0 8",
+"button 340 370 5525 5527 0 9",
+"button 453 365 5513 5515 1 0 0",
+"button 68 320 5608 5610 0 10",
+"button 68 225 5522 5524 0 11",
+"text 232 180 995 0",
+"text 332 180 995 1",
+"text 445 180 995 2",
+"text 227 300 995 3",
+"text 341 300 995 4",
+"text 450 300 995 5",
+"text 50 380 995 9",
+"page 2",
+"gumppic 15 50 1800",
+"gumppic 45 80 50928",
+"gumppic 45 80 60529",
+"gumppic 45 80 60528",
+"gumppic 45 80 60530",
+"gumppic 45 80 60531",
+"gumppic 45 80 50527",
+"gumppic 45 80 50644",
+"text 75 20 300 13",
+"text 240 65 995 81",
+"text 240 85 995 82",
+"text 240 125 995 83",
+"text 240 145 995 84",
+"text 240 185 995 85",
+"text 240 205 995 86",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 21",
+"page 3",
+"gumppic 15 50 1800",
+"gumppic 45 80 50928",
+"gumppic 45 80 60529",
+"gumppic 45 80 60528",
+"gumppic 45 80 60530",
+"gumppic 45 80 60531",
+"gumppic 45 80 50527",
+"gumppic 45 80 50642",
+"text 75 20 300 13",
+"text 240 65 995 74",
+"text 240 85 995 75",
+"text 240 125 995 76",
+"text 240 145 995 77",
+"text 240 185 995 78",
+"text 240 205 995 79",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 22",
+"page 4",
+"gumppic 15 50 1800",
+"gumppic 45 80 12",
+"gumppic 45 80 50561",
+"gumppic 45 80 50540",
+"gumppic 45 80 50476",
+"gumppic 45 80 50551",
+"gumppic 45 80 50538",
+"gumppic 45 80 50649",
+"text 75 20 300 13",
+"text 240 65 995 60",
+"text 240 85 995 61",
+"text 240 125 995 62",
+"text 240 145 995 63",
+"text 240 185 995 64",
+"text 240 205 995 65",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 23",
+"page 5",
+"gumppic 15 50 1800",
+"gumppic 45 80 50928",
+"gumppic 45 80 60529",
+"gumppic 45 80 60528",
+"gumppic 45 80 60530",
+"gumppic 45 80 60531",
+"gumppic 45 80 50527",
+"gumppic 45 80 50643",
+"text 75 20 300 13",
+"text 240 65 995 67",
+"text 240 85 995 68",
+"text 240 125 995 69",
+"text 240 145 995 70",
+"text 240 185 995 71",
+"text 240 205 995 72",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 24",
+"page 6",
+"gumppic 15 50 1800",
+"gumppic 45 80 12",
+"gumppic 45 80 50409",
+"gumppic 45 80 50540",
+"gumppic 45 80 50476",
+"gumppic 45 80 50551",
+"gumppic 45 80 50538",
+"gumppic 45 80 50984",
+"text 75 20 300 13",
+"text 240 65 995 46",
+"text 240 85 995 47",
+"text 240 125 995 48",
+"text 240 145 995 49",
+"text 240 185 995 50",
+"text 240 205 995 51",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 25",
+"page 7",
+"gumppic 15 50 1800",
+"gumppic 45 80 12",
+"gumppic 45 80 50561",
+"gumppic 45 80 50540",
+"gumppic 45 80 50476",
+"gumppic 45 80 50551",
+"gumppic 45 80 50538",
+"gumppic 45 80 50981",
+"text 75 20 300 13",
+"text 240 65 995 53",
+"text 240 85 995 54",
+"text 240 125 995 55",
+"text 240 145 995 56",
+"text 240 185 995 57",
+"text 240 205 995 58",
+"button 300 380 5537 5538 0 1",
+"button 400 380 5540 5541 1 0 26",
+"page 8",
+"text 200 25 995 6",
+"gumppic 50 50 5536",
+"text 240 55 995 37",
+"text 200 95 995 38",
+"text 200 115 995 39",
+"text 200 155 995 40",
+"text 200 175 995 41",
+"text 200 195 995 42",
+"text 200 235 995 43",
+"text 200 255 995 44",
+"button 300 380 5537 5538 0 1",
+"page 9",
+"text 200 25 995 18",
+"resizepic 455 60 2620 110 130",
+"text 466 140 33 14",
+"text 499 140 995 15",
+"text 519 140 4 16",
+"text 465 160 995 17",
+"gumppic 372 0 50501",
+"gumppic 50 50 5536",
+"text 160 65 300 19",
+"text 240 65 995 20",
+"text 160 85 995 21",
+"text 160 125 300 22",
+"text 342 125 995 23",
+"text 160 145 995 24",
+"text 160 185 300 25",
+"text 290 185 995 26",
+"text 160 205 995 27",
+"text 60 245 300 28",
+"text 215 245 995 29",
+"text 60 285 300 30",
+"text 135 285 995 31",
+"text 60 325 300 32",
+"text 110 325 995 33",
+"text 60 345 995 34",
+"button 300 380 5537 5538 0 1",
+"page 10",
+"text 200 25 995 6",
+"gumppic 50 50 5536",
+"text 200 120 600 91",
+"text 200 160 600 92",
+"text 200 180 600 93",
+"text 200 220 600 94",
+"text 200 240 600 95",
+"text 200 280 600 108",
+"text 200 300 600 109",
+"text 360 160 300 96",
+"text 360 180 300 97",
+"text 320 220 300 98",
+"text 320 240 300 99",
+"text 330 280 300 110",
+"text 330 300 300 111",
+"button 300 380 5537 5538 0 1",
+"page 11",
+"text 200 25 995 6",
+"gumppic 50 50 5536",
+"text 200 80 600 101",
+"text 345 80 600 13",
+"text 200 110 600 102",
+"tilepic 200 140 11537",
+"text 240 140 300 106",
+"tilepic 280 140 11538",
+"text 320 140 300 107",
+"text 200 200 600 35",
+"text 320 200 300 100",
+"text 200 225 600 103",
+"text 200 250 600 104",
+"text 200 275 600 105",
+"text 320 225 300 88",
+"text 320 250 300 89",
+"text 320 275 300 90",
+"button 300 380 5537 5538 0 1"
+};
+
+var data := {
+"War Axe",
+"War Bow",
+"Magic",
+"War Mace",
+"Warrior",
+"Cleric",
+"Zulu Hotel's Capture the Flag v3",
+"Welcome to the CTF player select. Pick the type of",
+"character you would like to be, from the list below.",
+"Current Game",
+"Kills:",
+"Deaths:",
+"Captures:",
+"Player Name",
+"Red",
+"or",
+"Blue",
+"Colored Flag",
+"Capture the Flag Help",
+"The object:",
+"locate the opposite flag and",
+"take it to your base and touch your flag.",
+"To pick up opposite flag:",
+"double click it",
+"or walk over it.",
+"To drop the flag:",
+"within your paper doll,",
+"double click on the flag or type .dropflag",
+"To return your flag:",
+"double click the flag or walk over it.",
+"Winning:",
+"the first team to capture 6 flags wins the game.",
+"Death:",
+"if you die, you will be transported to a waiting room.",
+"You will return to the game with flag capture or 30 seconds.",
+"Top Score:",
+"",
+"(c) 2000,2001 by Zulu",
+"Designed by Zulu",
+"Coded    by Zulu",
+"This version of CTF was loosely based on the",
+"CTF mod for Quake 2 and suggestions.",
+"Some sounds from Quake CTF/Jailbreak mods.",
+"If you have any comments or suggestions please",
+"Email: zulu@zuluhotel.com",
+"",
+"The magician is a great choice for players",
+"who like to use magic.",
+"This comes with all the magic skills required",
+"and a bunch of random scrolls to help you win.",
+"The magician get bonus skill points for",
+"having less armor protection.",
+"",
+"The cleric is a great choice for players",
+"who like hiding and stealth.",
+"This comes with all the skills required to",
+"make the cleric a strong choice by players.",
+"The cleric gets bonus skill points for",
+"having less armor protection.",
+"",
+"The archer is a great choice for players that",
+"like to make their kills from a distance.",
+"This comes with all the skills required to",
+"make your archer a strong player.",
+"The archer gets bonus skill points for",
+"having less armor protection.",
+"",
+"The warrior is a great choice for players",
+"who like to be in the action.",
+"This comes with all the skills that a good",
+"warrior needs to win.",
+"The warrior gets bonus strength points and",
+"a powerful one handed sword.",
+"",
+"The mace fighter is a great choice for players",
+"who like being in the center of it.",
+"This comes with all the skills required to",
+"make the mace fighter a strong class.",
+"The mace fighter gets bonus skill points for",
+"fighting and a custom mace.",
+"",
+"The axe fighter is another great choice for",
+"being in the action.",
+"This comes with all the skills required to",
+"make your fighter a force to be reckon with.",
+"The axe fighter gets bonus skill points for",
+"fighting and a powerful one handed axe.",
+"",
+"0",
+"0",
+"0",
+"Stats for current game",
+"Blue Team Players:",
+"Red Team Players:",
+"Blue Captures:",
+"Red Captures:",
+"0",
+"0",
+"0",
+"0",
+"topscore",
+"Stats Overview for",
+"Total Metals Awarded:",
+"Total Kills:",
+"Total Deaths:",
+"Total Captures:",
+"defense",
+"offense",
+"Blue Top Score:",
+"Red Top Score:",
+"topscore",
+"topscore",
+};
+
+program joinctf(who,item)
+
+if (who.title_race=="CTF_II") who.title_race:="ZuluCTF"; endif
+
+if (who.title_race!="ZuluCTF")
+MoveCharacterToLocation(who,1417,1715,20);
+SendSysMessage(who,"You are not allowed to be here!",3,34);
+return;
+endif
+
+var ctfloc:=GetObjProperty(who,"ctfloc");
+var redwait:={6039,407,0},bluewait:={6047,223,44};
+var team:=GetObjProperty(who,"team");
+
+if (GetObjProperty(who,"ctftopscore")==error)
+SetObjProperty(who,"ctftopscore",0);
+SetObjProperty(who,"ctfdefense",0);
+SetObjProperty(who,"ctfoffense",0);
+endif
+
+dismount(who);
+
+if (who.dead)
+Resurrect(who);
+DestroyItem(GetEquipmentByLayer(who,0x16));
+endif
+
+PlaySoundEffectPrivate( who, 0x14b, who );
+
+// players already in a game and should not be here.
+if (team=="BLUE" && ctfloc>0)
+SetObjProperty(who,"ctfloc",1);
+MoveCharacterToLocation(who,bluewait[1],bluewait[2],bluewait[3]);
+return;
+elseif (team=="RED" && ctfloc>0)
+SetObjProperty(who,"ctfloc",1);
+MoveCharacterToLocation(who,redwait[1],redwait[2],redwait[3]);
+return;
+endif
+
+data[14]:=who.name;
+data[89]:=GetObjProperty(who,"totalctfkills");
+data[90]:=GetObjProperty(who,"totalctfdeaths");
+data[91]:=GetObjProperty(who,"totalctfcaps");
+data[97]:=GetGlobalProperty("ctfblueteam");
+data[98]:=GetGlobalProperty("ctfredteam");
+data[99]:=GetGlobalProperty("ctfbluecaps");
+data[100]:=GetGlobalProperty("ctfredcaps");
+data[101]:=GetObjProperty(who,"ctftopscore");
+data[107]:=GetObjProperty(who,"ctfdefense");
+data[108]:=GetObjProperty(who,"ctfoffense");
+data[111]:=GetGlobalProperty("ctfbluescore");
+data[112]:=GetGlobalProperty("ctfredscore");
+
+var teamcolor,box;
+
+teamcolor:=item.color;
+who.setParalyzed(1);
+box:=SendDialogGump(who,layout,data);            
+
+case (box[0])
+       21: fixplayer(who,"axe",teamcolor);
+       22: fixplayer(who,"mace",teamcolor);
+       23: fixplayer(who,"bow",teamcolor);
+       24: fixplayer(who,"warrior",teamcolor);
+       25: fixplayer(who,"mage",teamcolor);
+       26: fixplayer(who,"cleric",teamcolor);
+	0: SendSysMessage(who,"canceled.",3,34);
+	   who.setParalyzed(0);
+	   return;
+endcase
+
+team:=GetObjProperty(who,"team");
+SetObjProperty(who,"ctfloc",1);
+
+set_critical(1);
+
+var ctfplyr:=GetGlobalProperty("#ctfplyr"),csize:=ctfplyr.size();
+
+if (ctfplyr[1]=="NONE") csize:=0; endif
+
+ctfplyr[csize+1]:=who.serial;
+
+SetGlobalProperty("#ctfplyr",ctfplyr);
+set_critical(0);
+
+if (GetDexterity(who)==1) SetBaseDexterity(who,50); endif
+
+if (team=="BLUE")
+SetGlobalProperty("ctfblueteam",GetGlobalProperty("ctfblueteam")+1);
+MoveCharacterToLocation(who,bluewait[1],bluewait[2],bluewait[3]);
+endif
+
+if (team=="RED")
+SetGlobalProperty("ctfredteam",GetGlobalProperty("ctfredteam")+1);
+MoveCharacterToLocation(who,redwait[1],redwait[2],redwait[3]);
+endif
+
+CreateItemInBackpack(who,0xeed,100);
+who.setParalyzed(0);
+
+endprogram
+
+
+function tellplayers(who,teamcolor)
+
+var team:="red";
+
+if (teamcolor==4) team:="blue"; endif
+
+messagectf(who.name+" joined "+team+" team.",teamcolor);
+
+endfunction
+
+
+function fixplayer(who,class,team)
+
+var i,item;
+
+for(i:=1;i<=25;i:=i+1)
+if ((i!=11) && (i!=16))
+item:=GetEquipmentByLayer(who,i);
+DestroyItem(item);
+endif
+endfor
+
+item:=GetEquipmentByLayer(who,0x15);
+DestroyItem(item);
+
+item:=CreateItemAtLocation(who.x,who.y,who.z,0xe75,1);
+EquipItem(who,item);
+
+SetObjProperty(who,"ctfclass",class);
+
+colorstuff(who,-1);
+
+if (team==4)
+  SetObjProperty(who,"team","BLUE");
+  tellplayers(who,"BLUE");
+else
+  SetObjProperty(who,"team","RED");
+  tellplayers(who,"RED");
+endif
+
+outfit(who);
+EraseObjProperty(who,"StatsState");
+SetObjProperty(who,"ctfkills",0);
+SetObjProperty(who,"ctfdeaths",0);
+SetObjProperty(who,"ctfcaps",0);
+SetObjProperty(who,"ctfscore",0);
+SetObjProperty(who,"ctfddd",0);
+SetObjProperty(who,"ctfooo",0);
+
+endfunction
+
+
+function dismount(who)
+
+var mount:=GetEquipmentByLayer(who,25);
+
+if (!mount) return; endif
+DestroyItem(mount);
+
+endfunction
+
+
+function outfit(who)
+
+var class:=GetObjProperty(who,"ctfclass");
+
+var armor01:={0x1410,0x1411,0x1412,0x1413,0x1414,0x1415,0x1515};
+var armor02:={0x1711,0x1718,0x13be,0x13bf,0x13c6,0x13c7,0x13c8,0x1f03};
+var armor03:={0x1711,0x13bb,0x13be,0x13bf,0x13c6,0x13c7,0x13c8,0x1f03};
+
+var i,item;
+
+for(i:=0;i<=48;i:=i+1)
+  SetBaseSkill(who,i,0);
+endfor
+
+if (class=="axe")
+SetBaseStrength(who,100);
+SetBaseDexterity(who,100);
+SetBaseIntelligence(who,50);
+SetHp(who,100);
+SetStamina(who,100);
+SetMana(who,50);
+setskill(who,41,(Random(21)+75));
+setskill(who,27,(Random(21)+60));
+setskill(who,43,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+40));
+setskill(who,17,(Random(41)+40));
+setskill(who,26,(Random(21)+10));
+
+for(i:=1;i<=6;i:=i+1)
+item:=CreateItemInBackpack(who,armor01[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+
+item:=CreateItemInBackpack(who,0x9950,1);
+SetObjProperty(item,"StayEquipped",1);
+SetObjProperty(item,"X6",1);
+EquipItem(who,item);
+item.movable:=0;
+return;
+endif
+
+if (class=="mace")
+SetBaseStrength(who,100);
+SetBaseDexterity(who,100);
+SetBaseIntelligence(who,50);
+SetHp(who,100);
+SetStamina(who,100);
+SetMana(who,50);
+setskill(who,41,(Random(21)+75));
+setskill(who,27,(Random(21)+60));
+setskill(who,43,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+40));
+setskill(who,17,(Random(41)+40));
+setskill(who,26,(Random(21)+10));
+
+for(i:=1;i<=6;i:=i+1)
+item:=CreateItemInBackpack(who,armor01[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+
+item:=CreateItemInBackpack(who,0x9956,1);
+SetObjProperty(item,"StayEquipped",1);
+SetObjProperty(item,"X6",1);
+EquipItem(who,item);
+item.movable:=0;
+return;
+endif
+
+if (class=="bow")
+SetBaseStrength(who,90);
+SetBaseDexterity(who,110);
+SetBaseIntelligence(who,70);
+SetHp(who,90);
+SetStamina(who,110);
+SetMana(who,70);
+setskill(who,31,(Random(21)+75));
+setskill(who,27,(Random(21)+60));
+setskill(who,42,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+40));
+setskill(who,17,(Random(41)+40));
+setskill(who,26,(Random(21)+10));
+
+for(i:=1;i<=7;i:=i+1)
+item:=CreateItemInBackpack(who,armor03[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+
+item:=CreateItemInBackpack(who,0x9952,1);
+SetObjProperty(item,"StayEquipped",1);
+SetObjProperty(item,"X6",1);
+EquipItem(who,item);
+item.movable:=0;
+return;
+endif
+
+if (class=="warrior")
+SetBaseStrength(who,130);
+SetBaseDexterity(who,70);
+SetBaseIntelligence(who,40);
+SetHp(who,130);
+SetStamina(who,70);
+SetMana(who,40);
+setskill(who,40,(Random(21)+70));
+setskill(who,27,(Random(21)+60));
+setskill(who,43,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+40));
+setskill(who,17,(Random(41)+40));
+setskill(who,26,(Random(21)+10));
+
+for(i:=1;i<=7;i:=i+1)
+item:=CreateItemInBackpack(who,armor01[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+
+item:=CreateItemInBackpack(who,0x9958,1);
+SetObjProperty(item,"StayEquipped",1);
+SetObjProperty(item,"X6",1);
+EquipItem(who,item);
+item.movable:=0;
+return;
+endif
+
+if (class=="mage")
+SetBaseStrength(who,80);
+SetBaseDexterity(who,40);
+SetBaseIntelligence(who,120);
+SetHp(who,80);
+SetStamina(who,40);
+SetMana(who,120);
+setskill(who,25,(Random(21)+70));
+setskill(who,26,(Random(21)+60));
+setskill(who,21,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+40));
+setskill(who,17,(Random(41)+40));
+setskill(who,16,(Random(21)+40));
+setskill(who,43,(Random(21)+75));
+
+SetManaRegenRate(who, (200) * 12);
+SetHpRegenRate(who, (200) * 12);
+
+for(i:=1;i<=8;i:=i+1)
+item:=CreateItemInBackpack(who,armor02[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+
+item:=CreateItemInBackpack(who,0x0efa,1);
+for (i:=0x1f2d;i<=0x1f58;i:=i+1)
+CreateItemInContainer(item,i,Random(2));
+endfor
+return;
+endif
+
+if (class=="cleric")
+SetBaseStrength(who,90);
+SetBaseDexterity(who,70);
+SetBaseIntelligence(who,60);
+SetHp(who,90);
+SetStamina(who,70);
+SetMana(who,60);
+setskill(who,21,(Random(21)+75));
+setskill(who,14,(Random(21)+85));
+setskill(who,16,(Random(21)+60));
+setskill(who,38,(Random(21)+40));
+setskill(who,25,(Random(21)+40));
+setskill(who,5,(Random(21)+30));
+setskill(who,46,(Random(41)+50));
+setskill(who,17,(Random(41)+50));
+setskill(who,26,(Random(21)+40));
+
+for(i:=1;i<=8;i:=i+1)
+item:=CreateItemInBackpack(who,armor03[i],1);
+SetObjProperty(item,"StayEquipped",1);
+item.equipscript:="";
+item.unequipscript:="";
+EquipItem(who,item);
+item.movable:=0;
+endfor
+endif
+
+endfunction
+
+
+function setskill(who,skill,skillamount)
+
+   //var basevalue:=CInt(CDbl(skillamount)*10);
+    //var rawvalue:=BaseSkillToRawSkill(basevalue);
+
+    if (skill != error && Cint(skillamount) != error)
+        SetBaseSkill(who,skill,Cint(skillamount));
+    endif
+endfunction

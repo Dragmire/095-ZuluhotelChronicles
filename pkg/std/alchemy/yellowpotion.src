@@ -1,0 +1,37 @@
+use os;
+use uo;
+use cfgfile;
+
+include "include/drinkpotion";
+include "include/random";
+include "include/client";
+include "include/damages";
+
+program drink_blue (character, potion)
+
+	if( !CheckIfCanDrink(character) )
+		return;
+	endif
+
+	if( IsPoison( potion ) )
+		DoPoison( character, potion );
+
+	else
+		var power	:= GetPotionStrength( potion );
+		EmptyBottle( character, potion );
+		var healed	:= RandomDiceStr( "12d" + CStr( power + 1 ) );
+		var bonus := GetObjProperty( character, "HealingIncrease" );
+		if( bonus )
+			healed := healed + CInt(healed * bonus * 0.1 );
+		endif
+	
+		PlaySoundEffect( character,  SFX_SPELL_HEAL );
+		PlayObjectCenteredEffect( character, FX_SPELL_HEAL, SPEED_SPELL_HEAL, LOOP_SPELL_HEAL );
+		HealTheDamage( character, healed );
+	endif
+
+	Detach();
+	sleep( DELAY_BETWEEN_DRINK );
+	CanDrink( character );
+
+endprogram

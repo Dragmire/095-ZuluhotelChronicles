@@ -1,0 +1,40 @@
+use uo;
+use os;
+
+include "include/constants/propids";
+
+program textcmd_getlooters( who )
+	SendSysMessage(who, "Select a corpse.");
+	var corpse := Target(who);
+	if( !corpse )
+		return 0;
+	elseif( !corpse.isA(POLCLASS_CORPSE) )
+		SendSysMessage(who, "You must target a corpse.");
+		return 0;
+	else
+		var looters := GetObjProperty(corpse, PROPID_CORPSE_LOOTED_BY);
+		if( !looters )
+			SendSysMessage(who, "No players looted this corpse.");
+			return 0;
+		else
+			PrintTextAbovePrivate(corpse, "This corpse was looted by:", who);
+			var mobile;
+			foreach serial in (looters.keys())
+				mobile := SystemFindObjectBySerial(serial);
+				if( !mobile )
+					mobile := SystemFindObjectBySerial(serial, SYSFIND_SEARCH_OFFLINE_MOBILES);
+					if( mobile )
+						PrintTextAbovePrivate(corpse, "- " + mobile.name + ", account: " + mobile.acctname, who);
+						Sleep(2);
+					endif
+				else
+					PrintTextAbovePrivate(corpse, "- " + mobile.name + ", account: " + mobile.acctname, who);
+					Sleep(2);
+				endif
+			endforeach
+			
+			PrintTextAbovePrivate(corpse, "Finished looter listing.", who);
+		endif
+	endif
+endprogram
+			

@@ -1,0 +1,117 @@
+use uo;
+use os;
+
+include "dotutils";
+
+var layout := {
+	"page 0",
+	"gumppic 30 30 2203",
+	"text 100 40 28 0",
+	"text 65 40 75 1",
+	"text 170 40 35 2",
+
+	"text 90 65 0 3",
+	"button 65 70  2104 2103 1 0 4",
+	"button 175 70  2104 2103 1 0 5",
+
+	"text 90 85 0 6",
+	"button 65 90  2104 2103 1 0 7",
+	"button 175 90  2104 2103 1 0 8",
+
+	"text 90 105 0 9",
+	"button 65 110  2104 2103 1 0 10",
+	"button 175 110  2104 2103 1 0 11",
+
+	"text 90 125 0 12",
+	"button 65 130  2104 2103 1 0 13",
+	"button 175 130  2104 2103 1 0 14"
+
+};
+
+var data := {
+	"Privileges",
+	"On",
+	"Off",
+	"Hear Ghosts",
+	"",
+	"",
+	"See Ghosts",
+	"",
+	"",
+	"See Hidden",
+	"",
+	"",
+	"Invulnerable",
+	"",
+	""
+};
+
+program staffhandbook(who, handbook)
+
+	ReserveItem(handbook);
+
+	if( who.cmdlevel < 1 )
+		foreach staff in EnumerateOnlineCharacters()
+		    if( staff.cmdlevel > 0 )
+		    	SendSysMessage(staff, who.name + " is using a staff only item 'Staff Handbook'", 3, 48);
+		    endif
+		endforeach
+
+	    SendSysMessage(who, "You do not have privileges to use this item. Staff have been notified.", 3, 48);
+	    DestroyItem(handbook);
+	    return 0;
+	endif
+
+	while(ShowPrivGump(who) > 0)
+		sleepms(250);
+	endwhile
+
+endprogram
+
+function ShowPrivGump(who)
+
+	var res := SendDialogGump( who, layout, data );
+
+	case( res[0] )
+
+		4: GrantPriv( who, "hearghosts" );
+		5: RevokePriv( who, "hearghosts" );
+
+		7: GrantPriv( who, "seeghosts" );
+		8: RevokePriv( who, "seeghosts" );
+
+		10: GrantPriv( who, "seehidden" );
+		11: RevokePriv( who, "seehidden" );
+
+		13: GrantPriv( who, "invul" );
+		14: RevokePriv( who, "invul" );
+
+	endcase
+
+	return res[0];
+
+endfunction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

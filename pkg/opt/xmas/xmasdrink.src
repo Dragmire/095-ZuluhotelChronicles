@@ -1,0 +1,43 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// updated by Zulu (zulu@zuluhotel.com) Dec 23, 1999
+// - funky xmas drink.
+// updated November 19, 2000
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+use uo;
+use os;
+include "include/random";
+const SOUND_EFFECT_DRINK1:=0x32;
+const ACTION_DRINK:=0x22;
+const ACTION_BOW:=0x20;
+
+program xmasdrink(who,xmas)
+
+    if(!ReserveItem(xmas)) return; endif
+
+    DestroyItem(xmas);
+
+    PerformAction(who,ACTION_DRINK);
+    PlaySoundEffect(who,SOUND_EFFECT_DRINK1);
+    sleep(5);
+
+    Detach();
+    // Drunk effect
+    PerformAction(who,ACTION_BOW);
+    PrintTextAbove(who,"*hic*");
+    who.facing:=RandomDiceStr("1d8");
+    sleep(2);
+    PerformAction(who,ACTION_BOW);
+    who.facing:=RandomDiceStr("1d8");
+    sleep(1);
+    PerformAction(who,ACTION_BOW);
+    who.facing:=RandomDiceStr("1d8");
+    sleep(5);
+    PrintTextAbove(who,"*hic*");
+    sleep(5);
+
+    SendSysMessage(who,"The drink wears off.");
+
+endprogram

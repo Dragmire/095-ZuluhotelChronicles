@@ -1,0 +1,80 @@
+
+use os;
+use uo;
+use basic;
+
+include "include/itemutil";
+include "include/eventid";
+include "include/objtype";
+include "include/client";
+
+program wordofpowertele( teleporter )
+
+	var old := GetObjProperty( teleporter, "Old" );
+	if( old )
+		teleporter.graphic := old;
+		EraseObjProperty( teleporter, "Old" );
+	endif
+
+	RegisterForSpeechEvents( teleporter, 2 );
+	EnableEvents( SYSEVENT_SPEECH, 2 );
+	var ev;
+	var text;
+	var words_of_power;
+
+	while( 1 && teleporter )
+        	ev := os::wait_for_event( 5 );
+
+	        if( ev )
+	        	case (ev.type)
+				SYSEVENT_SPEECH:
+					words_of_power := GetObjProperty( teleporter, "WordOfPower" );
+					if( words_of_power )
+						words_of_power := upper(words_of_power);
+						text := upper(ev.text);
+                				if( text[words_of_power] && FitRequirements( ev.source, teleporter ) )
+							DisableEvents( SYSEVENT_SPEECH );
+							RevealTheGate( teleporter );
+							ClearEvents();
+							EnableEvents( SYSEVENT_SPEECH, 2 );
+						endif
+					endif
+			endcase
+		endif
+	endwhile
+
+endprogram
+
+
+function RevealTheGate( teleporter )
+
+	var oldgraphic := teleporter.graphic;
+	SetObjProperty( teleporter, "Old", teleporter.graphic );
+	PlaySoundEffect( teleporter, SFX_SPELL_GATE_TRAVEL );
+    
+	var i;
+	for( i := 6899; i <= 6907; i := i+1 )
+		teleporter.graphic := i;
+		sleepms( 150 );
+	endfor
+	teleporter.graphic := UOBJ_BLUE_MOONGATE;
+	SetObjProperty( teleporter, "#Revealed", 1 );
+	sleep(10);
+	EraseObjProperty( teleporter, "#Revealed" );
+	for( i := 6907; i >= 6899; i := i-1 )
+		teleporter.graphic := i;
+		sleepms( 150 );
+	endfor
+	teleporter.graphic := oldgraphic;
+	EraseObjProperty( teleporter, "Old" );
+
+endfunction
+
+
+function ClearEvents()
+
+	var ev;
+	repeat
+	until (! (ev := os::wait_for_event(0)) );
+
+endfunction

@@ -1,0 +1,20 @@
+use uo;
+use os;
+
+
+include "include/client";
+include "include/spelldata";
+include "include/rituals";
+
+
+program crystal(who, item)
+
+var charges:=GetObjProperty( item, "ManaLevel" );
+
+if (charges)
+SendSysMessage(who, "this crystal contains "+charges+" charges");
+else
+SendSysMessage(who, "this crystal has not been charged");
+endif
+
+endprogram

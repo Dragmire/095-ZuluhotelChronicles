@@ -1,0 +1,190 @@
+use uo;
+use basic;
+
+include "gamedict";
+include "gamehelp";
+include "gamelist";
+
+var layout := { };
+var data := { };
+
+program boardtest(who, board)
+	Detach();
+	var piecestring := setupchess(0);
+	var dictchess := gdMakeDict(zba_chess);
+
+	SendSysMessage(who, "Select who you want to play with");
+	var targ := Target(who);
+	if (Distance(targ, who) > 5)
+		SendSysMessage(who, "Too far away");
+		return;
+	elseif (who.serial==targ.serial)
+		SendSysMessage(who, "Canceled");
+		return;
+	elseif (!targ.ip)
+		SendSysMessage(who, "Canceled");
+		return;
+	endif
+
+	var stopper;
+	while(who.ip && targ.ip)	 //If someone logs, end the game.
+		if (Distance(who, board) > 5 || Distance(targ, board) > 5)
+			break;
+		else
+			stopper := whiteplayer(who, piecestring, dictchess);
+			if (!stopper)
+				break;
+			else
+				blackplayer(targ, piecestring, dictchess);
+				if (!stopper)
+					break;
+				endif
+			endif
+		endif
+	endwhile
+
+endprogram
+
+function whiteplayer(who, byref piecestring, dictchess)
+		var sqfrom, sqto;
+		SendSysMessage(who, "Click the piece to move.", 3, 75);
+		renderboard(piecestring, dictchess);
+		sqfrom := getinput(who);
+	
+		if (sqfrom > 64)
+			return 0;
+		endif
+		SendSysMessage(who, "Click where you want to move the piece.", 3, 75);
+		renderboard(piecestring, dictchess);
+		sqto:= getinput(who);
+	
+		if (sqto > 64)
+			return 0;
+		endif
+		movepiece(sqto, sqfrom, piecestring);
+		return 1;
+endfunction
+
+function blackplayer(who, byref piecestring, dictchess)
+		var sqfrom, sqto;
+		SendSysMessage(who, "Click the piece to move.", 3, 75);
+		renderboard(piecestring, dictchess);
+		sqfrom := getinput(who);
+	
+		if (sqfrom > 64)
+			return 0;
+		endif
+		SendSysMessage(who, "Click where you want to move the piece.", 3, 75);
+		renderboard(piecestring, dictchess);
+		sqto:= getinput(who);
+	
+		if (sqto > 64)
+			return 0;
+		endif
+		movepiece(sqto, sqfrom, piecestring);
+		return 1;
+endfunction
+
+function movepiece(sqto, sqfrom, byref piecestring)
+	piecestring[sqto] := piecestring[sqfrom];
+	piecestring[sqfrom] := ".";
+endfunction
+
+function getinput(who)
+	var input := SendDialogGump( who, layout, data );
+	return input[0];
+endfunction
+
+function boardtray()
+	layout.append("button 100 330 2151 2154 1 0 66");
+	data.append("New Game");
+	layout.append("text 135 335 500 " + (data.size()-1));
+
+	layout.append("button 100 360 2151 2154 1 0 67");
+	data.append("Offer Draw");
+	layout.append("text 135 365 500 " + (data.size()-1));
+
+	layout.append("button 300 330 2151 2154 1 0 65");
+	data.append("Quit");
+	layout.append("text 335 335 500 " + (data.size()-1));
+endfunction
+
+function hiddenbuttons()
+	var row, col;
+	var x, y := 85, counter := 1;
+	for(row:=0;row<8;row:=row+1)
+		x := 145;
+		y := y+25;
+		for(col:=1;col<=8;col:=col+1)
+			layout.append("button " + x + " " + y + " 2708 2709 1 0 " + counter);
+			x := x+25;
+			counter := counter + 1;
+		endfor
+	endfor
+endfunction
+
+function renderboard(byref piecestring, dictchess)
+	layout := { };
+	data := { };
+	layout.append("noclose");
+	layout.append("nodispose");
+	layout.append("page 0");
+	hiddenbuttons();
+	layout.append("resizepic 85 260 5054 311 160");
+	layout.append("resizepic 85 85 3600 311 240");
+	layout.append("gumppic 100 100 2330");
+	boardtray();
+	var row, col;
+	var x, y := 65, counter := 1;
+	for(row:=0;row<8;row:=row+1)
+		x := 145;
+		y := y+25;
+		for(col:=1;col<=8;col:=col+1)
+			if (piecestring[counter] != ".")
+				layout.append("gumppic " + x + " " + y + " " + GetPieceGump(piecestring[counter],dictchess));
+			endif
+			x := x+25;
+			counter := counter + 1;
+		endfor
+	endfor
+endfunction
+
+
+/*
+	//White Pieces
+	"gumppic 240 60 2333",
+	"gumppic 268 60 2335",
+	"gumppic 292 60 2332",
+	"gumppic 315 60 2334",
+	"gumppic 345 60 2337",
+	"gumppic 370 60 2332",
+	"gumppic 390 60 2335",
+	"gumppic 415 60 2333",
+	//White Pawns
+	"gumppic 240 100 2336",	
+	"gumppic 268 100 2336",
+	"gumppic 292 100 2336",
+	"gumppic 315 100 2336",
+	"gumppic 345 100 2336",
+	"gumppic 370 100 2336",
+	"gumppic 390 100 2336",
+	"gumppic 415 100 2336",
+	//Black Pawns
+	"gumppic 240 220 2343",	
+	"gumppic 268 220 2343",
+	"gumppic 292 220 2343",
+	"gumppic 315 220 2343",
+	"gumppic 345 220 2343",
+	"gumppic 370 220 2343",
+	"gumppic 390 220 2343",
+	"gumppic 415 220 2343",
+	//Black Pieces
+	"gumppic 240 240 2340",
+	"gumppic 268 240 2342",
+	"gumppic 292 240 2339",
+	"gumppic 315 240 2341",
+	"gumppic 345 240 2344",
+	"gumppic 370 240 2339",
+	"gumppic 390 240 2342",
+	"gumppic 415 240 2340",
+*/

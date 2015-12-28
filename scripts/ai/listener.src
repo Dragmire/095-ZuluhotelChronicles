@@ -1,0 +1,72 @@
+// this is an npc that just sits there and listens for a certain word. If i hears i, it spawns a baddie near the speaker
+
+use cfgfile;
+use npc;
+use os;
+use uo;
+
+include "include/eventid";
+include "ai/setup/modsetup";
+include "include/random";
+var me := Self();
+
+program listener()
+
+applydamage(me, me.maxhp + 10000);
+print ("Listener died!");
+endprogram
+
+function createrandomcritter(ev)
+var what := Random(4)+1;
+var tem;
+var times;
+
+times := getobjproperty(ev.source, "sb");
+
+if (times)
+        case (cint(times))
+                1: applyrawdamage(ev.source, ev.source.hp + 100);
+                   broadcast("Bucon: You are angering me, " + ev.source.name);
+                   setobjproperty(ev.source, "sb", 2);
+                   broadcast("Bucon: let this be your warning!");
+                   return 1;
+                2: var x := ev.source.x;
+                   var y := ev.source.x;
+                   var z := ev.source.x;
+                   applyrawdamage(ev.source, ev.source.hp + 100);
+                   foreach corpse in listitemsnearlocation(x, y, z, 1)
+                        if (corpse.corpsetype)
+                                destroyitem(corpse);
+                        endif
+                   endforeach
+                   setobjproperty(ev.source, "sb", 3);
+                   broadcast("Bucon: This was your last warning, fool!");
+                   return 1;
+                 3: sendsysmessage(ev.source, "If you didn't get the message, you need to stop doing that");
+                    var x := ev.source.x;
+                   var y := ev.source.x;
+                   var z := ev.source.x;
+                   applyrawdamage(ev.source, ev.source.hp + 100);
+                   foreach corpse in listitemsnearlocation(x, y, z, 1)
+                        if (corpse.corpsetype)
+                                destroyitem(corpse);
+                        endif
+                   endforeach
+                   setobjproperty(ev.source, "sb", 3);
+
+                   return 1;
+        endcase
+endif
+
+setobjproperty(ev.source, "sb", 1);
+case (what)
+        1: tem := "daemon";
+        2: tem := "darkspawn";
+        3: tem := "daemonspawn";
+        4: tem := "necromancer";
+endcase
+
+createnpcfromtemplate(tem, ev.source.x, ev.source.y, ev.source.z);
+
+
+endfunction

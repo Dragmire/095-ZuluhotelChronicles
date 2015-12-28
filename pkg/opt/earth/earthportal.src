@@ -1,0 +1,218 @@
+use uo;
+use os;
+
+include "include/spelldata";
+include "include/attributes";
+include "include/recalling";
+include "include/objtype";
+include "include/client";
+
+
+program cast_earth_portal( caster )
+
+	var circle := GetCircle( SPELLID_EARTH_PORTAL );
+	var duration := CInt(GetEffectiveSkill( caster, SKILLID_MAGERY ) / 2);
+
+ 	if( TryToCast( caster, SPELLID_EARTH_PORTAL ) != SUCCESS )
+		return;
+	endif
+
+	if( caster.multi && GetObjProperty( caster.multi, "ownerserial" ) != caster.serial )
+		var co_owners := {};
+		var friends := {};
+		var i;
+		for( i := 1; i <= 5; i := i + 1 )
+			if( GetObjProperty( caster.multi, "Co-owner" + i ) )
+				co_owners.append( GetObjProperty( caster.multi, "Co-owner" + i ));
+			endif
+		endfor
+	
+		for( i := 1; i <= 20; i := i + 1 )
+			if( GetObjProperty( caster.multi, "friend" + i ) )
+				friends.append( GetObjProperty( caster.multi, "friend" + i ));
+			endif
+		endfor
+		
+		if( !( caster.serial in co_owners ) && !( caster.serial in friends ) )
+			SendSysMessage( caster, "You can't gate from there!" );
+			EraseObjProperty( caster, "#Casting" );
+			return;
+		endif
+	endif
+
+
+//---- by Greven ----//
+	//DONATOR basic area
+	var x1 := 5894;
+	var x2 := 6016;
+	var y1 := 1416;
+	var y2 := 1533;
+
+        if(caster.x >= x1 and caster.x <= x2 and caster.y >= y1 and caster.y <= y2)
+           sendsysmessage(caster,"You can't gate from there.",3,33);
+	   return;
+	endif
+
+	//DONATOR elite area
+	var elitex1 := 5375;
+	var elitex2 := 5427;
+	var elitey1 := 1080;
+	var elitey2 := 1142;
+
+	if(caster.x >= elitex1 and caster.x <= elitex2 and caster.y >= elitey1 and caster.y <= elitey2)
+            sendsysmessage(caster,"You can't gate from there.",3,33);
+	    return;
+	endif
+
+	//DONATOR pro area
+	var prox1 := 6033;
+	var prox2 := 6138;
+	var proy1 := 1284;
+	var proy2 := 1388;
+
+	if(caster.x >= prox1 and caster.x <= prox2 and caster.y >= proy1 and caster.y <= proy2)
+            sendsysmessage(caster,"You can't gate from there.",3,33);
+	    return;
+	endif
+
+//---- end ----//
+
+	if( !CheckPoz( caster.x, caster.y ) )
+		SendSysMessage( caster, "You can't gate out of this place.");
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	SendSysMessage( caster, "Select a rune to gate from." );
+
+	var cast_on := CanTargetThing( caster, circle, TGTOPT_CHECK_LOS );
+
+	if(!cast_on)
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( !Accessible( caster, cast_on ) )
+		SendSysMessage( caster, "You can't reach that!" );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( cast_on.objtype != UOBJ_RUNE && cast_on.objtype != 0x6100 )
+		SendSysMessage( caster, "You can only cast that on a recall rune!" );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( !ReserveItem(cast_on) )
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	var tox := CInt(GetObjProperty( cast_on, "x" ));
+	var toy := CInt(GetObjProperty( cast_on, "y" ));
+	var toz := CInt(GetObjProperty( cast_on, "z" ));
+
+	if( !tox && !toy && !toz )
+		SendSysMessage(caster, "That is a blank rune!");
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+//---- by Greven ----//
+	//DONATOR basic area
+        if(tox >= x1 and tox <= x2 and toy >= y1 and toy <= y2)
+           sendsysmessage(caster,"The destination is a magic place with protection.",3,33);
+	   return;
+	endif
+
+	//DONATOR elite area
+	if(tox >= elitex1 and tox <= elitex2 and toy >= elitey1 and toy <= elitey2)
+            sendsysmessage(caster,"The destination is a magic place with protection.",3,33);
+	    return;
+	endif
+
+	//DONATOR pro area
+	if(tox >= prox1 and tox <= prox2 and toy >= proy1 and toy <= proy2)
+            sendsysmessage(caster,"The destination is a magic place with protection.",3,33);
+	    return;
+	endif
+//---- end ----//
+
+	if( !CheckPoz( tox, toy ) )
+		SendSysMessage( caster, "The destination is a magic place with protection.");
+		DestroyItem( cast_on );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	if( IsForbiddenAreaToRecallTo( caster, tox, toy ) )
+		SendSysMessage( caster, "The destination is a magic place with protection.");
+		DestroyItem( cast_on );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	set_critical( 1 );
+
+	var gate1 := CreateItemAtLocation( caster.x, caster.y, caster.z, UOBJ_BLACK_MOONGATE, 1 );
+	var gate2 := CreateItemAtLocation( tox, toy, toz, UOBJ_BLACK_MOONGATE, 1 );
+
+	if( gate2.multi && GetObjProperty( gate2.multi, "ownerserial" ) != caster.serial )
+		var co_owners := {};
+		var friends := {};
+		var i;
+		for( i := 1; i <= 5; i := i + 1 )
+			if( GetObjProperty( gate2.multi, "Co-owner" + i ) )
+				co_owners.append( GetObjProperty( caster.multi, "Co-owner" + i ));
+			endif
+		endfor
+	
+		for( i := 1; i <= 20; i := i + 1 )
+			if( GetObjProperty( gate2.multi, "friend" + i ) )
+				friends.append( GetObjProperty( caster.multi, "friend" + i ));
+			endif
+		endfor
+		
+		if( !( caster.serial in co_owners ) && !( caster.serial in friends ) )
+			SendSysMessage( caster, "You can't gate to this place." );
+			DestroyItem( gate2 );
+		endif
+	endif
+
+	if( !gate1 )
+		DestroyItem( gate2 );
+		EraseObjProperty( caster, "#Casting" );
+        	return;
+	endif
+
+	if( !gate2 )
+		DestroyItem( gate1 );
+		EraseObjProperty( caster, "#Casting" );
+		return;
+	endif
+
+	SetObjProperty( gate1, "GateDestX", gate2.x );
+	SetObjProperty( gate1, "GateDestY", gate2.y );
+	SetObjProperty( gate1, "GateDestZ", gate2.z );
+	SetObjProperty( gate2, "GateDestX", gate1.x );
+	SetObjProperty( gate2, "GateDestY", gate1.y );
+	SetObjProperty( gate2, "GateDestZ", gate1.z );
+
+	Detach();
+
+	set_critical( 0 );
+
+	PlaySoundEffect( caster, SFX_SPELL_EARTH_PORTAL );
+	EraseObjProperty( caster, "#Casting" );
+
+	sleep( duration );
+   
+	set_critical( 1 );
+
+	DestroyItem( gate1 );
+	DestroyItem( gate2 );
+
+	set_critical(0);
+
+endprogram

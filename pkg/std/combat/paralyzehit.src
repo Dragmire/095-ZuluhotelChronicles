@@ -1,0 +1,42 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//											//
+//	trielementalscript :								//
+//											//
+//	Make the special weapon to ramdomly cast a lightning on the defender.		//
+//	The % of chance that lightning will be cast is included in the itemdesc.	//
+//	The lightning follow the normal spell damages and use the wielder magery	//
+//	and eval int to determine it.							//													//
+//											//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+use uo;
+
+include "include/spelldata";
+include "include/dotempmods";
+include "include/hitscriptinc";
+include "include/random";
+program paralyzehit( attacker, defender, weapon, armor, basedamage, rawdamage )
+
+	var chance := GetObjProperty(weapon, "ChanceOfEffect");
+	if(RandomDiceStr("1d100") <= chance)
+
+		var targ;
+		if( GetObjProperty( weapon , "Cursed" ) )
+			targ := attacker;
+		else
+			targ := defender;
+		endif
+
+		if( CanMod( targ , "p" ) )
+			if( !GetObjProperty( targ , "FreeAction" ) )
+				DoTempMod( targ , "p" , 1 , 15 );
+			endif
+		endif
+	endif
+
+	
+	rawdamage := RecalcDmg( attacker , defender , weapon , armor , basedamage );
+	DealDamage( attacker , defender , weapon , armor , basedamage , rawdamage );
+	
+endprogram

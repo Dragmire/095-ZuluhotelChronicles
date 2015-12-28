@@ -1,0 +1,115 @@
+use uo;
+use os;
+
+
+include "include/spelldata";
+include "include/attributes";
+include "include/dotempmods";
+
+program processtempmods( parms )
+	set_script_option( SCRIPTOPT_CAN_ACCESS_OFFLINE_MOBILES, 1 );
+
+	var who	:= parms[1];
+	var plvl	:= parms[2];
+	var msg	:= parms[3];
+	var serial	:= who.serial;
+
+	plvl := CInt(plvl);
+	var protected := PoisonProtected( who, plvl );
+
+	if( protected == IMMUNED )
+		return;
+	endif
+
+	if( protected == CURSED )
+		plvl := plvl + 2;
+	endif
+
+	if (plvl < 1)
+		return;
+	endif
+
+	if ( plvl > 6 )
+		plvl := 6;
+	endif
+
+	var current := 0;
+	set_critical(1);
+	var currentmod := GetObjProperty( who, "poison" );
+
+	if( currentmod )
+		current := CInt( currentmod[1] );
+	else
+		currentmod := {};
+	endif
+
+	if( plvl < current )
+		set_critical(0);
+		return;
+	endif
+
+	var duration := CInt(29 + ( 20 * plvl ) + 1);
+	var newpoisonregenmod := GetPoisonRegenMod( plvl );
+	var current_clock := CInt(ReadGameClock());
+
+	if( plvl > current )
+		SetHpRegenRate(who , ( CInt(BaseRegenRate(who) + newpoisonregenmod)) * 12 );
+	endif
+
+	var mmod := { plvl, CInt(current_clock + duration) };
+
+//greven
+
+
+	if( !current )
+		who.SetPoisoned();
+		if( msg )
+			PrintTextAbovePrivate( who, msg, who );
+		endif
+		currentmod := mmod;
+	else
+		AddToPoisonMod( currentmod, mmod );
+	endif
+
+	SetObjProperty( who, "poison", currentmod );
+
+	set_critical(0);
+
+	duration:=duration+1;
+
+while(  duration >= 0 )
+	duration:=duration-5;
+	sleep( 5 );
+	if( GetHp(who) < 1 OR GetHP(who) == 0)
+		ApplyRawDamage( who, 1 );
+	endif
+
+endwhile
+
+
+
+
+//end
+
+	if( !who )
+		who := SystemFindObjectBySerial( CInt(serial), SYSFIND_SEARCH_OFFLINE_MOBILES );
+	endif
+
+	if( who )
+		set_critical(1);
+		currentmod := GetObjProperty( who, "poison" );
+
+		if( !currentmod )
+			set_critical( 0 );
+			return;
+		endif
+
+		if( ReadGameClock() >= CInt(currentmod[2]) )
+			CurePoison( who );
+		endif
+
+		set_critical(0);
+	endif
+
+endprogram
+
